@@ -32,8 +32,12 @@ sudo apt-get install -y cuda
 export PATH=/usr/local/cuda/bin:$PATH
 
 # Install VALI
-pip3 install https://github.com/RomanArzumanyan/VALI
-# or if you cloned this repository
+
+```
+git clone https://github.com/RomanArzumanyan/VALI
+cd VALI
+mkdir -p _conan
+conan install . -of _conan -b=missing
 pip3 install .
 ```
 
@@ -58,8 +62,6 @@ After resolving those you should be able to run `make run_samples_without_docker
 
 - Install a C++ toolchain either via Visual Studio or Tools for Visual Studio (https://visualstudio.microsoft.com/downloads/)
 - Install the CUDA Toolkit: https://developer.nvidia.com/cuda-downloads?target_os=Windows&target_arch=x86_64
-- Compile [FFMPEG](https://github.com/FFmpeg/FFmpeg/) with shared libraries or download pre-compiled binaries from a source you trust
-- Install from the root directory of this repository indicating the location of the compiled FFMPEG in a Powershell console
 ```pwsh
 # Indicate path to your FFMPEG installation (with subfolders `bin` with DLLs, `include`, `lib`)
 $env:SKBUILD_CONFIGURE_OPTIONS="-DTC_FFMPEG_ROOT=C:/path/to/your/ffmpeg/installation/ffmpeg/" 
