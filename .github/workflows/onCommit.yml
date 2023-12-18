@@ -19,6 +19,18 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+        # already installed on runner: git build-essential python3-dev python3-pip cmake (new version required, use pip if toold)
+    - name: Install dependencies
+      run: | 
+        sudo apt-get update
+        sudo apt-get install \
+          libavfilter-dev \
+          libavformat-dev \
+          libavcodec-dev \
+          libswresample-dev \
+          libavutil-dev\
+          -y
+
     # CUDA toolkit: the following is sufficient on Ubuntu cuda-libraries-XX-X cuda-compiler-XX-X libnpp-dev-XX-X libnvidia-decode-XXX
     - uses: Jimver/cuda-toolkit@v0.2.8
       id: cuda-toolkit
@@ -37,10 +49,6 @@ jobs:
 
     - name: Build and Install Package
       run: | 
-        python -mpip install conan
-        mkdir -p _conan
-        conan profile detect -f
-        conan install . -of _conan -b=missing -c tools.system.package_manager:sudo -c tools.system.package_manager:mode=install
         python -mpip install . --verbose
 
     - name: Check Import
