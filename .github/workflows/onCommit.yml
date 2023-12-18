@@ -50,8 +50,8 @@ jobs:
     - name: Build and Install Package
       with:
         submodules: 'true'
-      run: | 
-        python -mpip install . --verbose
+        run: | 
+          python -mpip install . --verbose
 
     - name: Check Import
       # importing does not work on Windows as nvcuda.dll is required which comes with a Nvidia driver
