@@ -15,8 +15,6 @@ jobs:
       # Give the default GITHUB_TOKEN write permission to commit and push the
       # added or changed files to the repository.
       contents: write
-    with:
-      submodules: 'true'
 
     steps:
     - uses: actions/checkout@v3
@@ -50,6 +48,8 @@ jobs:
           -y
 
     - name: Build and Install Package
+      with:
+        submodules: 'true'
       run: | 
         python -mpip install . --verbose
 
