@@ -37,6 +37,9 @@ add_subdirectory(TC_CORE)
 find_package(CUDAToolkit 11.2 REQUIRED)
 include(GenerateExportHeader)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../../cmake-modules")
+find_package(FFmpeg REQUIRED)
+
 add_library(
     TC
     src/MemoryInterfaces.cpp
@@ -90,10 +93,7 @@ target_link_libraries(
         CUDA::nppial
         CUDA::nppicc
         CUDA::nppidei
-        ffmpeg::avformat 
-        ffmpeg::avcodec 
-        ffmpeg::avutil
-        ffmpeg::swresample
+        ${FFMPEG_LIBRARIES}
         TC_CORE    
 )
 

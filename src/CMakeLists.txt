@@ -16,8 +16,6 @@ endif(WIN32)
 
 find_package(CUDAToolkit 11.2 REQUIRED)
 
-find_package(FFMPEG REQUIRED PATHS "../_conan")
-
 add_subdirectory(PyNvCodec)
 add_subdirectory(TC)
 

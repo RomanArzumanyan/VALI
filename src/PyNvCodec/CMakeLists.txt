@@ -61,6 +61,9 @@ pybind11_add_module(_PyNvCodec MODULE
 set_property(TARGET _PyNvCodec PROPERTY CXX_STANDARD 17)
 target_include_directories(_PyNvCodec PRIVATE inc)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../../cmake-modules")
+find_package(FFmpeg REQUIRED)
+
 target_link_libraries(
 	_PyNvCodec PUBLIC 
 	TC_CORE 
@@ -72,19 +75,12 @@ target_link_libraries(
 	CUDA::nppial
 	CUDA::nppicc
 	CUDA::nppidei
-	ffmpeg::avformat 
-	ffmpeg::avcodec 
-	ffmpeg::avutil
-	ffmpeg::swresample)
+	${FFMPEG_LIBRARIES})
 include_directories(${ffmpeg_INCLUDE_DIR})
 include(GNUInstallDirs)
-
-include(../common.cmake)
-get_conan_ffmpeg_libs(CONAN_FFMPEG_LIBS CONAN_FFMPEG_LIB_DIR CONAN_FFMPEG_BIN_DIR)
 
 set_target_properties(_PyNvCodec PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 set_target_properties(_PyNvCodec PROPERTIES INSTALL_RPATH "$ORIGIN")
 
-message(STATUS "Conan FFMpeg libs: ${CONAN_FFMPEG_LIBS}")
 install(FILES ${CONAN_FFMPEG_LIBS} DESTINATION PyNvCodec)
 install(TARGETS _PyNvCodec RUNTIME DESTINATION PyNvCodec LIBRARY DESTINATION PyNvCodec)
