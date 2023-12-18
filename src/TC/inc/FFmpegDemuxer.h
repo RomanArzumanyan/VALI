@@ -17,10 +17,9 @@
 
 extern "C" {
 #include <libavcodec/avcodec.h>
+#include <libavcodec/bsf.h>
 #include <libavformat/avformat.h>
 #include <libavformat/avio.h>
-#include <libavcodec/bsf.h>
-
 }
 
 #include "CodecsSupport.hpp"
@@ -32,8 +31,7 @@ extern "C" {
 #include <string>
 #include <vector>
 
-namespace VPF
-{
+namespace VPF {
 enum SeekMode {
   /* Seek for exact frame number.
    * Suited for standalone demuxer seek. */
@@ -72,47 +70,35 @@ struct SeekContext {
 
   SeekContext()
       : use_seek(false), seek_frame(-1), seek_tssec(-1.0), mode(PREV_KEY_FRAME),
-        out_frame_pts(-1), out_frame_duration(-1), num_frames_decoded(-1)
-  {
-  }
+        out_frame_pts(-1), out_frame_duration(-1), num_frames_decoded(-1) {}
 
   SeekContext(int64_t frame_id)
-      : use_seek(true), seek_frame(frame_id), seek_tssec(-1.0), 
+      : use_seek(true), seek_frame(frame_id), seek_tssec(-1.0),
         mode(PREV_KEY_FRAME), out_frame_pts(-1), out_frame_duration(-1),
-        num_frames_decoded(-1)
-  {
-  }
+        num_frames_decoded(-1) {}
 
   SeekContext(double frame_ts)
-      : use_seek(true), seek_tssec(frame_ts), seek_frame(-1), 
-        mode(PREV_KEY_FRAME), out_frame_pts(-1), out_frame_duration(-1), 
-        num_frames_decoded(-1)
-  {
-  }
+      : use_seek(true), seek_tssec(frame_ts), seek_frame(-1),
+        mode(PREV_KEY_FRAME), out_frame_pts(-1), out_frame_duration(-1),
+        num_frames_decoded(-1) {}
 
   SeekContext(int64_t frame_num, SeekMode seek_mode)
-      : use_seek(true), seek_frame(frame_num), seek_tssec(-1.0), mode(seek_mode), 
-        out_frame_pts(-1), out_frame_duration(-1), num_frames_decoded(-1)
-  {
-  }
+      : use_seek(true), seek_frame(frame_num), seek_tssec(-1.0),
+        mode(seek_mode), out_frame_pts(-1), out_frame_duration(-1),
+        num_frames_decoded(-1) {}
 
   SeekContext(double frame_ts, SeekMode seek_mode)
       : use_seek(true), seek_tssec(frame_ts), mode(seek_mode), seek_frame(-1),
-        out_frame_pts(-1), out_frame_duration(-1), num_frames_decoded(-1)
-  {
-  }
+        out_frame_pts(-1), out_frame_duration(-1), num_frames_decoded(-1) {}
 
-  SeekContext(const SeekContext& other)
-      : use_seek(other.use_seek), seek_frame(other.seek_frame), 
-        seek_tssec(other.seek_tssec), mode(other.mode), 
+  SeekContext(const SeekContext &other)
+      : use_seek(other.use_seek), seek_frame(other.seek_frame),
+        seek_tssec(other.seek_tssec), mode(other.mode),
         out_frame_pts(other.out_frame_pts),
         out_frame_duration(other.out_frame_duration),
-        num_frames_decoded(other.num_frames_decoded)
-  {
-  }
+        num_frames_decoded(other.num_frames_decoded) {}
 
-  SeekContext& operator=(const SeekContext& other)
-  {
+  SeekContext &operator=(const SeekContext &other) {
     use_seek = other.use_seek;
     seek_frame = other.seek_frame;
     seek_tssec = other.seek_tssec;
@@ -129,24 +115,10 @@ struct SeekContext {
 
 } // namespace VPF
 
-class DataProvider
-{
-public:
-  DataProvider(std::istream& istr);
-
-  virtual ~DataProvider() = default;
-
-  virtual int GetData(uint8_t* pBuf, int nBuf);
-
-private:
-  std::istream& i_str;
-};
-
-class TC_EXPORT FFmpegDemuxer
-{
-  AVIOContext* avioc = nullptr;
+class TC_EXPORT FFmpegDemuxer {
+  AVIOContext *avioc = nullptr;
   AVBSFContext *bsfc_annexb = nullptr, *bsfc_sei = nullptr;
-  AVFormatContext* fmtc = nullptr;
+  AVFormatContext *fmtc = nullptr;
 
   AVPacket pktSrc, pktDst, pktSei;
   AVCodecID eVideoCodec = AV_CODEC_ID_NONE;
@@ -174,23 +146,16 @@ class TC_EXPORT FFmpegDemuxer
   std::vector<uint8_t> annexbBytes;
   std::vector<uint8_t> seiBytes;
 
-  explicit FFmpegDemuxer(AVFormatContext* fmtcx);
+  explicit FFmpegDemuxer(AVFormatContext *fmtcx);
 
-  AVFormatContext*
-  CreateFormatContext(DataProvider& pDataProvider,
-                      const std::map<std::string, std::string>& ffmpeg_options);
-
-  AVFormatContext*
-  CreateFormatContext(const char* szFilePath,
-                      const std::map<std::string, std::string>& ffmpeg_options);
+  AVFormatContext *
+  CreateFormatContext(const char *szFilePath,
+                      const std::map<std::string, std::string> &ffmpeg_options);
 
 public:
   explicit FFmpegDemuxer(
-      const char* szFilePath,
-      const std::map<std::string, std::string>& ffmpeg_options);
-  explicit FFmpegDemuxer(
-      DataProvider& pDataProvider,
-      const std::map<std::string, std::string>& ffmpeg_options);
+      const char *szFilePath,
+      const std::map<std::string, std::string> &ffmpeg_options);
   ~FFmpegDemuxer();
 
   AVCodecID GetVideoCodec() const;
@@ -223,21 +188,20 @@ public:
 
   AVColorRange GetColorRange() const;
 
-  bool Demux(uint8_t*& pVideo, size_t& rVideoBytes, PacketData& pktData,
-             TaskExecDetails& details, uint8_t** ppSEI = nullptr,
-             size_t* pSEIBytes = nullptr);
+  bool Demux(uint8_t *&pVideo, size_t &rVideoBytes, PacketData &pktData,
+             TaskExecDetails &details, uint8_t **ppSEI = nullptr,
+             size_t *pSEIBytes = nullptr);
 
-  bool Seek(VPF::SeekContext& seek_ctx, uint8_t*& pVideo, size_t& rVideoBytes,
-            PacketData& pktData, TaskExecDetails& details,
-            uint8_t** ppSEI = nullptr, size_t* pSEIBytes = nullptr);
+  bool Seek(VPF::SeekContext &seek_ctx, uint8_t *&pVideo, size_t &rVideoBytes,
+            PacketData &pktData, TaskExecDetails &details,
+            uint8_t **ppSEI = nullptr, size_t *pSEIBytes = nullptr);
 
   void Flush();
 
-  static int ReadPacket(void* opaque, uint8_t* pBuf, int nBuf);
+  static int ReadPacket(void *opaque, uint8_t *pBuf, int nBuf);
 };
 
-inline cudaVideoCodec FFmpeg2NvCodecId(AVCodecID id)
-{
+inline cudaVideoCodec FFmpeg2NvCodecId(AVCodecID id) {
   switch (id) {
   case AV_CODEC_ID_MPEG1VIDEO:
     return cudaVideoCodec_MPEG1;

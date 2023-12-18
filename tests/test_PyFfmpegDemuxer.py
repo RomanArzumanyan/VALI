@@ -157,7 +157,7 @@ class TestDemuxer(unittest.TestCase):
             self.fail("Test case raised exception unexpectedly!")
 
     def test_invalid_input(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(RuntimeError):
             nvDmx = nvc.PyFFmpegDemuxer("/path/to/nowhere.mkv", {})
 
 
