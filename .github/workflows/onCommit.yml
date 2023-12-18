@@ -39,6 +39,7 @@ jobs:
       run: | 
         python -mpip install conan
         mkdir -p _conan
+        conan profile detect -f
         conan install . -of _conan -b=missing
         python -mpip install . --verbose
 
