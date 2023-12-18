@@ -40,7 +40,7 @@ jobs:
         python -mpip install conan
         mkdir -p _conan
         conan profile detect -f
-        sudo conan install . -of _conan -b=missing -c tools.system.package_manager:mode=install
+        conan install . -of _conan -b=missing -c tools.system.package_manager:sudo -c tools.system.package_manager:mode=install
         python -mpip install . --verbose
 
     - name: Check Import
