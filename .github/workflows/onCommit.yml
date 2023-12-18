@@ -48,9 +48,8 @@ jobs:
           -y
 
     - name: Build and Install Package
-      with:
-        submodules: 'true'
-        run: | 
+      run: | 
+          git submodule update --init --recursive
           python -mpip install . --verbose
 
     - name: Check Import
