@@ -12,7 +12,10 @@ VALI works on Linux(Ubuntu 20.04 and Ubuntu 22.04 only) and Windows
 - CUDA Toolkit 11.2 or above 
   - CUDA toolkit has driver bundled with it e.g. CUDA Toolkit 12.0 has driver `530.xx.xx`. During installation of CUDA toolkit you could choose to install or skip installation of the bundled driver. Please choose the appropriate option.
 - FFMPEG
-  - This dependency is resolved via Conan package manager. Please see the conanfile.py for more information about FFMpeg version and configuration.
+  - [Compile FFMPEG with shared libraries](https://docs.nvidia.com/video-technologies/video-codec-sdk/12.0/ffmpeg-with-nvidia-gpu/index.html) 
+  - or download pre-compiled binaries from a source you trust.
+    - During VPF’s “pip install”(mentioned in sections below) you need to provide a path to the directory where FFMPEG got installed.
+  - or you could install system FFMPEG packages (e.g. ```apt install  libavfilter-dev libavformat-dev libavcodec-dev libswresample-dev libavutil-dev``` on Ubuntu)
 
 - Python 3 and above
 - Install a C++ toolchain either via Visual Studio or Tools for Visual Studio.
@@ -21,23 +24,37 @@ VALI works on Linux(Ubuntu 20.04 and Ubuntu 22.04 only) and Windows
 
 ### Linux
 
-We recommend Ubuntu 20.04.
+We recommend Ubuntu 20.04 as it comes with a recent enough FFmpeg system packages.
+If you want to build FFmpeg from source, you can follow
+https://docs.nvidia.com/video-technologies/video-codec-sdk/12.0/ffmpeg-with-nvidia-gpu/index.html
+
+# Install dependencies
+```bash
+apt install -y \
+          libavfilter-dev \
+          libavformat-dev \
+          libavcodec-dev \
+          libswresample-dev \
+          libavutil-dev\
+          wget \
+          build-essential \
+          git
+```
 
 # Install CUDA Toolkit (if not already present)
+```bash
 wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.0-1_all.deb
 sudo dpkg -i cuda-keyring_1.0-1_all.deb
 sudo apt-get update
 sudo apt-get install -y cuda
 # Ensure nvcc to your $PATH (most commonly already done by the CUDA installation)
 export PATH=/usr/local/cuda/bin:$PATH
+```
 
 # Install VALI
-
-```
-git clone https://github.com/RomanArzumanyan/VALI
-cd VALI
-mkdir -p _conan
-conan install . -of _conan -b=missing
+```bash
+pip3 install git+https://github.com/NVIDIA/VideoProcessingFramework
+# or if you cloned this repository
 pip3 install .
 ```
 
