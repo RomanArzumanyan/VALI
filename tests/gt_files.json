@@ -1,0 +1,58 @@
+{
+    "basic": {
+        "uri": "data/test.mp4",
+        "width": 848,
+        "height": 464,
+        "is_vfr": false,
+        "pix_fmt": "PixelFormat.NV12",
+        "framerate": 30,
+        "num_frames": 96,
+        "timebase": 8.1380e-5,
+        "color_space": "ColorSpace.BT_709",
+        "color_range": "ColorRange.MPEG",
+        "len_s": 3.23
+    },
+    "basic_mpeg4": {
+        "uri": "data/test_mpeg4.mpg",
+        "width": 848,
+        "height": 464,
+        "is_vfr": false,
+        "pix_fmt": "PixelFormat.NV12",
+        "framerate": 30,
+        "num_frames": 96,
+        "timebase": 8.1380e-5,
+        "color_space": "ColorSpace.BT_709",
+        "color_range": "ColorRange.MPEG",
+        "len_s": 3.23
+    },    
+    "res_change": {
+        "uri": "data/test_res_change.h264",
+        "width": 848,
+        "height": 464,
+        "res_change_factor": 0.5,
+        "is_vfr": false,
+        "pix_fmt": "PixelFormat.NV12",
+        "framerate": 30,
+        "num_frames": 96,
+        "res_change_frame": 47,
+        "timebase": 8.1380e-5,
+        "color_space": "ColorSpace.BT_709",
+        "color_range": "ColorRange.MPEG"
+    },
+    "log_warnings_nvdec": {
+        "uri": "data/test_bad_task_info_pynv.mkv",
+        "width": 1920,
+        "height": 1080,
+        "pix_fmt": "PixelFormat.NV12",
+        "framerate": 30,
+        "num_frames": 49
+    },
+    "log_warnings_ffdec": {
+        "uri": "data/test_bad_task_info_ffmpeg.wmv",
+        "width": 960,
+        "height": 546,
+        "pix_fmt": "PixelFormat.NV12",
+        "framerate": 29.75,
+        "num_frames": 509
+    }    
+}
