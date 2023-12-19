@@ -28,4 +28,5 @@ jobs:
     - name: Run Tests
       run: |
         source /tmp/venv_vali/bin/activate
-        python3 -munittest discover tests
+        cd tests
+        python3 -munittest discover .
