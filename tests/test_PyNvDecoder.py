@@ -262,13 +262,12 @@ class TestDecoderBuiltin(unittest.TestCase):
         with open("gt_files.json") as f:
             gtInfo = GroundTruth(**json.load(f)["basic"])
 
-        nvDec = nvc.PyNvDecoder(input = gtInfo.uri, gpu_id = 0)
-
-        # First get reconstructed frame with seek
         for idx in range(0, gtInfo.num_frames):
+            # First get reconstructed frame with seek
             seek_ctx = nvc.SeekContext(seek_frame=idx)
             frame_seek = np.ndarray(shape=(0), dtype=np.uint8)
             pdata_seek = nvc.PacketData()
+            nvDec = nvc.PyNvDecoder(input = gtInfo.uri, gpu_id = 0)
             self.assertTrue(nvDec.DecodeSingleFrame(
                 frame_seek, seek_ctx, pdata_seek)[0])
 
