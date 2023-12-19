@@ -296,6 +296,11 @@ void Init_PySurface(py::module& m)
         Return True if Surface owns memory, False if it only references actual
         memory allocation but doesn't own it.
     )pbdoc")
+      .def("Clone", &Surface::Clone, py::return_value_policy::take_ownership,
+           R"pbdoc(
+        CUDA mem alloc + deep copy.
+        Object returned is manager by Python interpreter.
+    )pbdoc")
       .def_static(
           "Make",
           [](Pixel_Format format, uint32_t newWidth, uint32_t newHeight,
@@ -388,59 +393,6 @@ void Init_PySurface(py::module& m)
         :param other: other Surface
         :param context: CUDA contet to use
         :param stream: desc
-    )pbdoc")
-      .def(
-          "Clone",
-          [](shared_ptr<Surface> self) {
-            auto pNewSurf = shared_ptr<Surface>(
-                Surface::Make(self->PixelFormat(), self->Width(),
-                              self->Height(), self->Context()));
-
-            CopySurface_Ctx_Str(self, pNewSurf, self->Context(), CUstream(0));
-            return pNewSurf;
-          },
-          py::return_value_policy::take_ownership,
-          py::call_guard<py::gil_scoped_release>(),
-          R"pbdoc(
-        Deep copy = CUDA mem alloc + CUDA mem copy.
-        Will use CUDA context associated with CUDA memory object and default
-        CUDA stream.
-    )pbdoc")
-      .def(
-          "Clone",
-          [](shared_ptr<Surface> self, int gpuID) {
-            auto pNewSurf = shared_ptr<Surface>(Surface::Make(
-                self->PixelFormat(), self->Width(), self->Height(),
-                CudaResMgr::Instance().GetCtx(gpuID)));
-
-            CopySurface(self, pNewSurf, gpuID);
-            return pNewSurf;
-          },
-          py::arg("gpu_id"), py::return_value_policy::take_ownership,
-          py::call_guard<py::gil_scoped_release>(),
-          R"pbdoc(
-        Deep copy = CUDA mem alloc + CUDA mem copy
-
-        :param gpu_id: GPU to use
-    )pbdoc")
-      .def(
-          "Clone",
-          [](shared_ptr<Surface> self, size_t ctx, size_t str) {
-            auto pNewSurf = shared_ptr<Surface>(
-                Surface::Make(self->PixelFormat(), self->Width(),
-                              self->Height(), (CUcontext)ctx));
-
-            CopySurface_Ctx_Str(self, pNewSurf, (CUcontext)ctx, (CUstream)str);
-            return pNewSurf;
-          },
-          py::arg("context"), py::arg("stream"),
-          py::return_value_policy::take_ownership,
-          py::call_guard<py::gil_scoped_release>(),
-          R"pbdoc(
-        Deep copy = CUDA mem alloc + CUDA mem copy
-
-        :param context: CUDA contet to use
-        :param stream: CUDA stream to use
     )pbdoc")
       .def(
           "Crop",

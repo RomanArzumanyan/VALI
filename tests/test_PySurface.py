@@ -44,6 +44,8 @@ if os.name == "nt":
 import PyNvCodec as nvc
 import numpy as np
 import unittest
+import json
+from test_common import GroundTruth
 
 try:
     import pycuda.driver as cuda
@@ -52,23 +54,13 @@ except ImportError as e:
     raise unittest.SkipTest(f"Skipping because of insufficient dependencies: {e}")
 
 
-# Ground truth information about input video
-gt_file = join(dirname(__file__), "data/test.mp4")
-gt_width = 848
-gt_height = 464
-gt_is_vfr = False
-gt_pix_fmt = nvc.PixelFormat.NV12
-gt_framerate = 30
-gt_num_frames = 96
-gt_color_space = nvc.ColorSpace.BT_709
-gt_color_range = nvc.ColorRange.MPEG
-
-
 class TestSurfacePycuda(unittest.TestCase):
     def __init__(self, methodName):
         super().__init__(methodName=methodName)
+        with open("gt_files.json") as f:
+            self.gtInfo = GroundTruth(**json.load(f)["basic"])
         self.gpu_id = 0
-        enc_file = gt_file
+        enc_file = self.gtInfo.uri
         cuda.init()
         self.cuda_ctx = cuda.Device(self.gpu_id).retain_primary_context()
         self.cuda_ctx.push()
@@ -86,7 +78,6 @@ class TestSurfacePycuda(unittest.TestCase):
         )
 
     def test_pycuda_memcpy_Surface_Surface(self):
-
         while True:
             surf_src, _ = self.nvDec.DecodeSingleSurface()
             if surf_src.Empty():
@@ -162,7 +153,7 @@ class TestSurfacePycuda(unittest.TestCase):
 
     def test_list_append(self):
         dec_frames = []
-        nvDec = nvc.PyNvDecoder(gt_file, 0)
+        nvDec = nvc.PyNvDecoder(self.gtInfo.uri, 0)
 
         # Decode all the surfaces and store them in the list.
         while True:
@@ -173,14 +164,14 @@ class TestSurfacePycuda(unittest.TestCase):
                 # Please note that we need to clone surfaces because those
                 # surfaces returned by decoder belongs to it's internal
                 # memory pool.
-                dec_frames.append(surf.Clone(self.gpu_id))
+                dec_frames.append(surf.Clone())
 
         # Make sure all the surfaces are kept.
-        self.assertEqual(len(dec_frames), gt_num_frames)
+        self.assertEqual(len(dec_frames), self.gtInfo.num_frames)
 
         # Now compare saved surfaces with data from decoder to make sure
         # no crruption happened.
-        nvDec = nvc.PyNvDecoder(gt_file, 0)
+        nvDec = nvc.PyNvDecoder(self.gtInfo.uri, 0)
         nvDwn = nvc.PySurfaceDownloader(
             nvDec.Width(), nvDec.Height(), nvDec.Format(), self.gpu_id
         )
