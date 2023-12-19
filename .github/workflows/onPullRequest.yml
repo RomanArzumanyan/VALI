@@ -1,0 +1,30 @@
+name: tests
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    runs-on: self-hosted
+
+    steps:
+    - uses: actions/checkout@v3
+      
+    - name: Setup pip
+      run: |
+        python3 -m venv /tmp/venv_vali
+        source /tmp/venv_vali/bin/activate   
+        
+    - name: Build and Install Package
+      run: | 
+        source /tmp/venv_vali/bin/activate
+        python3 -mpip install . --verbose
+        python3 -mpip install src/PytorchNvCodec --verbose
+
+    - name: Run Tests
+      run: |
+        source /tmp/venv_vali/bin/activate
+        python3 -munittest discover tests
