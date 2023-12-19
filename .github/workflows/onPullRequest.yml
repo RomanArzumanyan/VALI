@@ -16,7 +16,12 @@ jobs:
     - name: Setup pip
       run: |
         python3 -m venv /tmp/venv_vali
-        source /tmp/venv_vali/bin/activate   
+        source /tmp/venv_vali/bin/activate
+
+    - name Install requirements
+      run: |
+        python3 -mpip install pydantic
+        python3 -mpip install json
         
     - name: Build and Install Package
       run: | 
