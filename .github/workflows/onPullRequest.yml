@@ -21,7 +21,6 @@ jobs:
     - name: Install requirements
       run: |
         python3 -mpip install pydantic
-        python3 -mpip install json
         
     - name: Build and Install Package
       run: | 
