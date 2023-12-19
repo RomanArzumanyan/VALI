@@ -29,4 +29,8 @@ jobs:
       run: |
         source /tmp/venv_vali/bin/activate
         cd tests
-        python3 -munittest discover .
+        python3 ./test_PyFFmpegDecoder.py
+        python3 ./test_PyFfmpegDemuxer.py
+        python3 ./test_PyNvDecoder.py
+        python3 ./test_PyNvEncoder.py
+        python3 ./test_PySurface.py
