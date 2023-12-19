@@ -541,8 +541,7 @@ bool PyNvDecoder::DecodeSurface(DecodeContext& ctx, TaskExecDetails &details)
 }
 
 auto make_empty_surface = [](Pixel_Format pixFmt) {
-  auto pSurface = shared_ptr<Surface>(Surface::Make(pixFmt));
-  return shared_ptr<Surface>(pSurface->Clone());
+  return shared_ptr<Surface>(Surface::Make(pixFmt));
 };
 
 void PyNvDecoder::DownloaderLazyInit()
