@@ -13,11 +13,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       
-    - name: Setup venv
+    - name: 'Setup venv'
       run: |
         python3 -m venv /tmp/venv_vali
         
-    - name: Build and Install Package
+    - name: 'Build and install Package'
       run: | 
         git submodule update --init --recursive
         source /tmp/venv_vali/bin/activate
@@ -25,7 +25,7 @@ jobs:
         python3 -mpip install . --verbose
         python3 -mpip install src/PytorchNvCodec --verbose
 
-    - name: Run Tests
+    - name: 'Run tests'
       run: |
         source /tmp/venv_vali/bin/activate
         cd tests
@@ -41,3 +41,6 @@ jobs:
         name: artifacts
         path: tests/*.yuv
         retention-days: 1
+    
+    - name: 'Download all artifacts'
+      uses: actions/download-artifact@v3
