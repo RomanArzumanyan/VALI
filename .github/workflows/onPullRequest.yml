@@ -35,9 +35,9 @@ jobs:
         python3 ./test_PyNvEncoder.py     || true
         python3 ./test_PySurface.py       || true
 
-    - name: Save artifacts
+    - name: 'Upload Artifacts'
       uses: actions/upload-artifact@v3
-        with:
-          name: dist-without-markdown
-          path: tests/*.yuv
-          retention-hours: 1
+      with:
+        name: artifacts
+        path: tests/*.yuv
+        retention-days: 1
