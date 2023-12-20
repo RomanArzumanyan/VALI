@@ -44,20 +44,8 @@ if os.name == "nt":
 import PyNvCodec as nvc
 import numpy as np
 import unittest
-
-# Ground truth information about input video
-gt_file = join(dirname(__file__), "data/test.mp4")
-gt_file_res_change = join(dirname(__file__), "data/test_res_change.h264")
-gt_width = 848
-gt_height = 464
-gt_res_change = 47
-gt_is_vfr = False
-gt_pix_fmt = nvc.PixelFormat.NV12
-gt_framerate = 30
-gt_num_frames = 96
-gt_timebase = 8.1380e-5
-gt_color_space = nvc.ColorSpace.BT_709
-gt_color_range = nvc.ColorRange.MPEG
+import test_common as tc
+import json
 
 
 class TestEncoderBasic(unittest.TestCase):
@@ -65,11 +53,14 @@ class TestEncoderBasic(unittest.TestCase):
         super().__init__(methodName=methodName)
 
     def test_encode_all_surfaces(self):
+        with open("gt_files.json") as f:
+            gtInfo = tc.GroundTruth(**json.load(f)["basic"])
+
         gpu_id = 0
-        res = str(gt_width) + "x" + str(gt_height)
+        res = str(gtInfo.width) + "x" + str(gtInfo.height)
         encFrame = np.ndarray(shape=(0), dtype=np.uint8)
 
-        nvDec = nvc.PyNvDecoder(gt_file, gpu_id)
+        nvDec = nvc.PyNvDecoder(gtInfo.uri, gpu_id)
         nvEnc = nvc.PyNvEncoder(
             {
                 "preset": "P4",
@@ -105,14 +96,16 @@ class TestEncoderBasic(unittest.TestCase):
         self.assertEqual(frames_sent, frames_recv)
 
     def test_reconfigure(self):
+        with open("gt_files.json") as f:
+            gtInfo = tc.GroundTruth(**json.load(f)["res_change"])
         gpu_id = 0
-        res = str(gt_width) + "x" + str(gt_height)
+        res = str(gtInfo.width) + "x" + str(gtInfo.height)
         encFrame = np.ndarray(shape=(0), dtype=np.uint8)
 
-        nvDec = nvc.PyNvDecoder(gt_file_res_change, gpu_id)
+        nvDec = nvc.PyNvDecoder(gtInfo.uri, gpu_id)
         nvRcn = nvc.PyNvDecoder(
-            gt_width, gt_height, nvc.PixelFormat.NV12, nvc.CudaVideoCodec.H264, gpu_id
-        )
+            gtInfo.width, gtInfo.height, nvc.PixelFormat.NV12,
+            nvc.CudaVideoCodec.H264, gpu_id)
         nvEnc = nvc.PyNvEncoder(
             {
                 "preset": "P4",
@@ -133,7 +126,7 @@ class TestEncoderBasic(unittest.TestCase):
 
             sw = dec_surf.Width()
             sh = dec_surf.Height()
-            if sw != gt_width or sh != gt_height:
+            if sw != gtInfo.width or sh != gtInfo.height:
                 # Flush encoder before reconfigure.
                 # Some encoded frames will be lost but that doesn't matter.
                 # Decoder will be reconfigured upon resolution change anyway.
@@ -143,7 +136,8 @@ class TestEncoderBasic(unittest.TestCase):
                 # Now reconfigure.
                 res = str(sw) + "x" + str(sh)
                 self.assertTrue(
-                    nvEnc.Reconfigure({"s": res}, force_idr=True, reset_encoder=True)
+                    nvEnc.Reconfigure(
+                        {"s": res}, force_idr=True, reset_encoder=True)
                 )
                 self.assertEqual(nvEnc.Width(), sw)
                 self.assertEqual(nvEnc.Height(), sh)
@@ -154,9 +148,9 @@ class TestEncoderBasic(unittest.TestCase):
                 dec_surf, _ = nvRcn.DecodeSurfaceFromPacket(encFrame)
                 if dec_surf and not dec_surf.Empty():
                     frames_recn += 1
-                    if frames_recn < gt_res_change:
-                        self.assertEqual(dec_surf.Width(), gt_width)
-                        self.assertEqual(dec_surf.Height(), gt_height)
+                    if frames_recn < gtInfo.res_change_frame:
+                        self.assertEqual(dec_surf.Width(), gtInfo.width)
+                        self.assertEqual(dec_surf.Height(), gtInfo.height)
                     else:
                         self.assertEqual(dec_surf.Width(), sw)
                         self.assertEqual(dec_surf.Height(), sh)

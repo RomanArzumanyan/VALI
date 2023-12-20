@@ -53,8 +53,8 @@ export PATH=/usr/local/cuda/bin:$PATH
 
 # Install VALI
 ```bash
-pip3 install git+https://github.com/NVIDIA/VideoProcessingFramework
-# or if you cloned this repository
+# Update git submodules
+git submodule update --init --recursive
 pip3 install .
 ```
 
@@ -80,8 +80,10 @@ After resolving those you should be able to run `make run_samples_without_docker
 - Install a C++ toolchain either via Visual Studio or Tools for Visual Studio (https://visualstudio.microsoft.com/downloads/)
 - Install the CUDA Toolkit: https://developer.nvidia.com/cuda-downloads?target_os=Windows&target_arch=x86_64
 ```pwsh
+# Update git submodules
+git submodule update --init --recursive
 # Indicate path to your FFMPEG installation (with subfolders `bin` with DLLs, `include`, `lib`)
-$env:SKBUILD_CONFIGURE_OPTIONS="-DTC_FFMPEG_ROOT=C:/path/to/your/ffmpeg/installation/ffmpeg/" 
+$env:SKBUILD_CONFIGURE_OPTIONS="-DFFMPEG_ROOT=C:/path/to/ffmpeg"
 pip install .
 ```
 To check whether VALI is correctly installed run the following Python script
