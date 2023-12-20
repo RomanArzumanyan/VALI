@@ -61,8 +61,21 @@ pybind11_add_module(_PyNvCodec MODULE
 set_property(TARGET _PyNvCodec PROPERTY CXX_STANDARD 17)
 target_include_directories(_PyNvCodec PRIVATE inc)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../../cmake-modules")
-find_package(FFmpeg REQUIRED)
+if (NOT WIN32)
+	list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../../cmake-modules")
+	find_package(FFmpeg REQUIRED)
+else()
+	include("../../common.cmake")
+
+	findFFMpeg(
+		${FFMPEG_ROOT}
+		FFMPEG_LIBRARIES
+		FFMPEG_INCLUDE_DIRS)
+
+	message(STATUS "FFMPEG_ROOT: 			${FFMPEG_ROOT}")
+	message(STATUS "FFMPEG_LIBRARIES:		${FFMPEG_LIBRARIES}")
+	message(STATUS "FFMPEG_INCLUDE_DIRS:	${FFMPEG_INCLUDE_DIRS}")
+endif (WIN32)
 
 target_link_libraries(
 	_PyNvCodec PUBLIC 
@@ -76,7 +89,7 @@ target_link_libraries(
 	CUDA::nppicc
 	CUDA::nppidei
 	${FFMPEG_LIBRARIES})
-include_directories(${ffmpeg_INCLUDE_DIR})
+include_directories(${FFMPEG_INCLUDE_DIRS})
 include(GNUInstallDirs)
 
 set_target_properties(_PyNvCodec PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)

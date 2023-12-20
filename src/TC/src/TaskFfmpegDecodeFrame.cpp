@@ -82,8 +82,8 @@ struct FfmpegDecodeFrame_Impl {
         // dependency. Otherwise it's required by libavcodec but never put into
         // rpath by CMake.
         SwrContext* swr_ctx_ = swr_alloc();
-        m_swr_ctx =
-            std::shared_ptr<SwrContext>(swr_ctx_, [](auto p) { swr_free(&p); });
+        m_swr_ctx = std::shared_ptr<SwrContext>(
+          swr_ctx_, [](void *p){ swr_free((SwrContext **)&p); });
       }
 
       stringstream ss;
@@ -92,7 +92,7 @@ struct FfmpegDecodeFrame_Impl {
       throw runtime_error(ss.str());
     }
     m_fmt_ctx = std::shared_ptr<AVFormatContext>(
-        fmt_ctx_, [](auto p) { avformat_close_input(&p); });
+        fmt_ctx_, [](void *p) { avformat_close_input((AVFormatContext **)&p); });
 
     res = avformat_find_stream_info(m_fmt_ctx.get(), NULL);
     if (res < 0) {
@@ -131,7 +131,7 @@ struct FfmpegDecodeFrame_Impl {
       throw runtime_error(ss.str());
     }
     m_avc_ctx = std::shared_ptr<AVCodecContext>(
-        avctx_, [](auto p) { avcodec_free_context(&p); });
+      avctx_, [](void* p) { avcodec_free_context((AVCodecContext **)&p); });
 
     res =
         avcodec_parameters_to_context(m_avc_ctx.get(), video_stream->codecpar);
@@ -160,7 +160,7 @@ struct FfmpegDecodeFrame_Impl {
     }
 
     m_frame =
-        std::shared_ptr<AVFrame>(frame_, [](auto p) { av_frame_free(&p); });
+      std::shared_ptr<AVFrame>(frame_, [](void* p) { av_frame_free((AVFrame **)&p); });
 
     auto avpkt_ = av_packet_alloc();
     if (!avpkt_) {
@@ -169,7 +169,7 @@ struct FfmpegDecodeFrame_Impl {
       throw runtime_error(ss.str());
     }
     m_pkt =
-        std::shared_ptr<AVPacket>(avpkt_, [](auto p) { av_packet_free(&p); });
+        std::shared_ptr<AVPacket>(avpkt_, [](void* p) { av_packet_free((AVPacket **)&p); });
   }
 
   bool SaveYUV420()
