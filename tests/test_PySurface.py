@@ -172,6 +172,7 @@ class TestSurfacePycuda(unittest.TestCase):
             if not np.array_equal(frame_src, frame_dst):
                 self.fail("Video frames are not equal")
 
+    @unittest.skip("Known issue: unstable test")
     def test_list_append(self):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])

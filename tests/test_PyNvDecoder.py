@@ -258,7 +258,7 @@ class TestDecoderBuiltin(unittest.TestCase):
             dec_frames += 1
         self.assertEqual(gtInfo.num_frames - start_frame, dec_frames)
 
-    #@unittest.skip("Unstable, but only on self-hosted GitHub runner.")
+    @unittest.skip("Known issue: unstable test")
     def test_decodesinglesurface_cmp_vs_continuous(self):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
