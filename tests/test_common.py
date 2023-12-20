@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
+import numpy as np
 
 
 class GroundTruth(BaseModel):
@@ -17,3 +18,17 @@ class GroundTruth(BaseModel):
     color_space: Optional[str] = None
     color_range: Optional[str] = None
     len_s: Optional[float] = None
+
+
+def dumpFrameToDisk(
+        frame: np.ndarray,
+        prefix: str,
+        width: int,
+        height: int,
+        extension: str):
+
+    fname = prefix + '_'
+    fname += str(width) + 'x' + str(height) + '_' + extension
+
+    with open(fname, 'wb') as fout:
+        fout.write(frame)
