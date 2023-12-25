@@ -1,41 +1,41 @@
 numpy
 
 [dev]
-PytorchNvCodec@ file:///home/vlabs/git/VALI/src/PytorchNvCodec/
-onnx
-opencv-python
 pycuda
 pyopengl
-tensorrt
 torch
 torchvision
+opencv-python
+onnx
+tensorrt
+PytorchNvCodec@ file://D:\Git\VALI/src/PytorchNvCodec/
 
 [samples]
-PytorchNvCodec@ git+https://github.com/RomanArzumanyan/VALI.git#subdirectory=src/PytorchNvCodec/
-onnx
-opencv-python
 pycuda
 pyopengl
-tensorrt
 torch
 torchvision
+opencv-python
+onnx
+tensorrt
 tqdm
+PytorchNvCodec@ git+https://github.com/RomanArzumanyan/VALI.git#subdirectory=src/PytorchNvCodec/
 
 [tensorrt]
-PytorchNvCodec@ git+https://github.com/RomanArzumanyan/VALI.git#subdirectory=src/PytorchNvCodec/
 torch
 torchvision
+PytorchNvCodec@ git+https://github.com/RomanArzumanyan/VALI.git#subdirectory=src/PytorchNvCodec/
 
 [tests]
-PytorchNvCodec@ git+https://github.com/RomanArzumanyan/VALI.git#subdirectory=src/PytorchNvCodec/
-opencv-python
 pycuda
-pydantic
 pyopengl
 torch
 torchvision
+opencv-python
+pydantic
+PytorchNvCodec@ git+https://github.com/RomanArzumanyan/VALI.git#subdirectory=src/PytorchNvCodec/
 
 [torch]
-PytorchNvCodec@ git+https://github.com/RomanArzumanyan/VALI.git#subdirectory=src/PytorchNvCodec/
 torch
 torchvision
+PytorchNvCodec@ git+https://github.com/RomanArzumanyan/VALI.git#subdirectory=src/PytorchNvCodec/

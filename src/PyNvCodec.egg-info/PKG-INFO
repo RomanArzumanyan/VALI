@@ -2,16 +2,42 @@ Metadata-Version: 2.1
 Name: PyNvCodec
 Version: 2.0.4
 Summary: Video Processing Library with full NVENC/NVDEC hardware acceleration
-Home-page: UNKNOWN
 Author: Roman Arumanyan
 License: Apache 2.0
-Platform: UNKNOWN
-Provides-Extra: dev
-Provides-Extra: samples
-Provides-Extra: tensorrt
-Provides-Extra: tests
-Provides-Extra: torch
 License-File: LICENSE
-
-UNKNOWN
-
+Requires-Dist: numpy
+Provides-Extra: dev
+Requires-Dist: pycuda; extra == "dev"
+Requires-Dist: pyopengl; extra == "dev"
+Requires-Dist: torch; extra == "dev"
+Requires-Dist: torchvision; extra == "dev"
+Requires-Dist: opencv-python; extra == "dev"
+Requires-Dist: onnx; extra == "dev"
+Requires-Dist: tensorrt; extra == "dev"
+Requires-Dist: PytorchNvCodec@ file://D:\Git\VALI/src/PytorchNvCodec/ ; extra == "dev"
+Provides-Extra: samples
+Requires-Dist: pycuda; extra == "samples"
+Requires-Dist: pyopengl; extra == "samples"
+Requires-Dist: torch; extra == "samples"
+Requires-Dist: torchvision; extra == "samples"
+Requires-Dist: opencv-python; extra == "samples"
+Requires-Dist: onnx; extra == "samples"
+Requires-Dist: tensorrt; extra == "samples"
+Requires-Dist: tqdm; extra == "samples"
+Requires-Dist: PytorchNvCodec@ git+https://github.com/RomanArzumanyan/VALI.git#subdirectory=src/PytorchNvCodec/ ; extra == "samples"
+Provides-Extra: tests
+Requires-Dist: pycuda; extra == "tests"
+Requires-Dist: pyopengl; extra == "tests"
+Requires-Dist: torch; extra == "tests"
+Requires-Dist: torchvision; extra == "tests"
+Requires-Dist: opencv-python; extra == "tests"
+Requires-Dist: pydantic; extra == "tests"
+Requires-Dist: PytorchNvCodec@ git+https://github.com/RomanArzumanyan/VALI.git#subdirectory=src/PytorchNvCodec/ ; extra == "tests"
+Provides-Extra: torch
+Requires-Dist: torch; extra == "torch"
+Requires-Dist: torchvision; extra == "torch"
+Requires-Dist: PytorchNvCodec@ git+https://github.com/RomanArzumanyan/VALI.git#subdirectory=src/PytorchNvCodec/ ; extra == "torch"
+Provides-Extra: tensorrt
+Requires-Dist: torch; extra == "tensorrt"
+Requires-Dist: torchvision; extra == "tensorrt"
+Requires-Dist: PytorchNvCodec@ git+https://github.com/RomanArzumanyan/VALI.git#subdirectory=src/PytorchNvCodec/ ; extra == "tensorrt"

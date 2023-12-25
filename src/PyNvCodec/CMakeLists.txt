@@ -61,8 +61,16 @@ pybind11_add_module(_PyNvCodec MODULE
 set_property(TARGET _PyNvCodec PROPERTY CXX_STANDARD 17)
 target_include_directories(_PyNvCodec PRIVATE inc)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../../cmake-modules")
-find_package(FFmpeg REQUIRED)
+if (WIN32)
+	include("../../common.cmake")
+	if (NOT DEFINED FFMPEG_ROOT)
+		message (FATAL "Define FFMPEG_ROOT variable before build")
+	endif(FFMPEG_ROOT)
+	find_FFMpeg(${FFMPEG_ROOT})
+else ()
+	list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../../cmake-modules")
+	find_package(FFmpeg REQUIRED)
+endif (WIN32)
 
 target_link_libraries(
 	_PyNvCodec PUBLIC 
@@ -76,11 +84,16 @@ target_link_libraries(
 	CUDA::nppicc
 	CUDA::nppidei
 	${FFMPEG_LIBRARIES})
-include_directories(${ffmpeg_INCLUDE_DIR})
+include_directories(${FFMPEG_INCLUDE_DIRS})
 include(GNUInstallDirs)
 
 set_target_properties(_PyNvCodec PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 set_target_properties(_PyNvCodec PROPERTIES INSTALL_RPATH "$ORIGIN")
 
-install(FILES ${CONAN_FFMPEG_LIBS} DESTINATION PyNvCodec)
+if (WIN32)
+	message (STATUS "FFMPEG_DLLS: ${FFMPEG_DLLS}")
+	install(FILES ${FFMPEG_DLLS} DESTINATION PyNvCodec)
+else ()
+	install(FILES ${FFMPEG_LIBRARIES} DESTINATION PyNvCodec)
+endif (WIN32)
 install(TARGETS _PyNvCodec RUNTIME DESTINATION PyNvCodec LIBRARY DESTINATION PyNvCodec)
