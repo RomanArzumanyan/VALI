@@ -37,16 +37,15 @@ add_subdirectory(TC_CORE)
 find_package(CUDAToolkit 11.2 REQUIRED)
 include(GenerateExportHeader)
 
-if (NOT WIN32)
-	list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../../cmake-modules")
-	find_package(FFmpeg REQUIRED)
-else()
+if (WIN32)
     include("../../common.cmake")
-
-    findFFMpeg(
-        ${FFMPEG_ROOT}
-        FFMPEG_LIBRARIES
-        FFMPEG_INCLUDE_DIRS)
+    if (NOT DEFINED FFMPEG_ROOT)
+        message (FATAL "Define FFMPEG_ROOT variable before build")
+    endif(FFMPEG_ROOT)
+    find_FFMpeg(${FFMPEG_ROOT})
+else ()
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../../cmake-modules")
+    find_package(FFmpeg REQUIRED)
 endif (WIN32)
 
 add_library(
