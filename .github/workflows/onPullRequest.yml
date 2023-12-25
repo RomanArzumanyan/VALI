@@ -7,8 +7,8 @@ on:
     branches: [ "main" ]
 
 jobs:
-  test:
-    runs-on: self-hosted
+  test_linux:
+    runs-on: [self-hosted, Linux]
 
     steps:
     - uses: actions/checkout@v3
@@ -16,6 +16,52 @@ jobs:
     - name: 'Setup venv'
       run: |
         python3 -m venv /tmp/venv_vali
+        
+    - name: 'Build and install Package'
+      run: | 
+        git submodule update --init --recursive
+        source /tmp/venv_vali/bin/activate
+        python3 -mpip install pydantic
+        python3 -mpip install pycuda
+        python3 -mpip install . --verbose
+        python3 -mpip install src/PytorchNvCodec --verbose
+
+    - name: 'Run tests'
+      run: |
+        source /tmp/venv_vali/bin/activate
+        cd tests
+        python3 ./test_PyFFmpegDecoder.py
+        python3 ./test_PyFfmpegDemuxer.py
+        python3 ./test_PyNvDecoder.py
+        python3 ./test_PyNvEncoder.py
+        python3 ./test_PySurface.py
+
+    - name: 'Upload Artifacts'
+      uses: actions/upload-artifact@v3
+      with:
+        name: artifacts
+        path: tests/*.yuv
+        retention-days: 1
+    
+    - name: 'Download all artifacts'
+      uses: actions/download-artifact@v3
+
+  test_windows:
+    runs-on: [self-hosted, Windows]
+
+    steps:
+    - uses: actions/checkout@v3
+      
+    - name: 'Setup venv'
+      run: |
+        python3 -m venv /tmp/venv_vali
+
+    - name: 'Download FFMpeg build'
+      shell: pwsh
+      run: |
+        wget https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl-shared.zip
+        Expand-Archive ffmpeg-master-latest-win64-gpl-shared.zip  D:/install/
+        $env:SKBUILD_CONFIGURE_OPTIONS="-DFFMPEG_ROOT=D:/install/ffmpeg-master-latest-win64-gpl-shared" 
         
     - name: 'Build and install Package'
       run: | 
