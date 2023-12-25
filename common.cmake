@@ -3,11 +3,9 @@
 # Params:
 # FFMPEG_ROOT           (in)    path to directory with FFmpeg build
 # FFMPEG_LIBRARIES      (out)   list of FFMpeg libraries
+# FFMPEG_DLLS           (out)   list of FFMpeg DLLS. On platforms other then Windows it will be left untouched
 # FFMPEG_INCLUDE_DIRS   (out)   list of paths to FFMpeg headers
-function(findFFMpeg 
-    FFMPEG_ROOT
-    FFMPEG_LIBRARIES
-    FFMPEG_INCLUDE_DIRS)
+function(find_FFMpeg FFMPEG_ROOT)
 
     # Find paths to headers
     set(FFMPEG_INC_DIR ${FFMPEG_ROOT}/include)
@@ -63,7 +61,14 @@ function(findFFMpeg
         ${AVUTIL_LIBRARIES}
         ${SWRESAMPLE_LIBRARIES})
 
+    if (WIN32)
+        # Find FFMpeg DLLs
+        set (FFMPEG_DLLS "")
+        file(GLOB FFMPEG_DLLS "${FFMPEG_ROOT}/bin/*.dll")
+    endif (WIN32)
+
     # Promote to parent scope
     set (FFMPEG_INCLUDE_DIRS    ${FFMPEG_INCLUDE_DIRS}  PARENT_SCOPE)
     set (FFMPEG_LIBRARIES       ${FFMPEG_LIBRARIES}     PARENT_SCOPE)
+    set (FFMPEG_DLLS            ${FFMPEG_DLLS}          PARENT_SCOPE)
 endfunction()
