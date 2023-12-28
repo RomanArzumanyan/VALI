@@ -34,14 +34,14 @@ static auto ThrowOnCudaError = [](CUresult res, int lineNum = -1) {
       ss << lineNum << endl;
     }
 
-    const char* errName = nullptr;
+    const char *errName = nullptr;
     if (CUDA_SUCCESS != cuGetErrorName(res, &errName)) {
       ss << "CUDA error with code " << res << endl;
     } else {
       ss << "CUDA error: " << errName << endl;
     }
 
-    const char* errDesc = nullptr;
+    const char *errDesc = nullptr;
     cuGetErrorString(res, &errDesc);
 
     if (!errDesc) {
@@ -54,8 +54,7 @@ static auto ThrowOnCudaError = [](CUresult res, int lineNum = -1) {
   }
 };
 
-CudaResMgr::CudaResMgr()
-{
+CudaResMgr::CudaResMgr() {
   lock_guard<mutex> lock_ctx(CudaResMgr::gInsMutex);
 
   ThrowOnCudaError(cuInit(0), __LINE__);
@@ -74,15 +73,14 @@ CudaResMgr::CudaResMgr()
   return;
 }
 
-CUcontext CudaResMgr::GetCtx(size_t idx)
-{
+CUcontext CudaResMgr::GetCtx(size_t idx) {
   lock_guard<mutex> lock_ctx(CudaResMgr::gCtxMutex);
 
   if (idx >= GetNumGpus()) {
     return nullptr;
   }
 
-  auto& ctx = g_Contexts[idx];
+  auto &ctx = g_Contexts[idx];
   if (!ctx.second) {
     CUdevice cuDevice = 0;
     ThrowOnCudaError(cuDeviceGet(&cuDevice, idx), __LINE__);
@@ -92,15 +90,14 @@ CUcontext CudaResMgr::GetCtx(size_t idx)
   return g_Contexts[idx].second;
 }
 
-CUstream CudaResMgr::GetStream(size_t idx)
-{
+CUstream CudaResMgr::GetStream(size_t idx) {
   lock_guard<mutex> lock_ctx(CudaResMgr::gStrMutex);
 
   if (idx >= GetNumGpus()) {
     return nullptr;
   }
 
-  auto& str = g_Streams[idx];
+  auto &str = g_Streams[idx];
   if (!str) {
     auto ctx = GetCtx(idx);
     CudaCtxPush push(ctx);
@@ -110,8 +107,7 @@ CUstream CudaResMgr::GetStream(size_t idx)
   return g_Streams[idx];
 }
 
-CudaResMgr::~CudaResMgr()
-{
+CudaResMgr::~CudaResMgr() {
   lock_guard<mutex> ins_lock(CudaResMgr::gInsMutex);
   lock_guard<mutex> ctx_lock(CudaResMgr::gCtxMutex);
   lock_guard<mutex> str_lock(CudaResMgr::gStrMutex);
@@ -119,7 +115,7 @@ CudaResMgr::~CudaResMgr()
   stringstream ss;
   try {
     {
-      for (auto& cuStream : g_Streams) {
+      for (auto &cuStream : g_Streams) {
         if (cuStream) {
           cuStreamDestroy(cuStream); // Avoiding CUDA_ERROR_DEINITIALIZED while
                                      // destructing.
@@ -138,7 +134,7 @@ CudaResMgr::~CudaResMgr()
       }
       g_Contexts.clear();
     }
-  } catch (runtime_error& e) {
+  } catch (runtime_error &e) {
     cerr << e.what() << endl;
   }
 
@@ -149,8 +145,7 @@ CudaResMgr::~CudaResMgr()
 #endif
 }
 
-CudaResMgr& CudaResMgr::Instance()
-{
+CudaResMgr &CudaResMgr::Instance() {
   static CudaResMgr instance;
   return instance;
 }
@@ -181,29 +176,24 @@ auto CopyBuffer = [](shared_ptr<CudaBuffer> dst, shared_ptr<CudaBuffer> src,
   return CopyBuffer_Ctx_Str(dst, src, ctx, str);
 };
 
-DecodeContext::DecodeContext(
-    py::array_t<uint8_t>* sei, 
-    py::array_t<uint8_t>* packet,
-    PacketData* in_pkt_data, 
-    PacketData* out_pkt_data,
-    SeekContext* seek_ctx, 
-    bool is_flush)
-{
+DecodeContext::DecodeContext(py::array_t<uint8_t> *sei,
+                             py::array_t<uint8_t> *packet,
+                             PacketData *in_pkt_data, PacketData *out_pkt_data,
+                             SeekContext *seek_ctx, bool is_flush) {
   if (seek_ctx && packet) {
-      throw runtime_error("Can't use seek in standalone mode.");
-    }
+    throw runtime_error("Can't use seek in standalone mode.");
+  }
 
-    pSurface = nullptr;
-    pSei = sei;
-    pPacket = packet;
-    pInPktData = in_pkt_data;
-    pOutPktData = out_pkt_data;
-    pSeekCtx = seek_ctx;
-    flush = is_flush;
+  pSurface = nullptr;
+  pSei = sei;
+  pPacket = packet;
+  pInPktData = in_pkt_data;
+  pOutPktData = out_pkt_data;
+  pSeekCtx = seek_ctx;
+  flush = is_flush;
 }
 
-bool DecodeContext::IsSeek() const
-{
+bool DecodeContext::IsSeek() const {
   return (nullptr != pSeekCtx) && (nullptr == pPacket);
 }
 
@@ -217,18 +207,17 @@ bool DecodeContext::HasOutPktData() const { return nullptr != pOutPktData; }
 
 bool DecodeContext::HasInPktData() const { return nullptr != pInPktData; }
 
-const py::array_t<uint8_t>* DecodeContext::GetPacket() const { return pPacket; }
+const py::array_t<uint8_t> *DecodeContext::GetPacket() const { return pPacket; }
 
-const PacketData* DecodeContext::GetInPacketData() const { return pInPktData; }
+const PacketData *DecodeContext::GetInPacketData() const { return pInPktData; }
 
-const SeekContext* DecodeContext::GetSeekContext() const { return pSeekCtx; }
+const SeekContext *DecodeContext::GetSeekContext() const { return pSeekCtx; }
 
-SeekContext* DecodeContext::GetSeekContextMutable() { return pSeekCtx; }
+SeekContext *DecodeContext::GetSeekContextMutable() { return pSeekCtx; }
 
 shared_ptr<Surface> DecodeContext::GetSurfaceMutable() { return pSurface; }
 
-void DecodeContext::SetOutPacketData(PacketData* out_pkt_data)
-{
+void DecodeContext::SetOutPacketData(PacketData *out_pkt_data) {
   if (!out_pkt_data || !pOutPktData) {
     throw runtime_error("Invalid data pointer");
   }
@@ -236,17 +225,15 @@ void DecodeContext::SetOutPacketData(PacketData* out_pkt_data)
   memcpy(pOutPktData, out_pkt_data, sizeof(PacketData));
 }
 
-void DecodeContext::SetOutPacketData(const PacketData& out_pkt_data)
-{
+void DecodeContext::SetOutPacketData(const PacketData &out_pkt_data) {
   if (!pOutPktData) {
     throw runtime_error("Invalid data pointer");
   }
 
-  memcpy(pOutPktData, (const void*)&out_pkt_data, sizeof(PacketData));
+  memcpy(pOutPktData, (const void *)&out_pkt_data, sizeof(PacketData));
 }
 
-void DecodeContext::SetSei(Buffer* sei)
-{
+void DecodeContext::SetSei(Buffer *sei) {
   if (!pSei) {
     throw runtime_error("Invalid data pointer");
   }
@@ -260,40 +247,38 @@ void DecodeContext::SetSei(Buffer* sei)
   memcpy(pSei->mutable_data(), sei->GetRawMemPtr(), sei->GetRawMemSize());
 }
 
-void DecodeContext::SetCloneSurface(Surface* p_surface)
-{
+void DecodeContext::SetCloneSurface(Surface *p_surface) {
   if (!p_surface) {
     throw runtime_error("Invalid data pointer");
   }
   pSurface = shared_ptr<Surface>(p_surface->Clone());
 }
 
-void Init_PyBufferUploader(py::module&);
+void Init_PyBufferUploader(py::module &);
 
-void Init_PyCudaBufferDownloader(py::module&);
+void Init_PyCudaBufferDownloader(py::module &);
 
-void Init_PyFrameUploader(py::module&);
+void Init_PyFrameUploader(py::module &);
 
-void Init_PySurfaceConverter(py::module&);
+void Init_PySurfaceConverter(py::module &);
 
-void Init_PySurfaceDownloader(py::module&);
+void Init_PySurfaceDownloader(py::module &);
 
-void Init_PySurfaceResizer(py::module&);
+void Init_PySurfaceResizer(py::module &);
 
-void Init_PySurfaceRemaper(py::module&);
+void Init_PySurfaceRemaper(py::module &);
 
-void Init_PyFFMpegDecoder(py::module&);
+void Init_PyFFMpegDecoder(py::module &);
 
-void Init_PyFFMpegDemuxer(py::module&);
+void Init_PyFFMpegDemuxer(py::module &);
 
-void Init_PyNvDecoder(py::module&);
+void Init_PyNvDecoder(py::module &);
 
-void Init_PyNvEncoder(py::module&);
+void Init_PyNvEncoder(py::module &);
 
-void Init_PySurface(py::module&);
+void Init_PySurface(py::module &);
 
-PYBIND11_MODULE(_PyNvCodec, m)
-{
+PYBIND11_MODULE(_PyNvCodec, m) {
   PYBIND11_NUMPY_DTYPE_EX(MotionVector, source, "source", w, "w", h, "h", src_x,
                           "src_x", src_y, "src_y", dst_x, "dst_x", dst_y,
                           "dst_y", motion_x, "motion_x", motion_y, "motion_y",
@@ -324,7 +309,7 @@ PYBIND11_MODULE(_PyNvCodec, m)
       .value("P12", Pixel_Format::P12)
       .export_values();
 
-  py::enum_<TaskExecInfo>(m, "TaskExecInfo")      
+  py::enum_<TaskExecInfo>(m, "TaskExecInfo")
       .value("FAIL", TaskExecInfo::FAIL)
       .value("SUCCESS", TaskExecInfo::SUCCESS)
       .value("END_OF_STREAM", TaskExecInfo::END_OF_STREAM)
@@ -368,7 +353,8 @@ PYBIND11_MODULE(_PyNvCodec, m)
 
         :param seek_frame: number of frame to seek for, starts from 0
     )pbdoc")
-      .def(py::init<int64_t, SeekMode>(), py::arg("seek_frame"), py::arg("mode"),
+      .def(py::init<int64_t, SeekMode>(), py::arg("seek_frame"),
+           py::arg("mode"),
            R"pbdoc(
         Constructor method.
 
@@ -388,7 +374,7 @@ PYBIND11_MODULE(_PyNvCodec, m)
 
         :param seek_frame: timestamp (s) of frame to seek for.
         :param mode: seek to exact frame number or to closest previous key frame
-    )pbdoc")    
+    )pbdoc")
       .def_readwrite("seek_frame", &SeekContext::seek_frame,
                      R"pbdoc(
         Number of frame we want to seek.
@@ -396,7 +382,7 @@ PYBIND11_MODULE(_PyNvCodec, m)
       .def_readwrite("seek_tssec", &SeekContext::seek_tssec,
                      R"pbdoc(
         Timestamp we want to seek.
-    )pbdoc")    
+    )pbdoc")
       .def_readwrite("mode", &SeekContext::mode,
                      R"pbdoc(
         Seek mode: by frame number or timestamp

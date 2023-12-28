@@ -12,9 +12,10 @@
  * limitations under the License.
  */
 
+#include "Common.hpp"
 #include "PyNvCodec.hpp"
-#include <sstream>
 #include <map>
+#include <sstream>
 
 using namespace std;
 using namespace VPF;
@@ -31,14 +32,14 @@ static auto ThrowOnCudaError = [](CUresult res, int lineNum = -1) {
       ss << lineNum << endl;
     }
 
-    const char* errName = nullptr;
+    const char *errName = nullptr;
     if (CUDA_SUCCESS != cuGetErrorName(res, &errName)) {
       ss << "CUDA error with code " << res << endl;
     } else {
       ss << "CUDA error: " << errName << endl;
     }
 
-    const char* errDesc = nullptr;
+    const char *errDesc = nullptr;
     cuGetErrorString(res, &errDesc);
 
     if (!errDesc) {
@@ -88,22 +89,21 @@ auto CopySurface = [](shared_ptr<Surface> self, shared_ptr<Surface> other,
   return CopySurface_Ctx_Str(self, other, ctx, str);
 };
 
-string ToString(Pixel_Format fmt)
-{
+string ToString(Pixel_Format fmt) {
   static map<Pixel_Format, string> fmt_names = {
-    {Y,               "Y"},
-    {RGB,             "RGB"},
-    {NV12,            "NV12"},
-    {YUV420,          "YUV420"},
-    {RGB_PLANAR,      "RGB_PLANAR"},
-    {BGR,             "BGR"},
-    {YCBCR,           "YCBCR"},
-    {YUV444,          "YUV444"},
-    {RGB_32F,         "RGB_32F"},
-    {RGB_32F_PLANAR,  "RGB_32F_PLANAR"},
-    {YUV422,          "YUV422"},
-    {P10,             "P10"},
-    {P12,             "P12"},
+      {Y, "Y"},
+      {RGB, "RGB"},
+      {NV12, "NV12"},
+      {YUV420, "YUV420"},
+      {RGB_PLANAR, "RGB_PLANAR"},
+      {BGR, "BGR"},
+      {YCBCR, "YCBCR"},
+      {YUV444, "YUV444"},
+      {RGB_32F, "RGB_32F"},
+      {RGB_32F_PLANAR, "RGB_32F_PLANAR"},
+      {YUV422, "YUV422"},
+      {P10, "P10"},
+      {P12, "P12"},
   };
 
   auto it = fmt_names.find(fmt);
@@ -114,8 +114,7 @@ string ToString(Pixel_Format fmt)
   }
 };
 
-string ToString(SurfacePlane* self, int space = 0)
-{
+string ToString(SurfacePlane *self, int space = 0) {
   if (!self) {
     return string();
   }
@@ -137,8 +136,7 @@ string ToString(SurfacePlane* self, int space = 0)
   return ss.str();
 }
 
-string ToString(Surface* self)
-{
+string ToString(Surface *self) {
   if (!self) {
     return string();
   }
@@ -158,8 +156,7 @@ string ToString(Surface* self)
   return ss.str();
 }
 
-void Init_PySurface(py::module& m)
-{
+void Init_PySurface(py::module &m) {
   py::class_<SurfacePlane, shared_ptr<SurfacePlane>>(m, "SurfacePlane")
       .def("Width", &SurfacePlane::Width,
            R"pbdoc(
@@ -442,4 +439,13 @@ void Init_PySurface(py::module& m)
     )pbdoc")
       .def("__repr__",
            [](shared_ptr<Surface> self) { return ToString(self.get()); });
+
+  typedef PyContextManager<Surface> SurfCtxMgr;
+
+  py::class_<SurfCtxMgr, shared_ptr<SurfCtxMgr>>(m, "SurfaceView")
+      .def(py::init<std::shared_ptr<Surface>>(), py::arg("surface"))
+      .def("__enter__", [&](SurfCtxMgr &self) { return self.Get(); })
+      .def("__exit__",
+           [&](SurfCtxMgr &self, const py::object &type,
+               const py::object &value, const py::object &traceback) {});
 }
