@@ -1,0 +1,3 @@
+PytorchNvCodec
+**************
+.. automodule:: PytorchNvCodec
