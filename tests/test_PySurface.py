@@ -207,6 +207,17 @@ class TestSurfacePycuda(unittest.TestCase):
                                    nvDec.Height(), "nv12.yuv")
                 self.fail("Frames are not same")
 
+                
+    def test_context_manager(self):
+        with open("gt_files.json") as f:
+            gtInfo = tc.GroundTruth(**json.load(f)["basic"])
+
+        nvDec = nvc.PyNvDecoder(input=gtInfo.uri, gpu_id=0)
+        surf, _ = nvDec.DecodeSingleSurface()
+
+        with nvc.SurfaceView(surf) as surfView:
+            self.assertIsNotNone(surfView)
+            self.assertEqual(surfView.Width(), surf.Width())
 
 if __name__ == "__main__":
     unittest.main()

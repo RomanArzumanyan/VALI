@@ -15,6 +15,7 @@ if(WIN32)
 endif(WIN32)
 
 find_package(CUDAToolkit 11.2 REQUIRED)
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/inc")
 
 add_subdirectory(PyNvCodec)
 add_subdirectory(TC)
