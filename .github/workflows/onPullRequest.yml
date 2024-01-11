@@ -7,8 +7,8 @@ on:
     branches: [ "main" ]
 
 jobs:
-  test:
-    runs-on: self-hosted
+  test_linux:
+    runs-on: [self-hosted, Linux]
 
     steps:
     - uses: actions/checkout@v3
@@ -35,6 +35,47 @@ jobs:
         python3 ./test_PyNvDecoder.py
         python3 ./test_PyNvEncoder.py
         python3 ./test_PySurface.py
+
+    - name: 'Upload Artifacts'
+      uses: actions/upload-artifact@v3
+      with:
+        name: artifacts
+        path: tests/*.yuv
+        retention-days: 1
+    
+    - name: 'Download all artifacts'
+      uses: actions/download-artifact@v3
+
+  test_windows:
+    runs-on: [self-hosted, Windows]
+
+    steps:
+    - uses: actions/checkout@v3
+      
+    - name: 'Setup venv'
+      shell: cmd
+      run: |
+        python -m venv /tmp/venv_vali
+        
+    - name: 'Build and install Package'
+      shell: cmd
+      run: | 
+        set SKBUILD_CONFIGURE_OPTIONS="-DFFMPEG_ROOT=D:/install/ffmpeg-master-latest-win64-gpl-shared"
+        git submodule update --init --recursive
+        ./tmp/venv_vali/Scripts/activate
+        python -mpip install pydantic
+        python -mpip install pycuda
+        python -mpip install . --verbose
+
+    - name: 'Run tests'
+      shell: cmd
+      run: |
+        ./tmp/venv_vali/Scripts/activate
+        cd tests
+        python ./test_PyFFmpegDecoder.py
+        python ./test_PyFfmpegDemuxer.py
+        python ./test_PyNvDecoder.py
+        python ./test_PyNvEncoder.py
 
     - name: 'Upload Artifacts'
       uses: actions/upload-artifact@v3
