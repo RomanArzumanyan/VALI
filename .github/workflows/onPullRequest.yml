@@ -55,7 +55,7 @@ jobs:
     - name: 'Setup venv'
       shell: cmd
       run: |
-        python3 -m venv /tmp/venv_vali
+        python -m venv /tmp/venv_vali
         
     - name: 'Build and install Package'
       shell: cmd
@@ -63,21 +63,21 @@ jobs:
         $env:SKBUILD_CONFIGURE_OPTIONS="-DFFMPEG_ROOT=D:/install/ffmpeg-master-latest-win64-gpl-shared"
         git submodule update --init --recursive
         source /tmp/venv_vali/Scripts/activate
-        python3 -mpip install pydantic
-        python3 -mpip install pycuda
-        python3 -mpip install . --verbose
-        python3 -mpip install src/PytorchNvCodec --verbose
+        python -mpip install pydantic
+        python -mpip install pycuda
+        python -mpip install . --verbose
+        python -mpip install src/PytorchNvCodec --verbose
 
     - name: 'Run tests'
       shell: cmd
       run: |
         source /tmp/venv_vali/Scripts/activate
         cd tests
-        python3 ./test_PyFFmpegDecoder.py
-        python3 ./test_PyFfmpegDemuxer.py
-        python3 ./test_PyNvDecoder.py
-        python3 ./test_PyNvEncoder.py
-        python3 ./test_PySurface.py
+        python ./test_PyFFmpegDecoder.py
+        python ./test_PyFfmpegDemuxer.py
+        python ./test_PyNvDecoder.py
+        python ./test_PyNvEncoder.py
+        python ./test_PySurface.py
 
     - name: 'Upload Artifacts'
       uses: actions/upload-artifact@v3
