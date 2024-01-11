@@ -60,7 +60,7 @@ jobs:
       run: | 
         $env:SKBUILD_CONFIGURE_OPTIONS="-DFFMPEG_ROOT=D:/install/ffmpeg-master-latest-win64-gpl-shared"
         git submodule update --init --recursive
-        source /tmp/venv_vali/bin/activate
+        source /tmp/venv_vali/Scripts/activate
         python3 -mpip install pydantic
         python3 -mpip install pycuda
         python3 -mpip install . --verbose
@@ -68,7 +68,7 @@ jobs:
 
     - name: 'Run tests'
       run: |
-        source /tmp/venv_vali/bin/activate
+        source /tmp/venv_vali/Scripts/activate
         cd tests
         python3 ./test_PyFFmpegDecoder.py
         python3 ./test_PyFfmpegDemuxer.py
