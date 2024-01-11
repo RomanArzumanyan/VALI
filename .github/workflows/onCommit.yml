@@ -48,6 +48,7 @@ jobs:
       run: | 
           git submodule update --init --recursive
           python -mpip install . --verbose
+          python -mpip install src/PytorchNvCodec --verbose          
 
     - name: Check Import
       # importing does not work on Windows as nvcuda.dll is required which comes with a Nvidia driver
