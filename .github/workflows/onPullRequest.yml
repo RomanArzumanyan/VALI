@@ -60,7 +60,7 @@ jobs:
     - name: 'Build and install Package'
       shell: cmd
       run: | 
-        $env:SKBUILD_CONFIGURE_OPTIONS="-DFFMPEG_ROOT=D:/install/ffmpeg-master-latest-win64-gpl-shared"
+        set SKBUILD_CONFIGURE_OPTIONS="-DFFMPEG_ROOT=D:/install/ffmpeg-master-latest-win64-gpl-shared"
         git submodule update --init --recursive
         source /tmp/venv_vali/Scripts/activate
         python -mpip install pydantic
