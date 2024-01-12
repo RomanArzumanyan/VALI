@@ -36,6 +36,19 @@ jobs:
         python3 ./test_PyNvEncoder.py
         python3 ./test_PySurface.py
 
+    - name: 'Build docs'
+      run: |
+        python3 -mpip install sphinx
+        cd docs
+        make html
+
+    - name: 'Upload docs'
+      uses: actions/upload-artifact@v3
+      with:
+        name: sphinx_docs
+        path: docs/_build/html/*
+        retention-days: 1        
+
     - name: 'Upload Artifacts'
       uses: actions/upload-artifact@v3
       with:
