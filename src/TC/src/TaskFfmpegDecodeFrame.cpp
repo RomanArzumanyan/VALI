@@ -15,11 +15,11 @@
 #include "Tasks.hpp"
 
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <memory>
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -33,10 +33,9 @@ extern "C" {
 using namespace VPF;
 using namespace std;
 
-static string AvErrorToString(int av_error_code)
-{
+static string AvErrorToString(int av_error_code) {
   const auto buf_size = 1024U;
-  char* err_string = (char*)calloc(buf_size, sizeof(*err_string));
+  char *err_string = (char *)calloc(buf_size, sizeof(*err_string));
   if (!err_string) {
     return string();
   }
@@ -53,8 +52,7 @@ static string AvErrorToString(int av_error_code)
   return str;
 }
 
-namespace VPF
-{
+namespace VPF {
 
 enum DECODE_STATUS { DEC_SUCCESS, DEC_ERROR, DEC_MORE, DEC_EOS };
 
@@ -66,24 +64,23 @@ struct FfmpegDecodeFrame_Impl {
   std::shared_ptr<AVPacket> m_pkt;
   std::shared_ptr<Buffer> m_dec_frame;
   PacketData m_packetData;
-  map<AVFrameSideDataType, Buffer*> side_data;
+  map<AVFrameSideDataType, Buffer *> m_side_data;
 
   int video_stream_idx = -1;
   bool end_decode = false;
   bool eof = false;
 
-  FfmpegDecodeFrame_Impl(const char* URL, AVDictionary* pOptions)
-  {
-    AVFormatContext* fmt_ctx_ = nullptr;
+  FfmpegDecodeFrame_Impl(const char *URL, AVDictionary *pOptions) {
+    AVFormatContext *fmt_ctx_ = nullptr;
     auto res = avformat_open_input(&fmt_ctx_, URL, NULL, &pOptions);
     if (res < 0) {
       {
         // Don't remove, it's here to make linker clear of libswresample
         // dependency. Otherwise it's required by libavcodec but never put into
         // rpath by CMake.
-        SwrContext* swr_ctx_ = swr_alloc();
+        SwrContext *swr_ctx_ = swr_alloc();
         m_swr_ctx = std::shared_ptr<SwrContext>(
-          swr_ctx_, [](void *p){ swr_free((SwrContext **)&p); });
+            swr_ctx_, [](void *p) { swr_free((SwrContext **)&p); });
       }
 
       stringstream ss;
@@ -91,8 +88,9 @@ struct FfmpegDecodeFrame_Impl {
       ss << "Error description: " << AvErrorToString(res) << endl;
       throw runtime_error(ss.str());
     }
-    m_fmt_ctx = std::shared_ptr<AVFormatContext>(
-        fmt_ctx_, [](void *p) { avformat_close_input((AVFormatContext **)&p); });
+    m_fmt_ctx = std::shared_ptr<AVFormatContext>(fmt_ctx_, [](void *p) {
+      avformat_close_input((AVFormatContext **)&p);
+    });
 
     res = avformat_find_stream_info(m_fmt_ctx.get(), NULL);
     if (res < 0) {
@@ -131,7 +129,7 @@ struct FfmpegDecodeFrame_Impl {
       throw runtime_error(ss.str());
     }
     m_avc_ctx = std::shared_ptr<AVCodecContext>(
-      avctx_, [](void* p) { avcodec_free_context((AVCodecContext **)&p); });
+        avctx_, [](void *p) { avcodec_free_context((AVCodecContext **)&p); });
 
     res =
         avcodec_parameters_to_context(m_avc_ctx.get(), video_stream->codecpar);
@@ -159,8 +157,8 @@ struct FfmpegDecodeFrame_Impl {
       throw runtime_error(ss.str());
     }
 
-    m_frame =
-      std::shared_ptr<AVFrame>(frame_, [](void* p) { av_frame_free((AVFrame **)&p); });
+    m_frame = std::shared_ptr<AVFrame>(
+        frame_, [](void *p) { av_frame_free((AVFrame **)&p); });
 
     auto avpkt_ = av_packet_alloc();
     if (!avpkt_) {
@@ -168,12 +166,11 @@ struct FfmpegDecodeFrame_Impl {
       ss << "Could not allocate packet" << endl;
       throw runtime_error(ss.str());
     }
-    m_pkt =
-        std::shared_ptr<AVPacket>(avpkt_, [](void* p) { av_packet_free((AVPacket **)&p); });
+    m_pkt = std::shared_ptr<AVPacket>(
+        avpkt_, [](void *p) { av_packet_free((AVPacket **)&p); });
   }
 
-  bool SaveYUV420()
-  {
+  bool SaveYUV420() {
     size_t size = m_frame->width * m_frame->height * 3 / 2;
 
     if (!m_dec_frame || (m_dec_frame && size != m_dec_frame->GetRawMemSize())) {
@@ -181,10 +178,10 @@ struct FfmpegDecodeFrame_Impl {
     }
 
     auto plane = 0U;
-    auto* dst = m_dec_frame->GetDataAs<uint8_t>();
+    auto *dst = m_dec_frame->GetDataAs<uint8_t>();
 
     for (plane = 0; plane < 3; plane++) {
-      auto* src = m_frame->data[plane];
+      auto *src = m_frame->data[plane];
       auto width = (0 == plane) ? m_frame->width : m_frame->width / 2;
       auto height = (0 == plane) ? m_frame->height : m_frame->height / 2;
 
@@ -198,8 +195,7 @@ struct FfmpegDecodeFrame_Impl {
     return true;
   }
 
-  bool SaveYUV422()
-  {
+  bool SaveYUV422() {
     size_t size = m_frame->width * m_frame->height * 2;
 
     if (!m_dec_frame || (m_dec_frame && size != m_dec_frame->GetRawMemSize())) {
@@ -207,10 +203,10 @@ struct FfmpegDecodeFrame_Impl {
     }
 
     auto plane = 0U;
-    auto* dst = m_dec_frame->GetDataAs<uint8_t>();
+    auto *dst = m_dec_frame->GetDataAs<uint8_t>();
 
     for (plane = 0; plane < 3; plane++) {
-      auto* src = m_frame->data[plane];
+      auto *src = m_frame->data[plane];
       auto width = (0 == plane) ? m_frame->width : m_frame->width / 2;
       auto height = m_frame->height;
 
@@ -224,8 +220,7 @@ struct FfmpegDecodeFrame_Impl {
     return true;
   }
 
-  bool SaveGRAY12LE()
-  {
+  bool SaveGRAY12LE() {
     size_t size = m_frame->width * m_frame->height * 2;
 
     if (!m_dec_frame || (m_dec_frame && size != m_dec_frame->GetRawMemSize())) {
@@ -233,9 +228,9 @@ struct FfmpegDecodeFrame_Impl {
     }
 
     auto plane = 0U;
-    auto* dst = m_dec_frame->GetDataAs<uint8_t>();
+    auto *dst = m_dec_frame->GetDataAs<uint8_t>();
 
-    auto* src = m_frame->data[plane];
+    auto *src = m_frame->data[plane];
     auto width = m_frame->width;
     auto height = m_frame->height;
 
@@ -248,8 +243,7 @@ struct FfmpegDecodeFrame_Impl {
     return true;
   }
 
-  bool SaveYUV444()
-  {
+  bool SaveYUV444() {
     size_t size = m_frame->width * m_frame->height * 3;
 
     if (!m_dec_frame || (m_dec_frame && size != m_dec_frame->GetRawMemSize())) {
@@ -257,10 +251,10 @@ struct FfmpegDecodeFrame_Impl {
     }
 
     auto plane = 0U;
-    auto* dst = m_dec_frame->GetDataAs<uint8_t>();
+    auto *dst = m_dec_frame->GetDataAs<uint8_t>();
 
     for (plane = 0; plane < 3; plane++) {
-      auto* src = m_frame->data[plane];
+      auto *src = m_frame->data[plane];
       auto width = m_frame->width;
       auto height = m_frame->height;
 
@@ -274,8 +268,7 @@ struct FfmpegDecodeFrame_Impl {
     return true;
   }
 
-  void SavePacketData()
-  {
+  void SavePacketData() {
     m_packetData.dts = m_frame->pkt_dts;
     m_packetData.pts = m_frame->pts;
     m_packetData.duration = m_frame->pkt_duration;
@@ -283,8 +276,7 @@ struct FfmpegDecodeFrame_Impl {
     m_packetData.pos = m_frame->pkt_pos;
   }
 
-  bool DecodeSingleFrame(FfmpegDecodeFrame *parent)
-  {
+  bool DecodeSingleFrame(FfmpegDecodeFrame *parent) {
     if (end_decode) {
       return false;
     }
@@ -330,8 +322,7 @@ struct FfmpegDecodeFrame_Impl {
     return true;
   }
 
-  bool SaveVideoFrame()
-  {
+  bool SaveVideoFrame() {
     switch (m_frame->format) {
     case AV_PIX_FMT_YUV420P:
       return SaveYUV420();
@@ -348,17 +339,17 @@ struct FfmpegDecodeFrame_Impl {
     }
   }
 
-  void SaveMotionVectors()
-  {
-    AVFrameSideData* sd =
+  void SaveMotionVectors() {
+    AVFrameSideData *sd =
         av_frame_get_side_data(m_frame.get(), AV_FRAME_DATA_MOTION_VECTORS);
 
     if (sd) {
-      auto it = side_data.find(AV_FRAME_DATA_MOTION_VECTORS);
-      if (it == side_data.end()) {
+      auto it = m_side_data.find(AV_FRAME_DATA_MOTION_VECTORS);
+      if (it == m_side_data.end()) {
         // Add entry if not found (usually upon first call);
-        side_data[AV_FRAME_DATA_MOTION_VECTORS] = Buffer::MakeOwnMem(sd->size);
-        it = side_data.find(AV_FRAME_DATA_MOTION_VECTORS);
+        m_side_data[AV_FRAME_DATA_MOTION_VECTORS] =
+            Buffer::MakeOwnMem(sd->size);
+        it = m_side_data.find(AV_FRAME_DATA_MOTION_VECTORS);
         memcpy(it->second->GetRawMemPtr(), sd->data, sd->size);
       } else if (it->second->GetRawMemSize() != sd->size) {
         // Update entry size if changed (e. g. on video resolution change);
@@ -367,14 +358,12 @@ struct FfmpegDecodeFrame_Impl {
     }
   }
 
-  bool SaveSideData()
-  {
+  bool SaveSideData() {
     SaveMotionVectors();
     return true;
   }
 
-  DECODE_STATUS DecodeSinglePacket(const AVPacket* pkt_Src)
-  {
+  DECODE_STATUS DecodeSinglePacket(const AVPacket *pkt_Src) {
     auto res = avcodec_send_packet(m_avc_ctx.get(), pkt_Src);
     if (AVERROR_EOF == res) {
       // Flush decoder;
@@ -406,9 +395,8 @@ struct FfmpegDecodeFrame_Impl {
     return DEC_SUCCESS;
   }
 
-  ~FfmpegDecodeFrame_Impl()
-  {
-    for (auto& output : side_data) {
+  ~FfmpegDecodeFrame_Impl() {
+    for (auto &output : m_side_data) {
       if (output.second) {
         delete output.second;
         output.second = nullptr;
@@ -418,26 +406,23 @@ struct FfmpegDecodeFrame_Impl {
 };
 } // namespace VPF
 
-const PacketData& FfmpegDecodeFrame::GetLastPacketData() const
-{
+const PacketData &FfmpegDecodeFrame::GetLastPacketData() const {
   return pImpl->m_packetData;
 }
 
-TaskExecStatus FfmpegDecodeFrame::Run()
-{
+TaskExecStatus FfmpegDecodeFrame::Run() {
   ClearOutputs();
 
   if (pImpl->DecodeSingleFrame(this)) {
-    SetOutput((Token*)pImpl->m_dec_frame.get(), 0U);
+    SetOutput((Token *)pImpl->m_dec_frame.get(), 0U);
     return TaskExecStatus::TASK_EXEC_SUCCESS;
   }
 
   return TaskExecStatus::TASK_EXEC_FAIL;
 }
 
-void FfmpegDecodeFrame::GetParams(MuxingParams& params)
-{
-  memset((void*)&params, 0, sizeof(params));
+void FfmpegDecodeFrame::GetParams(MuxingParams &params) {
+  memset((void *)&params, 0, sizeof(params));
   auto fmtc = pImpl->m_fmt_ctx.get();
   auto videoStream =
       av_find_best_stream(fmtc, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
@@ -517,29 +502,26 @@ void FfmpegDecodeFrame::GetParams(MuxingParams& params)
   }
 }
 
-TaskExecStatus FfmpegDecodeFrame::GetSideData(AVFrameSideDataType data_type)
-{
+TaskExecStatus FfmpegDecodeFrame::GetSideData(AVFrameSideDataType data_type) {
   SetOutput(nullptr, 1U);
-  auto it = pImpl->side_data.find(data_type);
-  if (it != pImpl->side_data.end()) {
-    SetOutput((Token*)it->second, 1U);
+  auto it = pImpl->m_side_data.find(data_type);
+  if (it != pImpl->m_side_data.end()) {
+    SetOutput((Token *)it->second, 1U);
     return TaskExecStatus::TASK_EXEC_SUCCESS;
   }
 
   return TaskExecStatus::TASK_EXEC_FAIL;
 }
 
-FfmpegDecodeFrame* FfmpegDecodeFrame::Make(const char* URL,
-                                           NvDecoderClInterface& cli_iface)
-{
+FfmpegDecodeFrame *FfmpegDecodeFrame::Make(const char *URL,
+                                           NvDecoderClInterface &cli_iface) {
   return new FfmpegDecodeFrame(URL, cli_iface);
 }
 
-FfmpegDecodeFrame::FfmpegDecodeFrame(const char* URL,
-                                     NvDecoderClInterface& cli_iface)
+FfmpegDecodeFrame::FfmpegDecodeFrame(const char *URL,
+                                     NvDecoderClInterface &cli_iface)
     : Task("FfmpegDecodeFrame", FfmpegDecodeFrame::num_inputs,
-           FfmpegDecodeFrame::num_outputs)
-{
+           FfmpegDecodeFrame::num_outputs) {
   pImpl = new FfmpegDecodeFrame_Impl(URL, cli_iface.GetOptions());
 }
 

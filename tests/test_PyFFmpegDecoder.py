@@ -168,5 +168,28 @@ class TestDecoderBasic(unittest.TestCase):
             self.assertEqual(gtInfo.num_frames, dec_frames)
 
 
+    def test_get_motion_vectors(self):
+        with open("gt_files.json") as f:
+            gtInfo = GroundTruth(**json.load(f)["basic"])
+            ffDec = nvc.PyFfmpegDecoder(gtInfo.uri, {"flags2" : "+export_mvs"})
+
+        frame = np.ndarray(shape=(0), dtype=np.uint8)
+        mv = np.ndarray(shape=(0), dtype=nvc.MotionVector)
+
+        success, _ = ffDec.DecodeSingleFrame(frame)
+        self.assertTrue(success)
+
+        # First frame shall be I frame, hence no motion vectors.
+        success = ffDec.GetMotionVectors(mv)
+        self.assertFalse(success)
+
+        success, _ = ffDec.DecodeSingleFrame(frame)
+        self.assertTrue(success)
+
+        # Second frame shall be either P or B, hence motion vectors 
+        # shall be there.
+        success = ffDec.GetMotionVectors(mv)
+        self.assertTrue(success)
+
 if __name__ == "__main__":
     unittest.main()
