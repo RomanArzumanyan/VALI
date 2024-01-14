@@ -47,7 +47,6 @@ import numpy as np
 import unittest
 import json
 from test_common import GroundTruth
-from typing import List
 
 
 class TestDecoderBasic(unittest.TestCase):
@@ -174,7 +173,6 @@ class TestDecoderBasic(unittest.TestCase):
             ffDec = nvc.PyFfmpegDecoder(gtInfo.uri, {"flags2": "+export_mvs"})
 
         frame = np.ndarray(shape=(0), dtype=np.uint8)
-        # mv = np.ndarray(shape=(0), dtype=nvc.MotionVector)
 
         success, _ = ffDec.DecodeSingleFrame(frame)
         self.assertTrue(success)
