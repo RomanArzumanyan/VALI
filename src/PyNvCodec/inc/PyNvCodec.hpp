@@ -32,6 +32,7 @@
 #include <pybind11/stl.h>
 #include <pybind11/embed.h>
 #include <pybind11/cast.h>
+#include <pybind11/stl_bind.h>
 #include <iostream>
 #include <sstream>
 
@@ -348,7 +349,7 @@ public:
                          TaskExecDetails& details);
   bool DecodeSingleSurface(DecodeContext& ctx, TaskExecDetails& details);
 
-  bool GetMotionVectors(py::array_t<MotionVector> &mv);
+  std::vector<MotionVector> GetMotionVectors();
 
   uint32_t Width() const;
   uint32_t Height() const;
