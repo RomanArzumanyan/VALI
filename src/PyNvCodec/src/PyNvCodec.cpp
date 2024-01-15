@@ -280,18 +280,32 @@ void Init_PySurface(py::module &);
 
 PYBIND11_MODULE(_PyNvCodec, m) {
 
-  py::class_<MotionVector, std::shared_ptr<MotionVector>>(m, "MotionVector")
+  py::class_<MotionVector, std::shared_ptr<MotionVector>>(
+      m, "MotionVector", "This class stores iformation about motion vector.")
       .def(py::init<>())
-      .def_readwrite("source", &MotionVector::source)
-      .def_readwrite("w", &MotionVector::w)
-      .def_readwrite("h", &MotionVector::h)
-      .def_readwrite("src_x", &MotionVector::src_x)
-      .def_readwrite("src_y", &MotionVector::src_y)
-      .def_readwrite("dst_x", &MotionVector::dst_x)
-      .def_readwrite("dst_y", &MotionVector::dst_y)
-      .def_readwrite("motion_x", &MotionVector::motion_x)
-      .def_readwrite("motion_y", &MotionVector::motion_y)
-      .def_readwrite("motion_scale", &MotionVector::motion_scale)
+      .def_readwrite(
+          "source", &MotionVector::source,
+          "Where the current macroblock comes from; negative value when it "
+          "comes from the past, positive value when it comes from the future.")
+      .def_readwrite("w", &MotionVector::w, "Macroblock width.")
+      .def_readwrite("h", &MotionVector::h, "Macroblock height")
+      .def_readwrite("src_x", &MotionVector::src_x,
+                     "Absolute source X position. Can be outside frame area.")
+      .def_readwrite("src_y", &MotionVector::src_y,
+                     "Absolute source Y position. Can be outside frame area.")
+      .def_readwrite(
+          "dst_x", &MotionVector::dst_x,
+          "Absolute detination X position. Can be outside frame area.")
+      .def_readwrite(
+          "dst_y", &MotionVector::dst_y,
+          "Absolute detination Y position. Can be outside frame area.")
+      .def_readwrite("motion_x", &MotionVector::motion_x,
+                     "Motion vector X component.")
+      .def_readwrite("motion_y", &MotionVector::motion_y,
+                     "Motion vector Y component.")
+      .def_readwrite(
+          "motion_scale", &MotionVector::motion_scale,
+          "Motion prediction precision. E. g. 4 for quarter-pixel precision.")
       .def("__repr__", [](shared_ptr<MotionVector> self) {
         std::stringstream ss;
         ss << "source:        " << self->source << "\n";
@@ -317,22 +331,30 @@ PYBIND11_MODULE(_PyNvCodec, m) {
   py::register_exception<CuvidParserException>(m, "CuvidParserException");
 
   py::enum_<Pixel_Format>(m, "PixelFormat")
-      .value("Y", Pixel_Format::Y)
-      .value("RGB", Pixel_Format::RGB)
-      .value("NV12", Pixel_Format::NV12)
-      .value("YUV420", Pixel_Format::YUV420)
-      .value("RGB_PLANAR", Pixel_Format::RGB_PLANAR)
-      .value("BGR", Pixel_Format::BGR)
-      .value("YCBCR", Pixel_Format::YCBCR)
-      .value("YUV444", Pixel_Format::YUV444)
-      .value("YUV444_10bit", Pixel_Format::YUV444_10bit)
-      .value("YUV420_10bit", Pixel_Format::YUV420_10bit)
-      .value("UNDEFINED", Pixel_Format::UNDEFINED)
-      .value("RGB_32F", Pixel_Format::RGB_32F)
-      .value("RGB_32F_PLANAR", Pixel_Format::RGB_32F_PLANAR)
-      .value("YUV422", Pixel_Format::YUV422)
-      .value("P10", Pixel_Format::P10)
-      .value("P12", Pixel_Format::P12)
+      .value("Y", Pixel_Format::Y, "Grayscale.")
+      .value("RGB", Pixel_Format::RGB, "Interleaved 8 bit RGB.")
+      .value("NV12", Pixel_Format::NV12,
+             "Semi planar 8 bit: full resolution Y + quarter resolution "
+             "interleaved UV.")
+      .value("YUV420", Pixel_Format::YUV420,
+             "Planar 8 bit: full resolution Y + quarter resolution U + quarter "
+             "resolution V.")
+      .value("RGB_PLANAR", Pixel_Format::RGB_PLANAR, "Planar 8 bit R+G+B.")
+      .value("BGR", Pixel_Format::BGR, "Planar 8 bit R+G+B.")
+      .value("YCBCR", Pixel_Format::YCBCR, "Same to YUV420.")
+      .value("YUV444", Pixel_Format::YUV444, "Planar 8 bit Y+U+V.")
+      .value("YUV444_10bit", Pixel_Format::YUV444_10bit, "10 bit YUV444.")
+      .value("YUV420_10bit", Pixel_Format::YUV420_10bit, "10 bit YUV420")
+      .value("UNDEFINED", Pixel_Format::UNDEFINED,
+             "Undefined pixel format, use to signal unsupported formats")
+      .value("RGB_32F", Pixel_Format::RGB_32F, "32 bit float RGB.")
+      .value("RGB_32F_PLANAR", Pixel_Format::RGB_32F_PLANAR,
+             "32 bit float planar RGB")
+      .value("YUV422", Pixel_Format::YUV422,
+             "8 bit planar: full resolution Y + half resolution U + half "
+             "resolution V.")
+      .value("P10", Pixel_Format::P10, "10 bit NV12.")
+      .value("P12", Pixel_Format::P12, "12 bit NV12.")
       .export_values();
 
   py::enum_<TaskExecInfo>(m, "TaskExecInfo")
@@ -344,15 +366,17 @@ PYBIND11_MODULE(_PyNvCodec, m) {
       .export_values();
 
   py::enum_<ColorSpace>(m, "ColorSpace")
-      .value("BT_601", ColorSpace::BT_601)
-      .value("BT_709", ColorSpace::BT_709)
-      .value("UNSPEC", ColorSpace::UNSPEC)
+      .value("BT_601", ColorSpace::BT_601, "BT.601 color space.")
+      .value("BT_709", ColorSpace::BT_709, "BT.709 color space.")
+      .value("UNSPEC", ColorSpace::UNSPEC, "Unspecified color space.")
       .export_values();
 
   py::enum_<ColorRange>(m, "ColorRange")
-      .value("MPEG", ColorRange::MPEG)
-      .value("JPEG", ColorRange::JPEG)
-      .value("UDEF", ColorRange::UDEF)
+      .value("MPEG", ColorRange::MPEG,
+             "Narrow or MPEG color range. Doesn't use full [0;255] range.")
+      .value("JPEG", ColorRange::JPEG,
+             "Full of JPEG color range. Uses full [0;255] range.")
+      .value("UDEF", ColorRange::UDEF, "Undefined color range.")
       .export_values();
 
   py::enum_<cudaVideoCodec>(m, "CudaVideoCodec")
@@ -368,11 +392,18 @@ PYBIND11_MODULE(_PyNvCodec, m) {
       .export_values();
 
   py::enum_<SeekMode>(m, "SeekMode")
-      .value("EXACT_FRAME", SeekMode::EXACT_FRAME)
-      .value("PREV_KEY_FRAME", SeekMode::PREV_KEY_FRAME)
+      .value("EXACT_FRAME", SeekMode::EXACT_FRAME,
+             "Use this to seek for exac frame. Notice that if it's P or B "
+             "frame, decoder may not be able to get it unless it reconstructs "
+             "all the frames that desired frame use for reference.")
+      .value("PREV_KEY_FRAME", SeekMode::PREV_KEY_FRAME,
+             "Seek for closes key frame in past.")
       .export_values();
 
-  py::class_<SeekContext, shared_ptr<SeekContext>>(m, "SeekContext")
+  py::class_<SeekContext, shared_ptr<SeekContext>>(
+      m, "SeekContext",
+      "Incapsulates information required by decoder to seek for a particular "
+      "video frame.")
       .def(py::init<int64_t>(), py::arg("seek_frame"),
            R"pbdoc(
         Constructor method.
@@ -422,14 +453,20 @@ PYBIND11_MODULE(_PyNvCodec, m) {
         Number of frames, decoded if seek was done to closest previous key frame.
     )pbdoc");
 
-  py::class_<PacketData, shared_ptr<PacketData>>(m, "PacketData")
+  py::class_<PacketData, shared_ptr<PacketData>>(
+      m, "PacketData", "Incapsulates information about compressed video frame")
       .def(py::init<>())
-      .def_readwrite("key", &PacketData::key)
-      .def_readwrite("pts", &PacketData::pts)
-      .def_readwrite("dts", &PacketData::dts)
-      .def_readwrite("pos", &PacketData::pos)
-      .def_readwrite("bsl", &PacketData::bsl)
-      .def_readwrite("duration", &PacketData::duration)
+      .def_readwrite("key", &PacketData::key,
+                     "1 if frame is I frame, 0 otherwise.")
+      .def_readwrite("pts", &PacketData::pts, "Presentation timestamp.")
+      .def_readwrite("dts", &PacketData::dts, "Decode timestamp.")
+      .def_readwrite("pos", &PacketData::pos,
+                     "Position of compressed packet in input bitstream.")
+      .def_readwrite(
+          "bsl", &PacketData::bsl,
+          "Amount of bytes decoder had to consume to decode corresp. packet. "
+          "Useful to see when seeking for a previous key frame.")
+      .def_readwrite("duration", &PacketData::duration, "Duration of a packet.")
       .def("__repr__", [](shared_ptr<PacketData> self) {
         stringstream ss;
         ss << "key:      " << self->key << "\n";
@@ -447,33 +484,45 @@ PYBIND11_MODULE(_PyNvCodec, m) {
 
   py::class_<ColorspaceConversionContext,
              shared_ptr<ColorspaceConversionContext>>(
-      m, "ColorspaceConversionContext")
+      m, "ColorspaceConversionContext",
+      "Stores information required for accurate color conversion.")
       .def(py::init<>())
       .def(py::init<ColorSpace, ColorRange>(), py::arg("color_space"),
            py::arg("color_range"))
       .def_readwrite("color_space", &ColorspaceConversionContext::color_space)
       .def_readwrite("color_range", &ColorspaceConversionContext::color_range);
 
-  py::class_<CudaBuffer, shared_ptr<CudaBuffer>>(m, "CudaBuffer")
+  py::class_<CudaBuffer, shared_ptr<CudaBuffer>>(
+      m, "CudaBuffer", "General purpose data storage class in GPU memory.")
       .def("GetRawMemSize", &CudaBuffer::GetRawMemSize,
            R"pbdoc(
-        Get size of buffer in bytes
+        Get size of buffer in bytes.
+
+        :rtype: Int
     )pbdoc")
       .def("GetNumElems", &CudaBuffer::GetNumElems,
            R"pbdoc(
-        Get number of elements in buffer
+        Get number of elements in buffer.
+
+        :rtype: Int
     )pbdoc")
       .def("GetElemSize", &CudaBuffer::GetElemSize,
            R"pbdoc(
         Get size of single element in bytes
+
+        :rtype: Int
     )pbdoc")
       .def("GpuMem", &CudaBuffer::GpuMem,
            R"pbdoc(
-        Get CUdeviceptr of memory allocation
+        Get CUdeviceptr of memory allocation.
+
+        :rtype: Int
     )pbdoc")
       .def("Clone", &CudaBuffer::Clone, py::return_value_policy::take_ownership,
            R"pbdoc(
-        Deep copy = CUDA mem alloc + CUDA mem copy
+        Deep copy = CUDA mem alloc + CUDA mem copy.
+
+        :rtype: PyNvCodec.CudaBuffer
     )pbdoc")
       .def(
           "CopyFrom",
@@ -488,6 +537,7 @@ PYBIND11_MODULE(_PyNvCodec, m) {
         :param other: other CudaBuffer
         :param context: CUDA context to use
         :param stream: CUDA stream to use
+        :rtype: None
     )pbdoc")
       .def(
           "CopyFrom",
@@ -499,6 +549,7 @@ PYBIND11_MODULE(_PyNvCodec, m) {
 
         :param other: other CudaBuffer
         :param gpu_id: GPU to use for memcopy
+        :rtype: None
     )pbdoc")
       .def_static(
           "Make",
@@ -515,6 +566,7 @@ PYBIND11_MODULE(_PyNvCodec, m) {
         :param elem_size: single buffer element size in bytes
         :param num_elems: number of elements in buffer
         :param gpu_id: GPU to use for memcopy
+        :rtype: PyNvCodec.CudaBuffer
     )pbdoc");
 
   Init_PyFFMpegDecoder(m);

@@ -3,7 +3,10 @@
 VALI is a video analytics and processing project for python. VALI is a successor of NVIDIA's VPF.
 It’s set of C++ libraries and Python bindings which provides full HW acceleration for video processing tasks such as decoding, encoding, transcoding and GPU-accelerated color space and pixel format conversions.
 
-VALI also supports exporting GPU memory objects such as decoded video frames to PyTorch tensors without Host to Device copies. 
+VALI also supports exporting GPU memory objects such as decoded video frames to PyTorch tensors without Host to Device copies.
+
+## Documentation
+https://romanarzumanyan.github.io/VALI
 
 ## Prerequisites
 VALI works on Linux(Ubuntu 20.04 and Ubuntu 22.04 only) and Windows
@@ -28,7 +31,7 @@ We recommend Ubuntu 20.04 as it comes with a recent enough FFmpeg system package
 If you want to build FFmpeg from source, you can follow
 https://docs.nvidia.com/video-technologies/video-codec-sdk/12.0/ffmpeg-with-nvidia-gpu/index.html
 
-# Install dependencies
+#### Install dependencies
 ```bash
 apt install -y \
           libavfilter-dev \
@@ -41,7 +44,7 @@ apt install -y \
           git
 ```
 
-# Install CUDA Toolkit (if not already present)
+##### Install CUDA Toolkit (if not already present)
 ```bash
 wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.0-1_all.deb
 sudo dpkg -i cuda-keyring_1.0-1_all.deb
@@ -51,7 +54,7 @@ sudo apt-get install -y cuda
 export PATH=/usr/local/cuda/bin:$PATH
 ```
 
-# Install VALI
+##### Install VALI
 ```bash
 # Update git submodules
 git submodule update --init --recursive
@@ -115,7 +118,7 @@ docker run -it --rm --gpus=all VALI-gpu
 
 `PIP_INSTALL_EXTRAS` can be any subset listed under `project.optional-dependencies` in [pyproject.toml](pyproject.toml).
 
-## Documentation
+## Offline documentation
 
 A documentation for VALI can be generated from this repository:
 ```bash

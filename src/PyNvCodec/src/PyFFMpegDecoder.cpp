@@ -215,7 +215,9 @@ Pixel_Format PyFfmpegDecoder::PixelFormat() const {
 };
 
 void Init_PyFFMpegDecoder(py::module &m) {
-  py::class_<PyFfmpegDecoder, shared_ptr<PyFfmpegDecoder>>(m, "PyFfmpegDecoder")
+  py::class_<PyFfmpegDecoder, shared_ptr<PyFfmpegDecoder>>(
+      m, "PyFfmpegDecoder",
+      "Fallback decoder implementation which relies on FFMpeg libavcodec.")
       .def(py::init<const string &, const map<string, string> &, uint32_t>(),
            py::arg("input"), py::arg("opts"), py::arg("gpu_id") = 0,
            R"pbdoc(

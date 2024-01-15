@@ -26,8 +26,7 @@ constexpr auto TASK_EXEC_SUCCESS = TaskExecStatus::TASK_EXEC_SUCCESS;
 constexpr auto TASK_EXEC_FAIL = TaskExecStatus::TASK_EXEC_FAIL;
 
 PyFrameUploader::PyFrameUploader(uint32_t width, uint32_t height,
-                                 Pixel_Format format, uint32_t gpu_ID)
-{
+                                 Pixel_Format format, uint32_t gpu_ID) {
   surfaceWidth = width;
   surfaceHeight = height;
   surfaceFormat = format;
@@ -40,8 +39,7 @@ PyFrameUploader::PyFrameUploader(uint32_t width, uint32_t height,
 
 PyFrameUploader::PyFrameUploader(uint32_t width, uint32_t height,
                                  Pixel_Format format, CUcontext ctx,
-                                 CUstream str)
-{
+                                 CUstream str) {
   surfaceWidth = width;
   surfaceHeight = height;
   surfaceFormat = format;
@@ -52,8 +50,7 @@ PyFrameUploader::PyFrameUploader(uint32_t width, uint32_t height,
 
 Pixel_Format PyFrameUploader::GetFormat() { return surfaceFormat; }
 
-std::shared_ptr<Surface> PyFrameUploader::UploadSingleFrame(Buffer* buf)
-{
+std::shared_ptr<Surface> PyFrameUploader::UploadSingleFrame(Buffer *buf) {
   uploader->SetInput(buf, 0U);
   auto res = uploader->Execute();
 
@@ -61,7 +58,7 @@ std::shared_ptr<Surface> PyFrameUploader::UploadSingleFrame(Buffer* buf)
     throw runtime_error("Error uploading frame to GPU");
   }
 
-  auto pSurface = (Surface*)uploader->GetOutput(0U);
+  auto pSurface = (Surface *)uploader->GetOutput(0U);
   if (!pSurface) {
     throw runtime_error("Error uploading frame to GPU");
   }
@@ -69,9 +66,10 @@ std::shared_ptr<Surface> PyFrameUploader::UploadSingleFrame(Buffer* buf)
   return shared_ptr<Surface>(pSurface->Clone());
 }
 
-void Init_PyFrameUploader(py::module& m)
-{
-  py::class_<PyFrameUploader>(m, "PyFrameUploader")
+void Init_PyFrameUploader(py::module &m) {
+  py::class_<PyFrameUploader>(m, "PyFrameUploader",
+                              "This class is used to upload numpy array to "
+                              "Surface using CUDA HtoD memcpy.")
       .def(py::init<uint32_t, uint32_t, Pixel_Format, uint32_t>(),
            py::arg("width"), py::arg("height"), py::arg("format"),
            py::arg("gpu_id"),
@@ -100,7 +98,7 @@ void Init_PyFrameUploader(py::module& m)
         Get pixel format.
     )pbdoc")
       .def("UploadSingleFrame",
-           py::overload_cast<py::array_t<uint8_t>&>(
+           py::overload_cast<py::array_t<uint8_t> &>(
                &PyFrameUploader::UploadSingleFrame<uint8_t>),
            py::arg("frame").noconvert(true),
            py::return_value_policy::take_ownership,
@@ -114,7 +112,7 @@ void Init_PyFrameUploader(py::module& m)
         :rtype: PyNvCodec.Surface
     )pbdoc")
       .def("UploadSingleFrame",
-           py::overload_cast<py::array_t<float>&>(
+           py::overload_cast<py::array_t<float> &>(
                &PyFrameUploader::UploadSingleFrame<float>),
            py::arg("frame").noconvert(true),
            py::return_value_policy::take_ownership,

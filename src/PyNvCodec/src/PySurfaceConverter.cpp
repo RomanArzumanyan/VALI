@@ -28,8 +28,7 @@ constexpr auto TASK_EXEC_FAIL = TaskExecStatus::TASK_EXEC_FAIL;
 PySurfaceConverter::PySurfaceConverter(uint32_t width, uint32_t height,
                                        Pixel_Format inFormat,
                                        Pixel_Format outFormat, uint32_t gpuID)
-    : outputFormat(outFormat)
-{
+    : outputFormat(outFormat) {
   upConverter.reset(ConvertSurface::Make(
       width, height, inFormat, outFormat, CudaResMgr::Instance().GetCtx(gpuID),
       CudaResMgr::Instance().GetStream(gpuID)));
@@ -40,8 +39,7 @@ PySurfaceConverter::PySurfaceConverter(uint32_t width, uint32_t height,
                                        Pixel_Format inFormat,
                                        Pixel_Format outFormat, CUcontext ctx,
                                        CUstream str)
-    : outputFormat(outFormat)
-{
+    : outputFormat(outFormat) {
   upConverter.reset(
       ConvertSurface::Make(width, height, inFormat, outFormat, ctx, str));
   upCtxBuffer.reset(Buffer::MakeOwnMem(sizeof(ColorspaceConversionContext)));
@@ -49,8 +47,7 @@ PySurfaceConverter::PySurfaceConverter(uint32_t width, uint32_t height,
 
 shared_ptr<Surface>
 PySurfaceConverter::Execute(shared_ptr<Surface> surface,
-                            shared_ptr<ColorspaceConversionContext> context)
-{
+                            shared_ptr<ColorspaceConversionContext> context) {
   if (!surface) {
     return shared_ptr<Surface>(Surface::Make(outputFormat));
   }
@@ -61,23 +58,24 @@ PySurfaceConverter::Execute(shared_ptr<Surface> surface,
 
   if (context) {
     upCtxBuffer->CopyFrom(sizeof(ColorspaceConversionContext), context.get());
-    upConverter->SetInput((Token*)upCtxBuffer.get(), 1U);
+    upConverter->SetInput((Token *)upCtxBuffer.get(), 1U);
   }
 
   if (TASK_EXEC_SUCCESS != upConverter->Execute()) {
     return shared_ptr<Surface>(Surface::Make(outputFormat));
   }
 
-  auto pSurface = (Surface*)upConverter->GetOutput(0U);
+  auto pSurface = (Surface *)upConverter->GetOutput(0U);
   return shared_ptr<Surface>(pSurface ? pSurface->Clone()
                                       : Surface::Make(outputFormat));
 }
 
 Pixel_Format PySurfaceConverter::GetFormat() { return outputFormat; }
 
-void Init_PySurfaceConverter(py::module& m)
-{
-  py::class_<PySurfaceConverter>(m, "PySurfaceConverter")
+void Init_PySurfaceConverter(py::module &m) {
+  py::class_<PySurfaceConverter>(
+      m, "PySurfaceConverter",
+      "CUDA-accelerated converter between different pixel formats.")
       .def(py::init<uint32_t, uint32_t, Pixel_Format, Pixel_Format, uint32_t>(),
            py::arg("width"), py::arg("height"), py::arg("src_format"),
            py::arg("dst_format"), py::arg("gpu_id"),

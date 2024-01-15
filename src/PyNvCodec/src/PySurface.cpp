@@ -157,7 +157,10 @@ string ToString(Surface *self) {
 }
 
 void Init_PySurface(py::module &m) {
-  py::class_<SurfacePlane, shared_ptr<SurfacePlane>>(m, "SurfacePlane")
+  py::class_<SurfacePlane, shared_ptr<SurfacePlane>>(
+      m, "SurfacePlane",
+      "Continious 2D chunk of memory stored in vRAM which represents single "
+      "plane / channel of video frame.")
       .def("Width", &SurfacePlane::Width,
            R"pbdoc(
         Get width in pixels
@@ -247,7 +250,8 @@ void Init_PySurface(py::module &m) {
       .def("__repr__",
            [](shared_ptr<SurfacePlane> self) { return ToString(self.get()); });
 
-  py::class_<Surface, shared_ptr<Surface>>(m, "Surface")
+  py::class_<Surface, shared_ptr<Surface>>(
+      m, "Surface", "Image stored in vRAM. Consists of 1+ SurfacePlane(s).")
       .def("Width", &Surface::Width, py::arg("plane") = 0U,
            R"pbdoc(
         Width in pixels.

@@ -25,28 +25,21 @@ namespace py = pybind11;
 constexpr auto TASK_EXEC_SUCCESS = TaskExecStatus::TASK_EXEC_SUCCESS;
 constexpr auto TASK_EXEC_FAIL = TaskExecStatus::TASK_EXEC_FAIL;
 
+PyNvDecoder::PyNvDecoder(const string &pathToFile, int gpuOrdinal)
+    : PyNvDecoder(pathToFile, gpuOrdinal, map<string, string>()) {}
 
+PyNvDecoder::PyNvDecoder(const string &pathToFile, CUcontext ctx, CUstream str)
+    : PyNvDecoder(pathToFile, ctx, str, map<string, string>()) {}
 
-PyNvDecoder::PyNvDecoder(const string& pathToFile, int gpuOrdinal)
-    : PyNvDecoder(pathToFile, gpuOrdinal, map<string, string>())
-{
-}
-
-PyNvDecoder::PyNvDecoder(const string& pathToFile, CUcontext ctx, CUstream str)
-    : PyNvDecoder(pathToFile, ctx, str, map<string, string>())
-{
-}
-
-PyNvDecoder::PyNvDecoder(const string& pathToFile, int gpuOrdinal,
-                         const map<string, string>& ffmpeg_options)
-{
+PyNvDecoder::PyNvDecoder(const string &pathToFile, int gpuOrdinal,
+                         const map<string, string> &ffmpeg_options) {
   if (gpuOrdinal < 0 || gpuOrdinal >= CudaResMgr::Instance().GetNumGpus()) {
     gpuOrdinal = 0U;
   }
   gpuID = gpuOrdinal;
 
-  vector<const char*> options;
-  for (auto& pair : ffmpeg_options) {
+  vector<const char *> options;
+  for (auto &pair : ffmpeg_options) {
     options.push_back(pair.first.c_str());
     options.push_back(pair.second.c_str());
   }
@@ -64,11 +57,10 @@ PyNvDecoder::PyNvDecoder(const string& pathToFile, int gpuOrdinal,
       format));
 }
 
-PyNvDecoder::PyNvDecoder(const string& pathToFile, CUcontext ctx, CUstream str,
-                         const map<string, string>& ffmpeg_options)
-{
-  vector<const char*> options;
-  for (auto& pair : ffmpeg_options) {
+PyNvDecoder::PyNvDecoder(const string &pathToFile, CUcontext ctx, CUstream str,
+                         const map<string, string> &ffmpeg_options) {
+  vector<const char *> options;
+  for (auto &pair : ffmpeg_options) {
     options.push_back(pair.first.c_str());
     options.push_back(pair.second.c_str());
   }
@@ -87,8 +79,7 @@ PyNvDecoder::PyNvDecoder(const string& pathToFile, CUcontext ctx, CUstream str,
 PyNvDecoder::PyNvDecoder(uint32_t width, uint32_t height,
                          Pixel_Format new_format, cudaVideoCodec codec,
                          uint32_t gpuOrdinal)
-    : format(new_format)
-{
+    : format(new_format) {
   if (gpuOrdinal >= CudaResMgr::Instance().GetNumGpus()) {
     gpuOrdinal = 0U;
   }
@@ -103,26 +94,25 @@ PyNvDecoder::PyNvDecoder(uint32_t width, uint32_t height,
 PyNvDecoder::PyNvDecoder(uint32_t width, uint32_t height,
                          Pixel_Format new_format, cudaVideoCodec codec,
                          CUcontext ctx, CUstream str)
-    : format(new_format)
-{
+    : format(new_format) {
   upDecoder.reset(NvdecDecodeFrame::Make(str, ctx, codec, poolFrameSize, width,
                                          height, format));
 }
 
-Buffer* PyNvDecoder::getElementaryVideo(SeekContext* seek_ctx,
-                                        TaskExecDetails& details, bool needSEI)
-{
+Buffer *PyNvDecoder::getElementaryVideo(SeekContext *seek_ctx,
+                                        TaskExecDetails &details,
+                                        bool needSEI) {
   shared_ptr<Buffer> pSeekCtxBuf = nullptr;
   do {
     // Set 1st demuxer input to any non-zero value if we need SEI;
     if (needSEI) {
-      upDemuxer->SetInput((Token*)0xdeadbeefull, 0U);
+      upDemuxer->SetInput((Token *)0xdeadbeefull, 0U);
     }
 
     // Set 2nd demuxer input to seek context if we need to seek;
     if (seek_ctx && seek_ctx->use_seek) {
       pSeekCtxBuf.reset(Buffer::MakeOwnMem(sizeof(SeekContext), seek_ctx));
-      upDemuxer->SetInput((Token*)pSeekCtxBuf.get(), 1U);
+      upDemuxer->SetInput((Token *)pSeekCtxBuf.get(), 1U);
     }
 
     if (TASK_EXEC_FAIL == upDemuxer->Execute()) {
@@ -138,7 +128,7 @@ Buffer* PyNvDecoder::getElementaryVideo(SeekContext* seek_ctx,
     upDemuxer->ClearInputs();
   } while (!upDemuxer->GetOutput(0U));
 
-  auto pktDataBuf = (Buffer*)upDemuxer->GetOutput(3U);
+  auto pktDataBuf = (Buffer *)upDemuxer->GetOutput(3U);
   if (pktDataBuf) {
     auto pPktData = pktDataBuf->GetDataAs<PacketData>();
     if (seek_ctx) {
@@ -147,19 +137,19 @@ Buffer* PyNvDecoder::getElementaryVideo(SeekContext* seek_ctx,
     }
   }
 
-  return (Buffer*)upDemuxer->GetOutput(0U);
+  return (Buffer *)upDemuxer->GetOutput(0U);
 };
 
-Surface* PyNvDecoder::getDecodedSurface(SeekContext* seek_ctx,
-                                        TaskExecDetails& details, bool needSEI)
-{
+Surface *PyNvDecoder::getDecodedSurface(SeekContext *seek_ctx,
+                                        TaskExecDetails &details,
+                                        bool needSEI) {
   upDecoder->ClearInputs();
   upDecoder->ClearOutputs();
 
-  Surface* surface = nullptr;
+  Surface *surface = nullptr;
   do {
     auto elementaryVideo = getElementaryVideo(seek_ctx, details, needSEI);
-    auto pktData = (Buffer*)upDemuxer->GetOutput(3U);
+    auto pktData = (Buffer *)upDemuxer->GetOutput(3U);
 
     upDecoder->SetInput(elementaryVideo, 0U);
     upDecoder->SetInput(pktData, 1U);
@@ -167,24 +157,23 @@ Surface* PyNvDecoder::getDecodedSurface(SeekContext* seek_ctx,
     auto ret = upDecoder->Execute();
     upDecoder->GetExecDetails(details);
 
-    if (TASK_EXEC_FAIL == ret) {      
+    if (TASK_EXEC_FAIL == ret) {
       break;
     }
 
-    surface = (Surface*)upDecoder->GetOutput(0U);
+    surface = (Surface *)upDecoder->GetOutput(0U);
   } while (!surface);
 
   return surface;
 };
 
-Surface* PyNvDecoder::getDecodedSurfaceFromPacket(
-    const py::array_t<uint8_t>* pPacket, TaskExecDetails& details,
-    const PacketData* p_packet_data, bool no_eos)
-{
+Surface *PyNvDecoder::getDecodedSurfaceFromPacket(
+    const py::array_t<uint8_t> *pPacket, TaskExecDetails &details,
+    const PacketData *p_packet_data, bool no_eos) {
   upDecoder->ClearInputs();
   upDecoder->ClearOutputs();
 
-  Surface* surface = nullptr;
+  Surface *surface = nullptr;
   unique_ptr<Buffer> packetData = nullptr;
   unique_ptr<Buffer> elementaryVideo = nullptr;
 
@@ -194,7 +183,7 @@ Surface* PyNvDecoder::getDecodedSurfaceFromPacket(
   }
 
   if (no_eos) {
-    upDecoder->SetInput((Token*)0xbaddf00dull, 2U);
+    upDecoder->SetInput((Token *)0xbaddf00dull, 2U);
   }
 
   if (p_packet_data) {
@@ -209,11 +198,10 @@ Surface* PyNvDecoder::getDecodedSurfaceFromPacket(
     return nullptr;
   }
 
-  return (Surface*)upDecoder->GetOutput(0U);
+  return (Surface *)upDecoder->GetOutput(0U);
 };
 
-uint32_t PyNvDecoder::Width() const
-{
+uint32_t PyNvDecoder::Width() const {
   if (upDemuxer) {
     MuxingParams params;
     upDemuxer->GetParams(params);
@@ -224,10 +212,9 @@ uint32_t PyNvDecoder::Width() const
   }
 }
 
-void PyNvDecoder::LastPacketData(PacketData& packetData) const
-{
+void PyNvDecoder::LastPacketData(PacketData &packetData) const {
   if (upDemuxer) {
-    auto mp_buffer = (Buffer*)upDemuxer->GetOutput(3U);
+    auto mp_buffer = (Buffer *)upDemuxer->GetOutput(3U);
     if (mp_buffer) {
       auto mp = mp_buffer->GetDataAs<PacketData>();
       packetData = *mp;
@@ -238,8 +225,7 @@ void PyNvDecoder::LastPacketData(PacketData& packetData) const
   }
 }
 
-ColorSpace PyNvDecoder::GetColorSpace() const
-{
+ColorSpace PyNvDecoder::GetColorSpace() const {
   if (upDemuxer) {
 
     MuxingParams params;
@@ -251,8 +237,7 @@ ColorSpace PyNvDecoder::GetColorSpace() const
   }
 }
 
-ColorRange PyNvDecoder::GetColorRange() const
-{
+ColorRange PyNvDecoder::GetColorRange() const {
   if (upDemuxer) {
 
     MuxingParams params;
@@ -264,8 +249,7 @@ ColorRange PyNvDecoder::GetColorRange() const
   }
 }
 
-uint32_t PyNvDecoder::Height() const
-{
+uint32_t PyNvDecoder::Height() const {
   if (upDemuxer) {
 
     MuxingParams params;
@@ -277,8 +261,7 @@ uint32_t PyNvDecoder::Height() const
   }
 }
 
-double PyNvDecoder::Framerate() const
-{
+double PyNvDecoder::Framerate() const {
   if (upDemuxer) {
 
     MuxingParams params;
@@ -290,8 +273,7 @@ double PyNvDecoder::Framerate() const
   }
 }
 
-double PyNvDecoder::AvgFramerate() const
-{
+double PyNvDecoder::AvgFramerate() const {
   if (upDemuxer) {
 
     MuxingParams params;
@@ -303,8 +285,7 @@ double PyNvDecoder::AvgFramerate() const
   }
 }
 
-bool PyNvDecoder::IsVFR() const
-{
+bool PyNvDecoder::IsVFR() const {
   if (upDemuxer) {
 
     MuxingParams params;
@@ -317,8 +298,7 @@ bool PyNvDecoder::IsVFR() const
   }
 }
 
-double PyNvDecoder::Timebase() const
-{
+double PyNvDecoder::Timebase() const {
   if (upDemuxer) {
     MuxingParams params;
     upDemuxer->GetParams(params);
@@ -329,8 +309,7 @@ double PyNvDecoder::Timebase() const
   }
 }
 
-uint32_t PyNvDecoder::Framesize() const
-{
+uint32_t PyNvDecoder::Framesize() const {
   if (upDemuxer) {
     auto pSurface = Surface::Make(GetPixelFormat(), Width(), Height(),
                                   CudaResMgr::Instance().GetCtx(gpuID));
@@ -346,8 +325,7 @@ uint32_t PyNvDecoder::Framesize() const
   }
 }
 
-uint32_t PyNvDecoder::Numframes() const
-{
+uint32_t PyNvDecoder::Numframes() const {
   if (upDemuxer) {
     MuxingParams params;
     upDemuxer->GetParams(params);
@@ -360,14 +338,12 @@ uint32_t PyNvDecoder::Numframes() const
 
 Pixel_Format PyNvDecoder::GetPixelFormat() const { return format; }
 
-void PyNvDecoder::UpdateState()
-{
+void PyNvDecoder::UpdateState() {
   last_h = Height();
   last_w = Width();
 }
 
-bool PyNvDecoder::IsResolutionChanged()
-{
+bool PyNvDecoder::IsResolutionChanged() {
   try {
     if (last_h != Height()) {
       return true;
@@ -376,25 +352,26 @@ bool PyNvDecoder::IsResolutionChanged()
     if (last_w != Width()) {
       return true;
     }
-  } catch (exception& e) {
+  } catch (exception &e) {
     return false;
   }
 
   return false;
 }
 
-bool PyNvDecoder::DecodeSurface(DecodeContext& ctx, TaskExecDetails &details)
-{
-  
+bool PyNvDecoder::DecodeSurface(DecodeContext &ctx, TaskExecDetails &details) {
+
   if (!upDemuxer && !ctx.IsStandalone() && !ctx.IsFlush()) {
     throw std::runtime_error(
-        "Tried to call DecodeSurface/DecodeFrame on a Decoder that has been initialized "
-        "without a built-in demuxer. Please use DecodeSurfaceFromPacket/DecodeFrameFromPacket instead or "
+        "Tried to call DecodeSurface/DecodeFrame on a Decoder that has been "
+        "initialized "
+        "without a built-in demuxer. Please use "
+        "DecodeSurfaceFromPacket/DecodeFrameFromPacket instead or "
         "intialize the decoder with a demuxer when decoding from a file");
   }
   try {
     UpdateState();
-  } catch (exception& e) {
+  } catch (exception &e) {
     // Prevent exception throw;
   }
 
@@ -403,7 +380,7 @@ bool PyNvDecoder::DecodeSurface(DecodeContext& ctx, TaskExecDetails &details)
   bool const use_seek = ctx.IsSeek();
   bool dec_error = false, dmx_error = false;
 
-  Surface* pRawSurf = nullptr;
+  Surface *pRawSurf = nullptr;
 
   // Check seek params & flush decoder if we need to seek;
   if (use_seek) {
@@ -416,14 +393,14 @@ bool PyNvDecoder::DecodeSurface(DecodeContext& ctx, TaskExecDetails &details)
     }
 
     // Flush decoder without setting eos flag;
-    Surface* p_surf = nullptr;
+    Surface *p_surf = nullptr;
     do {
       try {
         p_surf = getDecodedSurfaceFromPacket(nullptr, details, nullptr);
-      } catch (decoder_error& dec_exc) {
+      } catch (decoder_error &dec_exc) {
         dec_error = true;
         cerr << dec_exc.what() << endl;
-      } catch (cuvid_parser_error& cvd_exc) {
+      } catch (cuvid_parser_error &cvd_exc) {
         dmx_error = true;
         cerr << cvd_exc.what() << endl;
       }
@@ -441,19 +418,20 @@ bool PyNvDecoder::DecodeSurface(DecodeContext& ctx, TaskExecDetails &details)
       if (ctx.IsFlush()) {
         pRawSurf = getDecodedSurfaceFromPacket(nullptr, details, nullptr);
       } else if (ctx.IsStandalone()) {
-        pRawSurf =
-            getDecodedSurfaceFromPacket(ctx.GetPacket(), details, ctx.GetInPacketData());
+        pRawSurf = getDecodedSurfaceFromPacket(ctx.GetPacket(), details,
+                                               ctx.GetInPacketData());
       } else {
-        pRawSurf = getDecodedSurface(ctx.GetSeekContextMutable(), details, ctx.HasSEI());
+        pRawSurf = getDecodedSurface(ctx.GetSeekContextMutable(), details,
+                                     ctx.HasSEI());
       }
 
       if (!pRawSurf) {
         break;
       }
-    } catch (decoder_error& dec_exc) {
+    } catch (decoder_error &dec_exc) {
       dec_error = true;
       cerr << dec_exc.what() << endl;
-    } catch (cuvid_parser_error& cvd_exc) {
+    } catch (cuvid_parser_error &cvd_exc) {
       dmx_error = true;
       cerr << cvd_exc.what() << endl;
     }
@@ -464,12 +442,12 @@ bool PyNvDecoder::DecodeSurface(DecodeContext& ctx, TaskExecDetails &details)
 
     /* Get timestamp from decoder.
      * However, this doesn't contain anything beside pts. */
-    auto pktDataBuf = (Buffer*)upDecoder->GetOutput(1U);
+    auto pktDataBuf = (Buffer *)upDecoder->GetOutput(1U);
     if (pktDataBuf && ctx.HasOutPktData()) {
       ctx.SetOutPacketData(pktDataBuf->GetDataAs<PacketData>());
     }
 
-    auto is_seek_done = [&](DecodeContext const& ctx, int64_t pts) {
+    auto is_seek_done = [&](DecodeContext const &ctx, int64_t pts) {
       auto seek_ctx = ctx.GetSeekContext();
       if (!seek_ctx)
         throw runtime_error("No seek context.");
@@ -526,7 +504,7 @@ bool PyNvDecoder::DecodeSurface(DecodeContext& ctx, TaskExecDetails &details)
     }
 
     if (ctx.HasSEI()) {
-      auto seiBuffer = (Buffer*)upDemuxer->GetOutput(2U);
+      auto seiBuffer = (Buffer *)upDemuxer->GetOutput(2U);
       ctx.SetSei(seiBuffer);
     }
 
@@ -544,8 +522,7 @@ auto make_empty_surface = [](Pixel_Format pixFmt) {
   return shared_ptr<Surface>(Surface::Make(pixFmt));
 };
 
-void PyNvDecoder::DownloaderLazyInit()
-{
+void PyNvDecoder::DownloaderLazyInit() {
   if (IsResolutionChanged() && upDownloader) {
     upDownloader.reset();
     upDownloader = nullptr;
@@ -558,10 +535,9 @@ void PyNvDecoder::DownloaderLazyInit()
   }
 }
 
-bool PyNvDecoder::DecodeFrame(class DecodeContext& ctx,
-                              TaskExecDetails& details,
-                              py::array_t<uint8_t>& frame)
-{
+bool PyNvDecoder::DecodeFrame(class DecodeContext &ctx,
+                              TaskExecDetails &details,
+                              py::array_t<uint8_t> &frame) {
   if (!DecodeSurface(ctx, details))
     return false;
 
@@ -569,8 +545,7 @@ bool PyNvDecoder::DecodeFrame(class DecodeContext& ctx,
   return upDownloader->DownloadSingleSurface(ctx.GetSurfaceMutable(), frame);
 }
 
-std::map<NV_DEC_CAPS, int> PyNvDecoder::Capabilities() const
-{
+std::map<NV_DEC_CAPS, int> PyNvDecoder::Capabilities() const {
   std::map<NV_DEC_CAPS, int> capabilities;
   capabilities.erase(capabilities.begin(), capabilities.end());
 
@@ -581,8 +556,7 @@ std::map<NV_DEC_CAPS, int> PyNvDecoder::Capabilities() const
   return capabilities;
 }
 
-void Init_PyNvDecoder(py::module& m)
-{
+void Init_PyNvDecoder(py::module &m) {
   py::enum_<NV_DEC_CAPS>(m, "NV_DEC_CAPS")
       .value("IS_CODEC_SUPPORTED", IS_CODEC_SUPPORTED)
       .value("BIT_DEPTH_MINUS_8", BIT_DEPTH_MINUS_8)
@@ -599,7 +573,8 @@ void Init_PyNvDecoder(py::module& m)
 #endif
       .export_values();
 
-  py::class_<PyNvDecoder, shared_ptr<PyNvDecoder>>(m, "PyNvDecoder")
+  py::class_<PyNvDecoder, shared_ptr<PyNvDecoder>>(
+      m, "PyNvDecoder", "HW-accelerated video decoder which uses Nvdec.")
       .def(py::init<uint32_t, uint32_t, Pixel_Format, cudaVideoCodec,
                     uint32_t>(),
            py::arg("width"), py::arg("height"), py::arg("format"),
@@ -614,7 +589,7 @@ void Init_PyNvDecoder(py::module& m)
         :param codec: video codec to use
         :param gpu_id: what GPU to run decode on
     )pbdoc")
-      .def(py::init<const string&, int, const map<string, string>&>(),
+      .def(py::init<const string &, int, const map<string, string> &>(),
            py::arg("input"), py::arg("gpu_id"), py::arg("opts"), R"pbdoc(
         Constructor method. Initialize HW decoding section with path to input,
         GPU ID and dictionary of AVDictionary options that will be passed to built-in
@@ -624,7 +599,7 @@ void Init_PyNvDecoder(py::module& m)
         :param gpu_id: what GPU to run decode on
         :param opts: AVDictionary options that will be passed to AVFormat context.
     )pbdoc")
-      .def(py::init<const string&, int>(), py::arg("input"), py::arg("gpu_id"),
+      .def(py::init<const string &, int>(), py::arg("input"), py::arg("gpu_id"),
            R"pbdoc(
         Constructor method. Initialize HW decoding section with path to input,
         and GPU ID. FFMpeg-based built-in demuxer will be used.
@@ -648,10 +623,10 @@ void Init_PyNvDecoder(py::module& m)
         :param context: CUDA context to use
         :param stream: CUDA stream to use
     )pbdoc")
-      .def(
-          py::init<const string&, size_t, size_t, const map<string, string>&>(),
-          py::arg("input"), py::arg("context"), py::arg("stream"),
-          py::arg("opts"), R"pbdoc(
+      .def(py::init<const string &, size_t, size_t,
+                    const map<string, string> &>(),
+           py::arg("input"), py::arg("context"), py::arg("stream"),
+           py::arg("opts"), R"pbdoc(
         Constructor method. Initialize HW decoding section with path to input,
         CUDA context and stream and dictionary of AVDictionary options that will
         be passed to built-in FFMpeg-based demuxer.
@@ -661,7 +636,7 @@ void Init_PyNvDecoder(py::module& m)
         :param stream: CUDA stream to use
         :param opts: AVDictionary options that will be passed to AVFormat context.
     )pbdoc")
-      .def(py::init<const string&, size_t, size_t>(), py::arg("input"),
+      .def(py::init<const string &, size_t, size_t>(), py::arg("input"),
            py::arg("context"), py::arg("stream"),
            R"pbdoc(
         Constructor method. Initialize HW decoding section with path to input,
@@ -732,8 +707,8 @@ void Init_PyNvDecoder(py::module& m)
     )pbdoc")
       .def(
           "DecodeSurfaceFromPacket",
-          [](shared_ptr<PyNvDecoder> self, PacketData& in_pkt_data,
-             py::array_t<uint8_t>& packet, PacketData& out_pkt_data,
+          [](shared_ptr<PyNvDecoder> self, PacketData &in_pkt_data,
+             py::array_t<uint8_t> &packet, PacketData &out_pkt_data,
              bool bOutputNVCVImage) -> py::object {
             TaskExecDetails details;
             if (!bOutputNVCVImage) {
@@ -833,7 +808,7 @@ else:
     )pbdoc")
       .def(
           "DecodeSingleSurface",
-          [](shared_ptr<PyNvDecoder> self, PacketData& out_pkt_data) {
+          [](shared_ptr<PyNvDecoder> self, PacketData &out_pkt_data) {
             DecodeContext ctx(nullptr, nullptr, nullptr, &out_pkt_data, nullptr,
                               false);
             TaskExecDetails details;
@@ -841,7 +816,7 @@ else:
               return std::make_tuple(ctx.GetSurfaceMutable(), details.info);
             } else {
               return std::make_tuple(make_empty_surface(self->GetPixelFormat()),
-                                details.info);
+                                     details.info);
             }
           },
           py::arg("pkt_data"), py::return_value_policy::take_ownership,
@@ -855,14 +830,14 @@ else:
     )pbdoc")
       .def(
           "DecodeSingleSurface",
-          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t>& sei) {
+          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t> &sei) {
             DecodeContext ctx(&sei, nullptr, nullptr, nullptr, nullptr, false);
             TaskExecDetails details;
             if (self->DecodeSurface(ctx, details)) {
               return std::make_tuple(ctx.GetSurfaceMutable(), details.info);
             } else {
               return std::make_tuple(make_empty_surface(self->GetPixelFormat()),
-                                details.info);
+                                     details.info);
             }
           },
           py::arg("sei"), py::return_value_policy::take_ownership,
@@ -876,8 +851,8 @@ else:
     )pbdoc")
       .def(
           "DecodeSingleSurface",
-          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t>& sei,
-             PacketData& out_pkt_data) {
+          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t> &sei,
+             PacketData &out_pkt_data) {
             DecodeContext ctx(&sei, nullptr, nullptr, &out_pkt_data, nullptr,
                               false);
             TaskExecDetails details;
@@ -885,7 +860,7 @@ else:
               return std::make_tuple(ctx.GetSurfaceMutable(), details.info);
             } else {
               return std::make_tuple(make_empty_surface(self->GetPixelFormat()),
-                                details.info);
+                                     details.info);
             }
           },
           py::arg("sei"), py::arg("pkt_data"),
@@ -901,8 +876,8 @@ else:
     )pbdoc")
       .def(
           "DecodeSingleSurface",
-          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t>& sei,
-             SeekContext& seek_ctx) {
+          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t> &sei,
+             SeekContext &seek_ctx) {
             DecodeContext ctx(&sei, nullptr, nullptr, nullptr, &seek_ctx,
                               false);
             TaskExecDetails details;
@@ -910,7 +885,7 @@ else:
               return std::make_tuple(ctx.GetSurfaceMutable(), details.info);
             } else {
               return std::make_tuple(make_empty_surface(self->GetPixelFormat()),
-                                details.info);
+                                     details.info);
             }
           },
           py::arg("sei"), py::arg("seek_context"),
@@ -927,8 +902,8 @@ else:
     )pbdoc")
       .def(
           "DecodeSingleSurface",
-          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t>& sei,
-             SeekContext& seek_ctx, PacketData& out_pkt_data) {
+          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t> &sei,
+             SeekContext &seek_ctx, PacketData &out_pkt_data) {
             DecodeContext ctx(&sei, nullptr, nullptr, &out_pkt_data, &seek_ctx,
                               false);
             TaskExecDetails details;
@@ -936,7 +911,7 @@ else:
               return std::make_tuple(ctx.GetSurfaceMutable(), details.info);
             } else {
               return std::make_tuple(make_empty_surface(self->GetPixelFormat()),
-                                details.info);
+                                     details.info);
             }
           },
           py::arg("sei"), py::arg("seek_context"), py::arg("pkt_data"),
@@ -962,7 +937,7 @@ else:
               return std::make_tuple(ctx.GetSurfaceMutable(), details.info);
             } else {
               return std::make_tuple(make_empty_surface(self->GetPixelFormat()),
-                                details.info);
+                                     details.info);
             }
           },
           py::return_value_policy::take_ownership,
@@ -975,7 +950,7 @@ else:
     )pbdoc")
       .def(
           "DecodeSingleSurface",
-          [](shared_ptr<PyNvDecoder> self, SeekContext& seek_ctx) {
+          [](shared_ptr<PyNvDecoder> self, SeekContext &seek_ctx) {
             DecodeContext ctx(nullptr, nullptr, nullptr, nullptr, &seek_ctx,
                               false);
             TaskExecDetails details;
@@ -983,7 +958,7 @@ else:
               return std::make_tuple(ctx.GetSurfaceMutable(), details.info);
             } else {
               return std::make_tuple(make_empty_surface(self->GetPixelFormat()),
-                                details.info);
+                                     details.info);
             }
           },
           py::arg("seek_context"), py::return_value_policy::take_ownership,
@@ -998,8 +973,8 @@ else:
     )pbdoc")
       .def(
           "DecodeSingleSurface",
-          [](shared_ptr<PyNvDecoder> self, SeekContext& seek_ctx,
-             PacketData& out_pkt_data) {
+          [](shared_ptr<PyNvDecoder> self, SeekContext &seek_ctx,
+             PacketData &out_pkt_data) {
             DecodeContext ctx(nullptr, nullptr, nullptr, &out_pkt_data,
                               &seek_ctx, false);
             TaskExecDetails details;
@@ -1007,7 +982,7 @@ else:
               return std::make_tuple(ctx.GetSurfaceMutable(), details.info);
             } else {
               return std::make_tuple(make_empty_surface(self->GetPixelFormat()),
-                                details.info);
+                                     details.info);
             }
           },
           py::arg("seek_context"), py::arg("pkt_data"),
@@ -1024,7 +999,7 @@ else:
     )pbdoc")
       .def(
           "DecodeSurfaceFromPacket",
-          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t>& packet) {
+          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t> &packet) {
             DecodeContext ctx(nullptr, &packet, nullptr, nullptr, nullptr,
                               false);
             TaskExecDetails details;
@@ -1032,7 +1007,7 @@ else:
               return std::make_tuple(ctx.GetSurfaceMutable(), details.info);
             } else {
               return std::make_tuple(make_empty_surface(self->GetPixelFormat()),
-                                details.info);
+                                     details.info);
             }
           },
           py::arg("packet"), py::return_value_policy::take_ownership,
@@ -1049,8 +1024,8 @@ else:
     )pbdoc")
       .def(
           "DecodeSurfaceFromPacket",
-          [](shared_ptr<PyNvDecoder> self, PacketData& in_packet_data,
-             py::array_t<uint8_t>& packet) {
+          [](shared_ptr<PyNvDecoder> self, PacketData &in_packet_data,
+             py::array_t<uint8_t> &packet) {
             DecodeContext ctx(nullptr, &packet, &in_packet_data, nullptr,
                               nullptr, false);
             TaskExecDetails details;
@@ -1058,7 +1033,7 @@ else:
               return std::make_tuple(ctx.GetSurfaceMutable(), details.info);
             } else {
               return std::make_tuple(make_empty_surface(self->GetPixelFormat()),
-                                details.info);
+                                     details.info);
             }
           },
           py::arg("enc_packet_data"), py::arg("packet"),
@@ -1077,8 +1052,8 @@ else:
     )pbdoc")
       .def(
           "DecodeSurfaceFromPacket",
-          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t>& packet,
-             PacketData& out_pkt_data) {
+          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t> &packet,
+             PacketData &out_pkt_data) {
             DecodeContext ctx(nullptr, &packet, nullptr, &out_pkt_data, nullptr,
                               false);
             TaskExecDetails details;
@@ -1086,7 +1061,7 @@ else:
               return std::make_tuple(ctx.GetSurfaceMutable(), details.info);
             } else {
               return std::make_tuple(make_empty_surface(self->GetPixelFormat()),
-                                details.info);
+                                     details.info);
             }
           },
           py::arg("packet"), py::arg("pkt_data"),
@@ -1105,8 +1080,8 @@ else:
     )pbdoc")
       .def(
           "DecodeSurfaceFromPacket",
-          [](shared_ptr<PyNvDecoder> self, PacketData& in_pkt_data,
-             py::array_t<uint8_t>& packet, PacketData& out_pkt_data) {
+          [](shared_ptr<PyNvDecoder> self, PacketData &in_pkt_data,
+             py::array_t<uint8_t> &packet, PacketData &out_pkt_data) {
             DecodeContext ctx(nullptr, &packet, &in_pkt_data, &out_pkt_data,
                               nullptr, false);
             TaskExecDetails details;
@@ -1114,7 +1089,7 @@ else:
               return std::make_tuple(ctx.GetSurfaceMutable(), details.info);
             } else {
               return std::make_tuple(make_empty_surface(self->GetPixelFormat()),
-                                details.info);
+                                     details.info);
             }
           },
           py::arg("enc_packet_data"), py::arg("packet"), py::arg("pkt_data"),
@@ -1142,7 +1117,7 @@ else:
               return std::make_tuple(ctx.GetSurfaceMutable(), details.info);
             } else {
               return std::make_tuple(make_empty_surface(self->GetPixelFormat()),
-                                details.info);
+                                     details.info);
             }
           },
           py::return_value_policy::take_ownership,
@@ -1159,7 +1134,7 @@ else:
     )pbdoc")
       .def(
           "FlushSingleSurface",
-          [](shared_ptr<PyNvDecoder> self, PacketData& out_pkt_data) {
+          [](shared_ptr<PyNvDecoder> self, PacketData &out_pkt_data) {
             DecodeContext ctx(nullptr, nullptr, nullptr, &out_pkt_data, nullptr,
                               true);
             TaskExecDetails details;
@@ -1167,7 +1142,7 @@ else:
               return std::make_tuple(ctx.GetSurfaceMutable(), details.info);
             } else {
               return std::make_tuple(make_empty_surface(self->GetPixelFormat()),
-                                details.info);
+                                     details.info);
             }
           },
           py::arg("pkt_data"), py::return_value_policy::take_ownership,
@@ -1186,13 +1161,13 @@ else:
     )pbdoc")
       .def(
           "DecodeSingleFrame",
-          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t>& frame,
-             py::array_t<uint8_t>& sei, PacketData& out_pkt_data) {
+          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t> &frame,
+             py::array_t<uint8_t> &sei, PacketData &out_pkt_data) {
             DecodeContext ctx(&sei, nullptr, nullptr, &out_pkt_data, nullptr,
                               false);
             TaskExecDetails details;
             return std::make_tuple(self->DecodeFrame(ctx, details, frame),
-                              details.info);
+                                   details.info);
           },
           py::arg("frame"), py::arg("sei"), py::arg("pkt_data"),
           py::call_guard<py::gil_scoped_release>(),
@@ -1206,13 +1181,13 @@ else:
     )pbdoc")
       .def(
           "DecodeSingleFrame",
-          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t>& frame,
-             py::array_t<uint8_t>& sei, SeekContext& seek_ctx) {
+          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t> &frame,
+             py::array_t<uint8_t> &sei, SeekContext &seek_ctx) {
             DecodeContext ctx(&sei, nullptr, nullptr, nullptr, &seek_ctx,
                               false);
             TaskExecDetails details;
             return std::make_tuple(self->DecodeFrame(ctx, details, frame),
-                              details.info);
+                                   details.info);
           },
           py::arg("frame"), py::arg("sei"), py::arg("seek_context"),
           py::call_guard<py::gil_scoped_release>(),
@@ -1226,14 +1201,14 @@ else:
     )pbdoc")
       .def(
           "DecodeSingleFrame",
-          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t>& frame,
-             py::array_t<uint8_t>& sei, SeekContext& seek_ctx,
-             PacketData& out_pkt_data) {
+          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t> &frame,
+             py::array_t<uint8_t> &sei, SeekContext &seek_ctx,
+             PacketData &out_pkt_data) {
             DecodeContext ctx(&sei, nullptr, nullptr, &out_pkt_data, &seek_ctx,
                               false);
             TaskExecDetails details;
             return std::make_tuple(self->DecodeFrame(ctx, details, frame),
-                              details.info);
+                                   details.info);
           },
           py::arg("frame"), py::arg("sei"), py::arg("seek_context"),
           py::arg("pkt_data"), py::call_guard<py::gil_scoped_release>(),
@@ -1248,12 +1223,12 @@ else:
     )pbdoc")
       .def(
           "DecodeSingleFrame",
-          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t>& frame) {
+          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t> &frame) {
             DecodeContext ctx(nullptr, nullptr, nullptr, nullptr, nullptr,
                               false);
             TaskExecDetails details;
             return std::make_tuple(self->DecodeFrame(ctx, details, frame),
-                              details.info);
+                                   details.info);
           },
           py::arg("frame"), py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
@@ -1264,13 +1239,13 @@ else:
     )pbdoc")
       .def(
           "DecodeSingleFrame",
-          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t>& frame,
-             PacketData& out_pkt_data) {
+          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t> &frame,
+             PacketData &out_pkt_data) {
             DecodeContext ctx(nullptr, nullptr, nullptr, &out_pkt_data, nullptr,
                               false);
             TaskExecDetails details;
             return std::make_tuple(self->DecodeFrame(ctx, details, frame),
-                              details.info);
+                                   details.info);
           },
           py::arg("frame"), py::arg("pkt_data"),
           py::call_guard<py::gil_scoped_release>(),
@@ -1283,13 +1258,13 @@ else:
     )pbdoc")
       .def(
           "DecodeSingleFrame",
-          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t>& frame,
-             SeekContext& seek_ctx) {
+          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t> &frame,
+             SeekContext &seek_ctx) {
             DecodeContext ctx(nullptr, nullptr, nullptr, nullptr, &seek_ctx,
                               false);
             TaskExecDetails details;
             return std::make_tuple(self->DecodeFrame(ctx, details, frame),
-                              details.info);
+                                   details.info);
           },
           py::arg("frame"), py::arg("seek_context"),
           py::call_guard<py::gil_scoped_release>(),
@@ -1302,13 +1277,13 @@ else:
     )pbdoc")
       .def(
           "DecodeSingleFrame",
-          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t>& frame,
-             SeekContext& seek_ctx, PacketData& out_pkt_data) {
+          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t> &frame,
+             SeekContext &seek_ctx, PacketData &out_pkt_data) {
             DecodeContext ctx(nullptr, nullptr, nullptr, &out_pkt_data,
                               &seek_ctx, false);
             TaskExecDetails details;
             return std::make_tuple(self->DecodeFrame(ctx, details, frame),
-                              details.info);
+                                   details.info);
           },
           py::arg("frame"), py::arg("seek_context"), py::arg("pkt_data"),
           py::call_guard<py::gil_scoped_release>(),
@@ -1322,13 +1297,13 @@ else:
     )pbdoc")
       .def(
           "DecodeFrameFromPacket",
-          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t>& frame,
-             py::array_t<uint8_t>& packet) {
+          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t> &frame,
+             py::array_t<uint8_t> &packet) {
             DecodeContext ctx(nullptr, &packet, nullptr, nullptr, nullptr,
                               false);
             TaskExecDetails details;
             return std::make_tuple(self->DecodeFrame(ctx, details, frame),
-                              details.info);
+                                   details.info);
           },
           py::arg("frame"), py::arg("packet"),
           py::call_guard<py::gil_scoped_release>(),
@@ -1341,13 +1316,13 @@ else:
     )pbdoc")
       .def(
           "DecodeFrameFromPacket",
-          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t>& frame,
-             PacketData& in_pkt_data, py::array_t<uint8_t>& packet) {
+          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t> &frame,
+             PacketData &in_pkt_data, py::array_t<uint8_t> &packet) {
             DecodeContext ctx(nullptr, &packet, &in_pkt_data, nullptr, nullptr,
                               false);
             TaskExecDetails details;
             return std::make_tuple(self->DecodeFrame(ctx, details, frame),
-                              details.info);
+                                   details.info);
           },
           py::arg("frame"), py::arg("enc_packet_data"), py::arg("packet"),
           py::call_guard<py::gil_scoped_release>(),
@@ -1361,14 +1336,14 @@ else:
     )pbdoc")
       .def(
           "DecodeFrameFromPacket",
-          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t>& frame,
-             PacketData& in_pkt_data, py::array_t<uint8_t>& packet,
-             PacketData& out_pkt_data) {
+          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t> &frame,
+             PacketData &in_pkt_data, py::array_t<uint8_t> &packet,
+             PacketData &out_pkt_data) {
             DecodeContext ctx(nullptr, &packet, &in_pkt_data, &out_pkt_data,
                               nullptr, false);
             TaskExecDetails details;
             return std::make_tuple(self->DecodeFrame(ctx, details, frame),
-                              details.info);
+                                   details.info);
           },
           py::arg("frame"), py::arg("enc_packet_data"), py::arg("packet"),
           py::arg("pkt_data"), py::call_guard<py::gil_scoped_release>(),
@@ -1383,13 +1358,13 @@ else:
     )pbdoc")
       .def(
           "DecodeFrameFromPacket",
-          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t>& frame,
-             py::array_t<uint8_t>& packet, PacketData& out_pkt_data) {
+          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t> &frame,
+             py::array_t<uint8_t> &packet, PacketData &out_pkt_data) {
             DecodeContext ctx(nullptr, &packet, nullptr, &out_pkt_data, nullptr,
                               false);
             TaskExecDetails details;
             return std::make_tuple(self->DecodeFrame(ctx, details, frame),
-                              details.info);
+                                   details.info);
           },
           py::arg("frame"), py::arg("packet"), py::arg("pkt_data"),
           py::call_guard<py::gil_scoped_release>(),
@@ -1403,12 +1378,12 @@ else:
     )pbdoc")
       .def(
           "FlushSingleFrame",
-          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t>& frame) {
+          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t> &frame) {
             DecodeContext ctx(nullptr, nullptr, nullptr, nullptr, nullptr,
                               true);
             TaskExecDetails details;
             return std::make_tuple(self->DecodeFrame(ctx, details, frame),
-                              details.info);
+                                   details.info);
           },
           py::arg("frame"), py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
@@ -1419,13 +1394,13 @@ else:
     )pbdoc")
       .def(
           "FlushSingleFrame",
-          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t>& frame,
-             PacketData& out_pkt_data) {
+          [](shared_ptr<PyNvDecoder> self, py::array_t<uint8_t> &frame,
+             PacketData &out_pkt_data) {
             DecodeContext ctx(nullptr, nullptr, nullptr, &out_pkt_data, nullptr,
                               true);
             TaskExecDetails details;
             return std::make_tuple(self->DecodeFrame(ctx, details, frame),
-                              details.info);
+                                   details.info);
           },
           py::arg("frame"), py::arg("pkt_data"),
           py::call_guard<py::gil_scoped_release>(),

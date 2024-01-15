@@ -25,21 +25,19 @@ namespace py = pybind11;
 constexpr auto TASK_EXEC_SUCCESS = TaskExecStatus::TASK_EXEC_SUCCESS;
 constexpr auto TASK_EXEC_FAIL = TaskExecStatus::TASK_EXEC_FAIL;
 
-PySurfaceRemaper::PySurfaceRemaper(py::array_t<float>& x_map,
-                                   py::array_t<float>& y_map,
+PySurfaceRemaper::PySurfaceRemaper(py::array_t<float> &x_map,
+                                   py::array_t<float> &y_map,
                                    Pixel_Format format, size_t ctx, size_t str)
-    : outputFormat(format)
-{
+    : outputFormat(format) {
   upRemaper.reset(RemapSurface::Make(x_map.data(), y_map.data(), x_map.shape(1),
                                      x_map.shape(0), format, (CUcontext)ctx,
                                      (CUstream)str));
 }
 
-PySurfaceRemaper::PySurfaceRemaper(py::array_t<float>& x_map,
-                                   py::array_t<float>& y_map,
+PySurfaceRemaper::PySurfaceRemaper(py::array_t<float> &x_map,
+                                   py::array_t<float> &y_map,
                                    Pixel_Format format, uint32_t gpuID)
-    : outputFormat(format)
-{
+    : outputFormat(format) {
   upRemaper.reset(RemapSurface::Make(x_map.data(), y_map.data(), x_map.shape(1),
                                      x_map.shape(0), format,
                                      CudaResMgr::Instance().GetCtx(gpuID),
@@ -48,8 +46,7 @@ PySurfaceRemaper::PySurfaceRemaper(py::array_t<float>& x_map,
 
 Pixel_Format PySurfaceRemaper::GetFormat() { return outputFormat; }
 
-shared_ptr<Surface> PySurfaceRemaper::Execute(shared_ptr<Surface> surface)
-{
+shared_ptr<Surface> PySurfaceRemaper::Execute(shared_ptr<Surface> surface) {
   if (!surface) {
     return shared_ptr<Surface>(Surface::Make(outputFormat));
   }
@@ -60,15 +57,16 @@ shared_ptr<Surface> PySurfaceRemaper::Execute(shared_ptr<Surface> surface)
     return shared_ptr<Surface>(Surface::Make(outputFormat));
   }
 
-  auto pSurface = (Surface*)upRemaper->GetOutput(0U);
+  auto pSurface = (Surface *)upRemaper->GetOutput(0U);
   return shared_ptr<Surface>(pSurface ? pSurface->Clone()
                                       : Surface::Make(outputFormat));
 }
 
-void Init_PySurfaceRemaper(py::module& m)
-{
-  py::class_<PySurfaceRemaper>(m, "PySurfaceRemaper")
-      .def(py::init<py::array_t<float>&, py::array_t<float>&, Pixel_Format,
+void Init_PySurfaceRemaper(py::module &m) {
+  py::class_<PySurfaceRemaper>(
+      m, "PySurfaceRemaper",
+      "This class is used to remap Surface along X and Y axis.")
+      .def(py::init<py::array_t<float> &, py::array_t<float> &, Pixel_Format,
                     uint32_t>(),
            py::arg("x_map"), py::arg("y_map"), py::arg("format"),
            py::arg("gpu_id"), R"pbdoc(
@@ -79,7 +77,7 @@ void Init_PySurfaceRemaper(py::module& m)
         :param format: target Surface pixel format
         :param gpu_id: what GPU to run resize on
     )pbdoc")
-      .def(py::init<py::array_t<float>&, py::array_t<float>&, Pixel_Format,
+      .def(py::init<py::array_t<float> &, py::array_t<float> &, Pixel_Format,
                     size_t, size_t>(),
            py::arg("x_map"), py::arg("y_map"), py::arg("format"),
            py::arg("context"), py::arg("stream"),

@@ -27,8 +27,7 @@ constexpr auto TASK_EXEC_FAIL = TaskExecStatus::TASK_EXEC_FAIL;
 
 PyCudaBufferDownloader::PyCudaBufferDownloader(uint32_t elemSize,
                                                uint32_t numElems,
-                                               uint32_t gpu_ID)
-{
+                                               uint32_t gpu_ID) {
   elem_size = elemSize;
   num_elems = numElems;
 
@@ -39,8 +38,7 @@ PyCudaBufferDownloader::PyCudaBufferDownloader(uint32_t elemSize,
 
 PyCudaBufferDownloader::PyCudaBufferDownloader(uint32_t elemSize,
                                                uint32_t numElems, CUcontext ctx,
-                                               CUstream str)
-{
+                                               CUstream str) {
   elem_size = elemSize;
   num_elems = numElems;
 
@@ -48,14 +46,13 @@ PyCudaBufferDownloader::PyCudaBufferDownloader(uint32_t elemSize,
 }
 
 bool PyCudaBufferDownloader::DownloadSingleCudaBuffer(
-    std::shared_ptr<CudaBuffer> buffer, py::array_t<uint8_t>& np_array)
-{
+    std::shared_ptr<CudaBuffer> buffer, py::array_t<uint8_t> &np_array) {
   upDownloader->SetInput(buffer.get(), 0U);
   if (TASK_EXEC_FAIL == upDownloader->Execute()) {
     return false;
   }
 
-  auto* pRawBuf = (Buffer*)upDownloader->GetOutput(0U);
+  auto *pRawBuf = (Buffer *)upDownloader->GetOutput(0U);
   if (pRawBuf) {
     auto const downloadSize = pRawBuf->GetRawMemSize();
     if (downloadSize != np_array.size()) {
@@ -69,9 +66,10 @@ bool PyCudaBufferDownloader::DownloadSingleCudaBuffer(
   return false;
 }
 
-void Init_PyCudaBufferDownloader(py::module& m)
-{
-  py::class_<PyCudaBufferDownloader>(m, "PyCudaBufferDownloader")
+void Init_PyCudaBufferDownloader(py::module &m) {
+  py::class_<PyCudaBufferDownloader>(m, "PyCudaBufferDownloader",
+                                     "This class is used to copy CudaBuffer to "
+                                     "numpy array using CUDA DtoH memcpy.")
       .def(py::init<uint32_t, uint32_t, uint32_t>(), py::arg("elem_size"),
            py::arg("num_elems"), py::arg("gpu_id"),
            R"pbdoc(
@@ -101,5 +99,6 @@ void Init_PyCudaBufferDownloader(py::module& m)
         :param buffer: input CUDA buffer
         :param array: output numpy array
         :return: True in case of success, False otherwise
+        :type: Bool
     )pbdoc");
 }

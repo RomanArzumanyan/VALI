@@ -19,13 +19,9 @@ project = "VALI"
 copyright = "2023 Roman Arzumanyan"
 author = ""
 
-language = None
-
+language = "en"
 exclude_patterns = ["_build"]
-
 pygments_style = "sphinx"
-
 todo_include_todos = False
-
 html_theme = "haiku"
 htmlhelp_basename = "VALIdoc"
