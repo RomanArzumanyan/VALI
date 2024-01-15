@@ -25,17 +25,15 @@ namespace py = pybind11;
 constexpr auto TASK_EXEC_SUCCESS = TaskExecStatus::TASK_EXEC_SUCCESS;
 constexpr auto TASK_EXEC_FAIL = TaskExecStatus::TASK_EXEC_FAIL;
 
-PyFfmpegDecoder::PyFfmpegDecoder(const string& pathToFile,
-                                 const map<string, string>& ffmpeg_options,
-                                 uint32_t gpuID)
-{
+PyFfmpegDecoder::PyFfmpegDecoder(const string &pathToFile,
+                                 const map<string, string> &ffmpeg_options,
+                                 uint32_t gpuID) {
   gpu_id = gpuID;
   NvDecoderClInterface cli_iface(ffmpeg_options);
   upDecoder.reset(FfmpegDecodeFrame::Make(pathToFile.c_str(), cli_iface));
 }
 
-bool PyFfmpegDecoder::DecodeImpl(DecodeContext& ctx, TaskExecDetails& details)
-{
+bool PyFfmpegDecoder::DecodeImpl(DecodeContext &ctx, TaskExecDetails &details) {
   UpdateState();
 
   auto ret = upDecoder->Execute();
@@ -45,19 +43,18 @@ bool PyFfmpegDecoder::DecodeImpl(DecodeContext& ctx, TaskExecDetails& details)
   return (TASK_EXEC_SUCCESS == ret);
 }
 
-bool PyFfmpegDecoder::DecodeSingleFrame(DecodeContext& ctx,
-                                        py::array_t<uint8_t>& frame,
-                                        TaskExecDetails& details)
-{
+bool PyFfmpegDecoder::DecodeSingleFrame(DecodeContext &ctx,
+                                        py::array_t<uint8_t> &frame,
+                                        TaskExecDetails &details) {
   if (DecodeImpl(ctx, details)) {
-    auto pRawFrame = (Buffer*)upDecoder->GetOutput(0U);
+    auto pRawFrame = (Buffer *)upDecoder->GetOutput(0U);
     if (pRawFrame) {
       auto const frame_size = pRawFrame->GetRawMemSize();
       if (frame_size != frame.size()) {
         frame.resize({frame_size}, false);
       }
 
-      memcpy(frame.mutable_data(), pRawFrame->GetRawMemPtr(), frame_size);      
+      memcpy(frame.mutable_data(), pRawFrame->GetRawMemPtr(), frame_size);
       return true;
     }
   }
@@ -65,14 +62,13 @@ bool PyFfmpegDecoder::DecodeSingleFrame(DecodeContext& ctx,
   return false;
 }
 
-bool PyFfmpegDecoder::DecodeSingleSurface(DecodeContext& ctx,
-                                          TaskExecDetails& details)
-{
+bool PyFfmpegDecoder::DecodeSingleSurface(DecodeContext &ctx,
+                                          TaskExecDetails &details) {
   std::shared_ptr<Surface> p_surf = nullptr;
 
   UploaderLazyInit();
   if (DecodeImpl(ctx, details)) {
-    auto frame = (Buffer*)upDecoder->GetOutput(0U);
+    auto frame = (Buffer *)upDecoder->GetOutput(0U);
     p_surf = upUploader->UploadSingleFrame(frame);
   }
 
@@ -85,11 +81,10 @@ bool PyFfmpegDecoder::DecodeSingleSurface(DecodeContext& ctx,
   return true;
 }
 
-void* PyFfmpegDecoder::GetSideData(AVFrameSideDataType data_type,
-                                   size_t& raw_size)
-{
+void *PyFfmpegDecoder::GetSideData(AVFrameSideDataType data_type,
+                                   size_t &raw_size) {
   if (TASK_EXEC_SUCCESS == upDecoder->GetSideData(data_type)) {
-    auto pSideData = (Buffer*)upDecoder->GetOutput(1U);
+    auto pSideData = (Buffer *)upDecoder->GetOutput(1U);
     if (pSideData) {
       raw_size = pSideData->GetRawMemSize();
       return pSideData->GetDataAs<void>();
@@ -98,14 +93,12 @@ void* PyFfmpegDecoder::GetSideData(AVFrameSideDataType data_type,
   return nullptr;
 }
 
-void PyFfmpegDecoder::UpdateState()
-{
+void PyFfmpegDecoder::UpdateState() {
   last_h = Height();
   last_w = Width();
 }
 
-bool PyFfmpegDecoder::IsResolutionChanged()
-{
+bool PyFfmpegDecoder::IsResolutionChanged() {
   if (last_h != Height()) {
     return true;
   }
@@ -117,8 +110,7 @@ bool PyFfmpegDecoder::IsResolutionChanged()
   return false;
 }
 
-void PyFfmpegDecoder::UploaderLazyInit()
-{
+void PyFfmpegDecoder::UploaderLazyInit() {
   if (IsResolutionChanged() && upUploader) {
     upUploader.reset();
     upUploader = nullptr;
@@ -130,16 +122,15 @@ void PyFfmpegDecoder::UploaderLazyInit()
   }
 }
 
-py::array_t<MotionVector> PyFfmpegDecoder::GetMotionVectors()
-{
+py::array_t<MotionVector> PyFfmpegDecoder::GetMotionVectors() {
   size_t size = 0U;
-  auto ptr = (AVMotionVector*)GetSideData(AV_FRAME_DATA_MOTION_VECTORS, size);
+  auto ptr = (AVMotionVector *)GetSideData(AV_FRAME_DATA_MOTION_VECTORS, size);
   size /= sizeof(*ptr);
 
   if (ptr && size) {
     py::array_t<MotionVector> mv(static_cast<int64_t>(size));
     auto req = mv.request(true);
-    auto mvc = static_cast<MotionVector*>(req.ptr);
+    auto mvc = static_cast<MotionVector *>(req.ptr);
 
     for (auto i = 0; i < req.shape[0]; i++) {
       mvc[i].source = ptr[i].source;
@@ -160,80 +151,71 @@ py::array_t<MotionVector> PyFfmpegDecoder::GetMotionVectors()
   return std::move(py::array_t<MotionVector>(0));
 }
 
-uint32_t PyFfmpegDecoder::Width() const
-{
+uint32_t PyFfmpegDecoder::Width() const {
   MuxingParams params;
   upDecoder->GetParams(params);
   return params.videoContext.width;
 };
 
-uint32_t PyFfmpegDecoder::Height() const
-{
+uint32_t PyFfmpegDecoder::Height() const {
   MuxingParams params;
   upDecoder->GetParams(params);
   return params.videoContext.height;
 };
 
-double PyFfmpegDecoder::Framerate() const
-{
+double PyFfmpegDecoder::Framerate() const {
   MuxingParams params;
   upDecoder->GetParams(params);
   return params.videoContext.frameRate;
 };
 
-ColorSpace PyFfmpegDecoder::Color_Space() const
-{
+ColorSpace PyFfmpegDecoder::Color_Space() const {
   MuxingParams params;
   upDecoder->GetParams(params);
   return params.videoContext.color_space;
 };
 
-ColorRange PyFfmpegDecoder::Color_Range() const
-{
+ColorRange PyFfmpegDecoder::Color_Range() const {
   MuxingParams params;
   upDecoder->GetParams(params);
   return params.videoContext.color_range;
 };
 
-cudaVideoCodec PyFfmpegDecoder::Codec() const
-{
+cudaVideoCodec PyFfmpegDecoder::Codec() const {
   MuxingParams params;
   upDecoder->GetParams(params);
   return params.videoContext.codec;
 };
 
-double PyFfmpegDecoder::AvgFramerate() const
-{
+double PyFfmpegDecoder::AvgFramerate() const {
   MuxingParams params;
   upDecoder->GetParams(params);
   return params.videoContext.avgFrameRate;
 };
 
-double PyFfmpegDecoder::Timebase() const
-{
+double PyFfmpegDecoder::Timebase() const {
   MuxingParams params;
   upDecoder->GetParams(params);
   return params.videoContext.timeBase;
 };
 
-uint32_t PyFfmpegDecoder::Numframes() const
-{
+uint32_t PyFfmpegDecoder::Numframes() const {
   MuxingParams params;
   upDecoder->GetParams(params);
   return params.videoContext.num_frames;
 };
 
-Pixel_Format PyFfmpegDecoder::PixelFormat() const
-{
+Pixel_Format PyFfmpegDecoder::PixelFormat() const {
   MuxingParams params;
   upDecoder->GetParams(params);
   return params.videoContext.format;
 };
 
-void Init_PyFFMpegDecoder(py::module& m)
-{
-  py::class_<PyFfmpegDecoder, shared_ptr<PyFfmpegDecoder>>(m, "PyFfmpegDecoder")
-      .def(py::init<const string&, const map<string, string>&, uint32_t>(),
+void Init_PyFFMpegDecoder(py::module &m) {
+  py::class_<PyFfmpegDecoder, shared_ptr<PyFfmpegDecoder>>(
+      m, "PyFfmpegDecoder",
+      "Fallback decoder implementation which relies on FFMpeg libavcodec.")
+      .def(py::init<const string &, const map<string, string> &, uint32_t>(),
            py::arg("input"), py::arg("opts"), py::arg("gpu_id") = 0,
            R"pbdoc(
         Constructor method.
@@ -243,7 +225,7 @@ void Init_PyFFMpegDecoder(py::module& m)
     )pbdoc")
       .def(
           "DecodeSingleFrame",
-          [](shared_ptr<PyFfmpegDecoder> self, py::array_t<uint8_t>& frame) {
+          [](shared_ptr<PyFfmpegDecoder> self, py::array_t<uint8_t> &frame) {
             TaskExecDetails details;
             PacketData pktData;
             DecodeContext ctx(nullptr, nullptr, nullptr, &pktData, nullptr,
@@ -260,21 +242,23 @@ void Init_PyFFMpegDecoder(py::module& m)
     )pbdoc")
       .def(
           "DecodeSingleFrame",
-          [](shared_ptr<PyFfmpegDecoder> self, py::array_t<uint8_t>& frame, PacketData &pktData) {
+          [](shared_ptr<PyFfmpegDecoder> self, py::array_t<uint8_t> &frame,
+             PacketData &pktData) {
             TaskExecDetails details;
             DecodeContext ctx(nullptr, nullptr, nullptr, &pktData, nullptr,
                               false);
             auto res = self->DecodeSingleFrame(ctx, frame, details);
             return std::make_tuple(res, details.info);
           },
-          py::arg("frame"), py::arg("pktData"), py::call_guard<py::gil_scoped_release>(),
+          py::arg("frame"), py::arg("pktData"),
+          py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
         Decode single video frame from input file.
 
         :param frame: decoded video frame
         :param pktData: decoded video frame packet data
         :return: tuple, first element is True in case of success, False otherwise. Second elements is TaskExecInfo.
-    )pbdoc")    
+    )pbdoc")
       .def(
           "DecodeSingleSurface",
           [](shared_ptr<PyFfmpegDecoder> self) {
@@ -308,7 +292,7 @@ void Init_PyFFMpegDecoder(py::module& m)
 
         :param pktData: decoded video frame packet data
         :return: tuple, first element is the surface, second is TaskExecInfo.
-    )pbdoc")    
+    )pbdoc")
       .def("Codec", &PyFfmpegDecoder::Codec,
            R"pbdoc(
         Return video codec used in encoded video stream.

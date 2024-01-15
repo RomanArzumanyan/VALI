@@ -26,8 +26,7 @@ constexpr auto TASK_EXEC_SUCCESS = TaskExecStatus::TASK_EXEC_SUCCESS;
 constexpr auto TASK_EXEC_FAIL = TaskExecStatus::TASK_EXEC_FAIL;
 
 PyBufferUploader::PyBufferUploader(uint32_t elemSize, uint32_t numElems,
-                                   uint32_t gpu_ID)
-{
+                                   uint32_t gpu_ID) {
   elem_size = elemSize;
   num_elems = numElems;
 
@@ -37,8 +36,7 @@ PyBufferUploader::PyBufferUploader(uint32_t elemSize, uint32_t numElems,
 }
 
 PyBufferUploader::PyBufferUploader(uint32_t elemSize, uint32_t numElems,
-                                   CUcontext ctx, CUstream str)
-{
+                                   CUcontext ctx, CUstream str) {
   elem_size = elemSize;
   num_elems = numElems;
 
@@ -46,8 +44,7 @@ PyBufferUploader::PyBufferUploader(uint32_t elemSize, uint32_t numElems,
 }
 
 shared_ptr<CudaBuffer>
-PyBufferUploader::UploadSingleBuffer(py::array_t<uint8_t>& frame)
-{
+PyBufferUploader::UploadSingleBuffer(py::array_t<uint8_t> &frame) {
   auto pRawBuf = Buffer::Make(frame.size(), frame.mutable_data());
   uploader->SetInput(pRawBuf, 0U);
   auto res = uploader->Execute();
@@ -56,16 +53,17 @@ PyBufferUploader::UploadSingleBuffer(py::array_t<uint8_t>& frame)
   if (TASK_EXEC_FAIL == res)
     throw runtime_error("Error uploading frame to GPU");
 
-  auto pCudaBuffer = (CudaBuffer*)uploader->GetOutput(0U);
+  auto pCudaBuffer = (CudaBuffer *)uploader->GetOutput(0U);
   if (!pCudaBuffer)
     throw runtime_error("Error uploading frame to GPU");
 
   return shared_ptr<CudaBuffer>(pCudaBuffer->Clone());
 }
 
-void Init_PyBufferUploader(py::module& m)
-{
-  py::class_<PyBufferUploader>(m, "PyBufferUploader")
+void Init_PyBufferUploader(py::module &m) {
+  py::class_<PyBufferUploader>(m, "PyBufferUploader",
+                               "This class is used to upload numpy array to "
+                               "CudaBuffer using CUDA HtoD memcpy.")
       .def(py::init<uint32_t, uint32_t, uint32_t>(), py::arg("elem_size"),
            py::arg("num_elems"), py::arg("gpu_id"),
            R"pbdoc(
@@ -93,5 +91,6 @@ void Init_PyBufferUploader(py::module& m)
 
         :param array: output numpy array
         :return: True in case of success, False otherwise
+        :type: Bool
     )pbdoc");
 }

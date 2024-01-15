@@ -284,7 +284,8 @@ PYBIND11_MODULE(_PyNvCodec, m) {
                           "dst_y", motion_x, "motion_x", motion_y, "motion_y",
                           motion_scale, "motion_scale");
 
-  py::class_<MotionVector>(m, "MotionVector");
+  py::class_<MotionVector>(m, "MotionVector",
+                           "This class stores iformation about motion vector.");
 
   py::register_exception<HwResetException>(m, "HwResetException");
 
@@ -346,7 +347,10 @@ PYBIND11_MODULE(_PyNvCodec, m) {
       .value("PREV_KEY_FRAME", SeekMode::PREV_KEY_FRAME)
       .export_values();
 
-  py::class_<SeekContext, shared_ptr<SeekContext>>(m, "SeekContext")
+  py::class_<SeekContext, shared_ptr<SeekContext>>(
+      m, "SeekContext",
+      "Incapsulates information required by decoder to seek for a particular "
+      "video frame.")
       .def(py::init<int64_t>(), py::arg("seek_frame"),
            R"pbdoc(
         Constructor method.
@@ -396,7 +400,8 @@ PYBIND11_MODULE(_PyNvCodec, m) {
         Number of frames, decoded if seek was done to closest previous key frame.
     )pbdoc");
 
-  py::class_<PacketData, shared_ptr<PacketData>>(m, "PacketData")
+  py::class_<PacketData, shared_ptr<PacketData>>(
+      m, "PacketData", "Incapsulates information about compressed video frame")
       .def(py::init<>())
       .def_readwrite("key", &PacketData::key)
       .def_readwrite("pts", &PacketData::pts)
@@ -421,33 +426,45 @@ PYBIND11_MODULE(_PyNvCodec, m) {
 
   py::class_<ColorspaceConversionContext,
              shared_ptr<ColorspaceConversionContext>>(
-      m, "ColorspaceConversionContext")
+      m, "ColorspaceConversionContext",
+      "Stores information required for accurate color conversion.")
       .def(py::init<>())
       .def(py::init<ColorSpace, ColorRange>(), py::arg("color_space"),
            py::arg("color_range"))
       .def_readwrite("color_space", &ColorspaceConversionContext::color_space)
       .def_readwrite("color_range", &ColorspaceConversionContext::color_range);
 
-  py::class_<CudaBuffer, shared_ptr<CudaBuffer>>(m, "CudaBuffer")
+  py::class_<CudaBuffer, shared_ptr<CudaBuffer>>(
+      m, "CudaBuffer", "General purpose data storage class in GPU memory.")
       .def("GetRawMemSize", &CudaBuffer::GetRawMemSize,
            R"pbdoc(
-        Get size of buffer in bytes
+        Get size of buffer in bytes.
+
+        :rtype: Int
     )pbdoc")
       .def("GetNumElems", &CudaBuffer::GetNumElems,
            R"pbdoc(
-        Get number of elements in buffer
+        Get number of elements in buffer.
+
+        :rtype: Int
     )pbdoc")
       .def("GetElemSize", &CudaBuffer::GetElemSize,
            R"pbdoc(
         Get size of single element in bytes
+
+        :rtype: Int
     )pbdoc")
       .def("GpuMem", &CudaBuffer::GpuMem,
            R"pbdoc(
-        Get CUdeviceptr of memory allocation
+        Get CUdeviceptr of memory allocation.
+
+        :rtype: Int
     )pbdoc")
       .def("Clone", &CudaBuffer::Clone, py::return_value_policy::take_ownership,
            R"pbdoc(
-        Deep copy = CUDA mem alloc + CUDA mem copy
+        Deep copy = CUDA mem alloc + CUDA mem copy.
+
+        :rtype: PyNvCodec.CudaBuffer
     )pbdoc")
       .def(
           "CopyFrom",
@@ -462,6 +479,7 @@ PYBIND11_MODULE(_PyNvCodec, m) {
         :param other: other CudaBuffer
         :param context: CUDA context to use
         :param stream: CUDA stream to use
+        :rtype: None
     )pbdoc")
       .def(
           "CopyFrom",
@@ -473,6 +491,7 @@ PYBIND11_MODULE(_PyNvCodec, m) {
 
         :param other: other CudaBuffer
         :param gpu_id: GPU to use for memcopy
+        :rtype: None
     )pbdoc")
       .def_static(
           "Make",
@@ -489,6 +508,7 @@ PYBIND11_MODULE(_PyNvCodec, m) {
         :param elem_size: single buffer element size in bytes
         :param num_elems: number of elements in buffer
         :param gpu_id: GPU to use for memcopy
+        :rtype: PyNvCodec.CudaBuffer
     )pbdoc");
 
   Init_PyFFMpegDecoder(m);

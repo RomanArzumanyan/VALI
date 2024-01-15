@@ -28,15 +28,13 @@ constexpr auto TASK_EXEC_FAIL = TaskExecStatus::TASK_EXEC_FAIL;
 PySurfaceResizer::PySurfaceResizer(uint32_t width, uint32_t height,
                                    Pixel_Format format, CUcontext ctx,
                                    CUstream str)
-    : outputFormat(format)
-{
+    : outputFormat(format) {
   upResizer.reset(ResizeSurface::Make(width, height, format, ctx, str));
 }
 
 PySurfaceResizer::PySurfaceResizer(uint32_t width, uint32_t height,
                                    Pixel_Format format, uint32_t gpuID)
-    : outputFormat(format)
-{
+    : outputFormat(format) {
   upResizer.reset(ResizeSurface::Make(width, height, format,
                                       CudaResMgr::Instance().GetCtx(gpuID),
                                       CudaResMgr::Instance().GetStream(gpuID)));
@@ -44,8 +42,7 @@ PySurfaceResizer::PySurfaceResizer(uint32_t width, uint32_t height,
 
 Pixel_Format PySurfaceResizer::GetFormat() { return outputFormat; }
 
-shared_ptr<Surface> PySurfaceResizer::Execute(shared_ptr<Surface> surface)
-{
+shared_ptr<Surface> PySurfaceResizer::Execute(shared_ptr<Surface> surface) {
   if (!surface) {
     return shared_ptr<Surface>(Surface::Make(outputFormat));
   }
@@ -56,14 +53,14 @@ shared_ptr<Surface> PySurfaceResizer::Execute(shared_ptr<Surface> surface)
     return shared_ptr<Surface>(Surface::Make(outputFormat));
   }
 
-  auto pSurface = (Surface*)upResizer->GetOutput(0U);
+  auto pSurface = (Surface *)upResizer->GetOutput(0U);
   return shared_ptr<Surface>(pSurface ? pSurface->Clone()
                                       : Surface::Make(outputFormat));
 }
 
-void Init_PySurfaceResizer(py::module& m)
-{
-  py::class_<PySurfaceResizer>(m, "PySurfaceResizer")
+void Init_PySurfaceResizer(py::module &m) {
+  py::class_<PySurfaceResizer>(m, "PySurfaceResizer",
+                               "CUDA-accelerated Surface resizer.")
       .def(py::init<uint32_t, uint32_t, Pixel_Format, uint32_t>(),
            py::arg("width"), py::arg("height"), py::arg("format"),
            py::arg("gpu_id"),

@@ -1,1 +1,0 @@
-https://pypi.ngc.nvidia.com
