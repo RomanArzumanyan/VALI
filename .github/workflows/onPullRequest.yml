@@ -51,12 +51,13 @@ jobs:
         cd docs
         make html
 
-    - name: 'Upload docs'
-      uses: actions/upload-artifact@v3
+    - name: 'Deploy to GitHub Pages'
+      uses: uses: peaceiris/actions-gh-pages@v3
       with:
-        name: sphinx_docs
-        path: docs/_build/html/*
-        retention-days: 1        
+        publish_branch: gh-pages
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: docs/_build/html/
+        force_orphan: true        
 
     - name: 'Upload Artifacts'
       uses: actions/upload-artifact@v3
@@ -107,24 +108,4 @@ jobs:
         retention-days: 1
     
     - name: 'Download all artifacts'
-      uses: actions/download-artifact@v3
-
-  # deploy_docs:
-  #   needs: test_linux
-  #   environment:
-  #     name: github-pages
-  #     url: ${{ steps.deployment.outputs.page_url }}
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #     - name: Setup Pages
-  #       uses: actions/configure-pages@v4
-  #     - name: Upload artifact
-  #       uses: actions/upload-pages-artifact@v3
-  #       with:
-  #         name: 'sphinx_docs'
-  #         path: '.'
-  #     - name: Deploy to GitHub Pages
-  #       id: deployment
-  #       uses: actions/deploy-pages@v4      
+      uses: actions/download-artifact@v3   
