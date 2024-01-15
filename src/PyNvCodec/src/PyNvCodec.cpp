@@ -292,22 +292,30 @@ PYBIND11_MODULE(_PyNvCodec, m) {
   py::register_exception<CuvidParserException>(m, "CuvidParserException");
 
   py::enum_<Pixel_Format>(m, "PixelFormat")
-      .value("Y", Pixel_Format::Y)
-      .value("RGB", Pixel_Format::RGB)
-      .value("NV12", Pixel_Format::NV12)
-      .value("YUV420", Pixel_Format::YUV420)
-      .value("RGB_PLANAR", Pixel_Format::RGB_PLANAR)
-      .value("BGR", Pixel_Format::BGR)
-      .value("YCBCR", Pixel_Format::YCBCR)
-      .value("YUV444", Pixel_Format::YUV444)
-      .value("YUV444_10bit", Pixel_Format::YUV444_10bit)
-      .value("YUV420_10bit", Pixel_Format::YUV420_10bit)
-      .value("UNDEFINED", Pixel_Format::UNDEFINED)
-      .value("RGB_32F", Pixel_Format::RGB_32F)
-      .value("RGB_32F_PLANAR", Pixel_Format::RGB_32F_PLANAR)
-      .value("YUV422", Pixel_Format::YUV422)
-      .value("P10", Pixel_Format::P10)
-      .value("P12", Pixel_Format::P12)
+      .value("Y", Pixel_Format::Y, "Grayscale.")
+      .value("RGB", Pixel_Format::RGB, "Interleaved 8 bit RGB.")
+      .value("NV12", Pixel_Format::NV12,
+             "Semi planar 8 bit: full resolution Y + quarter resolution "
+             "interleaved UV.")
+      .value("YUV420", Pixel_Format::YUV420,
+             "Planar 8 bit: full resolution Y + quarter resolution U + quarter "
+             "resolution V.")
+      .value("RGB_PLANAR", Pixel_Format::RGB_PLANAR, "Planar 8 bit R+G+B.")
+      .value("BGR", Pixel_Format::BGR, "Planar 8 bit R+G+B.")
+      .value("YCBCR", Pixel_Format::YCBCR, "Same to YUV420.")
+      .value("YUV444", Pixel_Format::YUV444, "Planar 8 bit Y+U+V.")
+      .value("YUV444_10bit", Pixel_Format::YUV444_10bit, "10 bit YUV444.")
+      .value("YUV420_10bit", Pixel_Format::YUV420_10bit, "10 bit YUV420")
+      .value("UNDEFINED", Pixel_Format::UNDEFINED,
+             "Undefined pixel format, use to signal unsupported formats")
+      .value("RGB_32F", Pixel_Format::RGB_32F, "32 bit float RGB.")
+      .value("RGB_32F_PLANAR", Pixel_Format::RGB_32F_PLANAR,
+             "32 bit float planar RGB")
+      .value("YUV422", Pixel_Format::YUV422,
+             "8 bit planar: full resolution Y + half resolution U + half "
+             "resolution V.")
+      .value("P10", Pixel_Format::P10, "10 bit NV12.")
+      .value("P12", Pixel_Format::P12, "12 bit NV12.")
       .export_values();
 
   py::enum_<TaskExecInfo>(m, "TaskExecInfo")
@@ -319,15 +327,17 @@ PYBIND11_MODULE(_PyNvCodec, m) {
       .export_values();
 
   py::enum_<ColorSpace>(m, "ColorSpace")
-      .value("BT_601", ColorSpace::BT_601)
-      .value("BT_709", ColorSpace::BT_709)
-      .value("UNSPEC", ColorSpace::UNSPEC)
+      .value("BT_601", ColorSpace::BT_601, "BT.601 color space.")
+      .value("BT_709", ColorSpace::BT_709, "BT.709 color space.")
+      .value("UNSPEC", ColorSpace::UNSPEC, "Unspecified color space.")
       .export_values();
 
   py::enum_<ColorRange>(m, "ColorRange")
-      .value("MPEG", ColorRange::MPEG)
-      .value("JPEG", ColorRange::JPEG)
-      .value("UDEF", ColorRange::UDEF)
+      .value("MPEG", ColorRange::MPEG,
+             "Narrow or MPEG color range. Doesn't use full [0;255] range.")
+      .value("JPEG", ColorRange::JPEG,
+             "Full of JPEG color range. Uses full [0;255] range.")
+      .value("UDEF", ColorRange::UDEF, "Undefined color range.")
       .export_values();
 
   py::enum_<cudaVideoCodec>(m, "CudaVideoCodec")
@@ -343,8 +353,12 @@ PYBIND11_MODULE(_PyNvCodec, m) {
       .export_values();
 
   py::enum_<SeekMode>(m, "SeekMode")
-      .value("EXACT_FRAME", SeekMode::EXACT_FRAME)
-      .value("PREV_KEY_FRAME", SeekMode::PREV_KEY_FRAME)
+      .value("EXACT_FRAME", SeekMode::EXACT_FRAME,
+             "Use this to seek for exac frame. Notice that if it's P or B "
+             "frame, decoder may not be able to get it unless it reconstructs "
+             "all the frames that desired frame use for reference.")
+      .value("PREV_KEY_FRAME", SeekMode::PREV_KEY_FRAME,
+             "Seek for closes key frame in past.")
       .export_values();
 
   py::class_<SeekContext, shared_ptr<SeekContext>>(
@@ -403,12 +417,17 @@ PYBIND11_MODULE(_PyNvCodec, m) {
   py::class_<PacketData, shared_ptr<PacketData>>(
       m, "PacketData", "Incapsulates information about compressed video frame")
       .def(py::init<>())
-      .def_readwrite("key", &PacketData::key)
-      .def_readwrite("pts", &PacketData::pts)
-      .def_readwrite("dts", &PacketData::dts)
-      .def_readwrite("pos", &PacketData::pos)
-      .def_readwrite("bsl", &PacketData::bsl)
-      .def_readwrite("duration", &PacketData::duration)
+      .def_readwrite("key", &PacketData::key,
+                     "1 if frame is I frame, 0 otherwise.")
+      .def_readwrite("pts", &PacketData::pts, "Presentation timestamp.")
+      .def_readwrite("dts", &PacketData::dts, "Decode timestamp.")
+      .def_readwrite("pos", &PacketData::pos,
+                     "Position of compressed packet in input bitstream.")
+      .def_readwrite(
+          "bsl", &PacketData::bsl,
+          "Amount of bytes decoder had to consume to decode corresp. packet. "
+          "Useful to see when seeking for a previous key frame.")
+      .def_readwrite("duration", &PacketData::duration, "Duration of a packet.")
       .def("__repr__", [](shared_ptr<PacketData> self) {
         stringstream ss;
         ss << "key:      " << self->key << "\n";
