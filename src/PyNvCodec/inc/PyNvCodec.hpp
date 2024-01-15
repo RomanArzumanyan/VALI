@@ -348,7 +348,7 @@ public:
                          TaskExecDetails& details);
   bool DecodeSingleSurface(DecodeContext& ctx, TaskExecDetails& details);
 
-  py::array_t<MotionVector> GetMotionVectors();
+  std::vector<MotionVector> GetMotionVectors();
 
   uint32_t Width() const;
   uint32_t Height() const;

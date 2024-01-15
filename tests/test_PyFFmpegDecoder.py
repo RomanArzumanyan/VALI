@@ -112,7 +112,7 @@ class TestDecoderBasic(unittest.TestCase):
                 break
             dec_frames += 1
         self.assertEqual(self.gtInfo.num_frames, dec_frames)
-        self.assertEqual(details, nvc.TaskExecInfo.END_OF_STREAM)        
+        self.assertEqual(details, nvc.TaskExecInfo.END_OF_STREAM)
 
     def test_check_decode_status(self):
         ffDec = nvc.PyFfmpegDecoder(self.gtInfo.uri, {})
@@ -148,7 +148,7 @@ class TestDecoderBasic(unittest.TestCase):
         with open("gt_files.json") as f:
             gtInfo = GroundTruth(**json.load(f)["log_warnings_ffdec"])
             ffDec = nvc.PyFfmpegDecoder(gtInfo.uri, {})
-            
+
             self.assertEqual(ffDec.Width(), gtInfo.width)
             self.assertEqual(ffDec.Height(), gtInfo.height)
             self.assertEqual(str(ffDec.Format()), gtInfo.pix_fmt)
@@ -156,16 +156,46 @@ class TestDecoderBasic(unittest.TestCase):
 
             frame = np.ndarray(shape=(0), dtype=np.uint8)
             dec_frames = 0
-        
+
             while True:
                 newFrame, execInfo = ffDec.DecodeSingleFrame(frame)
                 if not newFrame:
                     break
                 else:
                     dec_frames += 1
-            
+
             self.assertEqual(execInfo, nvc.TaskExecInfo.END_OF_STREAM)
             self.assertEqual(gtInfo.num_frames, dec_frames)
+
+    def test_get_motion_vectors(self):
+        with open("gt_files.json") as f:
+            gtInfo = GroundTruth(**json.load(f)["basic"])
+            ffDec = nvc.PyFfmpegDecoder(gtInfo.uri, {"flags2": "+export_mvs"})
+
+        frame = np.ndarray(shape=(0), dtype=np.uint8)
+
+        success, _ = ffDec.DecodeSingleFrame(frame)
+        self.assertTrue(success)
+
+        # First frame shall be I frame, hence no motion vectors.
+        mv = ffDec.GetMotionVectors()
+        self.assertEqual(len(mv), 0)
+
+        success, _ = ffDec.DecodeSingleFrame(frame)
+        self.assertTrue(success)
+
+        # Second frame shall be either P or B, hence motion vectors
+        # shall be there.
+        mv = ffDec.GetMotionVectors()
+        self.assertGreater(len(mv), 0)
+
+        # Very basic sanity check:
+        # Motion scale means precision, can't be 0. 
+        # Usually it's 2 or 4 (half- or quater- pixel precision).
+        # Source is either -1 (prediction from past) or 1 (from future).
+        first_mv = mv[0]
+        self.assertNotEqual(first_mv.source, 0)
+        self.assertNotEqual(first_mv.motion_scale, 0)
 
 
 if __name__ == "__main__":

@@ -122,33 +122,36 @@ void PyFfmpegDecoder::UploaderLazyInit() {
   }
 }
 
-py::array_t<MotionVector> PyFfmpegDecoder::GetMotionVectors() {
-  size_t size = 0U;
-  auto ptr = (AVMotionVector *)GetSideData(AV_FRAME_DATA_MOTION_VECTORS, size);
-  size /= sizeof(*ptr);
+std::vector<MotionVector> PyFfmpegDecoder::GetMotionVectors() {
+  size_t num_elems = 0U;
+  auto ptr =
+      (AVMotionVector *)GetSideData(AV_FRAME_DATA_MOTION_VECTORS, num_elems);
+  num_elems /= sizeof(*ptr);
 
-  if (ptr && size) {
-    py::array_t<MotionVector> mv(static_cast<int64_t>(size));
-    auto req = mv.request(true);
-    auto mvc = static_cast<MotionVector *>(req.ptr);
+  if (ptr && num_elems) {
+    try {
+      auto mvc = std::vector<MotionVector>(num_elems);
 
-    for (auto i = 0; i < req.shape[0]; i++) {
-      mvc[i].source = ptr[i].source;
-      mvc[i].w = ptr[i].w;
-      mvc[i].h = ptr[i].h;
-      mvc[i].src_x = ptr[i].src_x;
-      mvc[i].src_y = ptr[i].src_y;
-      mvc[i].dst_x = ptr[i].dst_x;
-      mvc[i].dst_y = ptr[i].dst_y;
-      mvc[i].motion_x = ptr[i].motion_x;
-      mvc[i].motion_y = ptr[i].motion_y;
-      mvc[i].motion_scale = ptr[i].motion_scale;
+      for (auto i = 0; i < num_elems; i++) {
+        mvc[i].source = ptr[i].source;
+        mvc[i].w = ptr[i].w;
+        mvc[i].h = ptr[i].h;
+        mvc[i].src_x = ptr[i].src_x;
+        mvc[i].src_y = ptr[i].src_y;
+        mvc[i].dst_x = ptr[i].dst_x;
+        mvc[i].dst_y = ptr[i].dst_y;
+        mvc[i].motion_x = ptr[i].motion_x;
+        mvc[i].motion_y = ptr[i].motion_y;
+        mvc[i].motion_scale = ptr[i].motion_scale;
+      }
+
+      return mvc;
+    } catch (std::exception &e) {
+      return std::vector<MotionVector>();
     }
-
-    return std::move(mv);
   }
 
-  return std::move(py::array_t<MotionVector>(0));
+  return std::vector<MotionVector>();
 }
 
 uint32_t PyFfmpegDecoder::Width() const {
@@ -339,5 +342,14 @@ void Init_PyFFMpegDecoder(py::module &m) {
       .def("Format", &PyFfmpegDecoder::PixelFormat,
            R"pbdoc(
         Return encoded video file pixel format.
+    )pbdoc")
+      .def("GetMotionVectors", &PyFfmpegDecoder::GetMotionVectors,
+           py::call_guard<py::gil_scoped_release>(),
+           R"pbdoc(
+        Return motion vectors of last decoded frame.
+        If there are no movion vectors it will return empty list.
+
+       :return: list of motion vectors
+       :rtype: List[nvc.MotionVector]
     )pbdoc");
 }

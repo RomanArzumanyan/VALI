@@ -279,13 +279,52 @@ void Init_PyNvEncoder(py::module &);
 void Init_PySurface(py::module &);
 
 PYBIND11_MODULE(_PyNvCodec, m) {
+
+  py::class_<MotionVector, std::shared_ptr<MotionVector>>(
+      m, "MotionVector", "This class stores iformation about motion vector.")
+      .def(py::init<>())
+      .def_readwrite(
+          "source", &MotionVector::source,
+          "Where the current macroblock comes from; negative value when it "
+          "comes from the past, positive value when it comes from the future.")
+      .def_readwrite("w", &MotionVector::w, "Macroblock width.")
+      .def_readwrite("h", &MotionVector::h, "Macroblock height")
+      .def_readwrite("src_x", &MotionVector::src_x,
+                     "Absolute source X position. Can be outside frame area.")
+      .def_readwrite("src_y", &MotionVector::src_y,
+                     "Absolute source Y position. Can be outside frame area.")
+      .def_readwrite(
+          "dst_x", &MotionVector::dst_x,
+          "Absolute detination X position. Can be outside frame area.")
+      .def_readwrite(
+          "dst_y", &MotionVector::dst_y,
+          "Absolute detination Y position. Can be outside frame area.")
+      .def_readwrite("motion_x", &MotionVector::motion_x,
+                     "Motion vector X component.")
+      .def_readwrite("motion_y", &MotionVector::motion_y,
+                     "Motion vector Y component.")
+      .def_readwrite(
+          "motion_scale", &MotionVector::motion_scale,
+          "Motion prediction precision. E. g. 4 for quarter-pixel precision.")
+      .def("__repr__", [](shared_ptr<MotionVector> self) {
+        std::stringstream ss;
+        ss << "source:        " << self->source << "\n";
+        ss << "w:             " << self->w << "\n";
+        ss << "h:             " << self->h << "\n";
+        ss << "src_x:         " << self->src_x << "\n";
+        ss << "src_y:         " << self->src_y << "\n";
+        ss << "dst_x:         " << self->dst_x << "\n";
+        ss << "dst_y:         " << self->dst_y << "\n";
+        ss << "motion_x:      " << self->motion_x << "\n";
+        ss << "motion_y:      " << self->motion_y << "\n";
+        ss << "motion_scale:  " << self->motion_scale << "\n";
+        return ss.str();
+      });
+
   PYBIND11_NUMPY_DTYPE_EX(MotionVector, source, "source", w, "w", h, "h", src_x,
                           "src_x", src_y, "src_y", dst_x, "dst_x", dst_y,
                           "dst_y", motion_x, "motion_x", motion_y, "motion_y",
                           motion_scale, "motion_scale");
-
-  py::class_<MotionVector>(m, "MotionVector",
-                           "This class stores iformation about motion vector.");
 
   py::register_exception<HwResetException>(m, "HwResetException");
 
