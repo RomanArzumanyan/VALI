@@ -47,6 +47,7 @@ import numpy as np
 import unittest
 import random
 import json
+import time
 import test_common as tc
 
 
@@ -372,6 +373,19 @@ class TestDecoderBuiltin(unittest.TestCase):
 
             self.assertEqual(execInfo, nvc.TaskExecInfo.END_OF_STREAM)
             self.assertEqual(gtInfo.num_frames, dec_frames)
+
+    def test_rtsp_nonexisting(self):
+        timeout_ms = 1000
+        tp = time.time()
+
+        with self.assertRaises(RuntimeError):
+            nvDec = nvc.PyNvDecoder(
+                input="rtsp://192.168.1.5/nothing",
+                gpu_id=0,
+                opts={"timeout": str(timeout_ms)})
+
+        tp = (time.time() - tp) * 1000
+        self.assertGreaterEqual(tp, timeout_ms)
 
 
 if __name__ == "__main__":
