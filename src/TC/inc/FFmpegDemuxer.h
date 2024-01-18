@@ -30,6 +30,7 @@ extern "C" {
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <memory>
 
 namespace VPF {
 enum SeekMode {
@@ -116,6 +117,7 @@ struct SeekContext {
 } // namespace VPF
 
 class TC_EXPORT FFmpegDemuxer {
+  std::shared_ptr<TimeoutHandler> m_timeout_handler;
   AVIOContext *avioc = nullptr;
   AVBSFContext *bsfc_annexb = nullptr, *bsfc_sei = nullptr;
   AVFormatContext *fmtc = nullptr;
@@ -145,8 +147,6 @@ class TC_EXPORT FFmpegDemuxer {
 
   std::vector<uint8_t> annexbBytes;
   std::vector<uint8_t> seiBytes;
-
-  explicit FFmpegDemuxer(AVFormatContext *fmtcx);
 
   AVFormatContext *
   CreateFormatContext(const char *szFilePath,

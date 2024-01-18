@@ -25,30 +25,6 @@ extern "C" {
 #include <memory>
 #include <sstream>
 
-static std::string AvErrorToString(int av_error_code) {
-  const auto buf_size = 1024U;
-  char *err_string = (char *)calloc(buf_size, sizeof(*err_string));
-  if (!err_string) {
-    return std::string();
-  }
-
-  if (0 != av_strerror(av_error_code, err_string, buf_size - 1)) {
-    free(err_string);
-    std::stringstream ss;
-    ss << "Unknown error with code " << av_error_code;
-    return ss.str();
-  }
-
-  std::string str(err_string);
-  free(err_string);
-  return str;
-}
-
-FFmpegDemuxer::FFmpegDemuxer(
-    const char *szFilePath,
-    const std::map<std::string, std::string> &ffmpeg_options)
-    : FFmpegDemuxer(CreateFormatContext(szFilePath, ffmpeg_options)) {}
-
 uint32_t FFmpegDemuxer::GetWidth() const { return width; }
 
 uint32_t FFmpegDemuxer::GetHeight() const { return height; }
@@ -128,6 +104,7 @@ bool FFmpegDemuxer::Demux(uint8_t *&pVideo, size_t &rVideoBytes,
   bool isDone = false, gotVideo = false;
 
   while (!isDone) {
+    m_timeout_handler->Reset();
     ret = av_read_frame(fmtc, &pktSrc);
     gotVideo = (pktSrc.stream_index == videoStream);
     isDone = (ret < 0) || gotVideo;
@@ -275,11 +252,13 @@ bool FFmpegDemuxer::Seek(SeekContext &seekCtx, uint8_t *&pVideo,
     if (seek_ctx.IsByNumber()) {
       timestamp = TsFromFrameNumber(seek_ctx.seek_frame);
       seek_backward = last_packet_data.dts > timestamp;
+      m_timeout_handler->Reset();
       ret = av_seek_frame(fmtc, GetVideoStreamIndex(), timestamp,
                           seek_backward ? AVSEEK_FLAG_BACKWARD | flags : flags);
     } else if (seek_ctx.IsByTimestamp()) {
       timestamp = TsFromTime(seek_ctx.seek_tssec);
       seek_backward = last_packet_data.dts > timestamp;
+      m_timeout_handler->Reset();
       ret = av_seek_frame(fmtc, GetVideoStreamIndex(), timestamp,
                           seek_backward ? AVSEEK_FLAG_BACKWARD | flags : flags);
     } else {
@@ -398,7 +377,7 @@ FFmpegDemuxer::~FFmpegDemuxer() {
     av_bsf_free(&bsfc_annexb);
   }
 
-  if (bsfc_annexb) {
+  if (bsfc_sei) {
     av_bsf_free(&bsfc_sei);
   }
 
@@ -416,20 +395,34 @@ AVFormatContext *FFmpegDemuxer::CreateFormatContext(
   avformat_network_init();
 
   // Set up format context options;
-  AVDictionary *options = NULL;
-  for (auto &pair : ffmpeg_options) {
-    auto err =
-        av_dict_set(&options, pair.first.c_str(), pair.second.c_str(), 0);
-    if (err < 0) {
-      av_dict_free(&options);
-      std::stringstream ss;
-      ss << "Can't set up dictionary option: " << pair.first << " "
-         << pair.second << ": " << AvErrorToString(err) << "\n";
-      throw std::runtime_error(ss.str());
-    }
+  AVDictionary *options = GetAvOptions(ffmpeg_options);
+
+  // Allocate format context first to set timeout before opening the input.
+  AVFormatContext *ctx = avformat_alloc_context();
+  if (!ctx) {
+    throw std::runtime_error("Failed to allocate format context");
   }
 
-  AVFormatContext *ctx = nullptr;
+  /* Set the timeout.
+   *
+   * Unfortunately, 'timeout' and 'stimeout' AVDictionary options do work for
+   * some formats and don't for others.
+   *
+   * So explicit timeout handler is used instead. In worst case scenario, 2
+   * handlers with same value will be registered within format context which is
+   * of no harm. */
+  m_timeout_handler = std::make_shared<TimeoutHandler>();
+  auto it = ffmpeg_options.find("timeout");
+  if (it != ffmpeg_options.end()) {
+    uint32_t timeout_ms = std::stoi(it->second);
+    m_timeout_handler.reset(new TimeoutHandler(timeout_ms));
+  }
+
+  ctx->interrupt_callback.opaque = (void *)m_timeout_handler.get();
+  ctx->interrupt_callback.callback = &TimeoutHandler::Check;
+
+  // Have to reset the timer before any IO operation.
+  m_timeout_handler->Reset();
   auto err = avformat_open_input(&ctx, szFilePath, nullptr, &options);
   if (err < 0 || nullptr == ctx) {
     av_dict_free(&options);
@@ -441,7 +434,12 @@ AVFormatContext *FFmpegDemuxer::CreateFormatContext(
   return ctx;
 }
 
-FFmpegDemuxer::FFmpegDemuxer(AVFormatContext *fmtcx) : fmtc(fmtcx) {
+FFmpegDemuxer::FFmpegDemuxer(
+    const char *szFilePath,
+    const std::map<std::string, std::string> &ffmpeg_options) {
+
+  fmtc = CreateFormatContext(szFilePath, ffmpeg_options);
+
   pktSrc = {};
   pktDst = {};
 
@@ -453,6 +451,7 @@ FFmpegDemuxer::FFmpegDemuxer(AVFormatContext *fmtcx) : fmtc(fmtcx) {
     throw std::invalid_argument(ss.str());
   }
 
+  m_timeout_handler->Reset();
   auto ret = avformat_find_stream_info(fmtc, nullptr);
   if (0 != ret) {
     std::stringstream ss;
@@ -460,6 +459,7 @@ FFmpegDemuxer::FFmpegDemuxer(AVFormatContext *fmtcx) : fmtc(fmtcx) {
     throw std::runtime_error(ss.str());
   }
 
+  m_timeout_handler->Reset();
   videoStream =
       av_find_best_stream(fmtc, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
   if (videoStream < 0) {

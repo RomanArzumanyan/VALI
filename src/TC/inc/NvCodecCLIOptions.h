@@ -74,6 +74,8 @@ public:
 
   AVDictionary* GetOptions();
 
+  void GetOptions(std::map<std::string, std::string> &options) const;
+
   uint32_t GetNumSideDataEntries();
 
 private:

@@ -1408,6 +1408,11 @@ NvDecoderClInterface::~NvDecoderClInterface()
   pImpl = nullptr;
 }
 
+void NvDecoderClInterface::GetOptions(
+    std::map<std::string, std::string> &options) const {
+  options = pImpl->options;
+}
+
 AVDictionary* NvDecoderClInterface::GetOptions()
 {
   auto AvErrorToString = [](int av_error_code) {

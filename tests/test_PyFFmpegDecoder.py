@@ -18,6 +18,7 @@
 # We need to add path to CUDA DLLs explicitly.
 import sys
 import os
+import time
 from os.path import join, dirname
 
 
@@ -190,12 +191,24 @@ class TestDecoderBasic(unittest.TestCase):
         self.assertGreater(len(mv), 0)
 
         # Very basic sanity check:
-        # Motion scale means precision, can't be 0. 
+        # Motion scale means precision, can't be 0.
         # Usually it's 2 or 4 (half- or quater- pixel precision).
         # Source is either -1 (prediction from past) or 1 (from future).
         first_mv = mv[0]
         self.assertNotEqual(first_mv.source, 0)
         self.assertNotEqual(first_mv.motion_scale, 0)
+
+    def test_rtsp_nonexisting(self):
+        timeout_ms = 1000
+        tp = time.time()
+
+        with self.assertRaises(RuntimeError):
+            ffDec = nvc.PyFfmpegDecoder(
+                input="rtsp://192.168.1.5/nothing",
+                opts={"timeout": str(timeout_ms)})
+
+        tp = (time.time() - tp) * 1000
+        self.assertGreaterEqual(tp, timeout_ms)
 
 
 if __name__ == "__main__":

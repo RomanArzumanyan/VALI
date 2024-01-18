@@ -33,25 +33,6 @@ extern "C" {
 using namespace VPF;
 using namespace std;
 
-static string AvErrorToString(int av_error_code) {
-  const auto buf_size = 1024U;
-  char *err_string = (char *)calloc(buf_size, sizeof(*err_string));
-  if (!err_string) {
-    return string();
-  }
-
-  if (0 != av_strerror(av_error_code, err_string, buf_size - 1)) {
-    free(err_string);
-    stringstream ss;
-    ss << "Unknown error with code " << av_error_code;
-    return ss.str();
-  }
-
-  string str(err_string);
-  free(err_string);
-  return str;
-}
-
 namespace VPF {
 
 enum DECODE_STATUS { DEC_SUCCESS, DEC_ERROR, DEC_MORE, DEC_EOS };
@@ -64,15 +45,42 @@ struct FfmpegDecodeFrame_Impl {
   std::shared_ptr<AVPacket> m_pkt;
   std::shared_ptr<Buffer> m_dec_frame;
   PacketData m_packetData;
-  map<AVFrameSideDataType, Buffer *> m_side_data;
+  std::map<AVFrameSideDataType, Buffer *> m_side_data;
+  std::shared_ptr<TimeoutHandler> m_timeout_handler;
 
   int video_stream_idx = -1;
   bool end_decode = false;
   bool eof = false;
 
-  FfmpegDecodeFrame_Impl(const char *URL, AVDictionary *pOptions) {
-    AVFormatContext *fmt_ctx_ = nullptr;
-    auto res = avformat_open_input(&fmt_ctx_, URL, NULL, &pOptions);
+  FfmpegDecodeFrame_Impl(
+      const char *URL,
+      const std::map<std::string, std::string> &ffmpeg_options) {
+    // Allocate format context first to set timeout before opening the input.
+    AVFormatContext *fmt_ctx_ = avformat_alloc_context();
+    if (!fmt_ctx_) {
+      throw std::runtime_error("Failed to allocate format context");
+    }
+
+    // Set up format context options;
+    AVDictionary *options = GetAvOptions(ffmpeg_options);
+
+    /* Set the timeout.
+     *
+     * Unfortunately, 'timeout' and 'stimeout' AVDictionary options do work for
+     * some formats and don't for others.
+     *
+     * So explicit timeout handler is used instead. In worst case scenario, 2
+     * handlers with same value will be registered within format context which
+     * is of no harm. */
+    auto it = ffmpeg_options.find("timeout");
+    if (it != ffmpeg_options.end()) {
+      m_timeout_handler.reset(new TimeoutHandler(std::stoi(it->second)));
+    } else {
+      m_timeout_handler.reset(new TimeoutHandler());
+    }
+
+    m_timeout_handler->Reset();
+    auto res = avformat_open_input(&fmt_ctx_, URL, NULL, &options);
     if (res < 0) {
       {
         // Don't remove, it's here to make linker clear of libswresample
@@ -88,10 +96,12 @@ struct FfmpegDecodeFrame_Impl {
       ss << "Error description: " << AvErrorToString(res) << endl;
       throw runtime_error(ss.str());
     }
+
     m_fmt_ctx = std::shared_ptr<AVFormatContext>(fmt_ctx_, [](void *p) {
       avformat_close_input((AVFormatContext **)&p);
     });
 
+    m_timeout_handler->Reset();
     res = avformat_find_stream_info(m_fmt_ctx.get(), NULL);
     if (res < 0) {
       stringstream ss;
@@ -100,6 +110,7 @@ struct FfmpegDecodeFrame_Impl {
       throw runtime_error(ss.str());
     }
 
+    m_timeout_handler->Reset();
     video_stream_idx = av_find_best_stream(m_fmt_ctx.get(), AVMEDIA_TYPE_VIDEO,
                                            -1, -1, NULL, 0);
     if (video_stream_idx < 0) {
@@ -141,7 +152,7 @@ struct FfmpegDecodeFrame_Impl {
       throw runtime_error(ss.str());
     }
 
-    res = avcodec_open2(m_avc_ctx.get(), p_codec, &pOptions);
+    res = avcodec_open2(m_avc_ctx.get(), p_codec, &options);
     if (res < 0) {
       stringstream ss;
       ss << "Failed to open codec "
@@ -289,6 +300,7 @@ struct FfmpegDecodeFrame_Impl {
           break;
         }
 
+        m_timeout_handler->Reset();
         auto ret = av_read_frame(m_fmt_ctx.get(), m_pkt.get());
 
         if (AVERROR_EOF == ret) {
@@ -424,6 +436,7 @@ TaskExecStatus FfmpegDecodeFrame::Run() {
 void FfmpegDecodeFrame::GetParams(MuxingParams &params) {
   memset((void *)&params, 0, sizeof(params));
   auto fmtc = pImpl->m_fmt_ctx.get();
+  pImpl->m_timeout_handler->Reset();
   auto videoStream =
       av_find_best_stream(fmtc, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
   if (videoStream < 0) {
@@ -522,7 +535,9 @@ FfmpegDecodeFrame::FfmpegDecodeFrame(const char *URL,
                                      NvDecoderClInterface &cli_iface)
     : Task("FfmpegDecodeFrame", FfmpegDecodeFrame::num_inputs,
            FfmpegDecodeFrame::num_outputs) {
-  pImpl = new FfmpegDecodeFrame_Impl(URL, cli_iface.GetOptions());
+  std::map<std::string, std::string> ffmpeg_options;
+  cli_iface.GetOptions(ffmpeg_options);
+  pImpl = new FfmpegDecodeFrame_Impl(URL, ffmpeg_options);
 }
 
 FfmpegDecodeFrame::~FfmpegDecodeFrame() { delete pImpl; }
