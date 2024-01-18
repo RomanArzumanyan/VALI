@@ -70,9 +70,9 @@ static std::string AvErrorToString(int av_error_code) {
   return str;
 }
 
-static void
-GetAvOptions(AVDictionary *options,
-             const std::map<std::string, std::string> &ffmpeg_options) {
+static AVDictionary *
+GetAvOptions(const std::map<std::string, std::string> &ffmpeg_options) {
+  AVDictionary *options = nullptr;
   for (auto &pair : ffmpeg_options) {
     auto err =
         av_dict_set(&options, pair.first.c_str(), pair.second.c_str(), 0);
@@ -84,4 +84,6 @@ GetAvOptions(AVDictionary *options,
       throw std::runtime_error(ss.str());
     }
   }
+
+  return options;
 }

@@ -395,8 +395,7 @@ AVFormatContext *FFmpegDemuxer::CreateFormatContext(
   avformat_network_init();
 
   // Set up format context options;
-  AVDictionary *options = NULL;
-  GetAvOptions(options, ffmpeg_options);
+  AVDictionary *options = GetAvOptions(ffmpeg_options);
 
   // Allocate format context first to set timeout before opening the input.
   AVFormatContext *ctx = avformat_alloc_context();

@@ -62,8 +62,7 @@ struct FfmpegDecodeFrame_Impl {
     }
 
     // Set up format context options;
-    AVDictionary *options = NULL;
-    GetAvOptions(options, ffmpeg_options);
+    AVDictionary *options = GetAvOptions(ffmpeg_options);
 
     /* Set the timeout.
      *
