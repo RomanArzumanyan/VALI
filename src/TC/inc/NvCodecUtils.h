@@ -74,8 +74,14 @@ static AVDictionary *
 GetAvOptions(const std::map<std::string, std::string> &ffmpeg_options) {
   AVDictionary *options = nullptr;
   for (auto &pair : ffmpeg_options) {
+    // Handle 'timeout' option separately
+    if (pair.first == "timeout") {
+      continue;
+    }
+
     auto err =
         av_dict_set(&options, pair.first.c_str(), pair.second.c_str(), 0);
+
     if (err < 0) {
       av_dict_free(&options);
       std::stringstream ss;
