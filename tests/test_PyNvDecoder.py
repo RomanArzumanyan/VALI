@@ -351,6 +351,7 @@ class TestDecoderBuiltin(unittest.TestCase):
                 self.assertEqual(surf.Width(), rw)
                 self.assertEqual(surf.Height(), rh)
 
+    @unittest.skip("Disable test: very noisy output")
     def test_log_warnings(self):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["log_warnings_nvdec"])

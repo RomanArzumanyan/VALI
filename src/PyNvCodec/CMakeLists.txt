@@ -61,6 +61,7 @@ pybind11_add_module(_PyNvCodec MODULE
 set_property(TARGET _PyNvCodec PROPERTY CXX_STANDARD 17)
 target_include_directories(_PyNvCodec PRIVATE inc)
 
+set(PROJECT_ROOT_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/../..")
 if (WIN32)
 	include("../../common.cmake")
 	if (NOT DEFINED FFMPEG_ROOT)
@@ -68,7 +69,7 @@ if (WIN32)
 	endif(FFMPEG_ROOT)
 	find_FFMpeg(${FFMPEG_ROOT})
 else ()
-	list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../../cmake-modules")
+	list(APPEND CMAKE_MODULE_PATH "${PROJECT_ROOT_DIRECTORY}/cmake-modules")
 	find_package(FFmpeg REQUIRED)
 endif (WIN32)
 
@@ -89,6 +90,15 @@ include(GNUInstallDirs)
 
 set_target_properties(_PyNvCodec PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 set_target_properties(_PyNvCodec PROPERTIES INSTALL_RPATH "$ORIGIN")
+
+option(RUN_CLANG_TIDY OFF)
+if (${RUN_CLANG_TIDY})
+	set_target_properties(
+		_PyNvCodec 
+		PROPERTIES 
+		CXX_CLANG_TIDY 
+		"clang-tidy;--config-file=${PROJECT_ROOT_DIRECTORY}/.clang-tidy")
+endif (${RUN_CLANG_TIDY})
 
 if (WIN32)
 	message (STATUS "FFMPEG_DLLS: ${FFMPEG_DLLS}")

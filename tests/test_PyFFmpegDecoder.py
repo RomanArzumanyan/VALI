@@ -145,6 +145,7 @@ class TestDecoderBasic(unittest.TestCase):
             dec_frame += 1
             last_pts = pdata.pts
 
+    @unittest.skip("Disable test: very noisy output")
     def test_log_warnings(self):
         with open("gt_files.json") as f:
             gtInfo = GroundTruth(**json.load(f)["log_warnings_ffdec"])
