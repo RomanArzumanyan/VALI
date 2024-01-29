@@ -1,0 +1,55 @@
+name: Clang-Tidy
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: | 
+        sudo apt-get update
+        sudo apt-get install -y \
+          libavfilter-dev \
+          libavformat-dev \
+          libavcodec-dev \
+          libswresample-dev \
+          libavutil-dev
+
+    - uses: Jimver/cuda-toolkit@v0.2.8
+      id: cuda-toolkit
+      with:
+        cuda: '11.7.0'
+        sub-packages: '["nvcc", "nvtx", "cudart"]'
+        method: "network"
+
+    - name: Install CUVID
+      run: | 
+        # normally you would install them via `apt install cuda`
+        sudo apt-get install \
+          libnpp-dev-11-7 \
+          libnvidia-decode-520 \
+          -y
+
+    - name: Build and Install Package
+      continue-on-error: true
+      run: | 
+          git submodule update --init --recursive
+          export SKBUILD_CONFIGURE_OPTIONS="-DRUN_CLANG_TIDY=ON"
+          python -mpip install . --verbose
+          python -mpip install src/PytorchNvCodec --verbose          
+
+    - name: Check Import
+      run: |
+        python -c "import PyNvCodec"
