@@ -199,6 +199,7 @@ class TestDecoderBasic(unittest.TestCase):
         self.assertNotEqual(first_mv.source, 0)
         self.assertNotEqual(first_mv.motion_scale, 0)
 
+    @unittest.skip("Need to setup RTSP server. Behaves differently on win / linux")
     def test_rtsp_nonexisting(self):
         timeout_ms = 1000
         tp = time.time()

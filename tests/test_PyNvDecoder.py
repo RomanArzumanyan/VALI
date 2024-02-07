@@ -375,6 +375,7 @@ class TestDecoderBuiltin(unittest.TestCase):
             self.assertEqual(execInfo, nvc.TaskExecInfo.END_OF_STREAM)
             self.assertEqual(gtInfo.num_frames, dec_frames)
 
+    @unittest.skip("Need to setup RTSP server. Behaves differently on win / linux")
     def test_rtsp_nonexisting(self):
         timeout_ms = 1000
         tp = time.time()
