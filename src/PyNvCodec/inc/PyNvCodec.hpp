@@ -57,13 +57,13 @@ struct MotionVector {
 class HwResetException : public std::runtime_error {
 public:
   HwResetException(std::string &str) : std::runtime_error(str) {}
-  HwResetException() : std::runtime_error("HW reset") {}
+  HwResetException() : std::runtime_error("HW reset") {};
 };
 
 class CuvidParserException : public std::runtime_error {
 public:
   CuvidParserException(std::string &str) : std::runtime_error(str) {}
-  CuvidParserException() : std::runtime_error("HW reset") {}
+  CuvidParserException() : std::runtime_error("HW reset") {};
 };
 
 class CudaResMgr
@@ -72,6 +72,11 @@ class CudaResMgr
     CudaResMgr();
 
   public:
+    CudaResMgr(const CudaResMgr& other) = delete;
+    CudaResMgr(const CudaResMgr&& other) = delete;
+    CudaResMgr& operator=(CudaResMgr& other) = delete;
+    CudaResMgr& operator=(CudaResMgr&& other) = delete;
+
     CUcontext GetCtx(size_t idx);
     CUstream GetStream(size_t idx);
     ~CudaResMgr();
@@ -87,9 +92,9 @@ class CudaResMgr
 };
 
 class PyFrameUploader {
-  std::unique_ptr<CudaUploadFrame> uploader;
-  uint32_t surfaceWidth, surfaceHeight;
-  Pixel_Format surfaceFormat;
+  std::unique_ptr<CudaUploadFrame> uploader = nullptr;
+  uint32_t surfaceWidth = 0U, surfaceHeight = 0U;
+  Pixel_Format surfaceFormat = UNDEFINED;
 
 public:
   PyFrameUploader(uint32_t width, uint32_t height, Pixel_Format format,
@@ -141,9 +146,9 @@ public:
 };
 
 class PySurfaceDownloader {
-  std::unique_ptr<CudaDownloadSurface> upDownloader;
-  uint32_t surfaceWidth, surfaceHeight;
-  Pixel_Format surfaceFormat;
+  std::unique_ptr<CudaDownloadSurface> upDownloader = nullptr;
+  uint32_t surfaceWidth = 0U, surfaceHeight = 0U;
+  Pixel_Format surfaceFormat = UNDEFINED;
 
 public:
   PySurfaceDownloader(uint32_t width, uint32_t height, Pixel_Format format,
@@ -185,9 +190,9 @@ public:
 };
 
 class PySurfaceConverter {
-  std::unique_ptr<ConvertSurface> upConverter;
-  std::unique_ptr<Buffer> upCtxBuffer;
-  Pixel_Format outputFormat;
+  std::unique_ptr<ConvertSurface> upConverter = nullptr;
+  std::unique_ptr<Buffer> upCtxBuffer = nullptr;
+  Pixel_Format outputFormat = UNDEFINED;
 
 public:
   PySurfaceConverter(uint32_t width, uint32_t height, Pixel_Format inFormat,
@@ -208,8 +213,8 @@ public:
 };
 
 class PySurfaceResizer {
-  std::unique_ptr<ResizeSurface> upResizer;
-  Pixel_Format outputFormat;
+  std::unique_ptr<ResizeSurface> upResizer = nullptr;
+  Pixel_Format outputFormat = UNDEFINED;
 
 public:
   PySurfaceResizer(uint32_t width, uint32_t height, Pixel_Format format,

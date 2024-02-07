@@ -381,7 +381,7 @@ class TestDecoderBuiltin(unittest.TestCase):
 
         with self.assertRaises(RuntimeError):
             nvDec = nvc.PyNvDecoder(
-                input="rtsp://192.168.1.5/nothing",
+                input="rtsp://127.0.0.1/nothing",
                 gpu_id=0,
                 opts={"timeout": str(timeout_ms)})
 
