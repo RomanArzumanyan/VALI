@@ -205,7 +205,7 @@ class TestDecoderBasic(unittest.TestCase):
 
         with self.assertRaises(RuntimeError):
             ffDec = nvc.PyFfmpegDecoder(
-                input="rtsp://192.168.1.5/nothing",
+                input="rtsp://127.0.0.1/nothing",
                 opts={"timeout": str(timeout_ms)})
 
         tp = (time.time() - tp) * 1000

@@ -15,12 +15,18 @@
 
 template <typename T> class PyContextManager {
 public:
+  PyContextManager() = delete;
+  PyContextManager(const PyContextManager& other) = delete;
+  PyContextManager(const PyContextManager&& other) = delete;
+  PyContextManager& operator=(PyContextManager& other) = delete;
+  PyContextManager& operator=(PyContextManager&& other) = delete;
+
   std::shared_ptr<T> Get() { return mObject; }
 
   PyContextManager(std::shared_ptr<T> givenObject) : mObject(givenObject) {}
 
-  virtual ~PyContextManager() {}
+  virtual ~PyContextManager() = default;
 
 private:
-  std::shared_ptr<T> mObject;
+  std::shared_ptr<T> mObject = nullptr;
 };
