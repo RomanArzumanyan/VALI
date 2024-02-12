@@ -15,6 +15,7 @@
  */
 
 #include "PyNvCodec.hpp"
+#include <memory>
 
 using namespace std;
 using namespace VPF;
@@ -45,10 +46,10 @@ PyBufferUploader::PyBufferUploader(uint32_t elemSize, uint32_t numElems,
 
 shared_ptr<CudaBuffer>
 PyBufferUploader::UploadSingleBuffer(py::array_t<uint8_t> &frame) {
-  auto pRawBuf = Buffer::Make(frame.size(), frame.mutable_data());
-  uploader->SetInput(pRawBuf, 0U);
+  auto pBuf =
+      std::unique_ptr<Buffer>(Buffer::Make(frame.size(), frame.mutable_data()));
+  uploader->SetInput(pBuf.get(), 0U);
   auto res = uploader->Execute();
-  delete pRawBuf;
 
   if (TASK_EXEC_FAIL == res)
     throw runtime_error("Error uploading frame to GPU");

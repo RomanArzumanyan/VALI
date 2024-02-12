@@ -179,7 +179,7 @@ size_t Buffer::GetRawMemSize() const { return mem_size; }
 
 static void ThrowOnCudaError(CUresult res, int lineNum = -1) {
   if (CUDA_SUCCESS != res) {
-    stringstream ss;
+    stringstream ss("");
 
     if (lineNum > 0) {
       ss << __FILE__ << ":";

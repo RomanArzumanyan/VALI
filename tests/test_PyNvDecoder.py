@@ -375,13 +375,14 @@ class TestDecoderBuiltin(unittest.TestCase):
             self.assertEqual(execInfo, nvc.TaskExecInfo.END_OF_STREAM)
             self.assertEqual(gtInfo.num_frames, dec_frames)
 
+    @unittest.skip("Need to setup RTSP server. Behaves differently on win / linux")
     def test_rtsp_nonexisting(self):
         timeout_ms = 1000
         tp = time.time()
 
         with self.assertRaises(RuntimeError):
             nvDec = nvc.PyNvDecoder(
-                input="rtsp://192.168.1.5/nothing",
+                input="rtsp://127.0.0.1/nothing",
                 gpu_id=0,
                 opts={"timeout": str(timeout_ms)})
 

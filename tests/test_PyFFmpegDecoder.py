@@ -199,13 +199,14 @@ class TestDecoderBasic(unittest.TestCase):
         self.assertNotEqual(first_mv.source, 0)
         self.assertNotEqual(first_mv.motion_scale, 0)
 
+    @unittest.skip("Need to setup RTSP server. Behaves differently on win / linux")
     def test_rtsp_nonexisting(self):
         timeout_ms = 1000
         tp = time.time()
 
         with self.assertRaises(RuntimeError):
             ffDec = nvc.PyFfmpegDecoder(
-                input="rtsp://192.168.1.5/nothing",
+                input="rtsp://127.0.0.1/nothing",
                 opts={"timeout": str(timeout_ms)})
 
         tp = (time.time() - tp) * 1000

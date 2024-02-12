@@ -26,11 +26,8 @@ constexpr auto TASK_EXEC_SUCCESS = TaskExecStatus::TASK_EXEC_SUCCESS;
 constexpr auto TASK_EXEC_FAIL = TaskExecStatus::TASK_EXEC_FAIL;
 
 PyFrameUploader::PyFrameUploader(uint32_t width, uint32_t height,
-                                 Pixel_Format format, uint32_t gpu_ID) {
-  surfaceWidth = width;
-  surfaceHeight = height;
-  surfaceFormat = format;
-
+                                 Pixel_Format format, uint32_t gpu_ID)
+    : surfaceWidth(width), surfaceHeight(height), surfaceFormat(format) {
   uploader.reset(CudaUploadFrame::Make(CudaResMgr::Instance().GetStream(gpu_ID),
                                        CudaResMgr::Instance().GetCtx(gpu_ID),
                                        surfaceWidth, surfaceHeight,
@@ -39,11 +36,8 @@ PyFrameUploader::PyFrameUploader(uint32_t width, uint32_t height,
 
 PyFrameUploader::PyFrameUploader(uint32_t width, uint32_t height,
                                  Pixel_Format format, CUcontext ctx,
-                                 CUstream str) {
-  surfaceWidth = width;
-  surfaceHeight = height;
-  surfaceFormat = format;
-
+                                 CUstream str)
+    : surfaceWidth(width), surfaceHeight(height), surfaceFormat(format) {
   uploader.reset(CudaUploadFrame::Make(str, ctx, surfaceWidth, surfaceHeight,
                                        surfaceFormat));
 }
