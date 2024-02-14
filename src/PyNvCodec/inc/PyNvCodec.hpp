@@ -207,7 +207,13 @@ public:
 
   std::shared_ptr<Surface>
   Execute(std::shared_ptr<Surface> surface,
-          std::shared_ptr<ColorspaceConversionContext> context);
+          std::shared_ptr<ColorspaceConversionContext> context,
+          TaskExecDetails& details);
+
+  bool
+  Execute(std::shared_ptr<Surface> src, std::shared_ptr<Surface> dst,
+          std::shared_ptr<ColorspaceConversionContext> context,
+          TaskExecDetails& details);
 
   Pixel_Format GetFormat();
 };

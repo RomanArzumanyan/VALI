@@ -44,9 +44,12 @@ using namespace VPF;
 // VPF stands for Video Processing Framework;
 namespace VPF
 {
-class TC_CORE_EXPORT NvtxMark
-{
+class TC_CORE_EXPORT NvtxMark {
 public:
+  NvtxMark() = delete;
+  NvtxMark(const NvtxMark& other) = delete;
+  NvtxMark(const NvtxMark&& other) = delete;
+  NvtxMark& operator=(const NvtxMark& other) = delete;
   NvtxMark(const char* fname) { NVTX_PUSH(fname) }
   ~NvtxMark() { NVTX_POP }
 };
@@ -279,8 +282,8 @@ public:
   TaskExecStatus Run() final;
 
 private:
-  static const uint32_t numInputs = 2U;
-  static const uint32_t numOutputs = 1U;
+  static const uint32_t numInputs = 3U;
+  static const uint32_t numOutputs = 2U;
 
   struct NppConvertSurface_Impl* pImpl;
 

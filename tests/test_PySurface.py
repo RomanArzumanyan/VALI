@@ -142,10 +142,8 @@ class TestSurfacePycuda(unittest.TestCase):
                 break
             src_plane = surf_src.PlanePtr()
 
-            surface_tensor = torch.zeros(
-                src_plane.Height(),
-                src_plane.Width(),
-                1,
+            surface_tensor = torch.empty(
+                size = (src_plane.Height(), src_plane.Width()),
                 dtype=torch.uint8,
                 device=torch.device(f"cuda:{gpu_id}"),
             )

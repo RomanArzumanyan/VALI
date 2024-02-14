@@ -341,7 +341,6 @@ PYBIND11_MODULE(_PyNvCodec, m) {
              "resolution V.")
       .value("RGB_PLANAR", Pixel_Format::RGB_PLANAR, "Planar 8 bit R+G+B.")
       .value("BGR", Pixel_Format::BGR, "Planar 8 bit R+G+B.")
-      .value("YCBCR", Pixel_Format::YCBCR, "Same to YUV420.")
       .value("YUV444", Pixel_Format::YUV444, "Planar 8 bit Y+U+V.")
       .value("YUV444_10bit", Pixel_Format::YUV444_10bit, "10 bit YUV444.")
       .value("YUV420_10bit", Pixel_Format::YUV420_10bit, "10 bit YUV420")
@@ -361,8 +360,10 @@ PYBIND11_MODULE(_PyNvCodec, m) {
       .value("FAIL", TaskExecInfo::FAIL)
       .value("SUCCESS", TaskExecInfo::SUCCESS)
       .value("END_OF_STREAM", TaskExecInfo::END_OF_STREAM)
+      .value("INVALID_INPUT", TaskExecInfo::INVALID_INPUT)
       .value("MORE_DATA_NEEDED", TaskExecInfo::MORE_DATA_NEEDED)
       .value("BIT_DEPTH_NOT_SUPPORTED", TaskExecInfo::BIT_DEPTH_NOT_SUPPORTED)
+      .value("UNSUPPORTED_FMT_CONV_PARAMS", TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS)
       .export_values();
 
   py::enum_<ColorSpace>(m, "ColorSpace")

@@ -54,5 +54,14 @@
         "pix_fmt": "PixelFormat.NV12",
         "framerate": 29.75,
         "num_frames": 509
-    }    
+    },
+    "basic_rgb": {
+        "uri": "data/test.rgb",
+        "width": 848,
+        "height": 464,
+        "pix_fmt": "PixelFormat.RGB",
+        "num_frames": 16,
+        "color_space": "ColorSpace.BT_709",
+        "color_range": "ColorRange.MPEG"
+    }
 }

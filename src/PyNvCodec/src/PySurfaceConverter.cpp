@@ -16,9 +16,7 @@
 
 #include "PyNvCodec.hpp"
 
-using namespace std;
 using namespace VPF;
-using namespace chrono;
 
 namespace py = pybind11;
 
@@ -45,11 +43,12 @@ PySurfaceConverter::PySurfaceConverter(uint32_t width, uint32_t height,
   upCtxBuffer.reset(Buffer::MakeOwnMem(sizeof(ColorspaceConversionContext)));
 }
 
-shared_ptr<Surface>
-PySurfaceConverter::Execute(shared_ptr<Surface> surface,
-                            shared_ptr<ColorspaceConversionContext> context) {
+std::shared_ptr<Surface> PySurfaceConverter::Execute(
+    std::shared_ptr<Surface> surface,
+    std::shared_ptr<ColorspaceConversionContext> context,
+    TaskExecDetails& details) {
   if (!surface) {
-    return shared_ptr<Surface>(Surface::Make(outputFormat));
+    return std::shared_ptr<Surface>(Surface::Make(outputFormat));
   }
 
   upConverter->ClearInputs();
@@ -58,22 +57,52 @@ PySurfaceConverter::Execute(shared_ptr<Surface> surface,
 
   if (context) {
     upCtxBuffer->CopyFrom(sizeof(ColorspaceConversionContext), context.get());
-    upConverter->SetInput((Token *)upCtxBuffer.get(), 1U);
+    upConverter->SetInput((Token*)upCtxBuffer.get(), 2U);
   }
 
   if (TASK_EXEC_SUCCESS != upConverter->Execute()) {
-    return shared_ptr<Surface>(Surface::Make(outputFormat));
+    return std::shared_ptr<Surface>(Surface::Make(outputFormat));
   }
 
-  auto pSurface = (Surface *)upConverter->GetOutput(0U);
-  return shared_ptr<Surface>(pSurface ? pSurface->Clone()
-                                      : Surface::Make(outputFormat));
+  auto pDetails = (Buffer*)upConverter->GetOutput(1U);
+  if (pDetails) {
+    details = *(pDetails->GetDataAs<TaskExecDetails>());
+  }
+
+  auto pSurface = (Surface*)upConverter->GetOutput(0U);
+  return std::shared_ptr<Surface>(pSurface ? pSurface->Clone()
+                                           : Surface::Make(outputFormat));
+}
+
+bool PySurfaceConverter::Execute(
+    std::shared_ptr<Surface> src, std::shared_ptr<Surface> dst,
+    std::shared_ptr<ColorspaceConversionContext> context,
+    TaskExecDetails& details) {
+  if (!src || !dst || !context) {
+    return false;
+  }
+
+  upCtxBuffer->CopyFrom(sizeof(ColorspaceConversionContext), context.get());
+
+  upConverter->ClearInputs();
+  upConverter->SetInput((Token*)src.get(), 0U);
+  upConverter->SetInput((Token*)dst.get(), 1U);
+  upConverter->SetInput((Token*)upCtxBuffer.get(), 2U);
+
+  auto ret = upConverter->Execute();
+  
+  auto pDetails = (Buffer*)upConverter->GetOutput(1U);
+  if (pDetails) {
+    details = *(pDetails->GetDataAs<TaskExecDetails>());
+  }
+
+  return (TASK_EXEC_SUCCESS == ret);
 }
 
 Pixel_Format PySurfaceConverter::GetFormat() { return outputFormat; }
 
-void Init_PySurfaceConverter(py::module &m) {
-  py::class_<PySurfaceConverter>(
+void Init_PySurfaceConverter(py::module& m) {
+  py::class_<PySurfaceConverter, std::shared_ptr<PySurfaceConverter>>(
       m, "PySurfaceConverter",
       "CUDA-accelerated converter between different pixel formats.")
       .def(py::init<uint32_t, uint32_t, Pixel_Format, Pixel_Format, uint32_t>(),
@@ -105,15 +134,44 @@ void Init_PySurfaceConverter(py::module &m) {
       .def("Format", &PySurfaceConverter::GetFormat, R"pbdoc(
         Get pixel format.
     )pbdoc")
-      .def("Execute", &PySurfaceConverter::Execute, py::arg("src"),
-           py::arg("cc_ctx"), py::return_value_policy::take_ownership,
-           py::call_guard<py::gil_scoped_release>(),
-           R"pbdoc(
+      .def(
+          "Execute",
+          [](std::shared_ptr<PySurfaceConverter> self,
+             std::shared_ptr<Surface> src,
+             std::shared_ptr<ColorspaceConversionContext> cc_ctx) {
+            TaskExecDetails details;
+            return std::make_tuple(self->Execute(src, cc_ctx, details),
+                                   details.info);
+          },
+          py::arg("src"), py::arg("cc_ctx"),
+          py::return_value_policy::take_ownership,
+          py::call_guard<py::gil_scoped_release>(),
+          R"pbdoc(
         Perform pixel format conversion.
 
         :param src: input Surface. Must be of same format class instance was created with.
         :param cc_ctx: colorspace conversion context. Describes color space and color range used for conversion.
         :return: Surface of pixel format equal to given to ctor
         :rtype: PyNvCodec.Surface
+    )pbdoc")
+      .def(
+          "Execute",
+          [](std::shared_ptr<PySurfaceConverter> self,
+             std::shared_ptr<Surface> src, std::shared_ptr<Surface> dst,
+             std::shared_ptr<ColorspaceConversionContext> cc_ctx) {
+            TaskExecDetails details;
+            return std::make_tuple(self->Execute(src, dst, cc_ctx, details),
+                                   details.info);
+          },
+          py::arg("src"), py::arg("dst"), py::arg("cc_ctx"),
+          py::call_guard<py::gil_scoped_release>(),
+          R"pbdoc(
+        Perform pixel format conversion.
+
+        :param src: input Surface. Must be of same format class instance was created with.
+        :param dst: output Surface. Must be of suitable format.
+        :param cc_ctx: colorspace conversion context. Describes color space and color range used for conversion.
+        :return: True in case of success, False otherwise.
+        :rtype: Bool
     )pbdoc");
 }
