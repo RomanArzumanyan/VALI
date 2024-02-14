@@ -29,7 +29,7 @@ jobs:
     - name: 'Build and install Package'
       run: | 
         git submodule update --init --recursive
-        source /tmp/venv_vali/bin/activate
+        export CUDACXX=/usr/local/cuda/bin/nvcc
         python3 -mpip install pydantic
         python3 -mpip install pycuda
         python3 -mpip install . --verbose
