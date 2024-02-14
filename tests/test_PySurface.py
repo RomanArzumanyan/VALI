@@ -142,7 +142,7 @@ class TestSurfacePycuda(unittest.TestCase):
                 break
             src_plane = surf_src.PlanePtr()
 
-            surface_tensor = torch.zeros(
+            surface_tensor = torch.rand(
                 src_plane.Height(),
                 src_plane.Width(),
                 1,
