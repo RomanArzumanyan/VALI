@@ -151,8 +151,10 @@ void Init_PySurfaceConverter(py::module& m) {
 
         :param src: input Surface. Must be of same format class instance was created with.
         :param cc_ctx: colorspace conversion context. Describes color space and color range used for conversion.
-        :return: Surface of pixel format equal to given to ctor
-        :rtype: PyNvCodec.Surface
+        :return: tuple containing:
+          surface (PyNvCodec.Surface) output surface. Empty in case of failure.
+          info (TaskExecInfo) task execution information.
+        :rtype: tuple
     )pbdoc")
       .def(
           "Execute",
@@ -171,7 +173,9 @@ void Init_PySurfaceConverter(py::module& m) {
         :param src: input Surface. Must be of same format class instance was created with.
         :param dst: output Surface. Must be of suitable format.
         :param cc_ctx: colorspace conversion context. Describes color space and color range used for conversion.
-        :return: True in case of success, False otherwise.
-        :rtype: Bool
+        :return: tuple containing:
+          success (Bool) True in case of success, False otherwise.
+          info (TaskExecInfo) task execution information.
+        :rtype: tuple
     )pbdoc");
 }
