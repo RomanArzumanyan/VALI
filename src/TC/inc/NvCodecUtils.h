@@ -17,11 +17,16 @@
 #include <map>
 #include <sstream>
 #include <string>
+#include <utility>
 
 extern "C" {
 #include <libavutil/dict.h>
 #include <libavutil/error.h>
 }
+
+#define X_TEXTIFY(a) TEXTIFY(a)
+#define TEXTIFY(a) #a
+#define MAKE_PAIR(a)  std::make_pair(a, TEXTIFY(a))
 
 // AVFormatContext timeout handler;
 class TimeoutHandler {
@@ -92,4 +97,32 @@ GetAvOptions(const std::map<std::string, std::string> &ffmpeg_options) {
   }
 
   return options;
+}
+
+static std::string GetFormatName(Pixel_Format fmt) {
+  static const std::map<Pixel_Format, std::string> names({
+      MAKE_PAIR(UNDEFINED),
+      MAKE_PAIR(Y),
+      MAKE_PAIR(RGB),
+      MAKE_PAIR(NV12),
+      MAKE_PAIR(YUV420),
+      MAKE_PAIR(RGB_PLANAR),
+      MAKE_PAIR(BGR),
+      MAKE_PAIR(YUV444),
+      MAKE_PAIR(RGB_32F),
+      MAKE_PAIR(RGB_32F_PLANAR),
+      MAKE_PAIR(YUV422),
+      MAKE_PAIR(P10),
+      MAKE_PAIR(P12),
+      MAKE_PAIR(YUV444_10bit),
+      MAKE_PAIR(YUV420_10bit),
+      MAKE_PAIR(GRAY12),
+  });
+
+  auto it = names.find(fmt);
+  if (it == names.end()) {
+    return "";
+  }
+
+  return it->second;
 }

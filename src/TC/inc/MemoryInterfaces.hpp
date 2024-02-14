@@ -35,17 +35,15 @@ enum Pixel_Format {
   YUV420 = 4,
   RGB_PLANAR = 5,
   BGR = 6,
-  YCBCR = 7,
-  YUV444 = 8,
-  RGB_32F = 9,
-  RGB_32F_PLANAR = 10,
-  YUV422 = 11,
-  P10 = 12,
-  P12 = 13,
-  YUV444_10bit = 14,
-  YUV420_10bit = 15,
-  NV12_Planar = 16,
-  GRAY12 = 17,
+  YUV444 = 7,
+  RGB_32F = 8,
+  RGB_32F_PLANAR = 9,
+  YUV422 = 10,
+  P10 = 11,
+  P12 = 12,
+  YUV444_10bit = 13,
+  YUV420_10bit = 14,
+  GRAY12 = 15,
 };
 
 enum ColorSpace {
@@ -492,45 +490,6 @@ private:
   SurfacePlane planeV;
 };
 
-/* 8-bit NV12 Planar image;
- *  due NVCVImage constraints chroma plane may not be contigous with luma
- */
-class TC_EXPORT SurfaceNV12Planar : public Surface {
-public:
-  ~SurfaceNV12Planar();
-
-  SurfaceNV12Planar();
-  SurfaceNV12Planar(uint32_t width, uint32_t height, uint32_t alignBy,
-                    CUdeviceptr pNewPtrToLumaPlane,
-                    CUdeviceptr pNewPtrToChromaPlane);
-  SurfaceNV12Planar &operator=(const SurfaceNV12Planar &other);
-  SurfaceNV12Planar(const SurfaceNV12Planar &other);
-
-  virtual Surface *Create() override;
-
-  uint32_t Width(uint32_t planeNumber = 0U) const override;
-  uint32_t WidthInBytes(uint32_t planeNumber = 0U) const override;
-  uint32_t Height(uint32_t planeNumber = 0U) const override;
-  uint32_t Pitch(uint32_t planeNumber = 0U) const override;
-  uint32_t HostMemSize() const override;
-
-  CUdeviceptr PlanePtr(uint32_t planeNumber = 0U) override;
-  virtual Pixel_Format PixelFormat() const override { return NV12_Planar; }
-  uint32_t NumPlanes() const override { return 2; }
-  virtual uint32_t ElemSize() const override { return sizeof(uint8_t); }
-  bool Empty() const override {
-    return 0UL == planeY.GpuMem() && 0UL == planeUV.GpuMem();
-  }
-
-  void Update(const SurfacePlane &newPlaneY, const SurfacePlane &newPlaneUV);
-  bool Update(SurfacePlane *pPlanes, size_t planesNum) override;
-  SurfacePlane *GetSurfacePlane(uint32_t planeNumber = 0U) override;
-
-private:
-  SurfacePlane planeY;
-  SurfacePlane planeUV;
-};
-
 class TC_EXPORT SurfaceP10 : public SurfaceNV12 {
 public:
   virtual uint32_t ElemSize() const override { return sizeof(uint16_t); }
@@ -613,17 +572,6 @@ private:
   SurfacePlane planeY;
   SurfacePlane planeU;
   SurfacePlane planeV;
-};
-
-class TC_EXPORT SurfaceYCbCr final : public SurfaceYUV420 {
-public:
-  Pixel_Format PixelFormat() const override { return YCBCR; }
-
-  SurfaceYCbCr();
-  SurfaceYCbCr(const SurfaceYCbCr &other);
-  SurfaceYCbCr(uint32_t width, uint32_t height, CUcontext context);
-
-  Surface *Create() override;
 };
 
 /* 8-bit RGB image;

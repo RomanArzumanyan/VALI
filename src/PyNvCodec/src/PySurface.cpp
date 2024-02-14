@@ -97,7 +97,6 @@ string ToString(Pixel_Format fmt) {
       {YUV420, "YUV420"},
       {RGB_PLANAR, "RGB_PLANAR"},
       {BGR, "BGR"},
-      {YCBCR, "YCBCR"},
       {YUV444, "YUV444"},
       {RGB_32F, "RGB_32F"},
       {RGB_32F_PLANAR, "RGB_32F_PLANAR"},

@@ -307,7 +307,7 @@ ResizeSurface::ResizeSurface(uint32_t width, uint32_t height,
            ResizeSurface::numOutputs, cuda_stream_sync, (void *)str) {
   if (RGB == format || BGR == format) {
     pImpl = new NppResizeSurfacePacked3C_Impl(width, height, ctx, str, format);
-  } else if (YUV420 == format || YCBCR == format || YUV444 == format ||
+  } else if (YUV420 == format || YUV444 == format ||
              RGB_PLANAR == format) {
     pImpl = new NppResizeSurfacePlanar_Impl(width, height, ctx, str, format);
   } else if (RGB_32F == format) {
