@@ -218,6 +218,22 @@ public:
   Pixel_Format GetFormat();
 };
 
+class PyFrameConverter {
+  std::unique_ptr<ConvertSurface> upConverter = nullptr;
+  std::unique_ptr<Buffer> upCtxBuffer = nullptr;
+  Pixel_Format outputFormat = UNDEFINED;
+
+public:
+  PyFrameConverter(uint32_t width, uint32_t height, Pixel_Format inFormat,
+                   Pixel_Format outFormat);
+
+  bool Execute(py::array& src, py::array& dst,
+               std::shared_ptr<ColorspaceConversionContext> context,
+               TaskExecDetails& details);
+
+  Pixel_Format GetFormat();
+};
+
 class PySurfaceResizer {
   std::unique_ptr<ResizeSurface> upResizer = nullptr;
   Pixel_Format outputFormat = UNDEFINED;

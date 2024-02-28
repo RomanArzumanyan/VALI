@@ -52,7 +52,7 @@ add_library(
     TC
     src/MemoryInterfaces.cpp
     src/TaskRemapSurface.cpp
-    src/TaskColorCvt.cpp
+    src/TaskConvertSurface.cpp
     src/TaskDemuxFrame.cpp
     src/TaskNvdecDecodeFrame.cpp
     src/TaskNvencEncodeFrame.cpp
@@ -62,8 +62,10 @@ add_library(
     src/TaskUploadBuffer.cpp
     src/TaskResizeSurface.cpp
     src/TaskFfmpegDecodeFrame.cpp
+    src/TaskConvertFrame.cpp
     src/NppCommon.cpp
     src/NvCodecCliOptions.cpp
+    src/Utils.cpp
 )
 
 if (WIN32)

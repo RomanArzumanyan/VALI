@@ -57,6 +57,7 @@ pybind11_add_module(_PyNvCodec MODULE
 	src/PySurfaceDownloader.cpp
 	src/PySurfaceRemaper.cpp
 	src/PySurfaceResizer.cpp
+	src/PyFrameConverter.cpp
 )
 set_property(TARGET _PyNvCodec PROPERTY CXX_STANDARD 17)
 target_include_directories(_PyNvCodec PRIVATE inc)

@@ -15,18 +15,24 @@
 #pragma once
 #include <chrono>
 #include <map>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <utility>
 
+#include "MemoryInterfaces.hpp"
+
 extern "C" {
 #include <libavutil/dict.h>
 #include <libavutil/error.h>
+#include <libavutil/pixfmt.h>
+
+struct AVFrame;
 }
 
 #define X_TEXTIFY(a) TEXTIFY(a)
 #define TEXTIFY(a) #a
-#define MAKE_PAIR(a)  std::make_pair(a, TEXTIFY(a))
+#define MAKE_PAIR(a) std::make_pair(a, TEXTIFY(a))
 
 // AVFormatContext timeout handler;
 class TimeoutHandler {
@@ -49,80 +55,48 @@ public:
            m_timeout;
   }
 
-  static int Check(void *self) {
-    return self && static_cast<TimeoutHandler *>(self)->IsTimeout();
+  static int Check(void* self) {
+    return self && static_cast<TimeoutHandler*>(self)->IsTimeout();
   }
 
   void Reset() { m_last_time = std::chrono::system_clock::now(); }
 };
 
-static std::string AvErrorToString(int av_error_code) {
-  const auto buf_size = 1024U;
-  char *err_string = (char *)calloc(buf_size, sizeof(*err_string));
-  if (!err_string) {
-    return std::string();
-  }
+std::string AvErrorToString(int av_error_code);
 
-  if (0 != av_strerror(av_error_code, err_string, buf_size - 1)) {
-    free(err_string);
-    std::stringstream ss;
-    ss << "Unknown error with code " << av_error_code;
-    return ss.str();
-  }
+AVDictionary*
+GetAvOptions(const std::map<std::string, std::string>& ffmpeg_options);
 
-  std::string str(err_string);
-  free(err_string);
-  return str;
-}
+AVPixelFormat toFfmpegPixelFormat(Pixel_Format fmt);
 
-static AVDictionary *
-GetAvOptions(const std::map<std::string, std::string> &ffmpeg_options) {
-  AVDictionary *options = nullptr;
-  for (auto &pair : ffmpeg_options) {
-    // Handle 'timeout' option separately
-    if (pair.first == "timeout") {
-      continue;
-    }
+Pixel_Format fromFfmpegPixelFormat(AVPixelFormat fmt);
 
-    auto err =
-        av_dict_set(&options, pair.first.c_str(), pair.second.c_str(), 0);
+AVColorSpace toFfmpegColorSpace(ColorSpace space);
 
-    if (err < 0) {
-      av_dict_free(&options);
-      std::stringstream ss;
-      ss << "Can't set up dictionary option: " << pair.first << " "
-         << pair.second << ": " << AvErrorToString(err) << "\n";
-      throw std::runtime_error(ss.str());
-    }
-  }
+ColorSpace fromFfmpegColorSpace(AVColorSpace space);
 
-  return options;
-}
+AVColorRange toFfmpegColorRange(ColorRange range);
 
-static std::string GetFormatName(Pixel_Format fmt) {
-  static const std::map<Pixel_Format, std::string> names({
-      MAKE_PAIR(UNDEFINED),
-      MAKE_PAIR(Y),
-      MAKE_PAIR(RGB),
-      MAKE_PAIR(NV12),
-      MAKE_PAIR(YUV420),
-      MAKE_PAIR(RGB_PLANAR),
-      MAKE_PAIR(BGR),
-      MAKE_PAIR(YUV444),
-      MAKE_PAIR(RGB_32F),
-      MAKE_PAIR(RGB_32F_PLANAR),
-      MAKE_PAIR(YUV422),
-      MAKE_PAIR(P10),
-      MAKE_PAIR(P12),
-      MAKE_PAIR(YUV444_10bit),
-      MAKE_PAIR(YUV420_10bit),
-      MAKE_PAIR(GRAY12),
-  });
+ColorRange fromFfmpegColorRange(AVColorRange range);
 
-  auto it = names.find(fmt);
-  if (it == names.end()) {
-    return "";
-  }
+std::string GetFormatName(Pixel_Format fmt);
 
-  return it->second;
-}
+/* Creates memaligned AVFrame that manages it's memory.
+ */
+std::shared_ptr<AVFrame> makeAVFrame(int width, int height, int format);
+
+/* Creates Buffer that manages it's memory.
+ */
+std::shared_ptr<Buffer> makeBuffer(int width, int height, AVPixelFormat format);
+
+/* Creates "wrapper" AVFrame that doesn't manage it's memory but relies on
+ * incoming Buffer instead. No memcpy, just convenient wrapper to pass Buffer's
+ * content into FFMpeg.
+ */
+std::shared_ptr<AVFrame> asAVFrame(Buffer* pBuf, int width, int height,
+                                   AVPixelFormat format);
+
+/* Creates Buffer which manages it's own memory, performs memcpy between it and
+ * AVFrame.
+ */
+std::shared_ptr<Buffer> makeBufferFromAVFrame(std::shared_ptr<AVFrame> src);
