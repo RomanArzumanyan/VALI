@@ -32,7 +32,7 @@ bool PyFrameConverter::Execute(
   return true;
 }
 
-void Init_PyFrameConverter(py::module&) {
+void Init_PyFrameConverter(py::module& m) {
   py::class_<PyFrameConverter, std::shared_ptr<PyFrameConverter>>(
       m, "PyFrameConverter",
       "CUDA-accelerated converter between different pixel formats.")
@@ -56,7 +56,7 @@ void Init_PyFrameConverter(py::module&) {
              py::array& dst,
              std::shared_ptr<ColorspaceConversionContext> cc_ctx) {
             TaskExecDetails details;
-            return std::make_tuple(self->Execute(src, cc_ctx, details),
+            return std::make_tuple(self->Execute(src, dst, cc_ctx, details),
                                    details.info);
           },
           py::arg("src"), py::arg("dst"), py::arg("cc_ctx"),
@@ -68,7 +68,9 @@ void Init_PyFrameConverter(py::module&) {
         :param src: input numpy ndarray.
         :param dst: output numpy ndarray.
         :param cc_ctx: colorspace conversion context. Describes color space and color range used for conversion.
-        :return: True in case of 
-        :rtype: PyNvCodec.Surface
+        :return: tuple containing:
+          success (Bool) True in case of success, False otherwise.
+          info (TaskExecInfo) task execution information.
+        :rtype: tuple
     )pbdoc");
 }
