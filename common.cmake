@@ -26,13 +26,18 @@ function(find_FFMpeg FFMPEG_ROOT)
         libswresample/swresample.h 
         ${FFMPEG_INC_DIR})
 
+    find_path(SWSCALE_INCLUDE_DIRS
+        libswscale/swscale.h 
+        ${FFMPEG_INC_DIR})
+
     set(FFMPEG_INCLUDE_DIRS "")
     list (APPEND
         FFMPEG_INCLUDE_DIRS
         ${AVFORMAT_INCLUDE_DIRS}
         ${AVCODEC_INCLUDE_DIRS}
         ${AVUTIL_INCLUDE_DIRS}
-        ${SWRESAMPLE_INCLUDE_DIRS})
+        ${SWRESAMPLE_INCLUDE_DIRS}
+        ${SWSCALE_INCLUDE_DIRS})
 
     # Find libraries
     set(FFMPEG_LIB_DIR ${FFMPEG_ROOT}/lib)
@@ -53,13 +58,18 @@ function(find_FFMpeg FFMPEG_ROOT)
         swresample
         ${FFMPEG_LIB_DIR})
 
+    find_library(SWSCALE_LIBRARIES
+        swscale
+        ${FFMPEG_LIB_DIR})        
+
     set(FFMPEG_LIBRARIES "")
     list (APPEND
         FFMPEG_LIBRARIES
         ${AVFORMAT_LIBRARIES}
         ${AVCODEC_LIBRARIES}
         ${AVUTIL_LIBRARIES}
-        ${SWRESAMPLE_LIBRARIES})
+        ${SWRESAMPLE_LIBRARIES}
+        ${SWSCALE_LIBRARIES})
 
     if (WIN32)
         # Find FFMpeg DLLs

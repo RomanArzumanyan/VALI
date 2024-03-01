@@ -2,12 +2,12 @@
 
 """
 
-__author__ = "NVIDIA"
-__copyright__ = "Copyright 2022, NVIDIA"
+__author__ = "Roman Arzumanyan"
+__copyright__ = "Copyright 2022, NVIDIA; Copyright 2023, Vision Labs LLC"
 __credits__ = []
 __license__ = "Apache 2.0"
-__version__ = "2.0.9"
-__maintainer__ = "NVIDIA"
+__version__ = "2.1.1"
+__maintainer__ = "Roman Arzumanyan"
 __email__ = "TODO"
 __status__ = "Production"
 

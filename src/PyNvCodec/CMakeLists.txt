@@ -57,6 +57,7 @@ pybind11_add_module(_PyNvCodec MODULE
 	src/PySurfaceDownloader.cpp
 	src/PySurfaceRemaper.cpp
 	src/PySurfaceResizer.cpp
+	src/PyFrameConverter.cpp
 )
 set_property(TARGET _PyNvCodec PROPERTY CXX_STANDARD 17)
 target_include_directories(_PyNvCodec PRIVATE inc)
@@ -69,7 +70,7 @@ if (WIN32)
 	endif(FFMPEG_ROOT)
 	find_FFMpeg(${FFMPEG_ROOT})
 else ()
-	list(APPEND CMAKE_MODULE_PATH "${PROJECT_ROOT_DIRECTORY}/cmake-modules")
+	list(APPEND CMAKE_MODULE_PATH "${PROJECT_ROOT_DIRECTORY}")
 	find_package(FFmpeg REQUIRED)
 endif (WIN32)
 

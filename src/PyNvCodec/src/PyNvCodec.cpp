@@ -278,6 +278,8 @@ void Init_PyNvEncoder(py::module &);
 
 void Init_PySurface(py::module &);
 
+void Init_PyFrameConverter(py::module &);
+
 PYBIND11_MODULE(_PyNvCodec, m) {
 
   py::class_<MotionVector, std::shared_ptr<MotionVector>>(
@@ -593,6 +595,8 @@ PYBIND11_MODULE(_PyNvCodec, m) {
   Init_PySurfaceRemaper(m);
 
   Init_PySurface(m);
+
+  Init_PyFrameConverter(m);
 
   m.def("GetNumGpus", &CudaResMgr::GetNumGpus, R"pbdoc(
         Get number of available GPUs.

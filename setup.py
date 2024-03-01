@@ -21,9 +21,9 @@ if __name__ == "__main__":
     PytorchNvCodec = "PytorchNvCodec @ git+https://github.com/RomanArzumanyan/VALI.git#subdirectory=src/PytorchNvCodec/"
     skbuild.setup(
         name="PyNvCodec",
-        version="2.1.0",
+        version="2.1.1",
         description="Video Processing Library with full NVENC/NVDEC hardware acceleration",
-        author="Roman Arumanyan",
+        author="Roman Arzumanyan",
         license="Apache 2.0",
         install_requires=["numpy"],
         extras_require={

@@ -291,6 +291,29 @@ private:
                  Pixel_Format outFormat, CUcontext ctx, CUstream str);
 };
 
+class TC_CORE_EXPORT ConvertFrame final : public Task {
+public:
+  ConvertFrame() = delete;
+  ConvertFrame(const ConvertFrame& other) = delete;
+  ConvertSurface& operator=(const ConvertFrame& other) = delete;
+
+  static ConvertFrame* Make(uint32_t width, uint32_t height,
+                            Pixel_Format inFormat, Pixel_Format outFormat);
+
+  ~ConvertFrame();
+
+  TaskExecStatus Run() final;
+
+private:
+  static const uint32_t numInputs = 3U;
+  static const uint32_t numOutputs = 2U;
+
+  struct ConvertFrame_Impl* pImpl;
+
+  ConvertFrame(uint32_t width, uint32_t height, Pixel_Format inFormat,
+               Pixel_Format outFormat);
+};
+
 class TC_CORE_EXPORT ResizeSurface final : public Task
 {
 public:
