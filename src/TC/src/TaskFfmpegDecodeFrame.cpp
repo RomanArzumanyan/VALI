@@ -463,7 +463,7 @@ void FfmpegDecodeFrame::GetParams(MuxingParams &params) {
   case AV_PIX_FMT_YUVJ420P:
   case AV_PIX_FMT_YUV420P:
   case AV_PIX_FMT_NV12:
-    params.videoContext.format = NV12;
+    params.videoContext.format = YUV420;
     break;
   case AV_PIX_FMT_YUV444P:
     params.videoContext.format = YUV444;

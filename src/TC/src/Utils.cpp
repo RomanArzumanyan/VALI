@@ -111,8 +111,8 @@ std::shared_ptr<AVFrame> asAVFrame(Buffer* pBuf, int width, int height,
 
 std::shared_ptr<Buffer> makeBufferFromAVFrame(std::shared_ptr<AVFrame> src) {
   auto const alignment = 1U;
-  auto const out_size = av_image_get_buffer_size(
-      (AVPixelFormat)src->format, src->width, src->height, alignment);
+  auto const out_size = getBufferSize(src->width, src->height,
+                                      (AVPixelFormat)src->format, alignment);
   auto pBuf = std::shared_ptr<Buffer>(Buffer::MakeOwnMem(out_size));
 
   auto ret = av_image_copy_to_buffer(
@@ -127,11 +127,13 @@ std::shared_ptr<Buffer> makeBufferFromAVFrame(std::shared_ptr<AVFrame> src) {
 
 std::shared_ptr<Buffer> makeBuffer(int width, int height,
                                    AVPixelFormat format) {
-  constexpr int alignment = 1;
-  auto const out_size =
-      av_image_get_buffer_size(format, width, height, alignment);
+  return std::shared_ptr<Buffer>(
+      Buffer::MakeOwnMem(getBufferSize(width, height, format)));
+}
 
-  return std::shared_ptr<Buffer>(Buffer::MakeOwnMem(out_size));
+size_t getBufferSize(int width, int height, AVPixelFormat format,
+                     int alignment) {
+  return av_image_get_buffer_size(format, width, height, alignment);
 }
 
 static const std::vector<std::pair<Pixel_Format, AVPixelFormat>>

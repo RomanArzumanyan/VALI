@@ -12,19 +12,28 @@ function(find_FFMpeg FFMPEG_ROOT)
 
     find_path(AVFORMAT_INCLUDE_DIRS 
         libavformat/avformat.h 
-        ${FFMPEG_INC_DIR})
+        ${FFMPEG_INC_DIR}
+        REQUIRED)
 
     find_path(AVCODEC_INCLUDE_DIRS 
         libavcodec/avcodec.h 
-        ${FFMPEG_INC_DIR})
+        ${FFMPEG_INC_DIR}
+        REQUIRED)
     
     find_path(AVUTIL_INCLUDE_DIRS
         libavutil/avutil.h 
-        ${FFMPEG_INC_DIR})
+        ${FFMPEG_INC_DIR}
+        REQUIRED)
 
     find_path(SWRESAMPLE_INCLUDE_DIRS
         libswresample/swresample.h 
-        ${FFMPEG_INC_DIR})
+        ${FFMPEG_INC_DIR}
+        REQUIRED)
+
+    find_path(SWSCALE_INCLUDE_DIRS
+        libswscale/swscale.h 
+        ${FFMPEG_INC_DIR}
+        REQUIRED)
 
     set(FFMPEG_INCLUDE_DIRS "")
     list (APPEND
@@ -32,26 +41,36 @@ function(find_FFMpeg FFMPEG_ROOT)
         ${AVFORMAT_INCLUDE_DIRS}
         ${AVCODEC_INCLUDE_DIRS}
         ${AVUTIL_INCLUDE_DIRS}
-        ${SWRESAMPLE_INCLUDE_DIRS})
+        ${SWRESAMPLE_INCLUDE_DIRS}
+        ${SWSCALE_INCLUDE_DIRS})
 
     # Find libraries
     set(FFMPEG_LIB_DIR ${FFMPEG_ROOT}/lib)
 
     find_library(AVFORMAT_LIBRARIES
         avformat 
-        ${FFMPEG_LIB_DIR})
+        ${FFMPEG_LIB_DIR}
+        REQUIRED)
 
     find_library(AVCODEC_LIBRARIES
         avcodec
-        ${FFMPEG_LIB_DIR})
+        ${FFMPEG_LIB_DIR}
+        REQUIRED)
 
     find_library(AVUTIL_LIBRARIES
         avutil
-        ${FFMPEG_LIB_DIR})
+        ${FFMPEG_LIB_DIR}
+        REQUIRED)
 
     find_library(SWRESAMPLE_LIBRARIES
         swresample
-        ${FFMPEG_LIB_DIR})
+        ${FFMPEG_LIB_DIR}
+        REQUIRED)
+
+    find_library(SWSCALE_LIBRARIES
+        swscale
+        ${FFMPEG_LIB_DIR}
+        REQUIRED)        
 
     set(FFMPEG_LIBRARIES "")
     list (APPEND
@@ -59,7 +78,8 @@ function(find_FFMpeg FFMPEG_ROOT)
         ${AVFORMAT_LIBRARIES}
         ${AVCODEC_LIBRARIES}
         ${AVUTIL_LIBRARIES}
-        ${SWRESAMPLE_LIBRARIES})
+        ${SWRESAMPLE_LIBRARIES}
+        ${SWSCALE_LIBRARIES})
 
     if (WIN32)
         # Find FFMpeg DLLs

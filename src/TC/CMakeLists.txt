@@ -44,7 +44,7 @@ if (WIN32)
     endif(FFMPEG_ROOT)
     find_FFMpeg(${FFMPEG_ROOT})
 else ()
-    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../../cmake-modules")
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../..")
     find_package(FFmpeg REQUIRED)
 endif (WIN32)
 

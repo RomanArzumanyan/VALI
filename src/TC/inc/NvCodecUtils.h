@@ -100,3 +100,6 @@ std::shared_ptr<AVFrame> asAVFrame(Buffer* pBuf, int width, int height,
  * AVFrame.
  */
 std::shared_ptr<Buffer> makeBufferFromAVFrame(std::shared_ptr<AVFrame> src);
+
+size_t getBufferSize(int width, int height, AVPixelFormat format,
+                     int alignment = 1);

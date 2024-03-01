@@ -76,7 +76,12 @@ class TestDecoderBasic(unittest.TestCase):
 
     def test_format(self):
         ffDec = nvc.PyFfmpegDecoder(self.gtInfo.uri, {})
-        self.assertEqual(self.gtInfo.pix_fmt, str(ffDec.Format()))
+        # The only difference between NV12 and YUV420 is chroma sampling
+        # So we consider them the same.
+        format = ffDec.Format()
+        if ffDec.Format() == nvc.PixelFormat.YUV420:
+            format = nvc.PixelFormat.NV12
+        self.assertEqual(self.gtInfo.pix_fmt, str(format))
 
     def test_framerate(self):
         ffDec = nvc.PyFfmpegDecoder(self.gtInfo.uri, {})

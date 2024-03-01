@@ -596,6 +596,8 @@ PYBIND11_MODULE(_PyNvCodec, m) {
 
   Init_PySurface(m);
 
+  Init_PyFrameConverter(m);
+
   m.def("GetNumGpus", &CudaResMgr::GetNumGpus, R"pbdoc(
         Get number of available GPUs.
     )pbdoc");

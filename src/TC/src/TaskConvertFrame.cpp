@@ -60,6 +60,7 @@ TaskExecStatus ConvertFrame::Run() {
       return TaskExecStatus::TASK_EXEC_FAIL;
     }
 
+    // Output check & lazy init;
     auto dst_buf = dynamic_cast<Buffer*>(GetInput(1));
     if (!dst_buf) {
       if (!pImpl->m_buffer) {
@@ -87,14 +88,17 @@ TaskExecStatus ConvertFrame::Run() {
     auto const isJpegRange =
         (toFfmpegColorRange(pCtx->color_range) == AVCOL_RANGE_JPEG);
     auto const brightness = 0U, contrast = 1U << 16U, saturation = 1U << 16U;
-    sws_setColorspaceDetails(pImpl->m_ctx.get(),
-                             sws_getCoefficients(colorSpace), isJpegRange,
-                             sws_getCoefficients(colorSpace), isJpegRange,
-                             brightness, contrast, saturation);
+    auto err = sws_setColorspaceDetails(
+        pImpl->m_ctx.get(), sws_getCoefficients(colorSpace), isJpegRange,
+        sws_getCoefficients(colorSpace), isJpegRange, brightness, contrast,
+        saturation);
+    if (err < 0) {
+      pDetails->info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
+      return TaskExecStatus::TASK_EXEC_FAIL;
+    }
 
-    auto err =
-        sws_scale(pImpl->m_ctx.get(), src_frame->data, src_frame->linesize, 0,
-                  pImpl->m_height, dst_frame->data, dst_frame->linesize);
+    err = sws_scale(pImpl->m_ctx.get(), src_frame->data, src_frame->linesize, 0,
+                    pImpl->m_height, dst_frame->data, dst_frame->linesize);
     if (err < 0) {
       pDetails->info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
       return TaskExecStatus::TASK_EXEC_FAIL;
