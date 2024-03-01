@@ -12,28 +12,23 @@ function(find_FFMpeg FFMPEG_ROOT)
 
     find_path(AVFORMAT_INCLUDE_DIRS 
         libavformat/avformat.h 
-        ${FFMPEG_INC_DIR}
-        REQUIRED)
+        ${FFMPEG_INC_DIR})
 
     find_path(AVCODEC_INCLUDE_DIRS 
         libavcodec/avcodec.h 
-        ${FFMPEG_INC_DIR}
-        REQUIRED)
+        ${FFMPEG_INC_DIR})
     
     find_path(AVUTIL_INCLUDE_DIRS
         libavutil/avutil.h 
-        ${FFMPEG_INC_DIR}
-        REQUIRED)
+        ${FFMPEG_INC_DIR})
 
     find_path(SWRESAMPLE_INCLUDE_DIRS
         libswresample/swresample.h 
-        ${FFMPEG_INC_DIR}
-        REQUIRED)
+        ${FFMPEG_INC_DIR})
 
     find_path(SWSCALE_INCLUDE_DIRS
         libswscale/swscale.h 
-        ${FFMPEG_INC_DIR}
-        REQUIRED)
+        ${FFMPEG_INC_DIR})
 
     set(FFMPEG_INCLUDE_DIRS "")
     list (APPEND
@@ -49,28 +44,23 @@ function(find_FFMpeg FFMPEG_ROOT)
 
     find_library(AVFORMAT_LIBRARIES
         avformat 
-        ${FFMPEG_LIB_DIR}
-        REQUIRED)
+        ${FFMPEG_LIB_DIR})
 
     find_library(AVCODEC_LIBRARIES
         avcodec
-        ${FFMPEG_LIB_DIR}
-        REQUIRED)
+        ${FFMPEG_LIB_DIR})
 
     find_library(AVUTIL_LIBRARIES
         avutil
-        ${FFMPEG_LIB_DIR}
-        REQUIRED)
+        ${FFMPEG_LIB_DIR})
 
     find_library(SWRESAMPLE_LIBRARIES
         swresample
-        ${FFMPEG_LIB_DIR}
-        REQUIRED)
+        ${FFMPEG_LIB_DIR})
 
     find_library(SWSCALE_LIBRARIES
         swscale
-        ${FFMPEG_LIB_DIR}
-        REQUIRED)        
+        ${FFMPEG_LIB_DIR})        
 
     set(FFMPEG_LIBRARIES "")
     list (APPEND
