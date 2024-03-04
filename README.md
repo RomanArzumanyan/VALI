@@ -108,12 +108,12 @@ are required)
 
 
 ```bash
-DOCKER_BUILDKIT=1 docker build \
-                --tag VALI-gpu \
-                -f docker/Dockerfile \
-                --build-arg PIP_INSTALL_EXTRAS=torch \
-                .
-docker run -it --rm --gpus=all VALI-gpu
+DOCKER_BUILDKIT=1 sudo docker build \
+  --tag vali-gpu \
+  --file docker/Dockerfile \
+  --build-arg PIP_INSTALL_EXTRAS=torch .
+
+docker run -it --rm --gpus=all vali-gpu
 ```
 
 `PIP_INSTALL_EXTRAS` can be any subset listed under `project.optional-dependencies` in [pyproject.toml](pyproject.toml).
