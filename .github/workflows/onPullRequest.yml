@@ -22,9 +22,15 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: 'Docker build'
+    - name: 'Docker build and test'
       run: |
         DOCKER_BUILDKIT=1 docker build --tag vali-gpu  -f docker/Dockerfile --build-arg PIP_INSTALL_EXTRAS=torch .
+        docker run \
+          --rm \
+          --gpus all \
+          --user $UID \
+          --workdir /src/tests \
+          --entrypoint "python3" vali-gpu -m unittest discover .
 
   test_linux:
     runs-on: [self-hosted, Linux]
