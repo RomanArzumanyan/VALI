@@ -24,8 +24,8 @@ jobs:
 
     - name: 'Docker build'
       run: |
-        DOCKER_BUILDKIT=1 docker build --tag VALI-gpu  -f docker/Dockerfile --build-arg PIP_INSTALL_EXTRAS=torch .
-        docker run -it --rm --gpus=all VALI-gpu
+        DOCKER_BUILDKIT=1 docker build --tag vali-gpu  -f docker/Dockerfile --build-arg PIP_INSTALL_EXTRAS=torch .
+        docker run -it --rm --gpus=all vali-gpu
 
   test_linux:
     runs-on: [self-hosted, Linux]
