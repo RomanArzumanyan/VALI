@@ -16,6 +16,17 @@ concurrency:
   cancel-in-progress: false    
 
 jobs:
+  test_docker:
+    runs-on: [self-hosted, Linux]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: 'Docker build'
+      run: |
+        DOCKER_BUILDKIT=1 docker build --tag VALI-gpu  -f docker/Dockerfile --build-arg PIP_INSTALL_EXTRAS=torch .
+        docker run -it --rm --gpus=all VALI-gpu
+
   test_linux:
     runs-on: [self-hosted, Linux]
 
