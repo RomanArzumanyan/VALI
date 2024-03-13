@@ -14,6 +14,7 @@
 
 #include "Common.hpp"
 #include "PyNvCodec.hpp"
+#include "dlpack.h"
 #include <map>
 #include <sstream>
 
@@ -22,6 +23,7 @@ using namespace VPF;
 using namespace chrono;
 
 namespace py = pybind11;
+using namespace pybind11::literals;
 
 static auto ThrowOnCudaError = [](CUresult res, int lineNum = -1) {
   if (CUDA_SUCCESS != res) {
@@ -32,14 +34,14 @@ static auto ThrowOnCudaError = [](CUresult res, int lineNum = -1) {
       ss << lineNum << endl;
     }
 
-    const char *errName = nullptr;
+    const char* errName = nullptr;
     if (CUDA_SUCCESS != cuGetErrorName(res, &errName)) {
       ss << "CUDA error with code " << res << endl;
     } else {
       ss << "CUDA error: " << errName << endl;
     }
 
-    const char *errDesc = nullptr;
+    const char* errDesc = nullptr;
     cuGetErrorString(res, &errDesc);
 
     if (!errDesc) {
@@ -113,7 +115,7 @@ string ToString(Pixel_Format fmt) {
   }
 };
 
-string ToString(SurfacePlane *self, int space = 0) {
+string ToString(SurfacePlane* self, int space = 0) {
   if (!self) {
     return string();
   }
@@ -135,7 +137,7 @@ string ToString(SurfacePlane *self, int space = 0) {
   return ss.str();
 }
 
-string ToString(Surface *self) {
+string ToString(Surface* self) {
   if (!self) {
     return string();
   }
@@ -155,7 +157,86 @@ string ToString(Surface *self) {
   return ss.str();
 }
 
-void Init_PySurface(py::module &m) {
+static void dlpack_capsule_deleter(PyObject* self) {
+  if (PyCapsule_IsValid(self, "used_dltensor")) {
+    return;
+  }
+
+  PyObject *type, *value, *traceback;
+  PyErr_Fetch(&type, &value, &traceback);
+
+  DLManagedTensor* managed =
+      (DLManagedTensor*)PyCapsule_GetPointer(self, "dltensor");
+  if (managed == NULL) {
+    PyErr_WriteUnraisable(self);
+    goto done;
+  }
+
+  if (managed->deleter) {
+    managed->deleter(managed);
+    assert(!PyErr_Occurred());
+  }
+
+done:
+  PyErr_Restore(type, value, traceback);
+}
+
+static void DLManagedTensor_Destroy(DLManagedTensor* self) {
+  if (!self) {
+    return;
+  }
+
+  if (self->dl_tensor.shape) {
+    delete[] self->dl_tensor.shape;
+  }
+
+  if (self->dl_tensor.strides) {
+    delete[] self->dl_tensor.strides;
+  }
+}
+
+static DLManagedTensor* DLManagedTensor_Make(shared_ptr<SurfacePlane> self) {
+  DLManagedTensor* dlmt = nullptr;
+  try {
+    dlmt = new DLManagedTensor();
+    memset((void*)dlmt, 0, sizeof(*dlmt));
+
+    dlmt->manager_ctx = nullptr;
+    dlmt->deleter = DLManagedTensor_Destroy;
+
+    CUdeviceptr dptr = NULL;
+    ThrowOnCudaError(cuPointerGetAttribute((void*)&dptr,
+                                           CU_POINTER_ATTRIBUTE_DEVICE_POINTER,
+                                           self->GpuMem()),
+                     __LINE__);
+
+    dlmt->dl_tensor.device.device_type = self->DeviceType();
+    dlmt->dl_tensor.device.device_id = 0;
+
+    dlmt->dl_tensor.data = (void*)dptr;
+    dlmt->dl_tensor.ndim = 2;
+    dlmt->dl_tensor.byte_offset = 0U;
+
+    dlmt->dl_tensor.dtype.code = self->DataType();
+    dlmt->dl_tensor.dtype.bits = self->ElemSize() * 8U;
+    dlmt->dl_tensor.dtype.lanes = 1;
+
+    dlmt->dl_tensor.shape = new int64_t[dlmt->dl_tensor.ndim];
+    dlmt->dl_tensor.shape[0] = self->Height();
+    dlmt->dl_tensor.shape[1] = self->Width();
+
+    dlmt->dl_tensor.strides = new int64_t[dlmt->dl_tensor.ndim];
+    dlmt->dl_tensor.strides[0] = self->Pitch() / self->ElemSize();
+    dlmt->dl_tensor.strides[1] = 1;
+  } catch (std::exception& e) {
+    DLManagedTensor_Destroy(dlmt);
+    throw e;
+  }
+
+  return dlmt;
+}
+
+void Init_PySurface(py::module& m) {
   py::class_<SurfacePlane, shared_ptr<SurfacePlane>>(
       m, "SurfacePlane",
       "Continious 2D chunk of memory stored in vRAM which represents single "
@@ -245,6 +326,24 @@ void Init_PySurface(py::module &m) {
         :param dst_pitch: destination SurfacePlane pitch in bytes
         :param context: CUDA context to use
         :param stream: CUDA stream to use
+    )pbdoc")
+      .def(
+          "__dlpack_device__",
+          [](shared_ptr<SurfacePlane> self) {
+            return std::make_tuple(self->DeviceType(), 0);
+          },
+          R"pbdoc(
+        DLPack: get device information.
+    )pbdoc")
+      .def(
+          "__dlpack__",
+          [](shared_ptr<SurfacePlane> self, int stream) {
+            auto* dl_mt = DLManagedTensor_Make(self);
+            return py::capsule(dl_mt, "dltensor", dlpack_capsule_deleter);
+          },
+          py::arg("stream") = 0,
+          R"pbdoc(
+        DLPack: get capsule.
     )pbdoc")
       .def("__repr__",
            [](shared_ptr<SurfacePlane> self) { return ToString(self.get()); });
@@ -447,8 +546,8 @@ void Init_PySurface(py::module &m) {
 
   py::class_<SurfCtxMgr, shared_ptr<SurfCtxMgr>>(m, "SurfaceView")
       .def(py::init<std::shared_ptr<Surface>>(), py::arg("surface"))
-      .def("__enter__", [&](SurfCtxMgr &self) { return self.Get(); })
+      .def("__enter__", [&](SurfCtxMgr& self) { return self.Get(); })
       .def("__exit__",
-           [&](SurfCtxMgr &self, const py::object &type,
-               const py::object &value, const py::object &traceback) {});
+           [&](SurfCtxMgr& self, const py::object& type,
+               const py::object& value, const py::object& traceback) {});
 }

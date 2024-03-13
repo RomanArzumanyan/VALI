@@ -40,14 +40,14 @@ static auto ThrowOnCudaError = [](CUresult res, int lineNum = -1) {
       ss << lineNum << endl;
     }
 
-    const char *errName = nullptr;
+    const char* errName = nullptr;
     if (CUDA_SUCCESS != cuGetErrorName(res, &errName)) {
       ss << "CUDA error with code " << res << endl;
     } else {
       ss << "CUDA error: " << errName << endl;
     }
 
-    const char *errDesc = nullptr;
+    const char* errDesc = nullptr;
     cuGetErrorString(res, &errDesc);
 
     if (!errDesc) {
@@ -156,7 +156,7 @@ cudaVideoCodec NvDecoder::GetCodec() const { return p_impl->m_eCodec; }
  *   > 1: override dpb size of parser (set by
  * CUVIDPARSERPARAMS::ulMaxNumDecodeSurfaces while creating parser)
  */
-int NvDecoder::HandleVideoSequence(CUVIDEOFORMAT *pVideoFormat) noexcept {
+int NvDecoder::HandleVideoSequence(CUVIDEOFORMAT* pVideoFormat) noexcept {
   try {
     p_impl->decoder_recon++;
     CudaCtxPush ctxPush(p_impl->m_cuContext);
@@ -303,7 +303,7 @@ int NvDecoder::HandleVideoSequence(CUVIDEOFORMAT *pVideoFormat) noexcept {
         __LINE__);
 
     return nDecodeSurface;
-  } catch (exception &e) {
+  } catch (exception& e) {
     cerr << e.what() << endl;
     p_impl->parser_error.store(1);
   }
@@ -311,7 +311,7 @@ int NvDecoder::HandleVideoSequence(CUVIDEOFORMAT *pVideoFormat) noexcept {
   return 0;
 }
 
-int NvDecoder::ReconfigureDecoder(CUVIDEOFORMAT *pVideoFormat) {
+int NvDecoder::ReconfigureDecoder(CUVIDEOFORMAT* pVideoFormat) {
   CudaCtxPush ctxPush(p_impl->m_cuContext);
 
   p_impl->eos_set = false;
@@ -424,7 +424,7 @@ int NvDecoder::ReconfigureDecoder(CUVIDEOFORMAT *pVideoFormat) {
  *   0: fail
  *   >=1: suceeded
  */
-int NvDecoder::HandlePictureDecode(CUVIDPICPARAMS *pPicParams) noexcept {
+int NvDecoder::HandlePictureDecode(CUVIDPICPARAMS* pPicParams) noexcept {
   try {
     p_impl->bit_stream_len.fetch_add(pPicParams->nBitstreamDataLen);
 
@@ -440,7 +440,7 @@ int NvDecoder::HandlePictureDecode(CUVIDPICPARAMS *pPicParams) noexcept {
                      __LINE__);
 
     return 1;
-  } catch (exception &e) {
+  } catch (exception& e) {
     cerr << e.what();
     p_impl->parser_error.store(1);
   }
@@ -451,7 +451,7 @@ int NvDecoder::HandlePictureDecode(CUVIDPICPARAMS *pPicParams) noexcept {
  *   0: fail
  *   >=1: suceeded
  */
-int NvDecoder::HandlePictureDisplay(CUVIDPARSERDISPINFO *pDispInfo) noexcept {
+int NvDecoder::HandlePictureDisplay(CUVIDPARSERDISPINFO* pDispInfo) noexcept {
   try {
     CudaCtxPush ctxPush(p_impl->m_cuContext);
 
@@ -545,17 +545,17 @@ int NvDecoder::HandlePictureDisplay(CUVIDPARSERDISPINFO *pDispInfo) noexcept {
     m.Height = p_impl->m_nLumaHeight;
     ThrowOnCudaError(cuMemcpy2DAsync(&m, p_impl->m_cuvidStream), __LINE__);
 
-    m.srcDevice = (CUdeviceptr)((uint8_t *)dpSrcFrame +
+    m.srcDevice = (CUdeviceptr)((uint8_t*)dpSrcFrame +
                                 m.srcPitch * p_impl->m_nSurfaceHeight);
-    m.dstDevice = (CUdeviceptr)((uint8_t *)pDecodedFrame +
+    m.dstDevice = (CUdeviceptr)((uint8_t*)pDecodedFrame +
                                 m.dstPitch * p_impl->m_nLumaHeight);
     m.Height = p_impl->m_nChromaHeight;
     ThrowOnCudaError(cuMemcpy2DAsync(&m, p_impl->m_cuvidStream), __LINE__);
 
     if (p_impl->m_nNumChromaPlanes == 2) {
-      m.srcDevice = (CUdeviceptr)((uint8_t *)dpSrcFrame +
+      m.srcDevice = (CUdeviceptr)((uint8_t*)dpSrcFrame +
                                   m.srcPitch * p_impl->m_nSurfaceHeight * 2);
-      m.dstDevice = (CUdeviceptr)((uint8_t *)pDecodedFrame +
+      m.dstDevice = (CUdeviceptr)((uint8_t*)pDecodedFrame +
                                   m.dstPitch * p_impl->m_nLumaHeight * 2);
       m.Height = p_impl->m_nChromaHeight;
       ThrowOnCudaError(cuMemcpy2DAsync(&m, p_impl->m_cuvidStream), __LINE__);
@@ -570,7 +570,7 @@ int NvDecoder::HandlePictureDisplay(CUVIDPARSERDISPINFO *pDispInfo) noexcept {
         p_impl->bit_stream_len.exchange(0U);
 
     return 1;
-  } catch (exception &e) {
+  } catch (exception& e) {
     cerr << e.what();
     p_impl->parser_error.store(1);
   }
@@ -580,14 +580,14 @@ int NvDecoder::HandlePictureDisplay(CUVIDPARSERDISPINFO *pDispInfo) noexcept {
 NvDecoder::NvDecoder(CUstream cuStream, CUcontext cuContext,
                      cudaVideoCodec eCodec, bool bLowLatency, int maxWidth,
                      int maxHeight) {
-  const char *err = loadCuvidSymbols(&this->m_api,
+  const char* err = loadCuvidSymbols(&this->m_api,
 #ifdef _WIN32
                                      "nvcuvid.dll");
 #else
-                                     "libnvcuvid.so.1");
+                                      "libnvcuvid.so.1");
 #endif
   if (err) {
-    constexpr const char *explanation =
+    constexpr const char* explanation =
 #if defined(_WIN32)
         "Could not dynamically load nvcuvid.dll. Please ensure "
         "Nvidia Graphics drivers are correctly installed!";
@@ -647,12 +647,12 @@ NvDecoder::~NvDecoder() {
     lock_guard<mutex> lock(p_impl->m_mtxVPFrame);
     // Return all surfaces to m_vpFrame;
     while (!p_impl->m_DecFramesCtxQueue.empty()) {
-      auto &surface = p_impl->m_DecFramesCtxQueue.front();
+      auto& surface = p_impl->m_DecFramesCtxQueue.front();
       p_impl->m_DecFramesCtxQueue.pop();
       p_impl->m_DecFramesCtxVec.push_back(surface);
     }
 
-    for (auto &dec_frame_ctx : p_impl->m_DecFramesCtxVec) {
+    for (auto& dec_frame_ctx : p_impl->m_DecFramesCtxVec) {
       cuMemFree(dec_frame_ctx.mem);
     }
   }
@@ -689,9 +689,9 @@ cudaVideoChromaFormat NvDecoder::GetChromaFormat() const {
   return p_impl->m_eChromaFormat;
 }
 
-bool NvDecoder::DecodeLockSurface(Buffer const *encFrame,
-                                  PacketData const &pdata,
-                                  DecodedFrameContext &decCtx) {
+bool NvDecoder::DecodeLockSurface(Buffer const* encFrame,
+                                  PacketData const& pdata,
+                                  DecodedFrameContext& decCtx) {
   if (!p_impl->m_hParser) {
     throw runtime_error("Parser not initialized.");
   }
@@ -785,7 +785,7 @@ bool NvDecoder::DecodeLockSurface(Buffer const *encFrame,
 }
 
 // Adds frame back to pool of decoder-owned frames;
-void NvDecoder::UnlockSurface(CUdeviceptr &lockedSurface) {
+void NvDecoder::UnlockSurface(CUdeviceptr& lockedSurface) {
   if (lockedSurface) {
     lock_guard<mutex> lock(p_impl->m_mtxVPFrame);
     p_impl->m_DecFramesCtxVec.push_back(
@@ -796,16 +796,16 @@ void NvDecoder::UnlockSurface(CUdeviceptr &lockedSurface) {
 namespace VPF {
 struct NvdecDecodeFrame_Impl {
   NvDecoder nvDecoder;
-  Surface *pLastSurface = nullptr;
-  Buffer *pPacketData = nullptr;
-  Buffer *PDetails = nullptr;
+  Surface* pLastSurface = nullptr;
+  Buffer* pPacketData = nullptr;
+  Buffer* PDetails = nullptr;
   CUstream stream = 0;
   CUcontext context = nullptr;
   bool didDecode = false;
 
   NvdecDecodeFrame_Impl() = delete;
-  NvdecDecodeFrame_Impl(const NvdecDecodeFrame_Impl &other) = delete;
-  NvdecDecodeFrame_Impl &operator=(const NvdecDecodeFrame_Impl &other) = delete;
+  NvdecDecodeFrame_Impl(const NvdecDecodeFrame_Impl& other) = delete;
+  NvdecDecodeFrame_Impl& operator=(const NvdecDecodeFrame_Impl& other) = delete;
 
   NvdecDecodeFrame_Impl(CUstream cuStream, CUcontext cuContext,
                         cudaVideoCodec videoCodec, Pixel_Format format)
@@ -816,6 +816,8 @@ struct NvdecDecodeFrame_Impl {
     PDetails = Buffer::MakeOwnMem(sizeof(TaskExecDetails));
   }
 
+  DLDataTypeCode TypeCode() const { return kDLUInt; }
+
   ~NvdecDecodeFrame_Impl() {
     delete pLastSurface;
     delete pPacketData;
@@ -824,7 +826,7 @@ struct NvdecDecodeFrame_Impl {
 };
 } // namespace VPF
 
-NvdecDecodeFrame *NvdecDecodeFrame::Make(CUstream cuStream, CUcontext cuContext,
+NvdecDecodeFrame* NvdecDecodeFrame::Make(CUstream cuStream, CUcontext cuContext,
                                          cudaVideoCodec videoCodec,
                                          uint32_t decodedFramesPoolSize,
                                          uint32_t coded_width,
@@ -857,8 +859,8 @@ TaskExecStatus NvdecDecodeFrame::Run() {
   NvtxMark tick(GetName());
   ClearOutputs();
   try {
-    auto &decoder = pImpl->nvDecoder;
-    auto pEncFrame = (Buffer *)GetInput();
+    auto& decoder = pImpl->nvDecoder;
+    auto pEncFrame = (Buffer*)GetInput();
 
     if (!pEncFrame && !pImpl->didDecode) {
       /* Empty input given + we've never did decoding means something went
@@ -870,7 +872,7 @@ TaskExecStatus NvdecDecodeFrame::Run() {
 
     bool isSurfaceReturned = false;
     uint64_t timestamp = 0U;
-    auto pPktData = (Buffer *)GetInput(1U);
+    auto pPktData = (Buffer*)GetInput(1U);
     if (pPktData) {
       auto p_pkt_data = pPktData->GetDataAs<PacketData>();
       timestamp = p_pkt_data->pts;
@@ -933,7 +935,8 @@ TaskExecStatus NvdecDecodeFrame::Run() {
         return TaskExecStatus::TASK_EXEC_FAIL;
       }
 
-      SurfacePlane tmpPlane(rawW, rawH, rawP, elem_size, dec_ctx.mem);
+      SurfacePlane tmpPlane(rawW, rawH, rawP, elem_size, pImpl->TypeCode(),
+                            dec_ctx.mem);
       pImpl->pLastSurface->Update(&tmpPlane, 1);
       SetOutput(pImpl->pLastSurface, 0U);
 
@@ -960,15 +963,15 @@ TaskExecStatus NvdecDecodeFrame::Run() {
       SetExecDetails(TaskExecDetails(TaskExecInfo::END_OF_STREAM));
       return TaskExecStatus::TASK_EXEC_FAIL;
     }
-  } catch (exception &e) {
+  } catch (exception& e) {
     cerr << e.what() << endl;
     SetExecDetails(TaskExecDetails(TaskExecInfo::FAIL));
     return TaskExecStatus::TASK_EXEC_FAIL;
   }
 }
 
-void NvdecDecodeFrame::GetDecodedFrameParams(uint32_t &width, uint32_t &height,
-                                             uint32_t &elem_size) {
+void NvdecDecodeFrame::GetDecodedFrameParams(uint32_t& width, uint32_t& height,
+                                             uint32_t& elem_size) {
   width = pImpl->nvDecoder.GetWidth();
   height = pImpl->nvDecoder.GetHeight();
   elem_size = (pImpl->nvDecoder.GetBitDepth() + 7) / 8;
@@ -980,7 +983,7 @@ uint32_t NvdecDecodeFrame::GetDeviceFramePitch() {
 
 int NvdecDecodeFrame::GetCapability(NV_DEC_CAPS cap) const {
   CUVIDDECODECAPS decode_caps;
-  memset((void *)&decode_caps, 0, sizeof(decode_caps));
+  memset((void*)&decode_caps, 0, sizeof(decode_caps));
 
   decode_caps.eCodecType = pImpl->nvDecoder.GetCodec();
   decode_caps.eChromaFormat = pImpl->nvDecoder.GetChromaFormat();

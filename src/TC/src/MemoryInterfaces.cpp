@@ -363,6 +363,7 @@ SurfacePlane& SurfacePlane::operator=(const SurfacePlane& other) {
   height = other.height;
   pitch = other.pitch;
   elemSize = other.elemSize;
+  typeCode = other.typeCode;
 
 #ifdef TRACK_TOKEN_ALLOCATIONS
   id = other.id;
@@ -373,18 +374,20 @@ SurfacePlane& SurfacePlane::operator=(const SurfacePlane& other) {
 
 SurfacePlane::SurfacePlane(const SurfacePlane& other)
     : ownMem(false), gpuMem(other.gpuMem), width(other.width),
-      height(other.height), pitch(other.pitch), elemSize(other.elemSize) {}
+      height(other.height), pitch(other.pitch), elemSize(other.elemSize),
+      typeCode(other.typeCode) {}
 
 SurfacePlane::SurfacePlane(uint32_t newWidth, uint32_t newHeight,
                            uint32_t newPitch, uint32_t newElemSize,
-                           CUdeviceptr pNewPtr)
+                           DLDataTypeCode newTypeCode, CUdeviceptr pNewPtr)
     : ownMem(false), gpuMem(pNewPtr), width(newWidth), height(newHeight),
-      pitch(newPitch), elemSize(newElemSize) {}
+      pitch(newPitch), elemSize(newElemSize), typeCode(newTypeCode) {}
 
 SurfacePlane::SurfacePlane(uint32_t newWidth, uint32_t newHeight,
-                           uint32_t newElemSize, CUcontext context)
+                           uint32_t newElemSize, DLDataTypeCode newTypeCode,
+                           CUcontext context)
     : ownMem(true), width(newWidth), height(newHeight), elemSize(newElemSize),
-      ctx(context) {
+      typeCode(newTypeCode), ctx(context) {
   Allocate();
 }
 
@@ -507,9 +510,10 @@ void SurfacePlane::Export(CUdeviceptr dst, uint32_t dst_pitch, CUcontext ctx,
 }
 
 SurfacePlane::SurfacePlane(uint32_t newWidth, uint32_t newHeight,
-                           uint32_t newElemSize, uint32_t srcPitch,
-                           CUdeviceptr src, CUcontext context, CUstream str)
-    : SurfacePlane(newWidth, newHeight, newElemSize, context) {
+                           uint32_t newElemSize, DLDataTypeCode newTypeCode,
+                           uint32_t srcPitch, CUdeviceptr src,
+                           CUcontext context, CUstream str)
+    : SurfacePlane(newWidth, newHeight, newElemSize, newTypeCode, context) {
   Import(src, srcPitch, context, str);
 }
 
@@ -710,7 +714,7 @@ Surface* SurfaceY::Create() { return new SurfaceY; }
 SurfaceY::SurfaceY(const SurfaceY& other) : plane(other.plane) {}
 
 SurfaceY::SurfaceY(uint32_t width, uint32_t height, CUcontext context)
-    : plane(width, height, ElemSize(), context) {}
+    : plane(width, height, ElemSize(), DataType(), context) {}
 
 SurfaceY& SurfaceY::operator=(const SurfaceY& other) {
   plane = other.plane;
@@ -781,11 +785,12 @@ SurfaceNV12::SurfaceNV12() = default;
 SurfaceNV12::SurfaceNV12(const SurfaceNV12& other) : plane(other.plane) {}
 
 SurfaceNV12::SurfaceNV12(uint32_t width, uint32_t height, CUcontext context)
-    : plane(width, height * 3 / 2, ElemSize(), context) {}
+    : plane(width, height * 3 / 2, ElemSize(), DataType(), context) {}
 
 SurfaceNV12::SurfaceNV12(uint32_t width, uint32_t height, uint32_t pitch,
                          CUdeviceptr pNewPtrToLumaPlane)
-    : plane(width, height * 3 / 2, pitch, ElemSize(), pNewPtrToLumaPlane) {}
+    : plane(width, height * 3 / 2, pitch, ElemSize(), DataType(),
+            pNewPtrToLumaPlane) {}
 
 SurfaceNV12& SurfaceNV12::operator=(const SurfaceNV12& other) {
   plane = other.plane;
@@ -872,9 +877,9 @@ SurfaceYUV420::SurfaceYUV420(const SurfaceYUV420& other)
     : planeY(other.planeY), planeU(other.planeU), planeV(other.planeV) {}
 
 SurfaceYUV420::SurfaceYUV420(uint32_t width, uint32_t height, CUcontext context)
-    : planeY(width, height, ElemSize(), context),
-      planeU(width / 2, height / 2, ElemSize(), context),
-      planeV(width / 2, height / 2, ElemSize(), context) {}
+    : planeY(width, height, ElemSize(), DataType(), context),
+      planeU(width / 2, height / 2, ElemSize(), DataType(), context),
+      planeV(width / 2, height / 2, ElemSize(), DataType(), context) {}
 
 SurfaceYUV420& SurfaceYUV420::operator=(const SurfaceYUV420& other) {
   planeY = other.planeY;
@@ -1005,9 +1010,9 @@ SurfaceYUV422::SurfaceYUV422(const SurfaceYUV422& other)
     : planeY(other.planeY), planeU(other.planeU), planeV(other.planeV) {}
 
 SurfaceYUV422::SurfaceYUV422(uint32_t width, uint32_t height, CUcontext context)
-    : planeY(width, height, ElemSize(), context),
-      planeU(width / 2, height, ElemSize(), context),
-      planeV(width / 2, height, ElemSize(), context) {}
+    : planeY(width, height, ElemSize(), DataType(), context),
+      planeU(width / 2, height, ElemSize(), DataType(), context),
+      planeV(width / 2, height, ElemSize(), DataType(), context) {}
 
 SurfaceYUV422& SurfaceYUV422::operator=(const SurfaceYUV422& other) {
   planeY = other.planeY;
@@ -1137,7 +1142,7 @@ SurfaceRGB::SurfaceRGB() = default;
 SurfaceRGB::SurfaceRGB(const SurfaceRGB& other) : plane(other.plane) {}
 
 SurfaceRGB::SurfaceRGB(uint32_t width, uint32_t height, CUcontext context)
-    : plane(width * 3, height, ElemSize(), context) {}
+    : plane(width * 3, height, ElemSize(), DataType(), context) {}
 
 SurfaceRGB& SurfaceRGB::operator=(const SurfaceRGB& other) {
   plane = other.plane;
@@ -1210,7 +1215,7 @@ SurfaceBGR::SurfaceBGR() = default;
 SurfaceBGR::SurfaceBGR(const SurfaceBGR& other) : plane(other.plane) {}
 
 SurfaceBGR::SurfaceBGR(uint32_t width, uint32_t height, CUcontext context)
-    : plane(width * 3, height, ElemSize(), context) {}
+    : plane(width * 3, height, ElemSize(), DataType(), context) {}
 
 SurfaceBGR& SurfaceBGR::operator=(const SurfaceBGR& other) {
   plane = other.plane;
@@ -1276,11 +1281,11 @@ SurfaceRGBPlanar::SurfaceRGBPlanar(const SurfaceRGBPlanar& other)
 
 SurfaceRGBPlanar::SurfaceRGBPlanar(uint32_t width, uint32_t height,
                                    CUcontext context)
-    : plane(width, height * 3, ElemSize(), context) {}
+    : plane(width, height * 3, ElemSize(), DataType(), context) {}
 
 VPF::SurfaceRGBPlanar::SurfaceRGBPlanar(uint32_t width, uint32_t height,
                                         uint32_t elemSize, CUcontext context)
-    : plane(width, height * 3, elemSize, context) {}
+    : plane(width, height * 3, elemSize, DataType(), context) {}
 
 SurfaceRGBPlanar& SurfaceRGBPlanar::operator=(const SurfaceRGBPlanar& other) {
   plane = other.plane;
@@ -1368,7 +1373,7 @@ SurfaceRGB32F::SurfaceRGB32F() = default;
 SurfaceRGB32F::SurfaceRGB32F(const SurfaceRGB32F& other) : plane(other.plane) {}
 
 SurfaceRGB32F::SurfaceRGB32F(uint32_t width, uint32_t height, CUcontext context)
-    : plane(width * 3, height, ElemSize(), context) {}
+    : plane(width * 3, height, ElemSize(), DataType(), context) {}
 
 SurfaceRGB32F& SurfaceRGB32F::operator=(const SurfaceRGB32F& other) {
   plane = other.plane;
@@ -1443,7 +1448,7 @@ SurfaceRGB32FPlanar::SurfaceRGB32FPlanar(const SurfaceRGB32FPlanar& other)
 
 SurfaceRGB32FPlanar::SurfaceRGB32FPlanar(uint32_t width, uint32_t height,
                                          CUcontext context)
-    : plane(width, height * 3, ElemSize(), context) {}
+    : plane(width, height * 3, ElemSize(), DataType(), context) {}
 
 SurfaceRGB32FPlanar&
 SurfaceRGB32FPlanar::operator=(const SurfaceRGB32FPlanar& other) {
@@ -1541,7 +1546,7 @@ SurfaceP12::SurfaceP12() = default;
 SurfaceP12::SurfaceP12(const SurfaceP12& other) : plane(other.plane) {}
 
 SurfaceP12::SurfaceP12(uint32_t width, uint32_t height, CUcontext context)
-    : plane(width, height * 3 / 2, ElemSize(), context) {}
+    : plane(width, height * 3 / 2, ElemSize(), DataType(), context) {}
 
 SurfaceP12& SurfaceP12::operator=(const SurfaceP12& other) {
   plane = other.plane;

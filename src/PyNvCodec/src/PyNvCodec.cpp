@@ -15,6 +15,7 @@
  */
 
 #include "PyNvCodec.hpp"
+#include "dlpack.h"
 
 using namespace std;
 using namespace VPF;
@@ -380,6 +381,15 @@ PYBIND11_MODULE(_PyNvCodec, m) {
       .value("JPEG", ColorRange::JPEG,
              "Full of JPEG color range. Uses full [0;255] range.")
       .value("UDEF", ColorRange::UDEF, "Undefined color range.")
+      .export_values();
+
+  py::enum_<DLDeviceType>(m, "DLDeviceType")
+      .value("kDLCPU", kDLCPU, "CPU device.")
+      .value("kDLCUDA", kDLCUDA, "CUDA GPU device.")
+      .value("kDLCUDAHost", kDLCUDAHost,
+             "Pinned CUDA CPU memory by cudaMallocHost.")
+      .value("kDLCUDAManaged", kDLCUDAManaged,
+             "CUDA managed/unified memory allocated by cudaMallocManaged.")
       .export_values();
 
   py::enum_<cudaVideoCodec>(m, "CudaVideoCodec")

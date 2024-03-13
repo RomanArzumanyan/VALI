@@ -60,6 +60,43 @@ class TestSurfacePycuda(unittest.TestCase):
         super().__init__(methodName=methodName)
         cuda.init()
 
+    def test_surface_plane_dlpack(self):
+        with open("gt_files.json") as f:
+            gtInfo = tc.GroundTruth(**json.load(f)["basic"])
+
+            nvDec = nvc.PyNvDecoder(
+                input=gtInfo.uri,
+                gpu_id=0)
+
+            nvCvt = nvc.PySurfaceConverter(
+                nvDec.Width(),
+                nvDec.Height(),
+                nvc.PixelFormat.NV12,
+                nvc.PixelFormat.RGB,
+                gpu_id=0)
+
+            # Use color space and range of original file.
+            cc_ctx = nvc.ColorspaceConversionContext(
+                nvc.ColorSpace.BT_709,
+                nvc.ColorRange.MPEG)
+
+            for i in range(0, gtInfo.num_frames):
+                surf_src, _ = nvDec.DecodeSingleSurface()
+                if surf_src.Empty():
+                    self.fail("Fail to decode surface")
+
+                surf_dst, _ = nvCvt.Execute(surf_src, cc_ctx)
+                if surf_dst.Empty():
+                    self.fail("Fail to convert surface")
+
+                surf_plane = surf_dst.PlanePtr()
+                src_tensor = torch.from_dlpack(surf_plane)
+                self.assertEqual(
+                    src_tensor.shape[0] * src_tensor.shape[1], surf_dst.HostSize())
+                
+                rgb_frame = src_tensor.cpu().numpy()
+                self.assertEqual(rgb_frame.size, surf_dst.HostSize())
+
     def test_pycuda_memcpy_Surface_Surface(self):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
@@ -143,7 +180,7 @@ class TestSurfacePycuda(unittest.TestCase):
             src_plane = surf_src.PlanePtr()
 
             surface_tensor = torch.empty(
-                size = (src_plane.Height(), src_plane.Width()),
+                size=(src_plane.Height(), src_plane.Width()),
                 dtype=torch.uint8,
                 device=torch.device(f"cuda:{gpu_id}"),
             )
@@ -205,7 +242,6 @@ class TestSurfacePycuda(unittest.TestCase):
                                    nvDec.Height(), "nv12.yuv")
                 self.fail("Frames are not same")
 
-                
     def test_context_manager(self):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
@@ -216,6 +252,7 @@ class TestSurfacePycuda(unittest.TestCase):
         with nvc.SurfaceView(surf) as surfView:
             self.assertIsNotNone(surfView)
             self.assertEqual(surfView.Width(), surf.Width())
+
 
 if __name__ == "__main__":
     unittest.main()
