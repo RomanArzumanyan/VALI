@@ -60,7 +60,7 @@ class TestSurfacePycuda(unittest.TestCase):
         super().__init__(methodName=methodName)
         cuda.init()
 
-    def test_surface_plane_dlpack(self):
+    def test_surface_plane_from_dlpack(self):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
 

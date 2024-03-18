@@ -38,7 +38,7 @@ find_package(CUDAToolkit 11.2 REQUIRED)
 include(GenerateExportHeader)
 
 if (WIN32)
-    include("../../common.cmake")
+    include("${PROJECT_ROOT_DIR}/common.cmake")
     if (NOT DEFINED FFMPEG_ROOT)
         message (FATAL "Define FFMPEG_ROOT variable before build")
     endif(FFMPEG_ROOT)
@@ -123,7 +123,8 @@ target_include_directories(
     TC
     PUBLIC
         inc
-        ${TC_VIDEO_CODEC_INTERFACE_DIR} # TODO: check if it can be made private!
+        "${PROJECT_ROOT_DIR}/extern/dlpack/include/dlpack"
+        ${TC_VIDEO_CODEC_INTERFACE_DIR}
         ${CMAKE_CURRENT_BINARY_DIR}
 )
 if(NOT EXISTS ${TC_VIDEO_CODEC_INTERFACE_DIR}/nvEncodeAPI.h)

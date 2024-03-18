@@ -87,7 +87,12 @@ target_link_libraries(
 	CUDA::nppicc
 	CUDA::nppidei
 	${FFMPEG_LIBRARIES})
-include_directories(${FFMPEG_INCLUDE_DIRS})
+
+include_directories(
+	${FFMPEG_INCLUDE_DIRS}
+	"${PROJECT_ROOT_DIR}/extern/dlpack/include/dlpack"
+)
+
 include(GNUInstallDirs)
 
 set_target_properties(_PyNvCodec PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)

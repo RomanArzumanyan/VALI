@@ -240,7 +240,7 @@ void Init_PySurface(py::module& m) {
   py::class_<SurfacePlane, shared_ptr<SurfacePlane>>(
       m, "SurfacePlane",
       "Continious 2D chunk of memory stored in vRAM which represents single "
-      "plane / channel of video frame.")
+      "plane / channel of video frame. It supports DLPack specification.")
       .def("Width", &SurfacePlane::Width,
            R"pbdoc(
         Get width in pixels
@@ -436,6 +436,116 @@ void Init_PySurface(py::module& m) {
         :param width: width in pixels
         :param height: height in pixels
         :param context: CUDA contet to use
+    )pbdoc")
+      .def_static(
+          "from_dlpack",
+          [](PyObject* obj) {
+            try {
+              auto capsule = PyObject_CallMethod((PyObject*)obj->ob_type,
+                                                 "__dlpack__", "O", obj);
+              if (!capsule) {
+                Py_DECREF(capsule);
+                throw std::runtime_error("");
+              }
+
+              auto managed =
+                  (DLManagedTensor*)PyCapsule_GetPointer(capsule, "dltensor");
+
+              if (!managed) {
+                Py_DECREF(capsule);
+                throw std::runtime_error("");
+              }
+
+              auto ndim = managed->dl_tensor.ndim;
+              if (ndim != 2) {
+                Py_DECREF(capsule);
+                throw std::runtime_error("");
+              }
+
+              auto device_type = managed->dl_tensor.device.device_type;
+              if (device_type != kDLCUDA) {
+                Py_DECREF(capsule);
+                throw std::runtime_error("");
+              }
+
+              if (managed->dl_tensor.dtype.lanes != 1) {
+                Py_DECREF(capsule);
+                throw std::runtime_error("");
+              }
+
+              auto typenum = -1;
+              auto bits = managed->dl_tensor.dtype.bits;
+              auto itemsize = bits / 8;
+
+              switch (managed->dl_tensor.dtype.code) {
+              case kDLUInt:
+                switch (bits) {
+                case 8:
+                  typenum = 1;
+                  break;
+                case 16:
+                  typenum = 2;
+                  break;
+                case 32:
+                  typenum = 3;
+                  break;
+                case 64:
+                  typenum = 4;
+                  break;
+                }
+                break;
+              case kDLFloat:
+                switch (bits) {
+                case 32:
+                  typenum = 5;
+                  break;
+                }
+                break;
+              }
+
+              if (typenum == -1) {
+                Py_DECREF(capsule);
+                throw std::runtime_error("");
+              }
+
+              if (managed->dl_tensor.strides[0] != 1) {
+                Py_DECREF(capsule);
+                throw std::runtime_error("");
+              }
+
+              auto height = managed->dl_tensor.shape[0];
+              auto width = managed->dl_tensor.shape[1];
+              auto pitch = managed->dl_tensor.strides[1];
+              auto dptr = (CUdeviceptr)managed->dl_tensor.data +
+                          managed->dl_tensor.byte_offset;
+
+              auto plane_ptr = std::make_shared<SurfacePlane>(
+                  width, height, pitch, itemsize,
+                  (DLDataTypeCode)managed->dl_tensor.dtype.code, dptr);
+
+              if (!plane_ptr) {
+                Py_DECREF(capsule);
+                throw std::runtime_error("");
+              }
+
+              Py_DECREF(capsule);
+
+              auto surface =
+                  std::shared_ptr<Surface>(Surface::Make(Pixel_Format::RGB));
+
+              if (!surface) {
+                throw std::runtime_error("");
+              }
+
+              surface->Update(plane_ptr.get(), 0U);
+              return surface;
+            } catch (...) {
+              return std::shared_ptr<Surface>(Surface::Make(Pixel_Format::RGB));
+            }
+          },
+          R"pbdoc(
+        DLPack: Make Surface from dlpack, don not own memory. Primary device 
+        context will be used.
     )pbdoc")
       .def(
           "PlanePtr",
