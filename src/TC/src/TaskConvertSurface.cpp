@@ -1225,6 +1225,74 @@ struct rgb32f_deinterleave final : public NppConvertSurface_Impl {
   }
 };
 
+struct p16_nv12 final : public NppConvertSurface_Impl {
+  /* Source format is needed because P10 and P12 to NV12 conversions share
+   * the same implementation. The only difference is bit depth value which
+   * is calculated at a runtime.
+   */
+  p16_nv12(uint32_t width, uint32_t height, CUcontext context, CUstream stream,
+           Pixel_Format src_fmt)
+      : NppConvertSurface_Impl(context, stream, src_fmt, NV12) {
+    pScratch = std::make_shared<SurfacePlane>(width, height, sizeof(uint16_t),
+                                              context);
+  }
+
+  Token* Execute(Token* pSrcToken, Token* pDstToken,
+                 ColorspaceConversionContext* pCtx) override {
+    NvtxMark tick(GetNvtxTickName().c_str());
+    details.info = TaskExecInfo::SUCCESS;
+
+    /* No Validate() call here because same code serves 2 different input
+     * pixel formats.
+     */
+    auto pInput = (Surface*)pSrcToken;
+    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+    if (!pInput || !pOutput) {
+      details.info = TaskExecInfo::INVALID_INPUT;
+      return nullptr;
+    }
+
+    constexpr auto bit_depth = 16U;
+    for (int i = 0; i < pInput->NumPlanes(); i++) {
+      // Take 8 most significant bits, save result in 16-bit scratch buffer;
+      auto pSrc = (Npp16u*)pInput->PlanePtr(i);
+      int nSrcStep = pInput->Pitch(i);
+      Npp16u nConstant = 1 << (bit_depth - (int)pSurface->ElemSize() * 8);
+      auto pDstScratch = (Npp16u*)pScratch->GpuMem();
+      int nDstStep = pScratch->Pitch();
+      NppiSize oSizeRoi = {0};
+      oSizeRoi.height = pSurface->Height(i);
+      oSizeRoi.width = pSurface->Width(i);
+      auto const nScaleFactor = 0;
+      auto err =
+          nppiDivC_16u_C1RSfs_Ctx(pSrc, nSrcStep, nConstant, pDstScratch,
+                                  nDstStep, oSizeRoi, nScaleFactor, nppCtx);
+      if (NPP_NO_ERROR != err) {
+        details.info = TaskExecInfo::FAIL;
+        return nullptr;
+      }
+
+      // Bit depth conversion from 16-bit scratch to output;
+      pSrc = (Npp16u*)pScratch->GpuMem();
+      nSrcStep = pScratch->Pitch();
+      Npp8u* pDst = (Npp8u*)pOutput->PlanePtr(i);
+      nDstStep = pSurface->Pitch(i);
+      oSizeRoi.height = pSurface->Height(i);
+      oSizeRoi.width = pSurface->Width(i);
+      err = nppiConvert_16u8u_C1R_Ctx(pSrc, nSrcStep, pDst, nDstStep,
+                                           oSizeRoi, nppCtx);
+      if (NPP_NO_ERROR != err) {
+        details.info = TaskExecInfo::FAIL;
+        return nullptr;
+      }
+    }
+
+    return pOutput;
+  }
+
+  std::shared_ptr<SurfacePlane> pScratch = nullptr;
+};
+
 } // namespace VPF
 
 auto const cuda_stream_sync = [](void* stream) {
@@ -1240,6 +1308,10 @@ ConvertSurface::ConvertSurface(uint32_t width, uint32_t height,
     pImpl = new nv12_yuv420(width, height, ctx, str);
   } else if (YUV420 == inFormat && NV12 == outFormat) {
     pImpl = new yuv420_nv12(width, height, ctx, str);
+  } else if (P10 == inFormat && NV12 == outFormat) {
+    pImpl = new p16_nv12(width, height, ctx, str, P10);
+  } else if (P12 == inFormat && NV12 == outFormat) {
+    pImpl = new p16_nv12(width, height, ctx, str, P12);
   } else if (NV12 == inFormat && RGB == outFormat) {
     pImpl = new nv12_rgb(width, height, ctx, str);
   } else if (NV12 == inFormat && BGR == outFormat) {

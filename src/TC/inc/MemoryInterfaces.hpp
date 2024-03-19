@@ -490,26 +490,45 @@ private:
   SurfacePlane planeV;
 };
 
-class TC_EXPORT SurfaceP10 : public SurfaceNV12 {
+class TC_EXPORT SurfaceP10 : public Surface {
 public:
-  virtual uint32_t ElemSize() const override { return sizeof(uint16_t); }
-  virtual Pixel_Format PixelFormat() const override { return P10; }
+  ~SurfaceP10() = default;
 
-  SurfaceP10();
+  SurfaceP10() = default;
   SurfaceP10(const SurfaceP10 &other);
   SurfaceP10(uint32_t width, uint32_t height, CUcontext context);
   SurfaceP10 &operator=(const SurfaceP10 &other);
 
-  Surface *Create() override;
+  virtual Surface *Create() override;
+
+  uint32_t Width(uint32_t planeNumber = 0U) const override;
+  uint32_t WidthInBytes(uint32_t planeNumber = 0U) const override;
+  uint32_t Height(uint32_t planeNumber = 0U) const override;
+  uint32_t Pitch(uint32_t planeNumber = 0U) const override;
+  uint32_t HostMemSize() const override;
+
+  CUdeviceptr PlanePtr(uint32_t planeNumber = 0U) override;
+  virtual Pixel_Format PixelFormat() const override { return P10; }
+  uint32_t NumPlanes() const override { return 2; }
+  virtual uint32_t ElemSize() const override { return sizeof(uint16_t); }
+  bool Empty() const override { return 0UL == plane.GpuMem(); }
+
+  void Update(const SurfacePlane &newPlane);
+  bool Update(SurfacePlane *pPlanes, size_t planesNum) override;
+
+  SurfacePlane *GetSurfacePlane(uint32_t planeNumber = 0U) override;
+
+private:
+  SurfacePlane plane;
 };
 
 /* 8-bit NV12 image;
  */
 class TC_EXPORT SurfaceP12 : public Surface {
 public:
-  ~SurfaceP12();
+  ~SurfaceP12() = default;
 
-  SurfaceP12();
+  SurfaceP12() = default;
   SurfaceP12(const SurfaceP12 &other);
   SurfaceP12(uint32_t width, uint32_t height, CUcontext context);
   SurfaceP12 &operator=(const SurfaceP12 &other);
