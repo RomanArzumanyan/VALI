@@ -21,7 +21,7 @@ if __name__ == "__main__":
     PytorchNvCodec = "PytorchNvCodec @ git+https://github.com/RomanArzumanyan/VALI.git#subdirectory=src/PytorchNvCodec/"
     skbuild.setup(
         name="PyNvCodec",
-        version="2.1.1",
+        version="2.1.3",
         description="Video Processing Library with full NVENC/NVDEC hardware acceleration",
         author="Roman Arzumanyan",
         license="Apache 2.0",
@@ -41,5 +41,5 @@ if __name__ == "__main__":
         package_data={"PyNvCodec": ["__init__.pyi"]},
         package_dir={"": "src"},
         cmake_install_dir="src",
-        cmake_args=["-DCMAKE_BUILD_TYPE=Debug"],
+        #cmake_args=["-DCMAKE_BUILD_TYPE=Debug"],
     )

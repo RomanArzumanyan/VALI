@@ -439,7 +439,7 @@ void Init_PySurface(py::module& m) {
     )pbdoc")
       .def_static(
           "from_dlpack",
-          [](py::capsule cap) {
+          [](py::capsule cap, Pixel_Format fmt) {
             try {
               auto ptr = cap.ptr();
               if (!ptr) {
@@ -514,8 +514,7 @@ void Init_PySurface(py::module& m) {
                 throw std::runtime_error("");
               }
 
-              auto surface =
-                  std::shared_ptr<Surface>(Surface::Make(Pixel_Format::RGB));
+              auto surface = std::shared_ptr<Surface>(Surface::Make(fmt));
 
               if (!surface) {
                 throw std::runtime_error("");
@@ -527,9 +526,14 @@ void Init_PySurface(py::module& m) {
               return std::shared_ptr<Surface>(Surface::Make(Pixel_Format::RGB));
             }
           },
+          py::arg("capsule"), py::arg("format") = Pixel_Format::RGB,
           R"pbdoc(
-        DLPack: Make Surface from dlpack, don not own memory. Primary device 
-        context will be used.
+        DLPack: Make Surface from dlpack, don not own memory.
+
+        :param capsule: capsule object with manager dltensor inside
+        :param fmt: pixel format, by default PyNvCodec.PixelFormat.RGB
+        :return: Surface
+        :rtype: PyNvCodec.Surface
     )pbdoc")
       .def(
           "PlanePtr",
