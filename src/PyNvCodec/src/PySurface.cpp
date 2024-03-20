@@ -439,37 +439,30 @@ void Init_PySurface(py::module& m) {
     )pbdoc")
       .def_static(
           "from_dlpack",
-          [](PyObject* obj) {
+          [](py::capsule cap) {
             try {
-              auto capsule = PyObject_CallMethod((PyObject*)obj->ob_type,
-                                                 "__dlpack__", "O", obj);
-              if (!capsule) {
-                Py_DECREF(capsule);
+              auto ptr = cap.ptr();
+              if (!ptr) {
                 throw std::runtime_error("");
               }
 
               auto managed =
-                  (DLManagedTensor*)PyCapsule_GetPointer(capsule, "dltensor");
-
+                  (DLManagedTensor*)PyCapsule_GetPointer(ptr, "dltensor");
               if (!managed) {
-                Py_DECREF(capsule);
                 throw std::runtime_error("");
               }
 
               auto ndim = managed->dl_tensor.ndim;
               if (ndim != 2) {
-                Py_DECREF(capsule);
                 throw std::runtime_error("");
               }
 
               auto device_type = managed->dl_tensor.device.device_type;
               if (device_type != kDLCUDA) {
-                Py_DECREF(capsule);
                 throw std::runtime_error("");
               }
 
               if (managed->dl_tensor.dtype.lanes != 1) {
-                Py_DECREF(capsule);
                 throw std::runtime_error("");
               }
 
@@ -504,18 +497,12 @@ void Init_PySurface(py::module& m) {
               }
 
               if (typenum == -1) {
-                Py_DECREF(capsule);
-                throw std::runtime_error("");
-              }
-
-              if (managed->dl_tensor.strides[0] != 1) {
-                Py_DECREF(capsule);
                 throw std::runtime_error("");
               }
 
               auto height = managed->dl_tensor.shape[0];
               auto width = managed->dl_tensor.shape[1];
-              auto pitch = managed->dl_tensor.strides[1];
+              auto pitch = managed->dl_tensor.strides[0];
               auto dptr = (CUdeviceptr)managed->dl_tensor.data +
                           managed->dl_tensor.byte_offset;
 
@@ -524,11 +511,8 @@ void Init_PySurface(py::module& m) {
                   (DLDataTypeCode)managed->dl_tensor.dtype.code, dptr);
 
               if (!plane_ptr) {
-                Py_DECREF(capsule);
                 throw std::runtime_error("");
               }
-
-              Py_DECREF(capsule);
 
               auto surface =
                   std::shared_ptr<Surface>(Surface::Make(Pixel_Format::RGB));
@@ -537,7 +521,7 @@ void Init_PySurface(py::module& m) {
                 throw std::runtime_error("");
               }
 
-              surface->Update(plane_ptr.get(), 0U);
+              surface->Update(plane_ptr.get(), 1U);
               return surface;
             } catch (...) {
               return std::shared_ptr<Surface>(Surface::Make(Pixel_Format::RGB));
