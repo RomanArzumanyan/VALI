@@ -362,7 +362,7 @@ public:
 
   /* Update from set of image planes, don't own the memory;
    */
-  virtual bool Update(SurfacePlane* pPlanes, size_t planesNum) = 0;
+  virtual bool Update(SurfacePlane** pPlanes, size_t planesNum) = 0;
 
   /* Copy constructor which does CUDA memalloc + deep copy;
    */
@@ -433,8 +433,8 @@ public:
   bool Empty() const override { return 0UL == plane.GpuMem(); }
   DLDataTypeCode DataType() const override { return kDLUInt; }
 
-  void Update(const SurfacePlane& newPlane);
-  bool Update(SurfacePlane* pPlanes, size_t planesNum) override;
+  bool Update(SurfacePlane& newPlane);
+  bool Update(SurfacePlane** pPlanes, size_t planesNum) override;
   SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) override;
 
 private:
@@ -469,8 +469,8 @@ public:
   bool Empty() const override { return 0UL == plane.GpuMem(); }
   DLDataTypeCode DataType() const override { return kDLUInt; }
 
-  void Update(const SurfacePlane& newPlane);
-  bool Update(SurfacePlane* pPlanes, size_t planesNum) override;
+  bool Update(SurfacePlane& newPlane);
+  bool Update(SurfacePlane** pPlanes, size_t planesNum) override;
 
   SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) override;
 
@@ -507,9 +507,9 @@ public:
   }
   DLDataTypeCode DataType() const override { return kDLUInt; }
 
-  void Update(const SurfacePlane& newPlaneY, const SurfacePlane& newPlaneU,
-              const SurfacePlane& newPlaneV);
-  bool Update(SurfacePlane* pPlanes, size_t planesNum) override;
+  bool Update(SurfacePlane& newPlaneY, SurfacePlane& newPlaneU,
+              SurfacePlane& newPlaneV);
+  bool Update(SurfacePlane** pPlanes, size_t planesNum) override;
   SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) override;
 
 private:
@@ -559,8 +559,8 @@ public:
   bool Empty() const override { return 0UL == plane.GpuMem(); }
   DLDataTypeCode DataType() const override { return kDLUInt; }
 
-  void Update(const SurfacePlane& newPlane);
-  bool Update(SurfacePlane* pPlanes, size_t planesNum) override;
+  bool Update(SurfacePlane& newPlane);
+  bool Update(SurfacePlane** pPlanes, size_t planesNum) override;
 
   SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) override;
 
@@ -595,9 +595,9 @@ public:
   }
   DLDataTypeCode DataType() const override { return kDLUInt; }
 
-  void Update(const SurfacePlane& newPlaneY, const SurfacePlane& newPlaneU,
-              const SurfacePlane& newPlaneV);
-  bool Update(SurfacePlane* pPlanes, size_t planesNum) override;
+  bool Update(SurfacePlane& newPlaneY, SurfacePlane& newPlaneU,
+              SurfacePlane& newPlaneV);
+  bool Update(SurfacePlane** pPlanes, size_t planesNum) override;
   SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) override;
 
 private:
@@ -632,8 +632,8 @@ public:
   bool Empty() const override { return 0UL == plane.GpuMem(); }
   DLDataTypeCode DataType() const override { return kDLUInt; }
 
-  void Update(const SurfacePlane& newPlane);
-  bool Update(SurfacePlane* pPlanes, size_t planesNum) override;
+  bool Update(SurfacePlane& newPlane);
+  bool Update(SurfacePlane** pPlanes, size_t planesNum) override;
   SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) override;
 
 protected:
@@ -666,7 +666,8 @@ public:
   bool Empty() const override { return 0UL == plane.GpuMem(); }
   DLDataTypeCode DataType() const override { return kDLUInt; }
 
-  void Update(const SurfacePlane& newPlane);
+  bool Update(SurfacePlane& newPlane);
+  bool Update(SurfacePlane** pPlanes, size_t planesNum) override;
   SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) override;
 
 protected:
@@ -701,8 +702,8 @@ public:
   bool Empty() const override { return 0UL == plane.GpuMem(); }
   DLDataTypeCode DataType() const override { return kDLUInt; }
 
-  void Update(const SurfacePlane& newPlane);
-  bool Update(SurfacePlane* pPlanes, size_t planesNum) override;
+  bool Update(SurfacePlane& newPlane);
+  bool Update(SurfacePlane** pPlanes, size_t planesNum) override;
   SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) override;
 
 protected:
@@ -754,8 +755,8 @@ public:
   bool Empty() const override { return 0UL == plane.GpuMem(); }
   DLDataTypeCode DataType() const override { return kDLFloat; }
 
-  void Update(const SurfacePlane& newPlane);
-  bool Update(SurfacePlane* pPlanes, size_t planesNum) override;
+  bool Update(SurfacePlane& newPlane);
+  bool Update(SurfacePlane** pPlanes, size_t planesNum) override;
   SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) override;
 
 protected:
@@ -788,8 +789,8 @@ public:
   bool Empty() const override { return 0UL == plane.GpuMem(); }
   DLDataTypeCode DataType() const override { return kDLFloat; }
 
-  void Update(const SurfacePlane& newPlane);
-  bool Update(SurfacePlane* pPlanes, size_t planesNum) override;
+  bool Update(SurfacePlane& newPlane);
+  bool Update(SurfacePlane** pPlanes, size_t planesNum) override;
   SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) override;
 
 protected:

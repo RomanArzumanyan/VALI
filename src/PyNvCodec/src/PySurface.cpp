@@ -440,91 +440,56 @@ void Init_PySurface(py::module& m) {
       .def_static(
           "from_dlpack",
           [](py::capsule cap, Pixel_Format fmt) {
-            try {
               auto ptr = cap.ptr();
               if (!ptr) {
-                throw std::runtime_error("");
+                throw std::runtime_error("Empty capsule.");
               }
 
               auto managed =
                   (DLManagedTensor*)PyCapsule_GetPointer(ptr, "dltensor");
               if (!managed) {
-                throw std::runtime_error("");
+                throw std::runtime_error("Capsule doesn't contain dltensor.");
               }
 
               auto ndim = managed->dl_tensor.ndim;
               if (ndim != 2) {
-                throw std::runtime_error("");
+                throw std::runtime_error("Only 2D tensors are supported.");
               }
 
               auto device_type = managed->dl_tensor.device.device_type;
               if (device_type != kDLCUDA) {
-                throw std::runtime_error("");
+                throw std::runtime_error("Only kDLCUDA tensors are supported.");
               }
 
               if (managed->dl_tensor.dtype.lanes != 1) {
-                throw std::runtime_error("");
+                throw std::runtime_error("Only 1 lane tensors are supported.");
               }
 
-              auto typenum = -1;
-              auto bits = managed->dl_tensor.dtype.bits;
-              auto itemsize = bits / 8;
-
-              switch (managed->dl_tensor.dtype.code) {
-              case kDLUInt:
-                switch (bits) {
-                case 8:
-                  typenum = 1;
-                  break;
-                case 16:
-                  typenum = 2;
-                  break;
-                case 32:
-                  typenum = 3;
-                  break;
-                case 64:
-                  typenum = 4;
-                  break;
-                }
-                break;
-              case kDLFloat:
-                switch (bits) {
-                case 32:
-                  typenum = 5;
-                  break;
-                }
-                break;
+              if ((managed->dl_tensor.dtype.code != kDLUInt) &&
+                  (managed->dl_tensor.dtype.code != kDLFloat)) {
+                throw std::runtime_error(
+                    "Only kDLUInt and kDLFloat tensors are supported.");
               }
-
-              if (typenum == -1) {
-                throw std::runtime_error("");
-              }
-
-              auto height = managed->dl_tensor.shape[0];
-              auto width = managed->dl_tensor.shape[1];
-              auto pitch = managed->dl_tensor.strides[0];
-              auto dptr = (CUdeviceptr)managed->dl_tensor.data +
-                          managed->dl_tensor.byte_offset;
 
               auto plane_ptr = std::make_shared<SurfacePlane>(
-                  width, height, pitch, itemsize,
-                  (DLDataTypeCode)managed->dl_tensor.dtype.code, dptr);
-
+                  managed->dl_tensor.shape[1], managed->dl_tensor.shape[0],
+                  managed->dl_tensor.strides[0],
+                  managed->dl_tensor.dtype.bits / 8,
+                  (DLDataTypeCode)managed->dl_tensor.dtype.code,
+                  (CUdeviceptr)managed->dl_tensor.data +
+                      managed->dl_tensor.byte_offset);
               if (!plane_ptr) {
-                throw std::runtime_error("");
+                throw std::runtime_error("Failed to make SurfacePlane.");
               }
 
               auto surface = std::shared_ptr<Surface>(Surface::Make(fmt));
-
               if (!surface) {
-                throw std::runtime_error("");
+                throw std::runtime_error("Failed to make Surface.");
               }
 
-              surface->Update(plane_ptr.get(), 1U);
+              SurfacePlane* planes[] = {plane_ptr.get()};
+              surface->Update(planes, 1U);
               return surface;
-            } catch (...) {
-              return std::shared_ptr<Surface>(Surface::Make(Pixel_Format::RGB));
-            }
           },
           py::arg("capsule"), py::arg("format") = Pixel_Format::RGB,
           R"pbdoc(

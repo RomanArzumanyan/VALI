@@ -721,13 +721,33 @@ SurfaceY& SurfaceY::operator=(const SurfaceY& other) {
   return *this;
 }
 
-bool SurfaceY::Update(SurfacePlane* pPlanes, size_t planesNum) {
-  if (pPlanes && 1 == planesNum && !plane.OwnMemory()) {
-    plane = *pPlanes;
-    return true;
+static bool ValidatePlanes(SurfacePlane** pPlanes, size_t planesNum,
+                           size_t surface_elem_size,
+                           size_t surface_num_planes) {
+  if (!pPlanes) {
+    return false;
   }
 
-  return false;
+  if (planesNum != surface_num_planes) {
+    return false;
+  }
+
+  const auto elem_size = pPlanes[0]->ElemSize();
+  if (surface_elem_size != elem_size) {
+    return false;
+  }
+
+  for (auto i = 0U; i < planesNum; i++) {
+    if (!pPlanes[i]) {
+      return false;
+    }
+
+    if (pPlanes[i]->ElemSize() != elem_size) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 uint32_t SurfaceY::Width(uint32_t planeNumber) const {
@@ -772,7 +792,23 @@ CUdeviceptr SurfaceY::PlanePtr(uint32_t planeNumber) {
   throw invalid_argument("Invalid plane number");
 }
 
-void SurfaceY::Update(const SurfacePlane& newPlane) { plane = newPlane; }
+bool SurfaceY::Update(SurfacePlane& newPlane) {
+  SurfacePlane* planes[] = {&newPlane};
+  return Update(planes, 1U);
+}
+
+bool SurfaceY::Update(SurfacePlane** pPlanes, size_t planesNum) {
+  if (!ValidatePlanes(pPlanes, planesNum, ElemSize(), 1)) {
+    return false;
+  }
+
+  if (!plane.OwnMemory()) {
+    plane = *pPlanes[0];
+    return true;
+  }
+
+  return false;
+}
 
 SurfacePlane* SurfaceY::GetSurfacePlane(uint32_t planeNumber) {
   return planeNumber ? nullptr : &plane;
@@ -854,11 +890,18 @@ CUdeviceptr SurfaceNV12::PlanePtr(uint32_t planeNumber) {
   throw invalid_argument("Invalid plane number");
 }
 
-void SurfaceNV12::Update(const SurfacePlane& newPlane) { plane = newPlane; }
+bool SurfaceNV12::Update(SurfacePlane& newPlane) {
+  SurfacePlane* planes[] = {&newPlane};
+  return Update(planes, 1);
+}
 
-bool SurfaceNV12::Update(SurfacePlane* pPlanes, size_t planesNum) {
-  if (pPlanes && 1 == planesNum && !plane.OwnMemory()) {
-    plane = *pPlanes;
+bool SurfaceNV12::Update(SurfacePlane** pPlanes, size_t planesNum) {
+  if (!ValidatePlanes(pPlanes, planesNum, ElemSize(), 1)) {
+    return false;
+  }
+
+  if (!plane.OwnMemory()) {
+    plane = *pPlanes[0];
     return true;
   }
 
@@ -966,22 +1009,24 @@ CUdeviceptr SurfaceYUV420::PlanePtr(uint32_t planeNumber) {
   throw invalid_argument("Invalid plane number");
 }
 
-void SurfaceYUV420::Update(const SurfacePlane& newPlaneY,
-                           const SurfacePlane& newPlaneU,
-                           const SurfacePlane& newPlaneV) {
-  planeY = newPlaneY;
-  planeU = newPlaneY;
-  planeV = newPlaneV;
+bool SurfaceYUV420::Update(SurfacePlane& newPlaneY, SurfacePlane& newPlaneU,
+                           SurfacePlane& newPlaneV) {
+  SurfacePlane* planes[] = {&newPlaneY, &newPlaneU, &newPlaneV};
+  return Update(planes, 3);
 }
 
-bool SurfaceYUV420::Update(SurfacePlane* pPlanes, size_t planesNum) {
+bool SurfaceYUV420::Update(SurfacePlane** pPlanes, size_t planesNum) {
+  if (!ValidatePlanes(pPlanes, planesNum, ElemSize(), 3)) {
+    return false;
+  }
+
   bool ownMemory =
       planeY.OwnMemory() || planeU.OwnMemory() || planeV.OwnMemory();
 
-  if (pPlanes && 3 == planesNum && !ownMemory) {
-    planeY = pPlanes[0];
-    planeU = pPlanes[1];
-    planeV = pPlanes[2];
+  if (!ownMemory) {
+    planeY = *pPlanes[0];
+    planeU = *pPlanes[1];
+    planeV = *pPlanes[2];
 
     return true;
   }
@@ -1099,22 +1144,24 @@ CUdeviceptr SurfaceYUV422::PlanePtr(uint32_t planeNumber) {
   throw invalid_argument("Invalid plane number");
 }
 
-void SurfaceYUV422::Update(const SurfacePlane& newPlaneY,
-                           const SurfacePlane& newPlaneU,
-                           const SurfacePlane& newPlaneV) {
-  planeY = newPlaneY;
-  planeU = newPlaneY;
-  planeV = newPlaneV;
+bool SurfaceYUV422::Update(SurfacePlane& newPlaneY, SurfacePlane& newPlaneU,
+                           SurfacePlane& newPlaneV) {
+  SurfacePlane* planes[] = {&newPlaneY, &newPlaneU, &newPlaneV};
+  return Update(planes, 3);
 }
 
-bool SurfaceYUV422::Update(SurfacePlane* pPlanes, size_t planesNum) {
+bool SurfaceYUV422::Update(SurfacePlane** pPlanes, size_t planesNum) {
+  if (!ValidatePlanes(pPlanes, planesNum, ElemSize(), 3)) {
+    return false;
+  }
+
   bool ownMemory =
       planeY.OwnMemory() || planeU.OwnMemory() || planeV.OwnMemory();
 
-  if (pPlanes && 3 == planesNum && !ownMemory) {
-    planeY = pPlanes[0];
-    planeU = pPlanes[1];
-    planeV = pPlanes[2];
+  if (!ownMemory) {
+    planeY = *pPlanes[0];
+    planeU = *pPlanes[1];
+    planeV = *pPlanes[2];
 
     return true;
   }
@@ -1193,11 +1240,18 @@ CUdeviceptr SurfaceRGB::PlanePtr(uint32_t planeNumber) {
   throw invalid_argument("Invalid plane number");
 }
 
-void SurfaceRGB::Update(const SurfacePlane& newPlane) { plane = newPlane; }
+bool SurfaceRGB::Update(SurfacePlane& newPlane) {
+  SurfacePlane* planes[] = {&newPlane};
+  return Update(planes, 1U);
+}
 
-bool SurfaceRGB::Update(SurfacePlane* pPlanes, size_t planesNum) {
-  if (pPlanes && 1 == planesNum && !plane.OwnMemory()) {
-    plane = *pPlanes;
+bool SurfaceRGB::Update(SurfacePlane** pPlanes, size_t planesNum) {
+  if (!ValidatePlanes(pPlanes, planesNum, ElemSize(), 1)) {
+    return false;
+  }
+
+  if (!plane.OwnMemory()) {
+    plane = *pPlanes[0];
     return true;
   }
 
@@ -1266,7 +1320,23 @@ CUdeviceptr SurfaceBGR::PlanePtr(uint32_t planeNumber) {
   throw invalid_argument("Invalid plane number");
 }
 
-void SurfaceBGR::Update(const SurfacePlane& newPlane) { plane = newPlane; }
+bool SurfaceBGR::Update(SurfacePlane& newPlane) {
+  SurfacePlane* planes[] = {&newPlane};
+  return Update(planes, 1);
+}
+
+bool SurfaceBGR::Update(SurfacePlane** pPlanes, size_t planesNum) {
+  if (!ValidatePlanes(pPlanes, planesNum, ElemSize(), 1)) {
+    return false;
+  }
+
+  if (!plane.OwnMemory()) {
+    plane = *pPlanes[0];
+    return true;
+  }
+
+  return false;
+}
 
 SurfacePlane* SurfaceBGR::GetSurfacePlane(uint32_t planeNumber) {
   return planeNumber ? nullptr : &plane;
@@ -1338,13 +1408,18 @@ CUdeviceptr SurfaceRGBPlanar::PlanePtr(uint32_t planeNumber) {
   throw invalid_argument("Invalid plane number");
 }
 
-void SurfaceRGBPlanar::Update(const SurfacePlane& newPlane) {
-  plane = newPlane;
+bool SurfaceRGBPlanar::Update(SurfacePlane& newPlane) {
+  SurfacePlane* planes[] = {&newPlane};
+  return Update(planes, 1);
 }
 
-bool SurfaceRGBPlanar::Update(SurfacePlane* pPlanes, size_t planesNum) {
-  if (pPlanes && 1 == planesNum && !plane.OwnMemory()) {
-    plane = *pPlanes;
+bool SurfaceRGBPlanar::Update(SurfacePlane** pPlanes, size_t planesNum) {
+  if (!ValidatePlanes(pPlanes, planesNum, ElemSize(), 1)) {
+    return false;
+  }
+
+  if (!plane.OwnMemory()) {
+    plane = *pPlanes[0];
     return true;
   }
 
@@ -1424,11 +1499,18 @@ CUdeviceptr SurfaceRGB32F::PlanePtr(uint32_t planeNumber) {
   throw invalid_argument("Invalid plane number");
 }
 
-void SurfaceRGB32F::Update(const SurfacePlane& newPlane) { plane = newPlane; }
+bool SurfaceRGB32F::Update(SurfacePlane& newPlane) {
+  SurfacePlane* planes[] = {&newPlane};
+  return Update(planes, 1);
+}
 
-bool SurfaceRGB32F::Update(SurfacePlane* pPlanes, size_t planesNum) {
-  if (pPlanes && 1 == planesNum && !plane.OwnMemory()) {
-    plane = *pPlanes;
+bool SurfaceRGB32F::Update(SurfacePlane** pPlanes, size_t planesNum) {
+  if (!ValidatePlanes(pPlanes, planesNum, ElemSize(), 1)) {
+    return false;
+  }
+
+  if (!plane.OwnMemory()) {
+    plane = *pPlanes[0];
     return true;
   }
 
@@ -1502,13 +1584,18 @@ CUdeviceptr SurfaceRGB32FPlanar::PlanePtr(uint32_t planeNumber) {
   throw invalid_argument("Invalid plane number");
 }
 
-void SurfaceRGB32FPlanar::Update(const SurfacePlane& newPlane) {
-  plane = newPlane;
+bool SurfaceRGB32FPlanar::Update(SurfacePlane& newPlane) {
+  SurfacePlane* planes[] = {&newPlane};
+  return Update(planes, 1);
 }
 
-bool SurfaceRGB32FPlanar::Update(SurfacePlane* pPlanes, size_t planesNum) {
-  if (pPlanes && 1 == planesNum && !plane.OwnMemory()) {
-    plane = *pPlanes;
+bool SurfaceRGB32FPlanar::Update(SurfacePlane** pPlanes, size_t planesNum) {
+  if (!ValidatePlanes(pPlanes, planesNum, ElemSize(), 1)) {
+    return false;
+  }
+
+  if (!plane.OwnMemory()) {
+    plane = *pPlanes[0];
     return true;
   }
 
@@ -1610,11 +1697,18 @@ CUdeviceptr SurfaceP12::PlanePtr(uint32_t planeNumber) {
   throw invalid_argument("Invalid plane number");
 }
 
-void SurfaceP12::Update(const SurfacePlane& newPlane) { plane = newPlane; }
+bool SurfaceP12::Update(SurfacePlane& newPlane) {
+  SurfacePlane* planes[] = {&newPlane};
+  return Update(planes, 1);
+}
 
-bool SurfaceP12::Update(SurfacePlane* pPlanes, size_t planesNum) {
-  if (pPlanes && 1 == planesNum && !plane.OwnMemory()) {
-    plane = *pPlanes;
+bool SurfaceP12::Update(SurfacePlane** pPlanes, size_t planesNum) {
+  if (!ValidatePlanes(pPlanes, planesNum, ElemSize(), 1)) {
+    return false;
+  }
+
+  if (!plane.OwnMemory()) {
+    plane = *pPlanes[0];
     return true;
   }
 

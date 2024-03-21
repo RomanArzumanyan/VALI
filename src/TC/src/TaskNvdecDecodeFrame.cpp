@@ -937,7 +937,8 @@ TaskExecStatus NvdecDecodeFrame::Run() {
 
       SurfacePlane tmpPlane(rawW, rawH, rawP, elem_size, pImpl->TypeCode(),
                             dec_ctx.mem);
-      pImpl->pLastSurface->Update(&tmpPlane, 1);
+      SurfacePlane *tmpPlanes[] = {&tmpPlane};
+      pImpl->pLastSurface->Update(tmpPlanes, 1);
       SetOutput(pImpl->pLastSurface, 0U);
 
       // Update the reconstructed frame timestamp;
