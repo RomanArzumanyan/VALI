@@ -1709,7 +1709,7 @@ SurfacePlane* SurfaceP12::GetSurfacePlane(uint32_t planeNumber) {
 SurfaceP10::SurfaceP10(const SurfaceP10& other) : plane(other.plane) {}
 
 SurfaceP10::SurfaceP10(uint32_t width, uint32_t height, CUcontext context)
-    : plane(width, height * 3 / 2, ElemSize(), context) {}
+    : plane(width, height * 3 / 2, ElemSize(), DataType(), context) {}
 
 SurfaceP10& SurfaceP10::operator=(const SurfaceP10& other) {
   plane = other.plane;
@@ -1773,11 +1773,18 @@ CUdeviceptr SurfaceP10::PlanePtr(uint32_t planeNumber) {
   throw invalid_argument("Invalid plane number");
 }
 
-void SurfaceP10::Update(const SurfacePlane& newPlane) { plane = newPlane; }
+bool SurfaceP10::Update(SurfacePlane& newPlane) {
+  SurfacePlane* planes[] = {&newPlane};
+  return Update(planes, 1);
+}
 
-bool SurfaceP10::Update(SurfacePlane* pPlanes, size_t planesNum) {
-  if (pPlanes && 1 == planesNum && !plane.OwnMemory()) {
-    plane = *pPlanes;
+bool SurfaceP10::Update(SurfacePlane** pPlanes, size_t planesNum) {
+  if (!ValidatePlanes(pPlanes, planesNum, ElemSize(), 1)) {
+    return false;
+  }
+
+  if (!plane.OwnMemory()) {
+    plane = *pPlanes[0];
     return true;
   }
 

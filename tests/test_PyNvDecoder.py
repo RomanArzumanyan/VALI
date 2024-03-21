@@ -313,7 +313,7 @@ class TestDecoderBuiltin(unittest.TestCase):
                 self.assertEqual(details, nvc.TaskExecInfo.SUCCESS)
 
     def test_decode_all_surfaces(self):
-        for test_case in ["basic", "basic_mpeg4"]:
+        for test_case in ["basic", "basic_mpeg4", "hevc10"]:
             with open("gt_files.json") as f:
                 gtInfo = tc.GroundTruth(**json.load(f)[test_case])
 

@@ -540,6 +540,7 @@ public:
   uint32_t NumPlanes() const override { return 2; }
   virtual uint32_t ElemSize() const override { return sizeof(uint16_t); }
   bool Empty() const override { return 0UL == plane.GpuMem(); }
+  DLDataTypeCode DataType() const override { return kDLUInt; }
 
   bool Update(SurfacePlane &newPlane);
   bool Update(SurfacePlane **pPlanes, size_t planesNum) override;
