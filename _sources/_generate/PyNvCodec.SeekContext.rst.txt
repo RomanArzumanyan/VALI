@@ -1,0 +1,32 @@
+﻿PyNvCodec.SeekContext
+=====================
+
+.. currentmodule:: PyNvCodec
+
+.. autoclass:: SeekContext
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~SeekContext.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~SeekContext.mode
+      ~SeekContext.num_frames_decoded
+      ~SeekContext.out_frame_pts
+      ~SeekContext.seek_frame
+      ~SeekContext.seek_tssec
+   
+   

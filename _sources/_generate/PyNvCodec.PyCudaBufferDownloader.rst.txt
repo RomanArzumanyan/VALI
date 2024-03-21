@@ -1,0 +1,23 @@
+﻿PyNvCodec.PyCudaBufferDownloader
+================================
+
+.. currentmodule:: PyNvCodec
+
+.. autoclass:: PyCudaBufferDownloader
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PyCudaBufferDownloader.DownloadSingleCudaBuffer
+      ~PyCudaBufferDownloader.__init__
+   
+   
+
+   
+   
+   

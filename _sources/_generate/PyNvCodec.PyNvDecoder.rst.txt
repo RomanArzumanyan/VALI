@@ -1,0 +1,41 @@
+﻿PyNvCodec.PyNvDecoder
+=====================
+
+.. currentmodule:: PyNvCodec
+
+.. autoclass:: PyNvDecoder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PyNvDecoder.AvgFramerate
+      ~PyNvDecoder.Capabilities
+      ~PyNvDecoder.ColorRange
+      ~PyNvDecoder.ColorSpace
+      ~PyNvDecoder.DecodeFrameFromPacket
+      ~PyNvDecoder.DecodeSingleFrame
+      ~PyNvDecoder.DecodeSingleSurface
+      ~PyNvDecoder.DecodeSurfaceFromPacket
+      ~PyNvDecoder.FlushSingleFrame
+      ~PyNvDecoder.FlushSingleSurface
+      ~PyNvDecoder.Format
+      ~PyNvDecoder.Framerate
+      ~PyNvDecoder.Framesize
+      ~PyNvDecoder.Height
+      ~PyNvDecoder.IsVFR
+      ~PyNvDecoder.LastPacketData
+      ~PyNvDecoder.Numframes
+      ~PyNvDecoder.Timebase
+      ~PyNvDecoder.Width
+      ~PyNvDecoder.__init__
+   
+   
+
+   
+   
+   

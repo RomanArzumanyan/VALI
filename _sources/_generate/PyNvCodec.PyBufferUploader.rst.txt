@@ -1,0 +1,23 @@
+﻿PyNvCodec.PyBufferUploader
+==========================
+
+.. currentmodule:: PyNvCodec
+
+.. autoclass:: PyBufferUploader
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PyBufferUploader.UploadSingleBuffer
+      ~PyBufferUploader.__init__
+   
+   
+
+   
+   
+   

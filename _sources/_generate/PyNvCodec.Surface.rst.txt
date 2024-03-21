@@ -1,0 +1,36 @@
+﻿PyNvCodec.Surface
+=================
+
+.. currentmodule:: PyNvCodec
+
+.. autoclass:: Surface
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Surface.Clone
+      ~Surface.CopyFrom
+      ~Surface.Crop
+      ~Surface.Empty
+      ~Surface.Format
+      ~Surface.Height
+      ~Surface.HostSize
+      ~Surface.Make
+      ~Surface.NumPlanes
+      ~Surface.OwnMemory
+      ~Surface.Pitch
+      ~Surface.PlanePtr
+      ~Surface.Width
+      ~Surface.__init__
+      ~Surface.from_dlpack
+   
+   
+
+   
+   
+   

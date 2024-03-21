@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PyNvCodec.PyCudaBufferDownloader &#8212; VALI  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/haiku.css?v=e491ac2d" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PyNvCodec.PyBufferUploader" href="PyNvCodec.PyBufferUploader.html" />
+    <link rel="prev" title="PyNvCodec.PyFfmpegDecoder" href="PyNvCodec.PyFfmpegDecoder.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="../index.html">
+          <span>VALI  documentation</span></a></h1>
+        <h2 class="heading"><span>PyNvCodec.PyCudaBufferDownloader</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="PyNvCodec.PyFfmpegDecoder.html">PyNvCodec.PyFfmpegDecoder</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="PyNvCodec.PyBufferUploader.html">PyNvCodec.PyBufferUploader</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content" role="main">
+        
+        
+  <section id="pynvcodec-pycudabufferdownloader">
+<h1>PyNvCodec.PyCudaBufferDownloader<a class="headerlink" href="#pynvcodec-pycudabufferdownloader" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="PyNvCodec.PyCudaBufferDownloader">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">PyNvCodec.</span></span><span class="sig-name descname"><span class="pre">PyCudaBufferDownloader</span></span><a class="headerlink" href="#PyNvCodec.PyCudaBufferDownloader" title="Link to this definition">¶</a></dt>
+<dd><p>This class is used to copy CudaBuffer to numpy array using CUDA DtoH memcpy.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="PyNvCodec.PyCudaBufferDownloader.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#PyNvCodec.PyCudaBufferDownloader.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic">
+<li><p>__init__(self: PyNvCodec._PyNvCodec.PyCudaBufferDownloader, elem_size: int, num_elems: int, gpu_id: int) -&gt; None</p>
+<blockquote>
+<div><p>Constructor method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param elem_size<span class="colon">:</span></dt>
+<dd class="field-odd"><p>single buffer element size in bytes</p>
+</dd>
+<dt class="field-even">param num_elems<span class="colon">:</span></dt>
+<dd class="field-even"><p>number of elements in buffer</p>
+</dd>
+<dt class="field-odd">param gpu_id<span class="colon">:</span></dt>
+<dd class="field-odd"><p>GPU to use for memcopy</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>__init__(self: PyNvCodec._PyNvCodec.PyCudaBufferDownloader, elem_size: int, num_elems: int, context: int, stream: int) -&gt; None</p>
+<blockquote>
+<div><p>Constructor method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param elem_size<span class="colon">:</span></dt>
+<dd class="field-odd"><p>single buffer element size in bytes</p>
+</dd>
+<dt class="field-even">param num_elems<span class="colon">:</span></dt>
+<dd class="field-even"><p>number of elements in buffer</p>
+</dd>
+<dt class="field-odd">param context<span class="colon">:</span></dt>
+<dd class="field-odd"><p>CUDA context to use</p>
+</dd>
+<dt class="field-even">param stream<span class="colon">:</span></dt>
+<dd class="field-even"><p>CUDA stream to use</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+</ol>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#PyNvCodec.PyCudaBufferDownloader.DownloadSingleCudaBuffer" title="PyNvCodec.PyCudaBufferDownloader.DownloadSingleCudaBuffer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DownloadSingleCudaBuffer</span></code></a>(self, buffer, array)</p></td>
+<td><p>Perform DtoH memcopy.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#PyNvCodec.PyCudaBufferDownloader.__init__" title="PyNvCodec.PyCudaBufferDownloader.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Overloaded function.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="PyNvCodec.PyCudaBufferDownloader.DownloadSingleCudaBuffer">
+<span class="sig-name descname"><span class="pre">DownloadSingleCudaBuffer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../PyNvCodec.html#PyNvCodec._PyNvCodec.PyCudaBufferDownloader" title="PyNvCodec._PyNvCodec.PyCudaBufferDownloader"><span class="pre">PyNvCodec._PyNvCodec.PyCudaBufferDownloader</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../PyNvCodec.html#PyNvCodec._PyNvCodec.CudaBuffer" title="PyNvCodec._PyNvCodec.CudaBuffer"><span class="pre">PyNvCodec._PyNvCodec.CudaBuffer</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">array</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.uint8</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#PyNvCodec.PyCudaBufferDownloader.DownloadSingleCudaBuffer" title="Link to this definition">¶</a></dt>
+<dd><p>Perform DtoH memcopy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>buffer</strong> – input CUDA buffer</p></li>
+<li><p><strong>array</strong> – output numpy array</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True in case of success, False otherwise</p>
+</dd>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="PyNvCodec.PyFfmpegDecoder.html">PyNvCodec.PyFfmpegDecoder</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="PyNvCodec.PyBufferUploader.html">PyNvCodec.PyBufferUploader</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023 Roman Arzumanyan.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

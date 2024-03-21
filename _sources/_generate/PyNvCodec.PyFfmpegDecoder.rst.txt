@@ -1,0 +1,35 @@
+﻿PyNvCodec.PyFfmpegDecoder
+=========================
+
+.. currentmodule:: PyNvCodec
+
+.. autoclass:: PyFfmpegDecoder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PyFfmpegDecoder.AvgFramerate
+      ~PyFfmpegDecoder.Codec
+      ~PyFfmpegDecoder.ColorRange
+      ~PyFfmpegDecoder.ColorSpace
+      ~PyFfmpegDecoder.DecodeSingleFrame
+      ~PyFfmpegDecoder.DecodeSingleSurface
+      ~PyFfmpegDecoder.Format
+      ~PyFfmpegDecoder.Framerate
+      ~PyFfmpegDecoder.GetMotionVectors
+      ~PyFfmpegDecoder.Height
+      ~PyFfmpegDecoder.Numframes
+      ~PyFfmpegDecoder.Timebase
+      ~PyFfmpegDecoder.Width
+      ~PyFfmpegDecoder.__init__
+   
+   
+
+   
+   
+   

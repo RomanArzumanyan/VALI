@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PyNvCodec.PySurfaceConverter &#8212; VALI  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/haiku.css?v=e491ac2d" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PyNvCodec.PyNvEncoder" href="PyNvCodec.PyNvEncoder.html" />
+    <link rel="prev" title="PyNvCodec.PySurfaceDownloader" href="PyNvCodec.PySurfaceDownloader.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="../index.html">
+          <span>VALI  documentation</span></a></h1>
+        <h2 class="heading"><span>PyNvCodec.PySurfaceConverter</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="PyNvCodec.PySurfaceDownloader.html">PyNvCodec.PySurfaceDownloader</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="PyNvCodec.PyNvEncoder.html">PyNvCodec.PyNvEncoder</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content" role="main">
+        
+        
+  <section id="pynvcodec-pysurfaceconverter">
+<h1>PyNvCodec.PySurfaceConverter<a class="headerlink" href="#pynvcodec-pysurfaceconverter" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="PyNvCodec.PySurfaceConverter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">PyNvCodec.</span></span><span class="sig-name descname"><span class="pre">PySurfaceConverter</span></span><a class="headerlink" href="#PyNvCodec.PySurfaceConverter" title="Link to this definition">¶</a></dt>
+<dd><p>CUDA-accelerated converter between different pixel formats.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="PyNvCodec.PySurfaceConverter.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#PyNvCodec.PySurfaceConverter.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic">
+<li><p>__init__(self: PyNvCodec._PyNvCodec.PySurfaceConverter, width: int, height: int, src_format: PyNvCodec._PyNvCodec.PixelFormat, dst_format: PyNvCodec._PyNvCodec.PixelFormat, gpu_id: int) -&gt; None</p>
+<blockquote>
+<div><p>Constructor method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param width<span class="colon">:</span></dt>
+<dd class="field-odd"><p>target Surface width</p>
+</dd>
+<dt class="field-even">param height<span class="colon">:</span></dt>
+<dd class="field-even"><p>target Surface height</p>
+</dd>
+<dt class="field-odd">param src_format<span class="colon">:</span></dt>
+<dd class="field-odd"><p>input Surface pixel format</p>
+</dd>
+<dt class="field-even">param dst_format<span class="colon">:</span></dt>
+<dd class="field-even"><p>output Surface pixel format</p>
+</dd>
+<dt class="field-odd">param gpu_id<span class="colon">:</span></dt>
+<dd class="field-odd"><p>what GPU to run conversion on</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>__init__(self: PyNvCodec._PyNvCodec.PySurfaceConverter, width: int, height: int, src_format: PyNvCodec._PyNvCodec.PixelFormat, dst_format: PyNvCodec._PyNvCodec.PixelFormat, context: int, stream: int) -&gt; None</p>
+<blockquote>
+<div><p>Constructor method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param width<span class="colon">:</span></dt>
+<dd class="field-odd"><p>target Surface width</p>
+</dd>
+<dt class="field-even">param height<span class="colon">:</span></dt>
+<dd class="field-even"><p>target Surface height</p>
+</dd>
+<dt class="field-odd">param src_format<span class="colon">:</span></dt>
+<dd class="field-odd"><p>input Surface pixel format</p>
+</dd>
+<dt class="field-even">param dst_format<span class="colon">:</span></dt>
+<dd class="field-even"><p>output Surface pixel format</p>
+</dd>
+<dt class="field-odd">param context<span class="colon">:</span></dt>
+<dd class="field-odd"><p>CUDA context to use for conversion</p>
+</dd>
+<dt class="field-even">param stream<span class="colon">:</span></dt>
+<dd class="field-even"><p>CUDA stream to use for conversion</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+</ol>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#PyNvCodec.PySurfaceConverter.Execute" title="PyNvCodec.PySurfaceConverter.Execute"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Execute</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Overloaded function.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#PyNvCodec.PySurfaceConverter.Format" title="PyNvCodec.PySurfaceConverter.Format"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Format</span></code></a>(self)</p></td>
+<td><p>Get pixel format.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#PyNvCodec.PySurfaceConverter.__init__" title="PyNvCodec.PySurfaceConverter.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Overloaded function.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="PyNvCodec.PySurfaceConverter.Execute">
+<span class="sig-name descname"><span class="pre">Execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#PyNvCodec.PySurfaceConverter.Execute" title="Link to this definition">¶</a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic">
+<li><p>Execute(self: PyNvCodec._PyNvCodec.PySurfaceConverter, src: VPF::Surface, cc_ctx: PyNvCodec._PyNvCodec.ColorspaceConversionContext) -&gt; Tuple[VPF::Surface, PyNvCodec._PyNvCodec.TaskExecInfo]</p>
+<blockquote>
+<div><p>Perform pixel format conversion.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param src<span class="colon">:</span></dt>
+<dd class="field-odd"><p>input Surface. Must be of same format class instance was created with.</p>
+</dd>
+<dt class="field-even">param cc_ctx<span class="colon">:</span></dt>
+<dd class="field-even"><p>colorspace conversion context. Describes color space and color range used for conversion.</p>
+</dd>
+<dt class="field-odd">return<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple containing:
+surface (PyNvCodec.Surface) output surface. Empty in case of failure.
+info (TaskExecInfo) task execution information.</p>
+</dd>
+<dt class="field-even">rtype<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>Execute(self: PyNvCodec._PyNvCodec.PySurfaceConverter, src: VPF::Surface, dst: VPF::Surface, cc_ctx: PyNvCodec._PyNvCodec.ColorspaceConversionContext) -&gt; Tuple[bool, PyNvCodec._PyNvCodec.TaskExecInfo]</p>
+<blockquote>
+<div><p>Perform pixel format conversion.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param src<span class="colon">:</span></dt>
+<dd class="field-odd"><p>input Surface. Must be of same format class instance was created with.</p>
+</dd>
+<dt class="field-even">param dst<span class="colon">:</span></dt>
+<dd class="field-even"><p>output Surface. Must be of suitable format.</p>
+</dd>
+<dt class="field-odd">param cc_ctx<span class="colon">:</span></dt>
+<dd class="field-odd"><p>colorspace conversion context. Describes color space and color range used for conversion.</p>
+</dd>
+<dt class="field-even">return<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple containing:
+success (Bool) True in case of success, False otherwise.
+info (TaskExecInfo) task execution information.</p>
+</dd>
+<dt class="field-odd">rtype<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="PyNvCodec.PySurfaceConverter.Format">
+<span class="sig-name descname"><span class="pre">Format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../PyNvCodec.html#PyNvCodec._PyNvCodec.PySurfaceConverter" title="PyNvCodec._PyNvCodec.PySurfaceConverter"><span class="pre">PyNvCodec._PyNvCodec.PySurfaceConverter</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../PyNvCodec.html#PyNvCodec._PyNvCodec.PixelFormat" title="PyNvCodec._PyNvCodec.PixelFormat"><span class="pre">PyNvCodec._PyNvCodec.PixelFormat</span></a></span></span><a class="headerlink" href="#PyNvCodec.PySurfaceConverter.Format" title="Link to this definition">¶</a></dt>
+<dd><p>Get pixel format.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="PyNvCodec.PySurfaceDownloader.html">PyNvCodec.PySurfaceDownloader</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="PyNvCodec.PyNvEncoder.html">PyNvCodec.PyNvEncoder</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023 Roman Arzumanyan.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>
