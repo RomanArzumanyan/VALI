@@ -12,6 +12,15 @@
         "color_range": "ColorRange.MPEG",
         "len_s": 3.23
     },
+    "hevc10": {
+        "uri": "data/hevc10.mkv",
+        "width": 848,
+        "height": 464,
+        "is_vfr": false,
+        "pix_fmt": "PixelFormat.P10",
+        "framerate": 29.97,
+        "num_frames": 110
+    },    
     "basic_mpeg4": {
         "uri": "data/test_mpeg4.mpg",
         "width": 848,

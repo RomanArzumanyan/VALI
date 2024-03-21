@@ -20,4 +20,12 @@ cmake_minimum_required(VERSION 3.21)
 project(PyNvCodec)
 
 set(CMAKE_CXX_STANDARD 17)
+
+set(
+    PROJECT_ROOT_DIR 
+    "${CMAKE_CURRENT_SOURCE_DIR}" 
+    CACHE 
+    INTERNAL 
+    "project_root")
+
 add_subdirectory(src)

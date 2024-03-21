@@ -1234,7 +1234,7 @@ struct p16_nv12 final : public NppConvertSurface_Impl {
            Pixel_Format src_fmt)
       : NppConvertSurface_Impl(context, stream, src_fmt, NV12) {
     pScratch = std::make_shared<SurfacePlane>(width, height, sizeof(uint16_t),
-                                              context);
+                                              kDLUInt, context);
   }
 
   Token* Execute(Token* pSrcToken, Token* pDstToken,
@@ -1279,8 +1279,8 @@ struct p16_nv12 final : public NppConvertSurface_Impl {
       nDstStep = pSurface->Pitch(i);
       oSizeRoi.height = pSurface->Height(i);
       oSizeRoi.width = pSurface->Width(i);
-      err = nppiConvert_16u8u_C1R_Ctx(pSrc, nSrcStep, pDst, nDstStep,
-                                           oSizeRoi, nppCtx);
+      err = nppiConvert_16u8u_C1R_Ctx(pSrc, nSrcStep, pDst, nDstStep, oSizeRoi,
+                                      nppCtx);
       if (NPP_NO_ERROR != err) {
         details.info = TaskExecInfo::FAIL;
         return nullptr;
