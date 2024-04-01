@@ -25,35 +25,6 @@ using namespace chrono;
 namespace py = pybind11;
 using namespace pybind11::literals;
 
-static auto ThrowOnCudaError = [](CUresult res, int lineNum = -1) {
-  if (CUDA_SUCCESS != res) {
-    stringstream ss;
-
-    if (lineNum > 0) {
-      ss << __FILE__ << ":";
-      ss << lineNum << endl;
-    }
-
-    const char* errName = nullptr;
-    if (CUDA_SUCCESS != cuGetErrorName(res, &errName)) {
-      ss << "CUDA error with code " << res << endl;
-    } else {
-      ss << "CUDA error: " << errName << endl;
-    }
-
-    const char* errDesc = nullptr;
-    cuGetErrorString(res, &errDesc);
-
-    if (!errDesc) {
-      ss << "No error string available" << endl;
-    } else {
-      ss << errDesc << endl;
-    }
-
-    throw runtime_error(ss.str());
-  }
-};
-
 auto CopySurface_Ctx_Str = [](shared_ptr<Surface> self,
                               shared_ptr<Surface> other, CUcontext cudaCtx,
                               CUstream cudaStream) {
@@ -131,7 +102,7 @@ string ToString(SurfacePlane* self, int space = 0) {
   ss << spacer.str() << "Height:    " << self->Height() << "\n";
   ss << spacer.str() << "Pitch:     " << self->Pitch() << "\n";
   ss << spacer.str() << "Elem size: " << self->ElemSize() << "\n";
-  ss << spacer.str() << "Cuda ctx:  " << self->GetContext() << "\n";
+  ss << spacer.str() << "Cuda ctx:  " << self->Context() << "\n";
   ss << spacer.str() << "CUDA ptr:  " << self->GpuMem() << "\n";
 
   return ss.str();
@@ -181,61 +152,6 @@ done:
   PyErr_Restore(type, value, traceback);
 }
 
-static void DLManagedTensor_Destroy(DLManagedTensor* self) {
-  if (!self) {
-    return;
-  }
-
-  if (self->dl_tensor.shape) {
-    delete[] self->dl_tensor.shape;
-  }
-
-  if (self->dl_tensor.strides) {
-    delete[] self->dl_tensor.strides;
-  }
-}
-
-static DLManagedTensor* DLManagedTensor_Make(shared_ptr<SurfacePlane> self) {
-  DLManagedTensor* dlmt = nullptr;
-  try {
-    dlmt = new DLManagedTensor();
-    memset((void*)dlmt, 0, sizeof(*dlmt));
-
-    dlmt->manager_ctx = nullptr;
-    dlmt->deleter = DLManagedTensor_Destroy;
-
-    CUdeviceptr dptr = NULL;
-    ThrowOnCudaError(cuPointerGetAttribute((void*)&dptr,
-                                           CU_POINTER_ATTRIBUTE_DEVICE_POINTER,
-                                           self->GpuMem()),
-                     __LINE__);
-
-    dlmt->dl_tensor.device.device_type = self->DeviceType();
-    dlmt->dl_tensor.device.device_id = 0;
-
-    dlmt->dl_tensor.data = (void*)dptr;
-    dlmt->dl_tensor.ndim = 2;
-    dlmt->dl_tensor.byte_offset = 0U;
-
-    dlmt->dl_tensor.dtype.code = self->DataType();
-    dlmt->dl_tensor.dtype.bits = self->ElemSize() * 8U;
-    dlmt->dl_tensor.dtype.lanes = 1;
-
-    dlmt->dl_tensor.shape = new int64_t[dlmt->dl_tensor.ndim];
-    dlmt->dl_tensor.shape[0] = self->Height();
-    dlmt->dl_tensor.shape[1] = self->Width();
-
-    dlmt->dl_tensor.strides = new int64_t[dlmt->dl_tensor.ndim];
-    dlmt->dl_tensor.strides[0] = self->Pitch() / self->ElemSize();
-    dlmt->dl_tensor.strides[1] = 1;
-  } catch (std::exception& e) {
-    DLManagedTensor_Destroy(dlmt);
-    throw e;
-  }
-
-  return dlmt;
-}
-
 void Init_PySurface(py::module& m) {
   py::class_<SurfacePlane, shared_ptr<SurfacePlane>>(
       m, "SurfacePlane",
@@ -253,84 +169,25 @@ void Init_PySurface(py::module& m) {
            R"pbdoc(
         Get pitch in bytes
     )pbdoc")
-      .def("GpuMem", &SurfacePlane::GpuMem,
-           R"pbdoc(
-        Get CUdeviceptr of memory object
-    )pbdoc")
       .def("ElemSize", &SurfacePlane::ElemSize,
            R"pbdoc(
         Get element size in bytes
     )pbdoc")
-      .def("HostFrameSize", &SurfacePlane::GetHostMemSize,
+      .def("HostFrameSize", &SurfacePlane::HostMemSize,
            R"pbdoc(
         Get amount of host memory needed to store this SurfacePlane
     )pbdoc")
       .def(
-          "Import",
-          [](shared_ptr<SurfacePlane> self, CUdeviceptr src, uint32_t src_pitch,
-             int gpuID) {
-            self->Import(src, src_pitch, CudaResMgr::Instance().GetCtx(gpuID),
-                         CudaResMgr::Instance().GetStream(gpuID));
-          },
-          py::arg("src"), py::arg("src_pitch"), py::arg("gpu_id"),
-          R"pbdoc(
-        Import from another SurfacePlane
-
-        :param src: source SurfacePlane
-        :param src_pitch: source SurfacePlane pitch in bytes
-        :param gpu_id: GPU to use
-    )pbdoc")
-      .def(
-          "Import",
-          [](shared_ptr<SurfacePlane> self, CUdeviceptr src, uint32_t src_pitch,
-             size_t ctx, size_t str) {
-            self->Import(src, src_pitch, (CUcontext)ctx, (CUstream)str);
-          },
-          py::arg("src"), py::arg("src_pitch"), py::arg("context"),
-          py::arg("stream"),
-          R"pbdoc(
-        Import from another SurfacePlane
-
-        :param src: source SurfacePlane
-        :param src_pitch: source SurfacePlane pitch in bytes
-        :param context: CUDA context to use
-        :param stream: CUDA stream to use
-    )pbdoc")
-      .def(
-          "Export",
-          [](shared_ptr<SurfacePlane> self, CUdeviceptr dst, uint32_t dst_pitch,
-             int gpuID) {
-            self->Export(dst, dst_pitch, CudaResMgr::Instance().GetCtx(gpuID),
-                         CudaResMgr::Instance().GetStream(gpuID));
-          },
-          py::arg("dst"), py::arg("dst_pitch"), py::arg("gpu_id"),
-          R"pbdoc(
-        Export to another SurfacePlane
-
-        :param dst: destination SurfacePlane
-        :param dst_pitch: destination SurfacePlane pitch in bytes
-        :param gpu_id: GPU to use
-    )pbdoc")
-      .def(
-          "Export",
-          [](shared_ptr<SurfacePlane> self, CUdeviceptr dst, uint32_t dst_pitch,
-             size_t ctx, size_t str) {
-            self->Export(dst, dst_pitch, (CUcontext)ctx, (CUstream)str);
-          },
-          py::arg("dst"), py::arg("dst_pitch"), py::arg("context"),
-          py::arg("stream"),
-          R"pbdoc(
-        Export to another SurfacePlane
-
-        :param dst: destination SurfacePlane
-        :param dst_pitch: destination SurfacePlane pitch in bytes
-        :param context: CUDA context to use
-        :param stream: CUDA stream to use
-    )pbdoc")
-      .def(
           "__dlpack_device__",
           [](shared_ptr<SurfacePlane> self) {
-            return std::make_tuple(self->DeviceType(), 0);
+            if (self->FromDLPack()) {
+              throw(std::runtime_error(
+                  "Cant get __dlpack_device__ attribute from "
+                  "Surface created from DLPack."));
+            }
+
+            return std::make_tuple(self->DLPackCtx().DeviceType(),
+                                   self->DeviceId());
           },
           R"pbdoc(
         DLPack: get device information.
@@ -338,8 +195,8 @@ void Init_PySurface(py::module& m) {
       .def(
           "__dlpack__",
           [](shared_ptr<SurfacePlane> self, int stream) {
-            auto* dl_mt = DLManagedTensor_Make(self);
-            return py::capsule(dl_mt, "dltensor", dlpack_capsule_deleter);
+            auto dlmt = self->ToDLPack();
+            return py::capsule(dlmt, "dltensor", dlpack_capsule_deleter);
           },
           py::arg("stream") = 0,
           R"pbdoc(
@@ -440,56 +297,26 @@ void Init_PySurface(py::module& m) {
       .def_static(
           "from_dlpack",
           [](py::capsule cap, Pixel_Format fmt) {
-              auto ptr = cap.ptr();
-              if (!ptr) {
-                throw std::runtime_error("Empty capsule.");
-              }
+            auto ptr = cap.ptr();
+            if (!ptr) {
+              throw std::runtime_error("Empty capsule.");
+            }
 
-              auto managed =
-                  (DLManagedTensor*)PyCapsule_GetPointer(ptr, "dltensor");
-              if (!managed) {
-                throw std::runtime_error("Capsule doesn't contain dltensor.");
-              }
+            auto managed =
+                (DLManagedTensor*)PyCapsule_GetPointer(ptr, "dltensor");
+            if (!managed) {
+              throw std::runtime_error("Capsule doesn't contain dltensor.");
+            }
 
-              auto ndim = managed->dl_tensor.ndim;
-              if (ndim != 2) {
-                throw std::runtime_error("Only 2D tensors are supported.");
-              }
+            auto surface = std::shared_ptr<Surface>(Surface::Make(fmt));
+            if (!surface) {
+              throw std::runtime_error("Failed to make Surface.");
+            }
 
-              auto device_type = managed->dl_tensor.device.device_type;
-              if (device_type != kDLCUDA) {
-                throw std::runtime_error("Only kDLCUDA tensors are supported.");
-              }
-
-              if (managed->dl_tensor.dtype.lanes != 1) {
-                throw std::runtime_error("Only 1 lane tensors are supported.");
-              }
-
-              if ((managed->dl_tensor.dtype.code != kDLUInt) &&
-                  (managed->dl_tensor.dtype.code != kDLFloat)) {
-                throw std::runtime_error(
-                    "Only kDLUInt and kDLFloat tensors are supported.");
-              }
-
-              auto plane_ptr = std::make_shared<SurfacePlane>(
-                  managed->dl_tensor.shape[1], managed->dl_tensor.shape[0],
-                  managed->dl_tensor.strides[0],
-                  managed->dl_tensor.dtype.bits / 8,
-                  (DLDataTypeCode)managed->dl_tensor.dtype.code,
-                  (CUdeviceptr)managed->dl_tensor.data +
-                      managed->dl_tensor.byte_offset);
-              if (!plane_ptr) {
-                throw std::runtime_error("Failed to make SurfacePlane.");
-              }
-
-              auto surface = std::shared_ptr<Surface>(Surface::Make(fmt));
-              if (!surface) {
-                throw std::runtime_error("Failed to make Surface.");
-              }
-
-              SurfacePlane* planes[] = {plane_ptr.get()};
-              surface->Update(planes, 1U);
-              return surface;
+            auto surface_plane = SurfacePlane(*managed);
+            SurfacePlane* planes[] = {&surface_plane};
+            surface->Update(planes, 1U);
+            return surface;
           },
           py::arg("capsule"), py::arg("format") = Pixel_Format::RGB,
           R"pbdoc(
@@ -506,101 +333,11 @@ void Init_PySurface(py::module& m) {
             auto pPlane = self->GetSurfacePlane(plane);
             return make_shared<SurfacePlane>(*pPlane);
           },
-          // Integral part of Surface, only reference it;
-          py::arg("plane") = 0U, py::return_value_policy::reference,
+          py::arg("plane") = 0U, py::return_value_policy::take_ownership,
           R"pbdoc(
         Get SurfacePlane reference
 
         :param plane: SurfacePlane index
-    )pbdoc")
-      .def(
-          "CopyFrom",
-          [](shared_ptr<Surface> self, shared_ptr<Surface> other, int gpuID) {
-            if (self->PixelFormat() != other->PixelFormat()) {
-              throw runtime_error("Surfaces have different pixel formats");
-            }
-
-            if (self->Width() != other->Width() ||
-                self->Height() != other->Height()) {
-              throw runtime_error("Surfaces have different size");
-            }
-
-            CopySurface(self, other, gpuID);
-          },
-          py::arg("other"), py::arg("gpu_id"), R"pbdoc(
-        Perform DtoD memcopy
-
-        :param other: other Surface
-        :param gpu_id: GPU to use
-    )pbdoc")
-      .def(
-          "CopyFrom",
-          [](shared_ptr<Surface> self, shared_ptr<Surface> other, size_t ctx,
-             size_t str) {
-            if (self->PixelFormat() != other->PixelFormat()) {
-              throw runtime_error("Surfaces have different pixel formats");
-            }
-
-            if (self->Width() != other->Width() ||
-                self->Height() != other->Height()) {
-              throw runtime_error("Surfaces have different size");
-            }
-
-            CopySurface_Ctx_Str(self, other, (CUcontext)ctx, (CUstream)str);
-          },
-          py::arg("other"), py::arg("context"), py::arg("stream"),
-          R"pbdoc(
-        Perform DtoD memcopy
-
-        :param other: other Surface
-        :param context: CUDA contet to use
-        :param stream: desc
-    )pbdoc")
-      .def(
-          "Crop",
-          [](shared_ptr<Surface> self, uint32_t x, uint32_t y, uint32_t w,
-             uint32_t h, int gpuID) {
-            auto ctx = CudaResMgr::Instance().GetCtx(gpuID);
-            auto str = CudaResMgr::Instance().GetStream(gpuID);
-            auto cropped_surf = Surface::Make(self->PixelFormat(), w, h, ctx);
-            self->Export(*cropped_surf, ctx, str, x, y, w, h, 0U, 0U);
-            return cropped_surf;
-          },
-          py::arg("x"), py::arg("y"), py::arg("w"), py::arg("h"),
-          py::arg("gpu_id"), py::return_value_policy::take_ownership,
-          py::call_guard<py::gil_scoped_release>(),
-          R"pbdoc(
-        Crop = select ROI + CUDA mem alloc + CUDA mem copy
-
-        :param x: ROI top left X coordinate
-        :param y: ROI top left Y coordinate
-        :param w: ROI width in pixels
-        :param h: ROI height in pixels
-        :param gpu_id: GPU to use
-    )pbdoc")
-      .def(
-          "Crop",
-          [](shared_ptr<Surface> self, uint32_t x, uint32_t y, uint32_t w,
-             uint32_t h, size_t context, size_t stream) {
-            auto ctx = (CUcontext)context;
-            auto str = (CUstream)stream;
-            auto cropped_surf = Surface::Make(self->PixelFormat(), w, h, ctx);
-            self->Export(*cropped_surf, ctx, str, x, y, w, h, 0U, 0U);
-            return cropped_surf;
-          },
-          py::arg("x"), py::arg("y"), py::arg("w"), py::arg("h"),
-          py::arg("context"), py::arg("stream"),
-          py::return_value_policy::take_ownership,
-          py::call_guard<py::gil_scoped_release>(),
-          R"pbdoc(
-        Crop = select ROI + CUDA mem alloc + CUDA mem copy
-
-        :param x: ROI top left X coordinate
-        :param y: ROI top left Y coordinate
-        :param w: ROI width in pixels
-        :param h: ROI height in pixels
-        :param context: CUDA contet to use
-        :param stream: CUDA stream to use
     )pbdoc")
       .def("__repr__",
            [](shared_ptr<Surface> self) { return ToString(self.get()); });

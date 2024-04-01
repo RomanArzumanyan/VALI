@@ -22,7 +22,6 @@
 #include <stdexcept>
 
 using namespace VPF;
-using namespace VPF;
 using namespace std;
 
 #ifdef TRACK_TOKEN_ALLOCATIONS
@@ -177,40 +176,11 @@ Buffer::~Buffer() {
 
 size_t Buffer::GetRawMemSize() const { return mem_size; }
 
-static void ThrowOnCudaError(CUresult res, int lineNum = -1) {
-  if (CUDA_SUCCESS != res) {
-    stringstream ss("");
-
-    if (lineNum > 0) {
-      ss << __FILE__ << ":";
-      ss << lineNum << endl;
-    }
-
-    const char* errName = nullptr;
-    if (CUDA_SUCCESS != cuGetErrorName(res, &errName)) {
-      ss << "CUDA error with code " << res << endl;
-    } else {
-      ss << "CUDA error: " << errName << endl;
-    }
-
-    const char* errDesc = nullptr;
-    cuGetErrorString(res, &errDesc);
-
-    if (!errDesc) {
-      ss << "No error string available" << endl;
-    } else {
-      ss << errDesc << endl;
-    }
-
-    throw runtime_error(ss.str());
-  }
-};
-
 bool Buffer::Allocate() {
   if (GetRawMemSize()) {
     if (context) {
       CudaCtxPush lock(context);
-      auto res = cuMemAllocHost(&pRawData, GetRawMemSize());
+      CUresult res = cuMemAllocHost(&pRawData, GetRawMemSize());
       ThrowOnCudaError(res, __LINE__);
     } else {
       pRawData = calloc(GetRawMemSize(), sizeof(uint8_t));
@@ -352,202 +322,6 @@ void CudaBuffer::Deallocate() {
 #endif
 }
 
-SurfacePlane::SurfacePlane() = default;
-
-SurfacePlane& SurfacePlane::operator=(const SurfacePlane& other) {
-  Deallocate();
-
-  ownMem = false;
-  gpuMem = other.gpuMem;
-  width = other.width;
-  height = other.height;
-  pitch = other.pitch;
-  elemSize = other.elemSize;
-  typeCode = other.typeCode;
-
-#ifdef TRACK_TOKEN_ALLOCATIONS
-  id = other.id;
-#endif
-
-  return *this;
-}
-
-SurfacePlane::SurfacePlane(const SurfacePlane& other)
-    : ownMem(false), gpuMem(other.gpuMem), width(other.width),
-      height(other.height), pitch(other.pitch), elemSize(other.elemSize),
-      typeCode(other.typeCode) {}
-
-SurfacePlane::SurfacePlane(uint32_t newWidth, uint32_t newHeight,
-                           uint32_t newPitch, uint32_t newElemSize,
-                           DLDataTypeCode newTypeCode, CUdeviceptr pNewPtr)
-    : ownMem(false), gpuMem(pNewPtr), width(newWidth), height(newHeight),
-      pitch(newPitch), elemSize(newElemSize), typeCode(newTypeCode) {}
-
-SurfacePlane::SurfacePlane(uint32_t newWidth, uint32_t newHeight,
-                           uint32_t newElemSize, DLDataTypeCode newTypeCode,
-                           CUcontext context)
-    : ownMem(true), width(newWidth), height(newHeight), elemSize(newElemSize),
-      typeCode(newTypeCode), ctx(context) {
-  Allocate();
-}
-
-SurfacePlane::~SurfacePlane() { Deallocate(); }
-
-void SurfacePlane::Import(SurfacePlane& src, CUcontext ctx, CUstream str,
-                          uint32_t roi_x, uint32_t roi_y, uint32_t roi_w,
-                          uint32_t roi_h, uint32_t pos_x, uint32_t pos_y) {
-  Import(src.GpuMem(), src.Pitch(), ctx, str, roi_x, roi_y, roi_w, roi_h, 0U,
-         0U);
-}
-
-void SurfacePlane::Import(SurfacePlane& src, CUcontext ctx, CUstream str) {
-  bool same_size = Width() == src.Width();
-  same_size |= Height() == src.Height();
-  same_size |= Pitch() == src.Pitch();
-  same_size |= ElemSize() == src.ElemSize();
-
-  if (!same_size) {
-    return;
-  }
-
-  Import(src, ctx, str, 0U, 0U, Width(), Height(), 0U, 0U);
-}
-
-void SurfacePlane::Export(SurfacePlane& dst, CUcontext ctx, CUstream str,
-                          uint32_t roi_x, uint32_t roi_y, uint32_t roi_w,
-                          uint32_t roi_h, uint32_t pos_x, uint32_t pos_y) {
-  Export(dst.GpuMem(), dst.Pitch(), ctx, str, roi_x, roi_y, roi_w, roi_h, 0U,
-         0U);
-}
-
-void SurfacePlane::Export(SurfacePlane& dst, CUcontext ctx, CUstream str) {
-  bool same_size = Width() == dst.Width();
-  same_size |= Height() == dst.Height();
-  same_size |= Pitch() == dst.Pitch();
-  same_size |= ElemSize() == dst.ElemSize();
-
-  if (!same_size) {
-    return;
-  }
-
-  Export(dst, ctx, str, 0U, 0U, Width(), Height(), 0U, 0U);
-}
-
-void SurfacePlane::Import(CUdeviceptr src, uint32_t src_pitch, CUcontext ctx,
-                          CUstream str, uint32_t roi_x, uint32_t roi_y,
-                          uint32_t roi_w, uint32_t roi_h, uint32_t pos_x,
-                          uint32_t pos_y) {
-  if (roi_x + roi_w > Width()) {
-    throw runtime_error("ROI isn't enclosed within a Surface plane");
-  } else if (roi_y + roi_h > Height()) {
-    throw runtime_error("ROI isn't enclosed within a Surface plane");
-  }
-
-  auto srcPlanePtr = src + roi_x * ElemSize() + roi_y * src_pitch;
-  auto dstPlanePtr = GpuMem() + pos_x * ElemSize() + pos_y * Pitch();
-
-  if (!srcPlanePtr || !dstPlanePtr) {
-    return;
-  }
-
-  CudaCtxPush ctxPush(ctx);
-
-  CUDA_MEMCPY2D m = {0};
-  m.srcMemoryType = CU_MEMORYTYPE_DEVICE;
-  m.dstMemoryType = CU_MEMORYTYPE_DEVICE;
-  m.srcDevice = srcPlanePtr;
-  m.dstDevice = dstPlanePtr;
-  m.srcPitch = src_pitch;
-  m.dstPitch = Pitch();
-  m.Height = roi_h;
-  m.WidthInBytes = roi_w * ElemSize();
-
-  ThrowOnCudaError(cuMemcpy2DAsync(&m, str), __LINE__);
-  ThrowOnCudaError(cuStreamSynchronize(str), __LINE__);
-}
-
-void SurfacePlane::Import(CUdeviceptr src, uint32_t src_pitch, CUcontext ctx,
-                          CUstream str) {
-  Import(src, src_pitch, ctx, str, 0U, 0U, Width(), Height(), 0U, 0U);
-}
-
-void SurfacePlane::Export(CUdeviceptr dst, uint32_t dst_pitch, CUcontext ctx,
-                          CUstream str, uint32_t roi_x, uint32_t roi_y,
-                          uint32_t roi_w, uint32_t roi_h, uint32_t pos_x,
-                          uint32_t pos_y) {
-  if (roi_x + roi_w > Width()) {
-    throw runtime_error("ROI isn't enclosed within a Surface plane");
-  } else if (roi_y + roi_h > Height()) {
-    throw runtime_error("ROI isn't enclosed within a Surface plane");
-  }
-
-  auto srcPlanePtr = GpuMem() + roi_x * ElemSize() + roi_y * Pitch();
-  auto dstPlanePtr = dst + pos_x * ElemSize() + pos_y * dst_pitch;
-
-  if (!srcPlanePtr || !dstPlanePtr) {
-    return;
-  }
-
-  CudaCtxPush ctxPush(ctx);
-
-  CUDA_MEMCPY2D m = {0};
-  m.srcMemoryType = CU_MEMORYTYPE_DEVICE;
-  m.dstMemoryType = CU_MEMORYTYPE_DEVICE;
-  m.srcDevice = srcPlanePtr;
-  m.dstDevice = dstPlanePtr;
-  m.srcPitch = Pitch();
-  m.dstPitch = dst_pitch;
-  m.Height = roi_h;
-  m.WidthInBytes = roi_w * ElemSize();
-
-  ThrowOnCudaError(cuMemcpy2DAsync(&m, str), __LINE__);
-  ThrowOnCudaError(cuStreamSynchronize(str), __LINE__);
-}
-
-void SurfacePlane::Export(CUdeviceptr dst, uint32_t dst_pitch, CUcontext ctx,
-                          CUstream str) {
-  Export(dst, dst_pitch, ctx, str, 0U, 0U, Width(), Height(), 0U, 0U);
-}
-
-SurfacePlane::SurfacePlane(uint32_t newWidth, uint32_t newHeight,
-                           uint32_t newElemSize, DLDataTypeCode newTypeCode,
-                           uint32_t srcPitch, CUdeviceptr src,
-                           CUcontext context, CUstream str)
-    : SurfacePlane(newWidth, newHeight, newElemSize, newTypeCode, context) {
-  Import(src, srcPitch, context, str);
-}
-
-void SurfacePlane::Allocate() {
-  if (!OwnMemory()) {
-    return;
-  }
-
-  size_t newPitch;
-  CudaCtxPush ctxPush(ctx);
-  auto res =
-      cuMemAllocPitch(&gpuMem, &newPitch, width * ElemSize(), height, 16);
-  ThrowOnCudaError(res, __LINE__);
-  pitch = newPitch;
-
-#ifdef TRACK_TOKEN_ALLOCATIONS
-  id = HWSurfaceRegister.AddNote(GpuMem());
-#endif
-}
-
-void SurfacePlane::Deallocate() {
-  if (!OwnMemory()) {
-    return;
-  }
-
-#ifdef TRACK_TOKEN_ALLOCATIONS
-  AllocInfo info(id, GpuMem());
-  HWSurfaceRegister.DeleteNote(info);
-#endif
-
-  CudaCtxPush ctxPush(ctx);
-  cuMemFree(gpuMem);
-}
-
 Surface::Surface() = default;
 
 Surface::~Surface() = default;
@@ -618,48 +392,6 @@ Surface* Surface::Make(Pixel_Format format, uint32_t newWidth,
   default:
     cerr << __FUNCTION__ << "Unsupported pixeld format: " << format << endl;
     return nullptr;
-  }
-}
-
-void Surface::Import(Surface& src, CUcontext ctx, CUstream str, uint32_t roi_x,
-                     uint32_t roi_y, uint32_t roi_w, uint32_t roi_h,
-                     uint32_t pos_x, uint32_t pos_y) {
-  if (PixelFormat() != src.PixelFormat()) {
-    throw runtime_error("Pixel format mismatch.");
-  }
-
-  for (int i = 0; i < NumPlanes(); i++) {
-    auto plane = src.GetSurfacePlane(i);
-    /* SurfacePlane dimensions can be both smaller (e. g. yuv420)
-     * and bigger (e. g. rgb) than Surface dimensions, hence convert to float.
-     */
-    auto f_x = (1.f * Width(i)) / (1.f * Width());
-    auto f_y = (1.f * Height(i)) / (1.f * Height());
-
-    GetSurfacePlane(i)->Import(*plane, ctx, str, roi_x * f_x, roi_y * f_y,
-                               roi_w * f_x, roi_h * f_y, pos_x * f_x,
-                               pos_y * f_y);
-  }
-}
-
-void Surface::Export(Surface& dst, CUcontext ctx, CUstream str, uint32_t roi_x,
-                     uint32_t roi_y, uint32_t roi_w, uint32_t roi_h,
-                     uint32_t pos_x, uint32_t pos_y) {
-  if (PixelFormat() != dst.PixelFormat()) {
-    throw runtime_error("Pixel format mismatch.");
-  }
-
-  for (int i = 0; i < NumPlanes(); i++) {
-    auto plane = dst.GetSurfacePlane(i);
-    /* SurfacePlane dimensions can be both smaller (e. g. yuv420)
-     * and bigger (e. g. rgb) than Surface dimensions, hence convert to float.
-     */
-    auto f_x = (1.f * Width(i)) / (1.f * Width());
-    auto f_y = (1.f * Height(i)) / (1.f * Height());
-
-    GetSurfacePlane(i)->Export(*plane, ctx, str, roi_x * f_x, roi_y * f_y,
-                               roi_w * f_x, roi_h * f_y, pos_x * f_x,
-                               pos_y * f_y);
   }
 }
 
@@ -782,7 +514,7 @@ uint32_t SurfaceY::Pitch(uint32_t planeNumber) const {
   throw invalid_argument("Invalid plane number");
 }
 
-uint32_t SurfaceY::HostMemSize() const { return plane.GetHostMemSize(); }
+uint32_t SurfaceY::HostMemSize() const { return plane.HostMemSize(); }
 
 CUdeviceptr SurfaceY::PlanePtr(uint32_t planeNumber) {
   if (planeNumber < NumPlanes()) {
@@ -824,9 +556,15 @@ SurfaceNV12::SurfaceNV12(uint32_t width, uint32_t height, CUcontext context)
     : plane(width, height * 3 / 2, ElemSize(), DataType(), context) {}
 
 SurfaceNV12::SurfaceNV12(uint32_t width, uint32_t height, uint32_t pitch,
-                         CUdeviceptr pNewPtrToLumaPlane)
-    : plane(width, height * 3 / 2, pitch, ElemSize(), DataType(),
-            pNewPtrToLumaPlane) {}
+                         CUdeviceptr pNewPtrToLumaPlane) {
+  auto dlmt_ptr = SurfacePlane::DLPackContext::ToDLPack(
+      width, height * 3 / 2, pitch, ElemSize(), pNewPtrToLumaPlane, DataType());
+
+  auto dlmt_smart_ptr =
+      std::shared_ptr<DLManagedTensor>(dlmt_ptr, dlmt_ptr->deleter);
+
+  plane = SurfacePlane(*dlmt_smart_ptr.get());
+}
 
 SurfaceNV12& SurfaceNV12::operator=(const SurfaceNV12& other) {
   plane = other.plane;
@@ -880,9 +618,13 @@ uint32_t SurfaceNV12::Pitch(uint32_t planeNumber) const {
   throw invalid_argument("Invalid plane number");
 }
 
-uint32_t SurfaceNV12::HostMemSize() const { return plane.GetHostMemSize(); }
+uint32_t SurfaceNV12::HostMemSize() const { return plane.HostMemSize(); }
 
 CUdeviceptr SurfaceNV12::PlanePtr(uint32_t planeNumber) {
+  if (Empty()) {
+    return 0x0;
+  }
+
   if (planeNumber < NumPlanes()) {
     return plane.GpuMem() + planeNumber * Height() * plane.Pitch();
   }
@@ -991,11 +733,11 @@ uint32_t SurfaceYUV420::Pitch(uint32_t planeNumber) const {
 }
 
 uint32_t SurfaceYUV420::HostMemSize() const {
-  return planeY.GetHostMemSize() + planeU.GetHostMemSize() +
-         planeV.GetHostMemSize();
+  return planeY.HostMemSize() + planeU.HostMemSize() + planeV.HostMemSize();
 }
 
 CUdeviceptr SurfaceYUV420::PlanePtr(uint32_t planeNumber) {
+  std::shared_ptr<CUdeviceptr> ptr = nullptr;
   switch (planeNumber) {
   case 0:
     return planeY.GpuMem();
@@ -1126,8 +868,7 @@ uint32_t SurfaceYUV422::Pitch(uint32_t planeNumber) const {
 }
 
 uint32_t SurfaceYUV422::HostMemSize() const {
-  return planeY.GetHostMemSize() + planeU.GetHostMemSize() +
-         planeV.GetHostMemSize();
+  return planeY.HostMemSize() + planeU.HostMemSize() + planeV.HostMemSize();
 }
 
 CUdeviceptr SurfaceYUV422::PlanePtr(uint32_t planeNumber) {
@@ -1230,7 +971,7 @@ uint32_t SurfaceRGB::Pitch(uint32_t planeNumber) const {
   throw invalid_argument("Invalid plane number");
 }
 
-uint32_t SurfaceRGB::HostMemSize() const { return plane.GetHostMemSize(); }
+uint32_t SurfaceRGB::HostMemSize() const { return plane.HostMemSize(); }
 
 CUdeviceptr SurfaceRGB::PlanePtr(uint32_t planeNumber) {
   if (planeNumber < NumPlanes()) {
@@ -1310,7 +1051,7 @@ uint32_t SurfaceBGR::Pitch(uint32_t planeNumber) const {
   throw invalid_argument("Invalid plane number");
 }
 
-uint32_t SurfaceBGR::HostMemSize() const { return plane.GetHostMemSize(); }
+uint32_t SurfaceBGR::HostMemSize() const { return plane.HostMemSize(); }
 
 CUdeviceptr SurfaceBGR::PlanePtr(uint32_t planeNumber) {
   if (planeNumber < NumPlanes()) {
@@ -1396,13 +1137,11 @@ uint32_t SurfaceRGBPlanar::Pitch(uint32_t planeNumber) const {
   throw invalid_argument("Invalid plane number");
 }
 
-uint32_t SurfaceRGBPlanar::HostMemSize() const {
-  return plane.GetHostMemSize();
-}
+uint32_t SurfaceRGBPlanar::HostMemSize() const { return plane.HostMemSize(); }
 
 CUdeviceptr SurfaceRGBPlanar::PlanePtr(uint32_t planeNumber) {
   if (planeNumber < NumPlanes()) {
-    return plane.GpuMem() + planeNumber * Height() * plane.Pitch();
+    return plane.GpuMem();
   }
 
   throw invalid_argument("Invalid plane number");
@@ -1489,7 +1228,7 @@ uint32_t SurfaceRGB32F::Pitch(uint32_t planeNumber) const {
   throw invalid_argument("Invalid plane number");
 }
 
-uint32_t SurfaceRGB32F::HostMemSize() const { return plane.GetHostMemSize(); }
+uint32_t SurfaceRGB32F::HostMemSize() const { return plane.HostMemSize(); }
 
 CUdeviceptr SurfaceRGB32F::PlanePtr(uint32_t planeNumber) {
   if (planeNumber < NumPlanes()) {
@@ -1573,12 +1312,13 @@ uint32_t SurfaceRGB32FPlanar::Pitch(uint32_t planeNumber) const {
 }
 
 uint32_t SurfaceRGB32FPlanar::HostMemSize() const {
-  return plane.GetHostMemSize();
+  return plane.HostMemSize();
 }
 
 CUdeviceptr SurfaceRGB32FPlanar::PlanePtr(uint32_t planeNumber) {
   if (planeNumber < NumPlanes()) {
-    return plane.GpuMem() + planeNumber * Height() * plane.Pitch();
+    auto dptr = plane.GpuMem();
+    return dptr + planeNumber * Height() * plane.Pitch();
   }
 
   throw invalid_argument("Invalid plane number");
@@ -1674,11 +1414,12 @@ uint32_t SurfaceP12::Pitch(uint32_t planeNumber) const {
   throw invalid_argument("Invalid plane number");
 }
 
-uint32_t SurfaceP12::HostMemSize() const { return plane.GetHostMemSize(); }
+uint32_t SurfaceP12::HostMemSize() const { return plane.HostMemSize(); }
 
 CUdeviceptr SurfaceP12::PlanePtr(uint32_t planeNumber) {
   if (planeNumber < NumPlanes()) {
-    return plane.GpuMem() + planeNumber * Height() * plane.Pitch();
+    auto dptr = plane.GpuMem();
+    return dptr + planeNumber * Height() * plane.Pitch();
   }
 
   throw invalid_argument("Invalid plane number");
@@ -1763,11 +1504,12 @@ uint32_t SurfaceP10::Pitch(uint32_t planeNumber) const {
   throw invalid_argument("Invalid plane number");
 }
 
-uint32_t SurfaceP10::HostMemSize() const { return plane.GetHostMemSize(); }
+uint32_t SurfaceP10::HostMemSize() const { return plane.HostMemSize(); }
 
 CUdeviceptr SurfaceP10::PlanePtr(uint32_t planeNumber) {
   if (planeNumber < NumPlanes()) {
-    return plane.GpuMem() + planeNumber * Height() * plane.Pitch();
+    auto dptr = plane.GpuMem();
+    return dptr + planeNumber * Height() * plane.Pitch();
   }
 
   throw invalid_argument("Invalid plane number");

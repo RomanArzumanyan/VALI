@@ -26,35 +26,6 @@ namespace py = pybind11;
 constexpr auto TASK_EXEC_SUCCESS = TaskExecStatus::TASK_EXEC_SUCCESS;
 constexpr auto TASK_EXEC_FAIL = TaskExecStatus::TASK_EXEC_FAIL;
 
-static auto ThrowOnCudaError = [](CUresult res, int lineNum = -1) {
-  if (CUDA_SUCCESS != res) {
-    stringstream ss;
-
-    if (lineNum > 0) {
-      ss << __FILE__ << ":";
-      ss << lineNum << endl;
-    }
-
-    const char *errName = nullptr;
-    if (CUDA_SUCCESS != cuGetErrorName(res, &errName)) {
-      ss << "CUDA error with code " << res << endl;
-    } else {
-      ss << "CUDA error: " << errName << endl;
-    }
-
-    const char *errDesc = nullptr;
-    cuGetErrorString(res, &errDesc);
-
-    if (!errDesc) {
-      ss << "No error string available" << endl;
-    } else {
-      ss << errDesc << endl;
-    }
-
-    throw runtime_error(ss.str());
-  }
-};
-
 CudaResMgr::CudaResMgr() {
   lock_guard<mutex> lock_ctx(CudaResMgr::gInsMutex);
 
@@ -81,7 +52,7 @@ CUcontext CudaResMgr::GetCtx(size_t idx) {
     return nullptr;
   }
 
-  auto &ctx = g_Contexts[idx];
+  auto& ctx = g_Contexts[idx];
   if (!ctx.second) {
     CUdevice cuDevice = 0;
     ThrowOnCudaError(cuDeviceGet(&cuDevice, idx), __LINE__);
@@ -98,7 +69,7 @@ CUstream CudaResMgr::GetStream(size_t idx) {
     return nullptr;
   }
 
-  auto &str = g_Streams[idx];
+  auto& str = g_Streams[idx];
   if (!str) {
     auto ctx = GetCtx(idx);
     CudaCtxPush push(ctx);
@@ -116,7 +87,7 @@ CudaResMgr::~CudaResMgr() {
   stringstream ss;
   try {
     {
-      for (auto &cuStream : g_Streams) {
+      for (auto& cuStream : g_Streams) {
         if (cuStream) {
           cuStreamDestroy(cuStream); // Avoiding CUDA_ERROR_DEINITIALIZED while
                                      // destructing.
@@ -135,7 +106,7 @@ CudaResMgr::~CudaResMgr() {
       }
       g_Contexts.clear();
     }
-  } catch (runtime_error &e) {
+  } catch (runtime_error& e) {
     cerr << e.what() << endl;
   }
 
@@ -146,7 +117,7 @@ CudaResMgr::~CudaResMgr() {
 #endif
 }
 
-CudaResMgr &CudaResMgr::Instance() {
+CudaResMgr& CudaResMgr::Instance() {
   static CudaResMgr instance;
   return instance;
 }
@@ -166,7 +137,8 @@ auto CopyBuffer_Ctx_Str = [](shared_ptr<CudaBuffer> dst,
 
   CudaCtxPush ctxPush(cudaCtx);
   ThrowOnCudaError(cuMemcpyDtoDAsync(dst->GpuMem(), src->GpuMem(),
-                                     src->GetRawMemSize(), cudaStream));
+                                     src->GetRawMemSize(), cudaStream),
+                   __LINE__);
   ThrowOnCudaError(cuStreamSynchronize(cudaStream), __LINE__);
 };
 
@@ -177,10 +149,10 @@ auto CopyBuffer = [](shared_ptr<CudaBuffer> dst, shared_ptr<CudaBuffer> src,
   return CopyBuffer_Ctx_Str(dst, src, ctx, str);
 };
 
-DecodeContext::DecodeContext(py::array_t<uint8_t> *sei,
-                             py::array_t<uint8_t> *packet,
-                             PacketData *in_pkt_data, PacketData *out_pkt_data,
-                             SeekContext *seek_ctx, bool is_flush) {
+DecodeContext::DecodeContext(py::array_t<uint8_t>* sei,
+                             py::array_t<uint8_t>* packet,
+                             PacketData* in_pkt_data, PacketData* out_pkt_data,
+                             SeekContext* seek_ctx, bool is_flush) {
   if (seek_ctx && packet) {
     throw runtime_error("Can't use seek in standalone mode.");
   }
@@ -208,17 +180,17 @@ bool DecodeContext::HasOutPktData() const { return nullptr != pOutPktData; }
 
 bool DecodeContext::HasInPktData() const { return nullptr != pInPktData; }
 
-const py::array_t<uint8_t> *DecodeContext::GetPacket() const { return pPacket; }
+const py::array_t<uint8_t>* DecodeContext::GetPacket() const { return pPacket; }
 
-const PacketData *DecodeContext::GetInPacketData() const { return pInPktData; }
+const PacketData* DecodeContext::GetInPacketData() const { return pInPktData; }
 
-const SeekContext *DecodeContext::GetSeekContext() const { return pSeekCtx; }
+const SeekContext* DecodeContext::GetSeekContext() const { return pSeekCtx; }
 
-SeekContext *DecodeContext::GetSeekContextMutable() { return pSeekCtx; }
+SeekContext* DecodeContext::GetSeekContextMutable() { return pSeekCtx; }
 
 shared_ptr<Surface> DecodeContext::GetSurfaceMutable() { return pSurface; }
 
-void DecodeContext::SetOutPacketData(PacketData *out_pkt_data) {
+void DecodeContext::SetOutPacketData(PacketData* out_pkt_data) {
   if (!out_pkt_data || !pOutPktData) {
     throw runtime_error("Invalid data pointer");
   }
@@ -226,15 +198,15 @@ void DecodeContext::SetOutPacketData(PacketData *out_pkt_data) {
   memcpy(pOutPktData, out_pkt_data, sizeof(PacketData));
 }
 
-void DecodeContext::SetOutPacketData(const PacketData &out_pkt_data) {
+void DecodeContext::SetOutPacketData(const PacketData& out_pkt_data) {
   if (!pOutPktData) {
     throw runtime_error("Invalid data pointer");
   }
 
-  memcpy(pOutPktData, (const void *)&out_pkt_data, sizeof(PacketData));
+  memcpy(pOutPktData, (const void*)&out_pkt_data, sizeof(PacketData));
 }
 
-void DecodeContext::SetSei(Buffer *sei) {
+void DecodeContext::SetSei(Buffer* sei) {
   if (!pSei) {
     throw runtime_error("Invalid data pointer");
   }
@@ -248,38 +220,38 @@ void DecodeContext::SetSei(Buffer *sei) {
   memcpy(pSei->mutable_data(), sei->GetRawMemPtr(), sei->GetRawMemSize());
 }
 
-void DecodeContext::SetCloneSurface(Surface *p_surface) {
+void DecodeContext::SetCloneSurface(Surface* p_surface) {
   if (!p_surface) {
     throw runtime_error("Invalid data pointer");
   }
   pSurface = shared_ptr<Surface>(p_surface->Clone());
 }
 
-void Init_PyBufferUploader(py::module &);
+void Init_PyBufferUploader(py::module&);
 
-void Init_PyCudaBufferDownloader(py::module &);
+void Init_PyCudaBufferDownloader(py::module&);
 
-void Init_PyFrameUploader(py::module &);
+void Init_PyFrameUploader(py::module&);
 
-void Init_PySurfaceConverter(py::module &);
+void Init_PySurfaceConverter(py::module&);
 
-void Init_PySurfaceDownloader(py::module &);
+void Init_PySurfaceDownloader(py::module&);
 
-void Init_PySurfaceResizer(py::module &);
+void Init_PySurfaceResizer(py::module&);
 
-void Init_PySurfaceRemaper(py::module &);
+void Init_PySurfaceRemaper(py::module&);
 
-void Init_PyFFMpegDecoder(py::module &);
+void Init_PyFFMpegDecoder(py::module&);
 
-void Init_PyFFMpegDemuxer(py::module &);
+void Init_PyFFMpegDemuxer(py::module&);
 
-void Init_PyNvDecoder(py::module &);
+void Init_PyNvDecoder(py::module&);
 
-void Init_PyNvEncoder(py::module &);
+void Init_PyNvEncoder(py::module&);
 
-void Init_PySurface(py::module &);
+void Init_PySurface(py::module&);
 
-void Init_PyFrameConverter(py::module &);
+void Init_PyFrameConverter(py::module&);
 
 PYBIND11_MODULE(_PyNvCodec, m) {
 
@@ -366,7 +338,8 @@ PYBIND11_MODULE(_PyNvCodec, m) {
       .value("INVALID_INPUT", TaskExecInfo::INVALID_INPUT)
       .value("MORE_DATA_NEEDED", TaskExecInfo::MORE_DATA_NEEDED)
       .value("BIT_DEPTH_NOT_SUPPORTED", TaskExecInfo::BIT_DEPTH_NOT_SUPPORTED)
-      .value("UNSUPPORTED_FMT_CONV_PARAMS", TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS)
+      .value("UNSUPPORTED_FMT_CONV_PARAMS",
+             TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS)
       .export_values();
 
   py::enum_<ColorSpace>(m, "ColorSpace")

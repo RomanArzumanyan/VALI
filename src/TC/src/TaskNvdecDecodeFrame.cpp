@@ -31,35 +31,6 @@
 using namespace std;
 using namespace VPF;
 
-static auto ThrowOnCudaError = [](CUresult res, int lineNum = -1) {
-  if (CUDA_SUCCESS != res) {
-    stringstream ss;
-
-    if (lineNum > 0) {
-      ss << __FILE__ << ":";
-      ss << lineNum << endl;
-    }
-
-    const char* errName = nullptr;
-    if (CUDA_SUCCESS != cuGetErrorName(res, &errName)) {
-      ss << "CUDA error with code " << res << endl;
-    } else {
-      ss << "CUDA error: " << errName << endl;
-    }
-
-    const char* errDesc = nullptr;
-    cuGetErrorString(res, &errDesc);
-
-    if (!errDesc) {
-      ss << "No error string available" << endl;
-    } else {
-      ss << errDesc << endl;
-    }
-
-    throw runtime_error(ss.str());
-  }
-};
-
 static float GetChromaHeightFactor(cudaVideoChromaFormat eChromaFormat) {
   float factor = 0.5;
   switch (eChromaFormat) {
@@ -935,9 +906,10 @@ TaskExecStatus NvdecDecodeFrame::Run() {
         return TaskExecStatus::TASK_EXEC_FAIL;
       }
 
-      SurfacePlane tmpPlane(rawW, rawH, rawP, elem_size, pImpl->TypeCode(),
-                            dec_ctx.mem);
-      SurfacePlane *tmpPlanes[] = {&tmpPlane};
+      auto dlmt_ptr = SurfacePlane::DLPackContext::ToDLPackSmart(
+          rawW, rawH, rawP, elem_size, dec_ctx.mem, pImpl->TypeCode());
+      SurfacePlane tmpPlane(*dlmt_ptr.get());
+      SurfacePlane* tmpPlanes[] = {&tmpPlane};
       pImpl->pLastSurface->Update(tmpPlanes, 1);
       SetOutput(pImpl->pLastSurface, 0U);
 

@@ -66,6 +66,7 @@ add_library(
     src/NppCommon.cpp
     src/NvCodecCliOptions.cpp
     src/Utils.cpp
+    src/SurfacePlane.cpp
 )
 
 if (WIN32)
