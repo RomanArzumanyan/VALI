@@ -15,11 +15,8 @@
 
 #pragma once
 
-#include "SurfacePlane.hpp"
+#include "Surface.hpp"
 #include "nvEncodeAPI.h"
-
-#define ALIGN(x, a) __ALIGN_MASK(x, (decltype(x))(a)-1)
-#define __ALIGN_MASK(x, mask) (((x) + (mask)) & ~(mask))
 
 using namespace VPF;
 
@@ -106,9 +103,6 @@ private:
   size_t mem_size = 0UL;
   void* pRawData = nullptr;
   CUcontext context = nullptr;
-#ifdef TRACK_TOKEN_ALLOCATIONS
-  uint32_t id;
-#endif
 };
 
 class TC_EXPORT CudaBuffer final : public Token {
@@ -139,528 +133,251 @@ private:
   CUcontext ctx = nullptr;
   size_t elem_size = 0U;
   size_t num_elems = 0U;
-
-#ifdef TRACK_TOKEN_ALLOCATIONS
-  uint64_t id = 0U;
-#endif
-};
-
-/* RAII-style CUDA Context sync;
- */
-class TC_EXPORT CudaStrSync final {
-  CUstream str;
-
-public:
-  explicit CudaStrSync(CUstream stream) { str = stream; }
-  ~CudaStrSync() { cuStreamSynchronize(str); }
-};
-
-/* Represents GPU-side memory.
- * Pure interface class, see ancestors;
- */
-class TC_EXPORT Surface : public Token {
-public:
-  virtual ~Surface();
-
-  /* Returns width in pixels;
-   */
-  virtual uint32_t Width(uint32_t planeNumber = 0U) const = 0;
-
-  /* Returns width in bytes;
-   */
-  virtual uint32_t WidthInBytes(uint32_t planeNumber = 0U) const = 0;
-
-  /* Returns height in pixels;
-   */
-  virtual uint32_t Height(uint32_t planeNumber = 0U) const = 0;
-
-  /* Returns pitch in bytes;
-   */
-  virtual uint32_t Pitch(uint32_t planeNumber = 0U) const = 0;
-
-  /* Returns element size in bytes;
-   */
-  virtual uint32_t ElemSize() const = 0;
-
-  /* Returns total amount of memory in bytes needed
-   * to store all pixels of Surface in Host memory;
-   */
-  virtual uint32_t HostMemSize() const = 0;
-
-  /* Returns number of image planes;
-   */
-  virtual uint32_t NumPlanes() const = 0;
-
-  /* Returns SurfacePlane CUDA device pointer;
-   */
-  virtual CUdeviceptr PlanePtr(uint32_t planeNumber = 0U) = 0;
-
-  /* Returns pixel format;
-   */
-  virtual Pixel_Format PixelFormat() const = 0;
-
-  /* Returns true if surface is empty (no allocated data), false otherwise;
-   */
-  virtual bool Empty() const = 0;
-
-  /* Returns DLPack data type code;
-   */
-  virtual DLDataTypeCode DataType() const = 0;
-
-  /* Returns pointer to plane by number;
-   */
-  virtual SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) = 0;
-
-  /* Update from set of image planes, don't own the memory;
-   */
-  virtual bool Update(SurfacePlane** pPlanes, size_t planesNum) = 0;
-
-  /* Copy constructor which does CUDA memalloc + deep copy;
-   */
-  Surface* Clone();
-
-  /* Virtual default constructor;
-   */
-  virtual Surface* Create() = 0;
-
-  /* Get associated CUDA context;
-   */
-  CUcontext Context() { return GetSurfacePlane()->Context(); }
-
-  /* Returns true if memory was allocated in constructor, false otherwise;
-   */
-  bool OwnMemory();
-
-  /* Make empty;
-   */
-  static Surface* Make(Pixel_Format format);
-
-  /* Make & own memory;
-   */
-  static Surface* Make(Pixel_Format format, uint32_t newWidth,
-                       uint32_t newHeight, CUcontext context);
-
-protected:
-  Surface();
 };
 
 /* 8-bit single plane image.
  */
 class TC_EXPORT SurfaceY final : public Surface {
 public:
-  ~SurfaceY();
+  ~SurfaceY() = default;
+  SurfaceY() = default;
 
-  SurfaceY();
-  SurfaceY(const SurfaceY& other);
-  SurfaceY(uint32_t width, uint32_t height, CUcontext context);
-  SurfaceY& operator=(const SurfaceY& other);
+  SurfaceY(const SurfaceY& other) = delete;
+  SurfaceY(const SurfaceY&& other) = delete;
+  SurfaceY& operator=(const SurfaceY& other) = delete;
+  SurfaceY& operator=(const SurfaceY&& other) = delete;
 
-  Surface* Create() override;
+  SurfaceY(uint32_t width, uint32_t height, CUcontext context = nullptr,
+           bool pitched = true);
 
-  uint32_t Width(uint32_t planeNumber = 0U) const override;
-  uint32_t WidthInBytes(uint32_t planeNumber = 0U) const override;
-  uint32_t Height(uint32_t planeNumber = 0U) const override;
-  uint32_t Pitch(uint32_t planeNumber = 0U) const override;
-  uint32_t HostMemSize() const override;
-
-  CUdeviceptr PlanePtr(uint32_t planeNumber = 0U) override;
-  Pixel_Format PixelFormat() const override { return Y; };
-  uint32_t NumPlanes() const override { return 1U; };
-  uint32_t ElemSize() const override { return sizeof(uint8_t); }
-  bool Empty() const override { return 0UL == plane.GpuMem(); }
-  DLDataTypeCode DataType() const override { return kDLUInt; }
-
-  bool Update(SurfacePlane& newPlane);
-  bool Update(SurfacePlane** pPlanes, size_t planesNum) override;
-  SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) override;
-
-private:
-  SurfacePlane plane;
+  uint32_t NumPlanes() const noexcept override { return 1U; };
+  Pixel_Format PixelFormat() const noexcept override { return Y; };
+  size_t ElemSize() const noexcept override { return sizeof(uint8_t;) }
 };
 
 /* 8-bit NV12 image;
  */
-class TC_EXPORT SurfaceNV12 : public Surface {
+class TC_EXPORT SurfaceNV12 final : public Surface {
 public:
-  ~SurfaceNV12();
+  ~SurfaceNV12() = default;
+  SurfaceNV12() = default;
 
-  SurfaceNV12();
-  SurfaceNV12(const SurfaceNV12& other);
-  SurfaceNV12(uint32_t width, uint32_t height, CUcontext context);
-  SurfaceNV12(uint32_t width, uint32_t height, uint32_t alignBy,
-              CUdeviceptr pNewPtrToLumaPlane);
-  SurfaceNV12& operator=(const SurfaceNV12& other);
+  SurfaceNV12(const SurfaceNV12& other) = delete;
+  SurfaceNV12(const SurfaceNV12&& other) = delete;
+  SurfaceNV12& operator=(const SurfaceNV12& other) = delete;
+  SurfaceNV12& operator=(const SurfaceNV12&& other) = delete;
 
-  virtual Surface* Create() override;
+  SurfaceNV12(uint32_t width, uint32_t height, CUcontext context = nullptr,
+              bool pitched = true);
 
-  uint32_t Width(uint32_t planeNumber = 0U) const override;
-  uint32_t WidthInBytes(uint32_t planeNumber = 0U) const override;
-  uint32_t Height(uint32_t planeNumber = 0U) const override;
-  uint32_t Pitch(uint32_t planeNumber = 0U) const override;
-  uint32_t HostMemSize() const override;
-
-  CUdeviceptr PlanePtr(uint32_t planeNumber = 0U) override;
-  virtual Pixel_Format PixelFormat() const override { return NV12; }
-  uint32_t NumPlanes() const override { return 2; }
-  virtual uint32_t ElemSize() const override { return sizeof(uint8_t); }
-  bool Empty() const override { return 0UL == plane.GpuMem(); }
-  DLDataTypeCode DataType() const override { return kDLUInt; }
-
-  bool Update(SurfacePlane& newPlane);
-  bool Update(SurfacePlane** pPlanes, size_t planesNum) override;
-
-  SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) override;
-
-private:
-  SurfacePlane plane;
+  uint32_t NumPlanes() const noexcept override { return 2U; };
+  Pixel_Format PixelFormat() const noexcept override { return NV12; };
+  size_t ElemSize() const noexcept override { return sizeof(uint8_t;) }
 };
 
 /* 8-bit YUV420P image;
  */
-class TC_EXPORT SurfaceYUV420 : public Surface {
+class TC_EXPORT SurfaceYUV420 final : public Surface {
 public:
-  ~SurfaceYUV420();
+  ~SurfaceYUV420() = default;
+  SurfaceYUV420() = default;
 
-  SurfaceYUV420();
-  SurfaceYUV420(const SurfaceYUV420& other);
-  SurfaceYUV420(uint32_t width, uint32_t height, CUcontext context);
-  SurfaceYUV420& operator=(const SurfaceYUV420& other);
+  SurfaceYUV420(const SurfaceYUV420& other) = delete;
+  SurfaceYUV420(const SurfaceYUV420&& other) = delete;
+  SurfaceYUV420& operator=(const SurfaceYUV420& other) = delete;
+  SurfaceYUV420& operator=(const SurfaceYUV420&& other) = delete;
 
-  virtual Surface* Create() override;
+  SurfaceYUV420(uint32_t width, uint32_t height, CUcontext context = nullptr,
+                bool pitched = true);
 
-  uint32_t Width(uint32_t planeNumber = 0U) const override;
-  uint32_t WidthInBytes(uint32_t planeNumber = 0U) const override;
-  uint32_t Height(uint32_t planeNumber = 0U) const override;
-  uint32_t Pitch(uint32_t planeNumber = 0U) const override;
-  uint32_t HostMemSize() const override;
-
-  CUdeviceptr PlanePtr(uint32_t planeNumber = 0U) override;
-  virtual Pixel_Format PixelFormat() const override { return YUV420; }
-  uint32_t NumPlanes() const override { return 3; }
-  virtual uint32_t ElemSize() const override { return sizeof(uint8_t); }
-  bool Empty() const override {
-    return 0UL == planeY.GpuMem() && 0UL == planeU.GpuMem() &&
-           0UL == planeV.GpuMem();
-  }
-  DLDataTypeCode DataType() const override { return kDLUInt; }
-
-  bool Update(SurfacePlane& newPlaneY, SurfacePlane& newPlaneU,
-              SurfacePlane& newPlaneV);
-  bool Update(SurfacePlane** pPlanes, size_t planesNum) override;
-  SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) override;
-
-private:
-  SurfacePlane planeY;
-  SurfacePlane planeU;
-  SurfacePlane planeV;
+  Pixel_Format PixelFormat() const override { return YUV420; }
+  uint32_t NumPlanes() const override { return 3U; }
+  size_t ElemSize() const noexcept override { return sizeof(uint8_t;) }
 };
 
-class TC_EXPORT SurfaceP10 : public Surface {
-public:
-  ~SurfaceP10() = default;
+class TC_EXPORT SurfaceYUV422 final : public Surface {
+  ~SurfaceYUV422() = default;
+  SurfaceYUV422() = default;
 
-  SurfaceP10() = default;
-  SurfaceP10(const SurfaceP10& other);
-  SurfaceP10(uint32_t width, uint32_t height, CUcontext context);
-  SurfaceP10& operator=(const SurfaceP10& other);
+  SurfaceYUV422(const SurfaceYUV422& other) = delete;
+  SurfaceYUV422(const SurfaceYUV422&& other) = delete;
+  SurfaceYUV422& operator=(const SurfaceYUV422& other) = delete;
+  SurfaceYUV422& operator=(const SurfaceYUV422&& other) = delete;
 
-  virtual Surface* Create() override;
+  SurfaceYUV422(uint32_t width, uint32_t height, CUcontext context = nullptr,
+                bool pitched = true);
 
-  uint32_t Width(uint32_t planeNumber = 0U) const override;
-  uint32_t WidthInBytes(uint32_t planeNumber = 0U) const override;
-  uint32_t Height(uint32_t planeNumber = 0U) const override;
-  uint32_t Pitch(uint32_t planeNumber = 0U) const override;
-  uint32_t HostMemSize() const override;
-
-  CUdeviceptr PlanePtr(uint32_t planeNumber = 0U) override;
-  virtual Pixel_Format PixelFormat() const override { return P10; }
-  uint32_t NumPlanes() const override { return 2; }
-  virtual uint32_t ElemSize() const override { return sizeof(uint16_t); }
-  bool Empty() const override { return 0UL == plane.GpuMem(); }
-  DLDataTypeCode DataType() const override { return kDLUInt; }
-
-  bool Update(SurfacePlane& newPlane);
-  bool Update(SurfacePlane** pPlanes, size_t planesNum) override;
-
-  SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) override;
-
-private:
-  SurfacePlane plane;
-};
-
-/* 12-bit NV12 image;
- */
-class TC_EXPORT SurfaceP12 : public Surface {
-public:
-  ~SurfaceP12() = default;
-
-  SurfaceP12() = default;
-  SurfaceP12(const SurfaceP12& other);
-  SurfaceP12(uint32_t width, uint32_t height, CUcontext context);
-  SurfaceP12& operator=(const SurfaceP12& other);
-
-  virtual Surface* Create() override;
-
-  uint32_t Width(uint32_t planeNumber = 0U) const override;
-  uint32_t WidthInBytes(uint32_t planeNumber = 0U) const override;
-  uint32_t Height(uint32_t planeNumber = 0U) const override;
-  uint32_t Pitch(uint32_t planeNumber = 0U) const override;
-  uint32_t HostMemSize() const override;
-
-  CUdeviceptr PlanePtr(uint32_t planeNumber = 0U) override;
-  virtual Pixel_Format PixelFormat() const override { return P12; }
-  uint32_t NumPlanes() const override { return 2; }
-  virtual uint32_t ElemSize() const override { return sizeof(uint16_t); }
-  bool Empty() const override { return 0UL == plane.GpuMem(); }
-  DLDataTypeCode DataType() const override { return kDLUInt; }
-
-  bool Update(SurfacePlane& newPlane);
-  bool Update(SurfacePlane** pPlanes, size_t planesNum) override;
-
-  SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) override;
-
-private:
-  SurfacePlane plane;
-};
-
-class TC_EXPORT SurfaceYUV422 : public Surface {
-public:
-  ~SurfaceYUV422();
-
-  SurfaceYUV422();
-  SurfaceYUV422(const SurfaceYUV422& other);
-  SurfaceYUV422(uint32_t width, uint32_t height, CUcontext context);
-  SurfaceYUV422& operator=(const SurfaceYUV422& other);
-
-  virtual Surface* Create() override;
-
-  uint32_t Width(uint32_t planeNumber = 0U) const override;
-  uint32_t WidthInBytes(uint32_t planeNumber = 0U) const override;
-  uint32_t Height(uint32_t planeNumber = 0U) const override;
-  uint32_t Pitch(uint32_t planeNumber = 0U) const override;
-  uint32_t HostMemSize() const override;
-
-  CUdeviceptr PlanePtr(uint32_t planeNumber = 0U) override;
-  virtual Pixel_Format PixelFormat() const override { return YUV422; }
-  uint32_t NumPlanes() const override { return 3; }
-  uint32_t ElemSize() const override { return sizeof(uint8_t); }
-  bool Empty() const override {
-    return 0UL == planeY.GpuMem() && 0UL == planeU.GpuMem() &&
-           0UL == planeV.GpuMem();
-  }
-  DLDataTypeCode DataType() const override { return kDLUInt; }
-
-  bool Update(SurfacePlane& newPlaneY, SurfacePlane& newPlaneU,
-              SurfacePlane& newPlaneV);
-  bool Update(SurfacePlane** pPlanes, size_t planesNum) override;
-  SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) override;
-
-private:
-  SurfacePlane planeY;
-  SurfacePlane planeU;
-  SurfacePlane planeV;
+  Pixel_Format PixelFormat() const override { return YUV422; }
+  uint32_t NumPlanes() const override { return 3U; }
+  size_t ElemSize() const noexcept override { return sizeof(uint8_t;) }
 };
 
 /* 8-bit RGB image;
  */
-class TC_EXPORT SurfaceRGB : public Surface {
-public:
-  ~SurfaceRGB();
+class TC_EXPORT SurfaceRGB final : public Surface {
+  ~SurfaceRGB() = default;
+  SurfaceRGB() = default;
 
-  SurfaceRGB();
-  SurfaceRGB(const SurfaceRGB& other);
-  SurfaceRGB(uint32_t width, uint32_t height, CUcontext context);
-  SurfaceRGB& operator=(const SurfaceRGB& other);
+  SurfaceRGB(const SurfaceRGB& other) = delete;
+  SurfaceRGB(const SurfaceRGB&& other) = delete;
+  SurfaceRGB& operator=(const SurfaceRGB& other) = delete;
+  SurfaceRGB& operator=(const SurfaceRGB&& other) = delete;
 
-  Surface* Create() override;
+  SurfaceRGB(uint32_t width, uint32_t height, CUcontext context = nullptr,
+             bool pitched = true);
 
-  uint32_t Width(uint32_t planeNumber = 0U) const override;
-  uint32_t WidthInBytes(uint32_t planeNumber = 0U) const override;
-  uint32_t Height(uint32_t planeNumber = 0U) const override;
-  uint32_t Pitch(uint32_t planeNumber = 0U) const override;
-  uint32_t HostMemSize() const override;
-
-  CUdeviceptr PlanePtr(uint32_t planeNumber = 0U) override;
   Pixel_Format PixelFormat() const override { return RGB; }
-  uint32_t NumPlanes() const override { return 1; }
-  virtual uint32_t ElemSize() const override { return sizeof(uint8_t); }
-  bool Empty() const override { return 0UL == plane.GpuMem(); }
-  DLDataTypeCode DataType() const override { return kDLUInt; }
-
-  bool Update(SurfacePlane& newPlane);
-  bool Update(SurfacePlane** pPlanes, size_t planesNum) override;
-  SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) override;
-
-protected:
-  SurfacePlane plane;
+  uint32_t NumPlanes() const override { return 3U; }
+  size_t ElemSize() const noexcept override { return sizeof(uint8_t;) }
 };
 
 /* 8-bit BGR image;
  */
-class TC_EXPORT SurfaceBGR : public SurfaceRGB {
-public:
-  ~SurfaceBGR();
+class TC_EXPORT SurfaceBGR final : public SurfaceBGR {
+  ~SurfaceBGR() = default;
+  SurfaceBGR() = default;
 
-  SurfaceBGR();
-  SurfaceBGR(const SurfaceBGR& other);
-  SurfaceBGR(uint32_t width, uint32_t height, CUcontext context);
-  SurfaceBGR& operator=(const SurfaceBGR& other);
+  SurfaceBGR(const SurfaceBGR& other) = delete;
+  SurfaceBGR(const SurfaceBGR&& other) = delete;
+  SurfaceBGR& operator=(const SurfaceBGR& other) = delete;
+  SurfaceBGR& operator=(const SurfaceBGR&& other) = delete;
 
-  Surface* Create() override;
+  SurfaceBGR(uint32_t width, uint32_t height, CUcontext context = nullptr,
+             bool pitched = true);
 
-  uint32_t Width(uint32_t planeNumber = 0U) const override;
-  uint32_t WidthInBytes(uint32_t planeNumber = 0U) const override;
-  uint32_t Height(uint32_t planeNumber = 0U) const override;
-  uint32_t Pitch(uint32_t planeNumber = 0U) const override;
-  uint32_t HostMemSize() const override;
-
-  CUdeviceptr PlanePtr(uint32_t planeNumber = 0U) override;
   Pixel_Format PixelFormat() const override { return BGR; }
-  uint32_t NumPlanes() const override { return 1; }
-  virtual uint32_t ElemSize() const override { return sizeof(uint8_t); }
-  bool Empty() const override { return 0UL == plane.GpuMem(); }
-  DLDataTypeCode DataType() const override { return kDLUInt; }
-
-  bool Update(SurfacePlane& newPlane);
-  bool Update(SurfacePlane** pPlanes, size_t planesNum) override;
-  SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) override;
-
-protected:
-  SurfacePlane plane;
+  uint32_t NumPlanes() const override { return 3U; }
+  size_t ElemSize() const noexcept override { return sizeof(uint8_t;) }
 };
 
 /* 8-bit planar RGB image;
  */
-class TC_EXPORT SurfaceRGBPlanar : public Surface {
-public:
-  ~SurfaceRGBPlanar();
+class TC_EXPORT SurfaceRGBPlanar final : public Surface {
+  ~SurfaceRGBPlanar() = default;
+  SurfaceRGBPlanar() = default;
 
-  SurfaceRGBPlanar();
-  SurfaceRGBPlanar(const SurfaceRGBPlanar& other);
-  SurfaceRGBPlanar(uint32_t width, uint32_t height, CUcontext context);
-  SurfaceRGBPlanar(uint32_t width, uint32_t height, uint32_t elemSize,
-                   CUcontext context);
-  SurfaceRGBPlanar& operator=(const SurfaceRGBPlanar& other);
+  SurfaceRGBPlanar(const SurfaceRGBPlanar& other) = delete;
+  SurfaceRGBPlanar(const SurfaceRGBPlanar&& other) = delete;
+  SurfaceRGBPlanar& operator=(const SurfaceRGBPlanar& other) = delete;
+  SurfaceRGBPlanar& operator=(const SurfaceRGBPlanar&& other) = delete;
 
-  virtual Surface* Create() override;
+  SurfaceRGBPlanar(uint32_t width, uint32_t height, CUcontext context = nullptr,
+                   bool pitched = true);
 
-  uint32_t Width(uint32_t planeNumber = 0U) const override;
-  uint32_t WidthInBytes(uint32_t planeNumber = 0U) const override;
-  uint32_t Height(uint32_t planeNumber = 0U) const override;
-  uint32_t Pitch(uint32_t planeNumber = 0U) const override;
-  uint32_t HostMemSize() const override;
-
-  CUdeviceptr PlanePtr(uint32_t planeNumber = 0U) override;
   Pixel_Format PixelFormat() const override { return RGB_PLANAR; }
-  uint32_t NumPlanes() const override { return 1; }
-  virtual uint32_t ElemSize() const override { return sizeof(uint8_t); }
-  bool Empty() const override { return 0UL == plane.GpuMem(); }
-  DLDataTypeCode DataType() const override { return kDLUInt; }
-
-  bool Update(SurfacePlane& newPlane);
-  bool Update(SurfacePlane** pPlanes, size_t planesNum) override;
-  SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) override;
-
-protected:
-  SurfacePlane plane;
+  uint32_t NumPlanes() const override { return 1U; }
+  size_t ElemSize() const noexcept override { return sizeof(uint8_t;) }
 };
 
-class TC_EXPORT SurfaceYUV444 : public SurfaceRGBPlanar {
-public:
+class TC_EXPORT SurfaceYUV444 final : public Surface {
+  ~SurfaceYUV444() = default;
+  SurfaceYUV444() = default;
+
+  SurfaceYUV444(const SurfaceYUV444& other) = delete;
+  SurfaceYUV444(const SurfaceYUV444&& other) = delete;
+  SurfaceYUV444& operator=(const SurfaceYUV444& other) = delete;
+  SurfaceYUV444& operator=(const SurfaceYUV444&& other) = delete;
+
+  SurfaceYUV444(uint32_t width, uint32_t height, CUcontext context = nullptr,
+                bool pitched = true);
+
   Pixel_Format PixelFormat() const override { return YUV444; }
-
-  SurfaceYUV444();
-  SurfaceYUV444(const SurfaceYUV444& other);
-  SurfaceYUV444(uint32_t width, uint32_t height, CUcontext context);
-  SurfaceYUV444& operator=(const SurfaceYUV444& other);
-
-  Surface* Create() override;
+  uint32_t NumPlanes() const override { return 1U; }
+  size_t ElemSize() const noexcept override { return sizeof(uint8_t;) }
 };
-
-#ifdef TRACK_TOKEN_ALLOCATIONS
-/* Returns true if allocation counters are equal to zero, false otherwise;
- * If you want to check for dangling pointers, call this function at exit;
- */
-bool TC_EXPORT CheckAllocationCounters();
-#endif
 
 /* 32-bit float RGB image;
  */
-class TC_EXPORT SurfaceRGB32F : public Surface {
-public:
-  ~SurfaceRGB32F();
+class TC_EXPORT SurfaceRGB32F final : public Surface {
+  ~SurfaceRGB32F() = default;
+  SurfaceRGB32F() = default;
 
-  SurfaceRGB32F();
-  SurfaceRGB32F(const SurfaceRGB32F& other);
-  SurfaceRGB32F(uint32_t width, uint32_t height, CUcontext context);
-  SurfaceRGB32F& operator=(const SurfaceRGB32F& other);
+  SurfaceRGB32F(const SurfaceRGB32F& other) = delete;
+  SurfaceRGB32F(const SurfaceRGB32F&& other) = delete;
+  SurfaceRGB32F& operator=(const SurfaceRGB32F& other) = delete;
+  SurfaceRGB32F& operator=(const SurfaceRGB32F&& other) = delete;
 
-  Surface* Create() override;
+  SurfaceRGB32F(uint32_t width, uint32_t height, CUcontext context = nullptr,
+                bool pitched = true);
 
-  uint32_t Width(uint32_t planeNumber = 0U) const override;
-  uint32_t WidthInBytes(uint32_t planeNumber = 0U) const override;
-  uint32_t Height(uint32_t planeNumber = 0U) const override;
-  uint32_t Pitch(uint32_t planeNumber = 0U) const override;
-  uint32_t HostMemSize() const override;
-
-  CUdeviceptr PlanePtr(uint32_t planeNumber = 0U) override;
   Pixel_Format PixelFormat() const override { return RGB_32F; }
-  uint32_t NumPlanes() const override { return 1; }
-  virtual uint32_t ElemSize() const override { return sizeof(float); }
-  bool Empty() const override { return 0UL == plane.GpuMem(); }
-  DLDataTypeCode DataType() const override { return kDLFloat; }
-
-  bool Update(SurfacePlane& newPlane);
-  bool Update(SurfacePlane** pPlanes, size_t planesNum) override;
-  SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) override;
-
-protected:
-  SurfacePlane plane;
+  uint32_t NumPlanes() const override { return 3U; }
+  size_t ElemSize() const noexcept override { return sizeof(float;) }
 };
 
 /* 32-bit float planar RGB image;
  */
-class TC_EXPORT SurfaceRGB32FPlanar : public Surface {
-public:
-  ~SurfaceRGB32FPlanar();
+class TC_EXPORT SurfaceRGB32FPlanar final : public Surface {
+  ~SurfaceRGB32FPlanar() = default;
+  SurfaceRGB32FPlanar() = default;
 
-  SurfaceRGB32FPlanar();
-  SurfaceRGB32FPlanar(const SurfaceRGB32FPlanar& other);
-  SurfaceRGB32FPlanar(uint32_t width, uint32_t height, CUcontext context);
-  SurfaceRGB32FPlanar& operator=(const SurfaceRGB32FPlanar& other);
+  SurfaceRGB32FPlanar(const SurfaceRGB32FPlanar& other) = delete;
+  SurfaceRGB32FPlanar(const SurfaceRGB32FPlanar&& other) = delete;
+  SurfaceRGB32FPlanar& operator=(const SurfaceRGB32FPlanar& other) = delete;
+  SurfaceRGB32FPlanar& operator=(const SurfaceRGB32FPlanar&& other) = delete;
 
-  virtual Surface* Create() override;
+  SurfaceRGB32FPlanar(uint32_t width, uint32_t height,
+                      CUcontext context = nullptr, bool pitched = true);
 
-  uint32_t Width(uint32_t planeNumber = 0U) const override;
-  uint32_t WidthInBytes(uint32_t planeNumber = 0U) const override;
-  uint32_t Height(uint32_t planeNumber = 0U) const override;
-  uint32_t Pitch(uint32_t planeNumber = 0U) const override;
-  uint32_t HostMemSize() const override;
-
-  CUdeviceptr PlanePtr(uint32_t planeNumber = 0U) override;
   Pixel_Format PixelFormat() const override { return RGB_32F_PLANAR; }
-  uint32_t NumPlanes() const override { return 3; }
-  virtual uint32_t ElemSize() const override { return sizeof(float); }
-  bool Empty() const override { return 0UL == plane.GpuMem(); }
-  DLDataTypeCode DataType() const override { return kDLFloat; }
-
-  bool Update(SurfacePlane& newPlane);
-  bool Update(SurfacePlane** pPlanes, size_t planesNum) override;
-  SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) override;
-
-protected:
-  SurfacePlane plane;
+  uint32_t NumPlanes() const override { return 1U; }
+  size_t ElemSize() const noexcept override { return sizeof(float;) }
 };
 
-class TC_EXPORT SurfaceYUV444_10bit : public SurfaceRGBPlanar {
-public:
+class TC_EXPORT SurfaceYUV444_10bit final : public Surface {
+  ~SurfaceYUV444_10bit() = default;
+  SurfaceYUV444_10bit() = default;
+
+  SurfaceYUV444_10bit(const SurfaceYUV444_10bit& other) = delete;
+  SurfaceYUV444_10bit(const SurfaceYUV444_10bit&& other) = delete;
+  SurfaceYUV444_10bit& operator=(const SurfaceYUV444_10bit& other) = delete;
+  SurfaceYUV444_10bit& operator=(const SurfaceYUV444_10bit&& other) = delete;
+
+  SurfaceYUV444_10bit(uint32_t width, uint32_t height,
+                      CUcontext context = nullptr, bool pitched = true);
+
   Pixel_Format PixelFormat() const override { return YUV444; }
+  uint32_t NumPlanes() const override { return 1U; }
+  size_t ElemSize() const noexcept override { return sizeof(uint16_t;) }
+};
 
-  SurfaceYUV444_10bit();
-  SurfaceYUV444_10bit(const SurfaceYUV444_10bit& other);
-  SurfaceYUV444_10bit(uint32_t width, uint32_t height, CUcontext context);
-  SurfaceYUV444_10bit& operator=(const SurfaceYUV444_10bit& other);
+/* 10-bit NV12 image;
+ */
+class TC_EXPORT SurfaceP10 final : public Surface {
+public:
+  ~SurfaceP10() = default;
+  SurfaceP10() = default;
 
-  Surface* Create() override;
+  SurfaceP10(const SurfaceP10& other) = delete;
+  SurfaceP10(const SurfaceP10&& other) = delete;
+  SurfaceP10& operator=(const SurfaceP10& other) = delete;
+  SurfaceP10& operator=(const SurfaceP10&& other) = delete;
+
+  SurfaceP10(uint32_t width, uint32_t height, CUcontext context = nullptr,
+             bool pitched = true);
+
+  uint32_t NumPlanes() const noexcept override { return 2U; };
+  Pixel_Format PixelFormat() const noexcept override { return P10; };
+  size_t ElemSize() const noexcept override { return sizeof(uint16_t;) }
+};
+
+/* 12-bit NV12 image;
+ */
+class TC_EXPORT SurfaceP12 final : public Surface {
+public:
+  ~SurfaceP12() = default;
+  SurfaceP12() = default;
+
+  SurfaceP12(const SurfaceP12& other) = delete;
+  SurfaceP12(const SurfaceP12&& other) = delete;
+  SurfaceP12& operator=(const SurfaceP12& other) = delete;
+  SurfaceP12& operator=(const SurfaceP12&& other) = delete;
+
+  SurfaceP12(uint32_t width, uint32_t height, CUcontext context = nullptr,
+             bool pitched = true);
+
+  uint32_t NumPlanes() const noexcept override { return 2U; };
+  Pixel_Format PixelFormat() const noexcept override { return P10; };
+  size_t ElemSize() const noexcept override { return sizeof(uint16_t;) }
 };
 } // namespace VPF
