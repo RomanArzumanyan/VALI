@@ -77,8 +77,7 @@ struct NppConvertSurface_Impl {
     }
 
     if (!pSurface) {
-      pSurface.reset(
-          Surface::Make(dstFmt, pSrc->Width(), pSrc->Height(), cu_ctx));
+      pSurface = Surface::Make(dstFmt, pSrc->Width(), pSrc->Height(), cu_ctx);
     }
 
     return pSurface.get();
@@ -131,44 +130,47 @@ struct nv12_bgr final : public NppConvertSurface_Impl {
       return nullptr;
     }
 
-    auto const params = GetParams(pCtx);
-    auto const color_space = std::get<0>(params);
-    auto const color_range = std::get<1>(params);
+    try {
+      auto const params = GetParams(pCtx);
+      auto const color_space = std::get<0>(params);
+      auto const color_range = std::get<1>(params);
 
-    const Npp8u* const pSrc[] = {(const Npp8u* const)pInput->PlanePtr(0U),
-                                 (const Npp8u* const)pInput->PlanePtr(1U)};
-
-    auto pDst = (Npp8u*)pOutput->PlanePtr();
-    NppiSize oSizeRoi = {(int)pInput->Width(), (int)pInput->Height()};
-
-    CudaCtxPush ctxPush(cu_ctx);
-    auto err = NPP_NO_ERROR;
-
-    switch (color_space) {
-    case BT_709:
-      if (JPEG == color_range) {
-        err = nppiNV12ToBGR_709HDTV_8u_P2C3R_Ctx(
-            pSrc, pInput->Pitch(), pDst, pOutput->Pitch(), oSizeRoi, nppCtx);
-      } else {
-        err = nppiNV12ToBGR_709CSC_8u_P2C3R_Ctx(
-            pSrc, pInput->Pitch(), pDst, pOutput->Pitch(), oSizeRoi, nppCtx);
-      }
-      break;
-    case BT_601:
-      if (JPEG == color_range) {
-        err = nppiNV12ToBGR_8u_P2C3R_Ctx(pSrc, pInput->Pitch(), pDst,
-                                         pOutput->Pitch(), oSizeRoi, nppCtx);
-      } else {
+      auto func = nppiNV12ToBGR_709HDTV_8u_P2C3R_Ctx;
+      switch (color_space) {
+      case BT_709:
+        func = (JPEG == color_range) ? nppiNV12ToBGR_709HDTV_8u_P2C3R_Ctx
+                                     : nppiNV12ToBGR_709CSC_8u_P2C3R_Ctx;
+        break;
+      case BT_601:
+        if (JPEG == color_range) {
+          func = nppiNV12ToBGR_8u_P2C3R_Ctx;
+        } else {
+          details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
+          return nullptr;
+        }
+        break;
+      default:
         details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
         return nullptr;
       }
-      break;
-    default:
-      details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
-    }
 
-    if (NPP_NO_ERROR != err) {
+      auto src_ctx = pInput->GetNppContext();
+      auto dst_ctx = pOutput->GetNppContext();
+
+      /* NPP assumes that both Y and UV planes of NV12 Surface have same pitch.
+       * VPF doesn't impose such a restriction, hence need to check;
+       */
+      if (src_ctx.GetPitch()[0] != src_ctx.GetPitch()[1]) {
+        details.info = TaskExecInfo::UNSUPPORTED_IMG_PITCH_PARAMS;
+        return nullptr;
+      }
+
+      CudaCtxPush ctxPush(cu_ctx);
+      ThrowOnNppError(func(src_ctx.GetDataAs<Npp8u>().data(),
+                           src_ctx.GetPitch()[0], src_ctx.GetDataAs<Npp8u>()[0],
+                           dst_ctx.GetPitch()[0], src_ctx.GetSize(), nppCtx),
+                      __LINE__);
+    } catch (...) {
       details.info = TaskExecInfo::FAIL;
       return nullptr;
     }
@@ -194,44 +196,47 @@ struct nv12_rgb final : public NppConvertSurface_Impl {
       return nullptr;
     }
 
-    auto const params = GetParams(pCtx);
-    auto const color_space = std::get<0>(params);
-    auto const color_range = std::get<1>(params);
+    try {
+      auto const params = GetParams(pCtx);
+      auto const color_space = std::get<0>(params);
+      auto const color_range = std::get<1>(params);
 
-    const Npp8u* const pSrc[] = {(const Npp8u* const)pInput->PlanePtr(0U),
-                                 (const Npp8u* const)pInput->PlanePtr(1U)};
-
-    auto pDst = (Npp8u*)pOutput->PlanePtr();
-    NppiSize oSizeRoi = {(int)pInput->Width(), (int)pInput->Height()};
-
-    CudaCtxPush ctxPush(cu_ctx);
-    auto err = NPP_NO_ERROR;
-
-    switch (color_space) {
-    case BT_709:
-      if (JPEG == color_range) {
-        err = nppiNV12ToRGB_709HDTV_8u_P2C3R_Ctx(
-            pSrc, pInput->Pitch(), pDst, pOutput->Pitch(), oSizeRoi, nppCtx);
-      } else {
-        err = nppiNV12ToRGB_709CSC_8u_P2C3R_Ctx(
-            pSrc, pInput->Pitch(), pDst, pOutput->Pitch(), oSizeRoi, nppCtx);
-      }
-      break;
-    case BT_601:
-      if (JPEG == color_range) {
-        err = nppiNV12ToRGB_8u_P2C3R_Ctx(pSrc, pInput->Pitch(), pDst,
-                                         pOutput->Pitch(), oSizeRoi, nppCtx);
-      } else {
+      auto func = nppiNV12ToRGB_709HDTV_8u_P2C3R_Ctx;
+      switch (color_space) {
+      case BT_709:
+        func = (JPEG == color_range) ? nppiNV12ToRGB_709HDTV_8u_P2C3R_Ctx
+                                     : nppiNV12ToRGB_709CSC_8u_P2C3R_Ctx;
+        break;
+      case BT_601:
+        if (JPEG == color_range) {
+          func = nppiNV12ToRGB_8u_P2C3R_Ctx;
+        } else {
+          details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
+          return nullptr;
+        }
+        break;
+      default:
         details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
         return nullptr;
       }
-      break;
-    default:
-      details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
-    }
 
-    if (NPP_NO_ERROR != err) {
+      auto src_ctx = pInput->GetNppContext();
+      auto dst_ctx = pOutput->GetNppContext();
+
+      /* NPP assumes that both Y and UV planes of NV12 Surface have same pitch.
+       * VPF doesn't impose such a restriction, hence need to check;
+       */
+      if (src_ctx.GetPitch()[0] != src_ctx.GetPitch()[1]) {
+        details.info = TaskExecInfo::UNSUPPORTED_IMG_PITCH_PARAMS;
+        return nullptr;
+      }
+
+      CudaCtxPush ctxPush(cu_ctx);
+      ThrowOnNppError(func(src_ctx.GetDataAs<Npp8u>().data(),
+                           src_ctx.GetPitch()[0], dst_ctx.GetDataAs<Npp8u>()[0],
+                           dst_ctx.GetPitch()[0], src_ctx.GetSize(), nppCtx),
+                      __LINE__);
+    } catch (...) {
       details.info = TaskExecInfo::FAIL;
       return nullptr;
     }
@@ -258,37 +263,40 @@ struct nv12_yuv420 final : public NppConvertSurface_Impl {
       return nullptr;
     }
 
-    const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PlanePtr(0U),
-                                 (const Npp8u*)pInput->PlanePtr(1U)};
+    try {
+      auto const params = GetParams(pCtx);
+      auto const color_space = std::get<0>(params);
+      auto const color_range = std::get<1>(params);
 
-    Npp8u* pDst[] = {(Npp8u*)pOutput->PlanePtr(0U),
-                     (Npp8u*)pOutput->PlanePtr(1U),
-                     (Npp8u*)pOutput->PlanePtr(2U)};
+      auto src_ctx = pInput->GetNppContext();
+      auto dst_ctx = pOutput->GetNppContext();
 
-    int dstStep[] = {(int)pOutput->Pitch(0U), (int)pOutput->Pitch(1U),
-                     (int)pOutput->Pitch(2U)};
-    NppiSize roi = {(int)pInput->Width(), (int)pInput->Height()};
+      /* NPP assumes that both Y and UV planes of NV12 Surface have same pitch.
+       * VPF doesn't impose such a restriction, hence need to check;
+       */
+      if (src_ctx.GetPitch()[0] != src_ctx.GetPitch()[1]) {
+        details.info = TaskExecInfo::UNSUPPORTED_IMG_PITCH_PARAMS;
+        return nullptr;
+      }
 
-    CudaCtxPush ctxPush(cu_ctx);
-    auto err = NPP_NO_ERROR;
-
-    auto const color_range = pCtx ? pCtx->color_range : MPEG;
-    switch (color_range) {
-    case JPEG:
-      err = nppiNV12ToYUV420_8u_P2P3R_Ctx(pSrc, pInput->Pitch(0U), pDst,
-                                          dstStep, roi, nppCtx);
-      break;
-    case MPEG:
-      err = nppiYCbCr420_8u_P2P3R_Ctx(pSrc[0], pInput->Pitch(0U), pSrc[1],
-                                      pInput->Pitch(1U), pDst, dstStep, roi,
-                                      nppCtx);
-      break;
-    default:
-      details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
-    }
-
-    if (NPP_NO_ERROR != err) {
+      CudaCtxPush ctxPush(cu_ctx);
+      if (JPEG == color_range) {
+        ThrowOnNppError(nppiNV12ToYUV420_8u_P2P3R_Ctx(
+                            src_ctx.GetDataAs<Npp8u>().data(),
+                            src_ctx.GetPitch()[0],
+                            dst_ctx.GetDataAs<Npp8u>().data(),
+                            dst_ctx.GetPitch(), src_ctx.GetSize(), nppCtx),
+                        __LINE__);
+      } else {
+        ThrowOnNppError(
+            nppiYCbCr420_8u_P2P3R_Ctx(
+                src_ctx.GetDataAs<Npp8u>()[0], src_ctx.GetPitch()[0],
+                src_ctx.GetDataAs<Npp8u>()[1], src_ctx.GetPitch()[1],
+                dst_ctx.GetDataAs<Npp8u>().data(), dst_ctx.GetPitch(),
+                src_ctx.GetSize(), nppCtx),
+            __LINE__);
+      }
+    } catch (...) {
       details.info = TaskExecInfo::FAIL;
       return nullptr;
     }
@@ -314,19 +322,31 @@ struct nv12_y final : public NppConvertSurface_Impl {
       return nullptr;
     }
 
-    CUDA_MEMCPY2D m = {0};
-    m.srcMemoryType = CU_MEMORYTYPE_DEVICE;
-    m.dstMemoryType = CU_MEMORYTYPE_DEVICE;
-    m.srcDevice = pInput->PlanePtr();
-    m.dstDevice = pOutput->PlanePtr();
-    m.srcPitch = pInput->Pitch();
-    m.dstPitch = pOutput->Pitch();
-    m.Height = pInput->Height();
-    m.WidthInBytes = pInput->WidthInBytes();
+    try {
+      SurfacePlane src_plane, dst_plane;
+      if (!pInput->GetSurfacePlane(src_plane) ||
+          !pOutput->GetSurfacePlane(dst_plane)) {
+        details.info = TaskExecInfo::INVALID_INPUT;
+        return nullptr;
+      }
 
-    CudaCtxPush ctxPush(cu_ctx);
-    cuMemcpy2DAsync(&m, cu_str);
-    cuStreamSynchronize(cu_str);
+      CUDA_MEMCPY2D m = {0};
+      m.srcMemoryType = CU_MEMORYTYPE_DEVICE;
+      m.dstMemoryType = CU_MEMORYTYPE_DEVICE;
+      m.srcDevice = src_plane.GpuMem();
+      m.dstDevice = dst_plane.GpuMem();
+      m.srcPitch = src_plane.Pitch();
+      m.dstPitch = dst_plane.Pitch();
+      m.Height = src_plane.Height();
+      m.WidthInBytes = src_plane.Width() * src_plane.ElemSize();
+
+      CudaCtxPush ctxPush(cu_ctx);
+      ThrowOnCudaError(cuMemcpy2DAsync(&m, cu_str), __LINE__);
+      ThrowOnCudaError(cuStreamSynchronize(cu_str), __LINE__);
+    } catch (...) {
+      details.info = TaskExecInfo::FAIL;
+      return nullptr;
+    }
 
     return pOutput;
   }
@@ -349,11 +369,19 @@ struct rbg8_y final : public NppConvertSurface_Impl {
       return nullptr;
     }
 
-    NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
+    try {
+      auto src_ctx = pInput->GetNppContext();
+      auto dst_ctx = pOutput->GetNppContext();
 
-    auto ret = nppiRGBToGray_8u_C3C1R_Ctx(
-        (const Npp8u*)pInput->PlanePtr(), pInput->Pitch(),
-        (Npp8u*)pOutput->PlanePtr(), pOutput->Pitch(), roi, nppCtx);
+      ThrowOnNppError(nppiRGBToGray_8u_C3C1R_Ctx(
+                          src_ctx.GetDataAs<Npp8u>()[0], src_ctx.GetPitch()[0],
+                          dst_ctx.GetDataAs<Npp8u>()[0], dst_ctx.GetPitch()[0],
+                          src_ctx.GetSize(), nppCtx),
+                      __LINE__);
+    } catch (...) {
+      details.info = TaskExecInfo::FAIL;
+      return nullptr;
+    }
 
     return pOutput;
   }
@@ -369,10 +397,6 @@ struct yuv420_rgb final : public NppConvertSurface_Impl {
     NvtxMark tick(GetNvtxTickName().c_str());
     details.info = TaskExecInfo::SUCCESS;
 
-    auto const params = GetParams(pCtx);
-    auto const color_space = std::get<0>(params);
-    auto const color_range = std::get<1>(params);
-
     auto pInput = (SurfaceYUV420*)pSrcToken;
     auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
 
@@ -381,36 +405,28 @@ struct yuv420_rgb final : public NppConvertSurface_Impl {
       return nullptr;
     }
 
-    const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PlanePtr(0U),
-                                 (const Npp8u*)pInput->PlanePtr(1U),
-                                 (const Npp8u*)pInput->PlanePtr(2U)};
-    Npp8u* pDst = (Npp8u*)pOutput->PlanePtr();
-    int srcStep[] = {(int)pInput->Pitch(0U), (int)pInput->Pitch(1U),
-                     (int)pInput->Pitch(2U)};
-    int dstStep = (int)pOutput->Pitch();
-    NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
-    CudaCtxPush ctxPush(cu_ctx);
-    auto err = NPP_NO_ERROR;
+    try {
+      auto const params = GetParams(pCtx);
+      auto const color_space = std::get<0>(params);
+      auto const color_range = std::get<1>(params);
 
-    switch (color_space) {
-    case BT_709:
-      details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
-    case BT_601:
-      if (JPEG == color_range) {
-        err = nppiYUV420ToRGB_8u_P3C3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
-                                           nppCtx);
-      } else {
-        err = nppiYCbCr420ToRGB_8u_P3C3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
-                                             nppCtx);
+      auto src_ctx = pInput->GetNppContext();
+      auto dst_ctx = pOutput->GetNppContext();
+
+      if (BT_601 != color_space) {
+        details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
+        return nullptr;
       }
-      break;
-    default:
-      details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
-    }
 
-    if (NPP_NO_ERROR != err) {
+      auto func = (JPEG == color_range) ? nppiYUV420ToRGB_8u_P3C3R_Ctx
+                                        : nppiYCbCr420ToRGB_8u_P3C3R_Ctx;
+
+      CudaCtxPush ctxPush(cu_ctx);
+      ThrowOnNppError(func(src_ctx.GetDataAs<Npp8u>().data(),
+                           src_ctx.GetPitch(), dst_ctx.GetDataAs<Npp8u>()[0],
+                           dst_ctx.GetPitch()[0], src_ctx.GetSize(), nppCtx),
+                      __LINE__);
+    } catch (...) {
       details.info = TaskExecInfo::FAIL;
       return nullptr;
     }
@@ -429,10 +445,6 @@ struct yuv420_bgr final : public NppConvertSurface_Impl {
     NvtxMark tick(GetNvtxTickName().c_str());
     details.info = TaskExecInfo::SUCCESS;
 
-    auto const params = GetParams(pCtx);
-    auto const color_space = std::get<0>(params);
-    auto const color_range = std::get<1>(params);
-
     auto pInput = (SurfaceYUV420*)pSrcToken;
     auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
 
@@ -441,863 +453,827 @@ struct yuv420_bgr final : public NppConvertSurface_Impl {
       return nullptr;
     }
 
-    const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PlanePtr(0U),
-                                 (const Npp8u*)pInput->PlanePtr(1U),
-                                 (const Npp8u*)pInput->PlanePtr(2U)};
-    Npp8u* pDst = (Npp8u*)pOutput->PlanePtr();
-    int srcStep[] = {(int)pInput->Pitch(0U), (int)pInput->Pitch(1U),
-                     (int)pInput->Pitch(2U)};
-    int dstStep = (int)pOutput->Pitch();
-    NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
-    CudaCtxPush ctxPush(cu_ctx);
-    auto err = NPP_NO_ERROR;
+    try {
+      auto const params = GetParams(pCtx);
+      auto const color_space = std::get<0>(params);
+      auto const color_range = std::get<1>(params);
 
-    switch (color_space) {
-    case BT_709:
-      details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
-    case BT_601:
-      if (JPEG == color_range) {
-        err = nppiYUV420ToBGR_8u_P3C3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
-                                           nppCtx);
-      } else {
-        err = nppiYCbCr420ToBGR_8u_P3C3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
-                                             nppCtx);
+      auto src_ctx = pInput->GetNppContext();
+      auto dst_ctx = pOutput->GetNppContext();
+
+      if (BT_601 != color_space) {
+        details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
+        return nullptr;
       }
-      break;
-    default:
-      details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
-    }
 
-    if (NPP_NO_ERROR != err) {
+      auto func = (JPEG == color_range) ? nppiYUV420ToBGR_8u_P3C3R_Ctx
+                                        : nppiYCbCr420ToBGR_8u_P3C3R_Ctx;
+
+      CudaCtxPush ctxPush(cu_ctx);
+      ThrowOnNppError(func(src_ctx.GetDataAs<Npp8u>().data(),
+                           src_ctx.GetPitch(), dst_ctx.GetDataAs<Npp8u>()[0],
+                           dst_ctx.GetPitch()[0], src_ctx.GetSize(), nppCtx),
+                      __LINE__);
+    } catch (...) {
       details.info = TaskExecInfo::FAIL;
       return nullptr;
     }
 
     return pOutput;
-  }
-};
-
-struct yuv444_bgr final : public NppConvertSurface_Impl {
-  yuv444_bgr(uint32_t width, uint32_t height, CUcontext context,
-             CUstream stream)
-      : NppConvertSurface_Impl(context, stream, YUV444, BGR) {}
-
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
-    NvtxMark tick(GetNvtxTickName().c_str());
-    details.info = TaskExecInfo::SUCCESS;
-
-    auto const params = GetParams(pCtx);
-    auto const color_space = std::get<0>(params);
-    auto const color_range = std::get<1>(params);
-
-    if (BT_601 != color_space) {
-      details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
-    }
-
-    auto pInput = (SurfaceYUV444*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
-
-    if (!Validate(pInput, pOutput)) {
-      details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
-    }
-
-    const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PlanePtr(0U),
-                                 (const Npp8u*)pInput->PlanePtr(1U),
-                                 (const Npp8u*)pInput->PlanePtr(2U)};
-    Npp8u* pDst = (Npp8u*)pOutput->PlanePtr();
-    int srcStep = (int)pInput->Pitch();
-    int dstStep = (int)pOutput->Pitch();
-    NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
-    CudaCtxPush ctxPush(cu_ctx);
-    auto err = NPP_NO_ERROR;
-
-    switch (color_range) {
-    case MPEG:
-      err = nppiYCbCrToBGR_8u_P3C3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
-                                        nppCtx);
-      break;
-    case JPEG:
-      err =
-          nppiYUVToBGR_8u_P3C3R_Ctx(pSrc, srcStep, pDst, dstStep, roi, nppCtx);
-      break;
-    default:
-      err = NPP_NO_OPERATION_WARNING;
-      break;
-    }
-
-    if (NPP_NO_ERROR != err) {
-      details.info = TaskExecInfo::FAIL;
-      return nullptr;
-    }
-
-    return pOutput;
-  }
-};
-
-struct yuv444_rgb final : public NppConvertSurface_Impl {
-  yuv444_rgb(uint32_t width, uint32_t height, CUcontext context,
-             CUstream stream)
-      : NppConvertSurface_Impl(context, stream, YUV444, RGB) {}
-
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
-    NvtxMark tick(GetNvtxTickName().c_str());
-    details.info = TaskExecInfo::SUCCESS;
-
-    auto const params = GetParams(pCtx);
-    auto const color_space = std::get<0>(params);
-    auto const color_range = std::get<1>(params);
-
-    if (BT_601 != color_space) {
-      details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
-    }
-
-    auto pInput = (SurfaceYUV444*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
-
-    if (!Validate(pInput, pOutput)) {
-      details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
-    }
-
-    const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PlanePtr(0U),
-                                 (const Npp8u*)pInput->PlanePtr(1U),
-                                 (const Npp8u*)pInput->PlanePtr(2U)};
-    Npp8u* pDst = (Npp8u*)pOutput->PlanePtr();
-    int srcStep = (int)pInput->Pitch();
-    int dstStep = (int)pOutput->Pitch();
-    NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
-    CudaCtxPush ctxPush(cu_ctx);
-    auto err = NPP_NO_ERROR;
-
-    switch (color_range) {
-    case JPEG:
-      err =
-          nppiYUVToRGB_8u_P3C3R_Ctx(pSrc, srcStep, pDst, dstStep, roi, nppCtx);
-      break;
-    default:
-      err = NPP_NO_OPERATION_WARNING;
-      break;
-    }
-
-    if (NPP_NO_ERROR != err) {
-      details.info = TaskExecInfo::FAIL;
-      return nullptr;
-    }
-
-    return pOutput;
-  }
-};
-
-struct yuv444_rgb_planar final : public NppConvertSurface_Impl {
-  yuv444_rgb_planar(uint32_t width, uint32_t height, CUcontext context,
-                    CUstream stream)
-      : NppConvertSurface_Impl(context, stream, YUV444, RGB_PLANAR) {}
-
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
-    NvtxMark tick(GetNvtxTickName().c_str());
-    details.info = TaskExecInfo::SUCCESS;
-
-    auto const params = GetParams(pCtx);
-    auto const color_space = std::get<0>(params);
-    auto const color_range = std::get<1>(params);
-
-    if (BT_601 != color_space) {
-      details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
-    }
-
-    auto pInput = (SurfaceYUV444*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
-
-    if (!Validate(pInput, pOutput)) {
-      details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
-    }
-
-    const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PlanePtr(0U),
-                                 (const Npp8u*)pInput->PlanePtr(1U),
-                                 (const Npp8u*)pInput->PlanePtr(2U)};
-    Npp8u* pDst[] = {(Npp8u*)pOutput->PlanePtr(0), (Npp8u*)pOutput->PlanePtr(1),
-                     (Npp8u*)pOutput->PlanePtr(2)};
-    int srcStep = (int)pInput->Pitch();
-    int dstStep = (int)pOutput->Pitch();
-    NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
-    CudaCtxPush ctxPush(cu_ctx);
-    auto err = NPP_NO_ERROR;
-
-    switch (color_range) {
-    case JPEG:
-      err = nppiYUVToRGB_8u_P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi, nppCtx);
-      break;
-    default:
-      err = NPP_NO_OPERATION_WARNING;
-      break;
-    }
-
-    if (NPP_NO_ERROR != err) {
-      details.info = TaskExecInfo::FAIL;
-      return nullptr;
-    }
-
-    return pOutput;
-  }
-};
-
-struct bgr_yuv444 final : public NppConvertSurface_Impl {
-  bgr_yuv444(uint32_t width, uint32_t height, CUcontext context,
-             CUstream stream)
-      : NppConvertSurface_Impl(context, stream, BGR, YUV444) {}
-
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
-    NvtxMark tick(GetNvtxTickName().c_str());
-    details.info = TaskExecInfo::SUCCESS;
-
-    auto const params = GetParams(pCtx);
-    auto const color_space = std::get<0>(params);
-    auto const color_range = std::get<1>(params);
-
-    if (BT_601 != color_space) {
-      details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
-    }
-
-    auto pInput = (SurfaceBGR*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
-
-    if (!Validate(pInput, pOutput)) {
-      details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
-    }
-
-    const Npp8u* pSrc = (const Npp8u*)pInput->PlanePtr();
-    Npp8u* pDst[] = {(Npp8u*)pOutput->PlanePtr(0U),
-                     (Npp8u*)pOutput->PlanePtr(1U),
-                     (Npp8u*)pOutput->PlanePtr(2U)};
-    int srcStep = (int)pInput->Pitch();
-    int dstStep = (int)pOutput->Pitch();
-    NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
-    CudaCtxPush ctxPush(cu_ctx);
-    auto err = NPP_NO_ERROR;
-
-    switch (color_range) {
-    case MPEG:
-      err = nppiBGRToYCbCr_8u_C3P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
-                                        nppCtx);
-      break;
-    case JPEG:
-      err =
-          nppiBGRToYUV_8u_C3P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi, nppCtx);
-      break;
-    default:
-      err = NPP_NO_OPERATION_WARNING;
-      break;
-    }
-
-    if (NPP_NO_ERROR != err) {
-      details.info = TaskExecInfo::FAIL;
-      return nullptr;
-    }
-
-    return pOutput;
-  }
-};
-
-struct rgb_yuv444 final : public NppConvertSurface_Impl {
-  rgb_yuv444(uint32_t width, uint32_t height, CUcontext context,
-             CUstream stream)
-      : NppConvertSurface_Impl(context, stream, RGB, YUV444) {}
-
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
-    NvtxMark tick(GetNvtxTickName().c_str());
-    details.info = TaskExecInfo::SUCCESS;
-
-    auto pInput = (SurfaceRGB*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
-
-    if (!Validate(pInput, pOutput)) {
-      details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
-    }
-
-    auto const params = GetParams(pCtx);
-    auto const color_space = std::get<0>(params);
-    auto const color_range = std::get<1>(params);
-
-    if (BT_601 != color_space) {
-      details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
-    }
-
-    const Npp8u* pSrc = (const Npp8u*)pInput->PlanePtr();
-    int srcStep = pInput->Pitch();
-    Npp8u* pDst[] = {(Npp8u*)pOutput->PlanePtr(0U),
-                     (Npp8u*)pOutput->PlanePtr(1U),
-                     (Npp8u*)pOutput->PlanePtr(2U)};
-    int dstStep = pOutput->Pitch();
-    NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
-
-    CudaCtxPush ctxPush(cu_ctx);
-    auto err = NPP_NO_ERROR;
-    switch (color_range) {
-    case JPEG:
-      err =
-          nppiRGBToYUV_8u_C3P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi, nppCtx);
-      break;
-    case MPEG:
-      err = nppiRGBToYCbCr_8u_C3R_Ctx(pSrc, srcStep, pDst[0], dstStep, roi,
-                                      nppCtx);
-      break;
-    default:
-      err = NPP_NO_OPERATION_WARNING;
-    }
-
-    if (NPP_NO_ERROR != err) {
-      details.info = TaskExecInfo::FAIL;
-      return nullptr;
-    }
-
-    return pOutput;
-  }
-};
-
-struct rgb_planar_yuv444 final : public NppConvertSurface_Impl {
-  rgb_planar_yuv444(uint32_t width, uint32_t height, CUcontext context,
-                    CUstream stream)
-      : NppConvertSurface_Impl(context, stream, RGB_PLANAR, YUV444) {}
-
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
-    NvtxMark tick(GetNvtxTickName().c_str());
-    details.info = TaskExecInfo::SUCCESS;
-
-    auto pInput = (SurfaceRGBPlanar*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
-
-    if (!Validate(pInput, pOutput)) {
-      details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
-    }
-
-    auto const params = GetParams(pCtx);
-    auto const color_space = std::get<0>(params);
-    auto const color_range = std::get<1>(params);
-
-    if (BT_601 != color_space) {
-      details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
-    }
-
-    const Npp8u* pSrc[] = {(const Npp8u*)pInput->PlanePtr(0U),
-                           (const Npp8u*)pInput->PlanePtr(1U),
-                           (const Npp8u*)pInput->PlanePtr(2U)};
-    int srcStep = pInput->Pitch();
-    Npp8u* pDst[] = {(Npp8u*)pOutput->PlanePtr(0U),
-                     (Npp8u*)pOutput->PlanePtr(1U),
-                     (Npp8u*)pOutput->PlanePtr(2U)};
-    int dstStep = pOutput->Pitch();
-    NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
-
-    CudaCtxPush ctxPush(cu_ctx);
-    auto err = NPP_NO_ERROR;
-    switch (color_range) {
-    case JPEG:
-      err = nppiRGBToYUV_8u_P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi, nppCtx);
-      break;
-    case MPEG:
-      err =
-          nppiRGBToYCbCr_8u_P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi, nppCtx);
-      break;
-    default:
-      err = NPP_NO_OPERATION_WARNING;
-      break;
-    }
-
-    if (NPP_NO_ERROR != err) {
-      details.info = TaskExecInfo::FAIL;
-      return nullptr;
-    }
-
-    return pOutput;
-  }
-};
-
-struct y_yuv444 final : public NppConvertSurface_Impl {
-  y_yuv444(uint32_t width, uint32_t height, CUcontext context, CUstream stream)
-      : NppConvertSurface_Impl(context, stream, Y, YUV444) {}
-
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
-    NvtxMark tick(GetNvtxTickName().c_str());
-    details.info = TaskExecInfo::SUCCESS;
-
-    auto pInput = (SurfaceY*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
-
-    if (!Validate(pInput, pOutput)) {
-      details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
-    }
-
-    // Make gray U and V channels;
-    for (int i = 1; i < pOutput->NumPlanes(); i++) {
-      const Npp8u nValue = 128U;
-      Npp8u* pDst = (Npp8u*)pOutput->PlanePtr(i);
-      int nDstStep = pOutput->Pitch(i);
-      NppiSize roi = {(int)pOutput->Width(i), (int)pOutput->Height(i)};
-      auto err = nppiSet_8u_C1R_Ctx(nValue, pDst, nDstStep, roi, nppCtx);
-      if (NPP_NO_ERROR != err) {
+  };
+
+  struct yuv444_bgr final : public NppConvertSurface_Impl {
+    yuv444_bgr(uint32_t width, uint32_t height, CUcontext context,
+               CUstream stream)
+        : NppConvertSurface_Impl(context, stream, YUV444, BGR) {}
+
+    Token* Execute(Token* pSrcToken, Token* pDstToken,
+                   ColorspaceConversionContext* pCtx) override {
+      NvtxMark tick(GetNvtxTickName().c_str());
+      details.info = TaskExecInfo::SUCCESS;
+
+      auto pInput = (SurfaceYUV444*)pSrcToken;
+      auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+
+      if (!Validate(pInput, pOutput)) {
+        details.info = TaskExecInfo::INVALID_INPUT;
+        return nullptr;
+      }
+
+      try {
+        auto const params = GetParams(pCtx);
+        auto const color_space = std::get<0>(params);
+        auto const color_range = std::get<1>(params);
+
+        auto src_ctx = pInput->GetNppContext();
+        auto dst_ctx = pOutput->GetNppContext();
+
+        if (BT_601 != color_space) {
+          details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
+          return nullptr;
+        }
+
+        auto func = (MPEG == color_range) ? nppiYCbCrToBGR_8u_P3C3R_Ctx
+                                          : nppiYUVToBGR_8u_P3C3R_Ctx;
+        CudaCtxPush ctxPush(cu_ctx);
+        ThrowOnNppError(func(src_ctx.GetDataAs<Npp8u>().data(),
+                             src_ctx.GetPitch()[0],
+                             dst_ctx.GetDataAs<Npp8u>()[0],
+                             dst_ctx.GetPitch()[0], src_ctx.GetSize(), nppCtx),
+                        __LINE__);
+      } catch (...) {
         details.info = TaskExecInfo::FAIL;
         return nullptr;
       }
+
+      return pOutput;
     }
+  };
 
-    // Copy Y channel;
-    const Npp8u* pSrc = (const Npp8u*)pInput->PlanePtr();
-    int nSrcStep = pInput->Pitch();
-    Npp8u* pDst = (Npp8u*)pOutput->PlanePtr(0U);
-    int nDstStep = pOutput->Pitch(0U);
-    NppiSize roi = {(int)pInput->Width(), (int)pInput->Height()};
-    auto err = nppiCopy_8u_C1R_Ctx(pSrc, nSrcStep, pDst, nDstStep, roi, nppCtx);
-    if (NPP_NO_ERROR != err) {
-      details.info = TaskExecInfo::FAIL;
-      return nullptr;
+  struct yuv444_rgb final : public NppConvertSurface_Impl {
+    yuv444_rgb(uint32_t width, uint32_t height, CUcontext context,
+               CUstream stream)
+        : NppConvertSurface_Impl(context, stream, YUV444, RGB) {}
+
+    Token* Execute(Token* pSrcToken, Token* pDstToken,
+                   ColorspaceConversionContext* pCtx) override {
+      NvtxMark tick(GetNvtxTickName().c_str());
+      details.info = TaskExecInfo::SUCCESS;
+
+      auto pInput = (SurfaceYUV444*)pSrcToken;
+      auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+
+      if (!Validate(pInput, pOutput)) {
+        details.info = TaskExecInfo::INVALID_INPUT;
+        return nullptr;
+      }
+
+      try {
+        auto const params = GetParams(pCtx);
+        auto const color_space = std::get<0>(params);
+        auto const color_range = std::get<1>(params);
+
+        auto src_ctx = pInput->GetNppContext();
+        auto dst_ctx = pOutput->GetNppContext();
+
+        if (BT_601 != color_space || JPEG != color_range) {
+          details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
+          return nullptr;
+        }
+
+        CudaCtxPush ctxPush(cu_ctx);
+        ThrowOnNppError(nppiYUVToRGB_8u_P3C3R_Ctx(
+                            src_ctx.GetDataAs<Npp8u>().data(),
+                            src_ctx.GetPitch()[0],
+                            dst_ctx.GetDataAs<Npp8u>()[0],
+                            dst_ctx.GetPitch()[0], src_ctx.GetSize(), nppCtx),
+                        __LINE__);
+      } catch (...) {
+        details.info = TaskExecInfo::FAIL;
+        return nullptr;
+      }
+
+      return pOutput;
     }
+  };
 
-    return pOutput;
-  }
-};
-
-struct rgb_yuv420 final : public NppConvertSurface_Impl {
-  rgb_yuv420(uint32_t width, uint32_t height, CUcontext context,
-             CUstream stream)
-      : NppConvertSurface_Impl(context, stream, RGB, YUV420) {}
-
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
-    NvtxMark tick(GetNvtxTickName().c_str());
-    details.info = TaskExecInfo::SUCCESS;
-
-    auto pInput = (SurfaceRGB*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
-
-    if (!Validate(pInput, pOutput)) {
-      details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
-    }
-
-    auto const params = GetParams(pCtx);
-    auto const color_space = std::get<0>(params);
-    auto const color_range = std::get<1>(params);
-
-    if (BT_601 != color_space) {
-      details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
-    }
-
-    const Npp8u* pSrc = (const Npp8u*)pInput->PlanePtr();
-    int srcStep = pInput->Pitch();
-    Npp8u* pDst[] = {(Npp8u*)pOutput->PlanePtr(0U),
-                     (Npp8u*)pOutput->PlanePtr(1U),
-                     (Npp8u*)pOutput->PlanePtr(2U)};
-    int dstStep[] = {(int)pOutput->Pitch(0U), (int)pOutput->Pitch(1U),
-                     (int)pOutput->Pitch(2U)};
-    NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
-
-    CudaCtxPush ctxPush(cu_ctx);
-    auto err = NPP_NO_ERROR;
-    switch (color_range) {
-    case JPEG:
-      err = nppiRGBToYUV420_8u_C3P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
-                                         nppCtx);
-      break;
-
-    case MPEG:
-      err = nppiRGBToYCbCr420_8u_C3P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
-                                           nppCtx);
-      break;
-
-    default:
-      err = NPP_NO_OPERATION_WARNING;
-      break;
-    }
-
-    if (NPP_NO_ERROR != err) {
-      details.info = TaskExecInfo::FAIL;
-      return nullptr;
-    }
-
-    return pOutput;
-  }
-};
-
-struct yuv420_nv12 final : public NppConvertSurface_Impl {
-  yuv420_nv12(uint32_t width, uint32_t height, CUcontext context,
-              CUstream stream)
-      : NppConvertSurface_Impl(context, stream, YUV420, NV12) {}
-
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
-    NvtxMark tick(GetNvtxTickName().c_str());
-    details.info = TaskExecInfo::SUCCESS;
-
-    auto pInput = (Surface*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
-
-    if (!Validate(pInput, pOutput)) {
-      details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
-    }
-
-    const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PlanePtr(0U),
-                                 (const Npp8u*)pInput->PlanePtr(1U),
-                                 (const Npp8u*)pInput->PlanePtr(2U)};
-
-    Npp8u* pDst[] = {(Npp8u*)pOutput->PlanePtr(0U),
-                     (Npp8u*)pOutput->PlanePtr(1U)};
-
-    int srcStep[] = {(int)pInput->Pitch(0U), (int)pInput->Pitch(1U),
-                     (int)pInput->Pitch(2U)};
-    int dstStep[] = {(int)pOutput->Pitch(0U), (int)pOutput->Pitch(1U)};
-    NppiSize roi = {(int)pInput->Width(), (int)pInput->Height()};
-
-    CudaCtxPush ctxPush(cu_ctx);
-    auto err = nppiYCbCr420_8u_P3P2R_Ctx(pSrc, srcStep, pDst[0], dstStep[0],
-                                         pDst[1], dstStep[1], roi, nppCtx);
-    if (NPP_NO_ERROR != err) {
-      details.info = TaskExecInfo::FAIL;
-      return nullptr;
-    }
-
-    return pOutput;
-  }
-};
-
-struct rgb8_deinterleave final : public NppConvertSurface_Impl {
-  rgb8_deinterleave(uint32_t width, uint32_t height, CUcontext context,
-                    CUstream stream)
-      : NppConvertSurface_Impl(context, stream, RGB, RGB_PLANAR) {}
-
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
-    NvtxMark tick(GetNvtxTickName().c_str());
-    details.info = TaskExecInfo::SUCCESS;
-
-    auto pInput = (SurfaceRGB*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
-
-    if (!Validate(pInput, pOutput)) {
-      details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
-    }
-
-    const Npp8u* pSrc = (const Npp8u*)pInput->PlanePtr();
-    int nSrcStep = pInput->Pitch();
-    Npp8u* aDst[] = {
-        (Npp8u*)pOutput->PlanePtr(),
-        (Npp8u*)pOutput->PlanePtr() + pOutput->Height() * pOutput->Pitch(),
-        (Npp8u*)pOutput->PlanePtr() + pOutput->Height() * pOutput->Pitch() * 2};
-    int nDstStep = pOutput->Pitch();
-    NppiSize oSizeRoi = {0};
-    oSizeRoi.height = pOutput->Height();
-    oSizeRoi.width = pOutput->Width();
-
-    CudaCtxPush ctxPush(cu_ctx);
-    auto err =
-        nppiCopy_8u_C3P3R_Ctx(pSrc, nSrcStep, aDst, nDstStep, oSizeRoi, nppCtx);
-    if (NPP_NO_ERROR != err) {
-      details.info = TaskExecInfo::FAIL;
-      return nullptr;
-    }
-
-    return pOutput;
-  }
-};
-
-struct rgb8_interleave final : public NppConvertSurface_Impl {
-  rgb8_interleave(uint32_t width, uint32_t height, CUcontext context,
-                  CUstream stream)
-      : NppConvertSurface_Impl(context, stream, RGB_PLANAR, RGB) {}
-
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
-    NvtxMark tick(GetNvtxTickName().c_str());
-    details.info = TaskExecInfo::SUCCESS;
-
-    auto pInput = (SurfaceRGBPlanar*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
-
-    if (!Validate(pInput, pOutput)) {
-      details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
-    }
-
-    const Npp8u* const pSrc[] = {
-        (Npp8u*)pInput->PlanePtr(),
-        (Npp8u*)pInput->PlanePtr() + pInput->Height() * pInput->Pitch(),
-        (Npp8u*)pInput->PlanePtr() + pInput->Height() * pInput->Pitch() * 2};
-    int nSrcStep = pInput->Pitch();
-    Npp8u* pDst = (Npp8u*)pOutput->PlanePtr();
-    int nDstStep = pOutput->Pitch();
-    NppiSize oSizeRoi = {0};
-    oSizeRoi.height = pOutput->Height();
-    oSizeRoi.width = pOutput->Width();
-
-    CudaCtxPush ctxPush(cu_ctx);
-    auto err =
-        nppiCopy_8u_P3C3R_Ctx(pSrc, nSrcStep, pDst, nDstStep, oSizeRoi, nppCtx);
-    if (NPP_NO_ERROR != err) {
-      details.info = TaskExecInfo::FAIL;
-      return nullptr;
-    }
-
-    return pOutput;
-  }
-};
-
-struct rgb_bgr final : public NppConvertSurface_Impl {
-  rgb_bgr(uint32_t width, uint32_t height, CUcontext context, CUstream stream)
-      : NppConvertSurface_Impl(context, stream, RGB, BGR) {}
-
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
-    NvtxMark tick(GetNvtxTickName().c_str());
-    details.info = TaskExecInfo::SUCCESS;
-
-    auto pInput = (SurfaceRGB*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
-
-    if (!Validate(pInput, pOutput)) {
-      details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
-    }
-
-    const Npp8u* pSrc = (const Npp8u*)pInput->PlanePtr();
-    int nSrcStep = pInput->Pitch();
-    Npp8u* pDst = (Npp8u*)pOutput->PlanePtr();
-    int nDstStep = pOutput->Pitch();
-    NppiSize oSizeRoi = {0};
-    oSizeRoi.height = pOutput->Height();
-    oSizeRoi.width = pOutput->Width();
-    // rgb to brg
-    const int aDstOrder[3] = {2, 1, 0};
-    CudaCtxPush ctxPush(cu_ctx);
-    auto err = nppiSwapChannels_8u_C3R_Ctx(pSrc, nSrcStep, pDst, nDstStep,
-                                           oSizeRoi, aDstOrder, nppCtx);
-    if (NPP_NO_ERROR != err) {
-      details.info = TaskExecInfo::FAIL;
-      return nullptr;
-    }
-
-    return pOutput;
-  }
-};
-
-struct bgr_rgb final : public NppConvertSurface_Impl {
-  bgr_rgb(uint32_t width, uint32_t height, CUcontext context, CUstream stream)
-      : NppConvertSurface_Impl(context, stream, BGR, RGB) {}
-
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
-    NvtxMark tick(GetNvtxTickName().c_str());
-    details.info = TaskExecInfo::SUCCESS;
-
-    auto pInput = (SurfaceBGR*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
-
-    if (!Validate(pInput, pOutput)) {
-      details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
-    }
-
-    const Npp8u* pSrc = (const Npp8u*)pInput->PlanePtr();
-    int nSrcStep = pInput->Pitch();
-    Npp8u* pDst = (Npp8u*)pOutput->PlanePtr();
-    int nDstStep = pOutput->Pitch();
-    NppiSize oSizeRoi = {0};
-    oSizeRoi.height = pOutput->Height();
-    oSizeRoi.width = pOutput->Width();
-    // brg to rgb
-    const int aDstOrder[3] = {2, 1, 0};
-    CudaCtxPush ctxPush(cu_ctx);
-    auto err = nppiSwapChannels_8u_C3R_Ctx(pSrc, nSrcStep, pDst, nDstStep,
-                                           oSizeRoi, aDstOrder, nppCtx);
-    if (NPP_NO_ERROR != err) {
-      details.info = TaskExecInfo::FAIL;
-      return nullptr;
-    }
-
-    return pOutput;
-  }
-};
-
-struct rbg8_rgb32f final : public NppConvertSurface_Impl {
-  rbg8_rgb32f(uint32_t width, uint32_t height, CUcontext context,
-              CUstream stream)
-      : NppConvertSurface_Impl(context, stream, RGB, RGB_32F) {}
-
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
-    NvtxMark tick(GetNvtxTickName().c_str());
-    details.info = TaskExecInfo::SUCCESS;
-
-    auto pInput = (SurfaceRGB*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
-
-    if (!Validate(pInput, pOutput)) {
-      details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
-    }
-
-    const Npp8u* pSrc = (const Npp8u*)pInput->PlanePtr();
-
-    int nSrcStep = pInput->Pitch();
-    Npp32f* pDst = (Npp32f*)pOutput->PlanePtr();
-    int nDstStep = pOutput->Pitch();
-    NppiSize oSizeRoi = {0};
-    oSizeRoi.height = pOutput->Height();
-    oSizeRoi.width = pOutput->Width();
-    Npp32f nMin = 0.0;
-    Npp32f nMax = 1.0;
-    const int aDstOrder[3] = {2, 1, 0};
-
-    CudaCtxPush ctxPush(cu_ctx);
-
-    auto err = nppiScale_8u32f_C3R_Ctx(pSrc, nSrcStep, pDst, nDstStep, oSizeRoi,
-                                       nMin, nMax, nppCtx);
-    if (NPP_NO_ERROR != err) {
-      details.info = TaskExecInfo::FAIL;
-      return nullptr;
-    }
-
-    return pOutput;
-  }
-};
-
-struct rgb32f_deinterleave final : public NppConvertSurface_Impl {
-  rgb32f_deinterleave(uint32_t width, uint32_t height, CUcontext context,
+  struct yuv444_rgb_planar final : public NppConvertSurface_Impl {
+    yuv444_rgb_planar(uint32_t width, uint32_t height, CUcontext context,
                       CUstream stream)
-      : NppConvertSurface_Impl(context, stream, RGB_32F, RGB_32F_PLANAR) {}
+        : NppConvertSurface_Impl(context, stream, YUV444, RGB_PLANAR) {}
 
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
-    NvtxMark tick(GetNvtxTickName().c_str());
-    details.info = TaskExecInfo::SUCCESS;
+    Token* Execute(Token* pSrcToken, Token* pDstToken,
+                   ColorspaceConversionContext* pCtx) override {
+      NvtxMark tick(GetNvtxTickName().c_str());
+      details.info = TaskExecInfo::SUCCESS;
 
-    auto pInput = (SurfaceRGB*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+      auto pInput = (SurfaceYUV444*)pSrcToken;
+      auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
 
-    if (!Validate(pInput, pOutput)) {
-      details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
+      if (!Validate(pInput, pOutput)) {
+        details.info = TaskExecInfo::INVALID_INPUT;
+        return nullptr;
+      }
+
+      try {
+        auto const params = GetParams(pCtx);
+        auto const color_space = std::get<0>(params);
+        auto const color_range = std::get<1>(params);
+
+        auto src_ctx = pInput->GetNppContext();
+        auto dst_ctx = pOutput->GetNppContext();
+
+        if (BT_601 != color_space || JPEG != color_range) {
+          details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
+          return nullptr;
+        }
+
+        CudaCtxPush ctxPush(cu_ctx);
+        ThrowOnNppError(nppiYUVToRGB_8u_P3R_Ctx(
+                            src_ctx.GetDataAs<Npp8u>().data(),
+                            src_ctx.GetPitch()[0],
+                            dst_ctx.GetDataAs<Npp8u>().data(),
+                            dst_ctx.GetPitch()[0], src_ctx.GetSize(), nppCtx),
+                        __LINE__);
+      } catch (...) {
+        details.info = TaskExecInfo::FAIL;
+        return nullptr;
+      }
+
+      return pOutput;
     }
+  };
 
-    const Npp32f* pSrc = (const Npp32f*)pInput->PlanePtr();
-    int nSrcStep = pInput->Pitch();
-    Npp32f* aDst[] = {(Npp32f*)((uint8_t*)pOutput->PlanePtr()),
-                      (Npp32f*)((uint8_t*)pOutput->PlanePtr() +
-                                pOutput->Height() * pOutput->Pitch()),
-                      (Npp32f*)((uint8_t*)pOutput->PlanePtr() +
-                                pOutput->Height() * pOutput->Pitch() * 2)};
-    int nDstStep = pOutput->Pitch();
-    NppiSize oSizeRoi = {0};
-    oSizeRoi.height = pOutput->Height();
-    oSizeRoi.width = pOutput->Width();
+  struct bgr_yuv444 final : public NppConvertSurface_Impl {
+    bgr_yuv444(uint32_t width, uint32_t height, CUcontext context,
+               CUstream stream)
+        : NppConvertSurface_Impl(context, stream, BGR, YUV444) {}
 
-    CudaCtxPush ctxPush(cu_ctx);
-    auto err = nppiCopy_32f_C3P3R_Ctx(pSrc, nSrcStep, aDst, nDstStep, oSizeRoi,
-                                      nppCtx);
-    if (NPP_NO_ERROR != err) {
-      details.info = TaskExecInfo::FAIL;
-      return nullptr;
+    Token* Execute(Token* pSrcToken, Token* pDstToken,
+                   ColorspaceConversionContext* pCtx) override {
+      NvtxMark tick(GetNvtxTickName().c_str());
+      details.info = TaskExecInfo::SUCCESS;
+
+      auto const params = GetParams(pCtx);
+      auto const color_space = std::get<0>(params);
+      auto const color_range = std::get<1>(params);
+
+      if (BT_601 != color_space) {
+        details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
+        return nullptr;
+      }
+
+      auto pInput = (SurfaceBGR*)pSrcToken;
+      auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+
+      if (!Validate(pInput, pOutput)) {
+        details.info = TaskExecInfo::INVALID_INPUT;
+        return nullptr;
+      }
+
+      const Npp8u* pSrc = (const Npp8u*)pInput->PlanePtr();
+      Npp8u* pDst[] = {(Npp8u*)pOutput->PlanePtr(0U),
+                       (Npp8u*)pOutput->PlanePtr(1U),
+                       (Npp8u*)pOutput->PlanePtr(2U)};
+      int srcStep = (int)pInput->Pitch();
+      int dstStep = (int)pOutput->Pitch();
+      NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
+      CudaCtxPush ctxPush(cu_ctx);
+      auto err = NPP_NO_ERROR;
+
+      switch (color_range) {
+      case MPEG:
+        err = nppiBGRToYCbCr_8u_C3P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
+                                          nppCtx);
+        break;
+      case JPEG:
+        err = nppiBGRToYUV_8u_C3P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
+                                        nppCtx);
+        break;
+      default:
+        err = NPP_NO_OPERATION_WARNING;
+        break;
+      }
+
+      if (NPP_NO_ERROR != err) {
+        details.info = TaskExecInfo::FAIL;
+        return nullptr;
+      }
+
+      return pOutput;
     }
+  };
 
-    return pOutput;
-  }
-};
+  struct rgb_yuv444 final : public NppConvertSurface_Impl {
+    rgb_yuv444(uint32_t width, uint32_t height, CUcontext context,
+               CUstream stream)
+        : NppConvertSurface_Impl(context, stream, RGB, YUV444) {}
 
-struct p16_nv12 final : public NppConvertSurface_Impl {
-  /* Source format is needed because P10 and P12 to NV12 conversions share
-   * the same implementation. The only difference is bit depth value which
-   * is calculated at a runtime.
-   */
-  p16_nv12(uint32_t width, uint32_t height, CUcontext context, CUstream stream,
-           Pixel_Format src_fmt)
-      : NppConvertSurface_Impl(context, stream, src_fmt, NV12) {
-    pScratch = std::make_shared<SurfacePlane>(width, height, sizeof(uint16_t),
-                                              kDLUInt, context);
-  }
+    Token* Execute(Token* pSrcToken, Token* pDstToken,
+                   ColorspaceConversionContext* pCtx) override {
+      NvtxMark tick(GetNvtxTickName().c_str());
+      details.info = TaskExecInfo::SUCCESS;
 
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
-    NvtxMark tick(GetNvtxTickName().c_str());
-    details.info = TaskExecInfo::SUCCESS;
+      auto pInput = (SurfaceRGB*)pSrcToken;
+      auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
 
-    /* No Validate() call here because same code serves 2 different input
-     * pixel formats.
-     */
-    auto pInput = (Surface*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
-    if (!pInput || !pOutput) {
-      details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
+      if (!Validate(pInput, pOutput)) {
+        details.info = TaskExecInfo::INVALID_INPUT;
+        return nullptr;
+      }
+
+      auto const params = GetParams(pCtx);
+      auto const color_space = std::get<0>(params);
+      auto const color_range = std::get<1>(params);
+
+      if (BT_601 != color_space) {
+        details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
+        return nullptr;
+      }
+
+      const Npp8u* pSrc = (const Npp8u*)pInput->PlanePtr();
+      int srcStep = pInput->Pitch();
+      Npp8u* pDst[] = {(Npp8u*)pOutput->PlanePtr(0U),
+                       (Npp8u*)pOutput->PlanePtr(1U),
+                       (Npp8u*)pOutput->PlanePtr(2U)};
+      int dstStep = pOutput->Pitch();
+      NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
+
+      CudaCtxPush ctxPush(cu_ctx);
+      auto err = NPP_NO_ERROR;
+      switch (color_range) {
+      case JPEG:
+        err = nppiRGBToYUV_8u_C3P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
+                                        nppCtx);
+        break;
+      case MPEG:
+        err = nppiRGBToYCbCr_8u_C3R_Ctx(pSrc, srcStep, pDst[0], dstStep, roi,
+                                        nppCtx);
+        break;
+      default:
+        err = NPP_NO_OPERATION_WARNING;
+      }
+
+      if (NPP_NO_ERROR != err) {
+        details.info = TaskExecInfo::FAIL;
+        return nullptr;
+      }
+
+      return pOutput;
     }
+  };
 
-    constexpr auto bit_depth = 16U;
-    for (int i = 0; i < pInput->NumPlanes(); i++) {
-      // Take 8 most significant bits, save result in 16-bit scratch buffer;
-      auto pSrc = (Npp16u*)pInput->PlanePtr(i);
-      int nSrcStep = pInput->Pitch(i);
-      Npp16u nConstant = 1 << (bit_depth - (int)pSurface->ElemSize() * 8);
-      auto pDstScratch = (Npp16u*)pScratch->GpuMem();
-      int nDstStep = pScratch->Pitch();
-      NppiSize oSizeRoi = {0};
-      oSizeRoi.height = pSurface->Height(i);
-      oSizeRoi.width = pSurface->Width(i);
-      auto const nScaleFactor = 0;
+  struct rgb_planar_yuv444 final : public NppConvertSurface_Impl {
+    rgb_planar_yuv444(uint32_t width, uint32_t height, CUcontext context,
+                      CUstream stream)
+        : NppConvertSurface_Impl(context, stream, RGB_PLANAR, YUV444) {}
+
+    Token* Execute(Token* pSrcToken, Token* pDstToken,
+                   ColorspaceConversionContext* pCtx) override {
+      NvtxMark tick(GetNvtxTickName().c_str());
+      details.info = TaskExecInfo::SUCCESS;
+
+      auto pInput = (SurfaceRGBPlanar*)pSrcToken;
+      auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+
+      if (!Validate(pInput, pOutput)) {
+        details.info = TaskExecInfo::INVALID_INPUT;
+        return nullptr;
+      }
+
+      auto const params = GetParams(pCtx);
+      auto const color_space = std::get<0>(params);
+      auto const color_range = std::get<1>(params);
+
+      if (BT_601 != color_space) {
+        details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
+        return nullptr;
+      }
+
+      const Npp8u* pSrc[] = {(const Npp8u*)pInput->PlanePtr(0U),
+                             (const Npp8u*)pInput->PlanePtr(1U),
+                             (const Npp8u*)pInput->PlanePtr(2U)};
+      int srcStep = pInput->Pitch();
+      Npp8u* pDst[] = {(Npp8u*)pOutput->PlanePtr(0U),
+                       (Npp8u*)pOutput->PlanePtr(1U),
+                       (Npp8u*)pOutput->PlanePtr(2U)};
+      int dstStep = pOutput->Pitch();
+      NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
+
+      CudaCtxPush ctxPush(cu_ctx);
+      auto err = NPP_NO_ERROR;
+      switch (color_range) {
+      case JPEG:
+        err =
+            nppiRGBToYUV_8u_P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi, nppCtx);
+        break;
+      case MPEG:
+        err = nppiRGBToYCbCr_8u_P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
+                                        nppCtx);
+        break;
+      default:
+        err = NPP_NO_OPERATION_WARNING;
+        break;
+      }
+
+      if (NPP_NO_ERROR != err) {
+        details.info = TaskExecInfo::FAIL;
+        return nullptr;
+      }
+
+      return pOutput;
+    }
+  };
+
+  struct y_yuv444 final : public NppConvertSurface_Impl {
+    y_yuv444(uint32_t width, uint32_t height, CUcontext context,
+             CUstream stream)
+        : NppConvertSurface_Impl(context, stream, Y, YUV444) {}
+
+    Token* Execute(Token* pSrcToken, Token* pDstToken,
+                   ColorspaceConversionContext* pCtx) override {
+      NvtxMark tick(GetNvtxTickName().c_str());
+      details.info = TaskExecInfo::SUCCESS;
+
+      auto pInput = (SurfaceY*)pSrcToken;
+      auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+
+      if (!Validate(pInput, pOutput)) {
+        details.info = TaskExecInfo::INVALID_INPUT;
+        return nullptr;
+      }
+
+      // Make gray U and V channels;
+      for (int i = 1; i < pOutput->NumPlanes(); i++) {
+        const Npp8u nValue = 128U;
+        Npp8u* pDst = (Npp8u*)pOutput->PlanePtr(i);
+        int nDstStep = pOutput->Pitch(i);
+        NppiSize roi = {(int)pOutput->Width(i), (int)pOutput->Height(i)};
+        auto err = nppiSet_8u_C1R_Ctx(nValue, pDst, nDstStep, roi, nppCtx);
+        if (NPP_NO_ERROR != err) {
+          details.info = TaskExecInfo::FAIL;
+          return nullptr;
+        }
+      }
+
+      // Copy Y channel;
+      const Npp8u* pSrc = (const Npp8u*)pInput->PlanePtr();
+      int nSrcStep = pInput->Pitch();
+      Npp8u* pDst = (Npp8u*)pOutput->PlanePtr(0U);
+      int nDstStep = pOutput->Pitch(0U);
+      NppiSize roi = {(int)pInput->Width(), (int)pInput->Height()};
       auto err =
-          nppiDivC_16u_C1RSfs_Ctx(pSrc, nSrcStep, nConstant, pDstScratch,
-                                  nDstStep, oSizeRoi, nScaleFactor, nppCtx);
+          nppiCopy_8u_C1R_Ctx(pSrc, nSrcStep, pDst, nDstStep, roi, nppCtx);
       if (NPP_NO_ERROR != err) {
         details.info = TaskExecInfo::FAIL;
         return nullptr;
       }
 
-      // Bit depth conversion from 16-bit scratch to output;
-      pSrc = (Npp16u*)pScratch->GpuMem();
-      nSrcStep = pScratch->Pitch();
-      Npp8u* pDst = (Npp8u*)pOutput->PlanePtr(i);
-      nDstStep = pSurface->Pitch(i);
-      oSizeRoi.height = pSurface->Height(i);
-      oSizeRoi.width = pSurface->Width(i);
-      err = nppiConvert_16u8u_C1R_Ctx(pSrc, nSrcStep, pDst, nDstStep, oSizeRoi,
-                                      nppCtx);
+      return pOutput;
+    }
+  };
+
+  struct rgb_yuv420 final : public NppConvertSurface_Impl {
+    rgb_yuv420(uint32_t width, uint32_t height, CUcontext context,
+               CUstream stream)
+        : NppConvertSurface_Impl(context, stream, RGB, YUV420) {}
+
+    Token* Execute(Token* pSrcToken, Token* pDstToken,
+                   ColorspaceConversionContext* pCtx) override {
+      NvtxMark tick(GetNvtxTickName().c_str());
+      details.info = TaskExecInfo::SUCCESS;
+
+      auto pInput = (SurfaceRGB*)pSrcToken;
+      auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+
+      if (!Validate(pInput, pOutput)) {
+        details.info = TaskExecInfo::INVALID_INPUT;
+        return nullptr;
+      }
+
+      auto const params = GetParams(pCtx);
+      auto const color_space = std::get<0>(params);
+      auto const color_range = std::get<1>(params);
+
+      if (BT_601 != color_space) {
+        details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
+        return nullptr;
+      }
+
+      const Npp8u* pSrc = (const Npp8u*)pInput->PlanePtr();
+      int srcStep = pInput->Pitch();
+      Npp8u* pDst[] = {(Npp8u*)pOutput->PlanePtr(0U),
+                       (Npp8u*)pOutput->PlanePtr(1U),
+                       (Npp8u*)pOutput->PlanePtr(2U)};
+      int dstStep[] = {(int)pOutput->Pitch(0U), (int)pOutput->Pitch(1U),
+                       (int)pOutput->Pitch(2U)};
+      NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
+
+      CudaCtxPush ctxPush(cu_ctx);
+      auto err = NPP_NO_ERROR;
+      switch (color_range) {
+      case JPEG:
+        err = nppiRGBToYUV420_8u_C3P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
+                                           nppCtx);
+        break;
+
+      case MPEG:
+        err = nppiRGBToYCbCr420_8u_C3P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
+                                             nppCtx);
+        break;
+
+      default:
+        err = NPP_NO_OPERATION_WARNING;
+        break;
+      }
+
       if (NPP_NO_ERROR != err) {
         details.info = TaskExecInfo::FAIL;
         return nullptr;
       }
+
+      return pOutput;
+    }
+  };
+
+  struct yuv420_nv12 final : public NppConvertSurface_Impl {
+    yuv420_nv12(uint32_t width, uint32_t height, CUcontext context,
+                CUstream stream)
+        : NppConvertSurface_Impl(context, stream, YUV420, NV12) {}
+
+    Token* Execute(Token* pSrcToken, Token* pDstToken,
+                   ColorspaceConversionContext* pCtx) override {
+      NvtxMark tick(GetNvtxTickName().c_str());
+      details.info = TaskExecInfo::SUCCESS;
+
+      auto pInput = (Surface*)pSrcToken;
+      auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+
+      if (!Validate(pInput, pOutput)) {
+        details.info = TaskExecInfo::INVALID_INPUT;
+        return nullptr;
+      }
+
+      const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PlanePtr(0U),
+                                   (const Npp8u*)pInput->PlanePtr(1U),
+                                   (const Npp8u*)pInput->PlanePtr(2U)};
+
+      Npp8u* pDst[] = {(Npp8u*)pOutput->PlanePtr(0U),
+                       (Npp8u*)pOutput->PlanePtr(1U)};
+
+      int srcStep[] = {(int)pInput->Pitch(0U), (int)pInput->Pitch(1U),
+                       (int)pInput->Pitch(2U)};
+      int dstStep[] = {(int)pOutput->Pitch(0U), (int)pOutput->Pitch(1U)};
+      NppiSize roi = {(int)pInput->Width(), (int)pInput->Height()};
+
+      CudaCtxPush ctxPush(cu_ctx);
+      auto err = nppiYCbCr420_8u_P3P2R_Ctx(pSrc, srcStep, pDst[0], dstStep[0],
+                                           pDst[1], dstStep[1], roi, nppCtx);
+      if (NPP_NO_ERROR != err) {
+        details.info = TaskExecInfo::FAIL;
+        return nullptr;
+      }
+
+      return pOutput;
+    }
+  };
+
+  struct rgb8_deinterleave final : public NppConvertSurface_Impl {
+    rgb8_deinterleave(uint32_t width, uint32_t height, CUcontext context,
+                      CUstream stream)
+        : NppConvertSurface_Impl(context, stream, RGB, RGB_PLANAR) {}
+
+    Token* Execute(Token* pSrcToken, Token* pDstToken,
+                   ColorspaceConversionContext* pCtx) override {
+      NvtxMark tick(GetNvtxTickName().c_str());
+      details.info = TaskExecInfo::SUCCESS;
+
+      auto pInput = (SurfaceRGB*)pSrcToken;
+      auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+
+      if (!Validate(pInput, pOutput)) {
+        details.info = TaskExecInfo::INVALID_INPUT;
+        return nullptr;
+      }
+
+      const Npp8u* pSrc = (const Npp8u*)pInput->PlanePtr();
+      int nSrcStep = pInput->Pitch();
+      Npp8u* aDst[] = {(Npp8u*)pOutput->PlanePtr(),
+                       (Npp8u*)pOutput->PlanePtr() +
+                           pOutput->Height() * pOutput->Pitch(),
+                       (Npp8u*)pOutput->PlanePtr() +
+                           pOutput->Height() * pOutput->Pitch() * 2};
+      int nDstStep = pOutput->Pitch();
+      NppiSize oSizeRoi = {0};
+      oSizeRoi.height = pOutput->Height();
+      oSizeRoi.width = pOutput->Width();
+
+      CudaCtxPush ctxPush(cu_ctx);
+      auto err = nppiCopy_8u_C3P3R_Ctx(pSrc, nSrcStep, aDst, nDstStep, oSizeRoi,
+                                       nppCtx);
+      if (NPP_NO_ERROR != err) {
+        details.info = TaskExecInfo::FAIL;
+        return nullptr;
+      }
+
+      return pOutput;
+    }
+  };
+
+  struct rgb8_interleave final : public NppConvertSurface_Impl {
+    rgb8_interleave(uint32_t width, uint32_t height, CUcontext context,
+                    CUstream stream)
+        : NppConvertSurface_Impl(context, stream, RGB_PLANAR, RGB) {}
+
+    Token* Execute(Token* pSrcToken, Token* pDstToken,
+                   ColorspaceConversionContext* pCtx) override {
+      NvtxMark tick(GetNvtxTickName().c_str());
+      details.info = TaskExecInfo::SUCCESS;
+
+      auto pInput = (SurfaceRGBPlanar*)pSrcToken;
+      auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+
+      if (!Validate(pInput, pOutput)) {
+        details.info = TaskExecInfo::INVALID_INPUT;
+        return nullptr;
+      }
+
+      const Npp8u* const pSrc[] = {
+          (Npp8u*)pInput->PlanePtr(),
+          (Npp8u*)pInput->PlanePtr() + pInput->Height() * pInput->Pitch(),
+          (Npp8u*)pInput->PlanePtr() + pInput->Height() * pInput->Pitch() * 2};
+      int nSrcStep = pInput->Pitch();
+      Npp8u* pDst = (Npp8u*)pOutput->PlanePtr();
+      int nDstStep = pOutput->Pitch();
+      NppiSize oSizeRoi = {0};
+      oSizeRoi.height = pOutput->Height();
+      oSizeRoi.width = pOutput->Width();
+
+      CudaCtxPush ctxPush(cu_ctx);
+      auto err = nppiCopy_8u_P3C3R_Ctx(pSrc, nSrcStep, pDst, nDstStep, oSizeRoi,
+                                       nppCtx);
+      if (NPP_NO_ERROR != err) {
+        details.info = TaskExecInfo::FAIL;
+        return nullptr;
+      }
+
+      return pOutput;
+    }
+  };
+
+  struct rgb_bgr final : public NppConvertSurface_Impl {
+    rgb_bgr(uint32_t width, uint32_t height, CUcontext context, CUstream stream)
+        : NppConvertSurface_Impl(context, stream, RGB, BGR) {}
+
+    Token* Execute(Token* pSrcToken, Token* pDstToken,
+                   ColorspaceConversionContext* pCtx) override {
+      NvtxMark tick(GetNvtxTickName().c_str());
+      details.info = TaskExecInfo::SUCCESS;
+
+      auto pInput = (SurfaceRGB*)pSrcToken;
+      auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+
+      if (!Validate(pInput, pOutput)) {
+        details.info = TaskExecInfo::INVALID_INPUT;
+        return nullptr;
+      }
+
+      const Npp8u* pSrc = (const Npp8u*)pInput->PlanePtr();
+      int nSrcStep = pInput->Pitch();
+      Npp8u* pDst = (Npp8u*)pOutput->PlanePtr();
+      int nDstStep = pOutput->Pitch();
+      NppiSize oSizeRoi = {0};
+      oSizeRoi.height = pOutput->Height();
+      oSizeRoi.width = pOutput->Width();
+      // rgb to brg
+      const int aDstOrder[3] = {2, 1, 0};
+      CudaCtxPush ctxPush(cu_ctx);
+      auto err = nppiSwapChannels_8u_C3R_Ctx(pSrc, nSrcStep, pDst, nDstStep,
+                                             oSizeRoi, aDstOrder, nppCtx);
+      if (NPP_NO_ERROR != err) {
+        details.info = TaskExecInfo::FAIL;
+        return nullptr;
+      }
+
+      return pOutput;
+    }
+  };
+
+  struct bgr_rgb final : public NppConvertSurface_Impl {
+    bgr_rgb(uint32_t width, uint32_t height, CUcontext context, CUstream stream)
+        : NppConvertSurface_Impl(context, stream, BGR, RGB) {}
+
+    Token* Execute(Token* pSrcToken, Token* pDstToken,
+                   ColorspaceConversionContext* pCtx) override {
+      NvtxMark tick(GetNvtxTickName().c_str());
+      details.info = TaskExecInfo::SUCCESS;
+
+      auto pInput = (SurfaceBGR*)pSrcToken;
+      auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+
+      if (!Validate(pInput, pOutput)) {
+        details.info = TaskExecInfo::INVALID_INPUT;
+        return nullptr;
+      }
+
+      const Npp8u* pSrc = (const Npp8u*)pInput->PlanePtr();
+      int nSrcStep = pInput->Pitch();
+      Npp8u* pDst = (Npp8u*)pOutput->PlanePtr();
+      int nDstStep = pOutput->Pitch();
+      NppiSize oSizeRoi = {0};
+      oSizeRoi.height = pOutput->Height();
+      oSizeRoi.width = pOutput->Width();
+      // brg to rgb
+      const int aDstOrder[3] = {2, 1, 0};
+      CudaCtxPush ctxPush(cu_ctx);
+      auto err = nppiSwapChannels_8u_C3R_Ctx(pSrc, nSrcStep, pDst, nDstStep,
+                                             oSizeRoi, aDstOrder, nppCtx);
+      if (NPP_NO_ERROR != err) {
+        details.info = TaskExecInfo::FAIL;
+        return nullptr;
+      }
+
+      return pOutput;
+    }
+  };
+
+  struct rbg8_rgb32f final : public NppConvertSurface_Impl {
+    rbg8_rgb32f(uint32_t width, uint32_t height, CUcontext context,
+                CUstream stream)
+        : NppConvertSurface_Impl(context, stream, RGB, RGB_32F) {}
+
+    Token* Execute(Token* pSrcToken, Token* pDstToken,
+                   ColorspaceConversionContext* pCtx) override {
+      NvtxMark tick(GetNvtxTickName().c_str());
+      details.info = TaskExecInfo::SUCCESS;
+
+      auto pInput = (SurfaceRGB*)pSrcToken;
+      auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+
+      if (!Validate(pInput, pOutput)) {
+        details.info = TaskExecInfo::INVALID_INPUT;
+        return nullptr;
+      }
+
+      const Npp8u* pSrc = (const Npp8u*)pInput->PlanePtr();
+
+      int nSrcStep = pInput->Pitch();
+      Npp32f* pDst = (Npp32f*)pOutput->PlanePtr();
+      int nDstStep = pOutput->Pitch();
+      NppiSize oSizeRoi = {0};
+      oSizeRoi.height = pOutput->Height();
+      oSizeRoi.width = pOutput->Width();
+      Npp32f nMin = 0.0;
+      Npp32f nMax = 1.0;
+      const int aDstOrder[3] = {2, 1, 0};
+
+      CudaCtxPush ctxPush(cu_ctx);
+
+      auto err = nppiScale_8u32f_C3R_Ctx(pSrc, nSrcStep, pDst, nDstStep,
+                                         oSizeRoi, nMin, nMax, nppCtx);
+      if (NPP_NO_ERROR != err) {
+        details.info = TaskExecInfo::FAIL;
+        return nullptr;
+      }
+
+      return pOutput;
+    }
+  };
+
+  struct rgb32f_deinterleave final : public NppConvertSurface_Impl {
+    rgb32f_deinterleave(uint32_t width, uint32_t height, CUcontext context,
+                        CUstream stream)
+        : NppConvertSurface_Impl(context, stream, RGB_32F, RGB_32F_PLANAR) {}
+
+    Token* Execute(Token* pSrcToken, Token* pDstToken,
+                   ColorspaceConversionContext* pCtx) override {
+      NvtxMark tick(GetNvtxTickName().c_str());
+      details.info = TaskExecInfo::SUCCESS;
+
+      auto pInput = (SurfaceRGB*)pSrcToken;
+      auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+
+      if (!Validate(pInput, pOutput)) {
+        details.info = TaskExecInfo::INVALID_INPUT;
+        return nullptr;
+      }
+
+      const Npp32f* pSrc = (const Npp32f*)pInput->PlanePtr();
+      int nSrcStep = pInput->Pitch();
+      Npp32f* aDst[] = {(Npp32f*)((uint8_t*)pOutput->PlanePtr()),
+                        (Npp32f*)((uint8_t*)pOutput->PlanePtr() +
+                                  pOutput->Height() * pOutput->Pitch()),
+                        (Npp32f*)((uint8_t*)pOutput->PlanePtr() +
+                                  pOutput->Height() * pOutput->Pitch() * 2)};
+      int nDstStep = pOutput->Pitch();
+      NppiSize oSizeRoi = {0};
+      oSizeRoi.height = pOutput->Height();
+      oSizeRoi.width = pOutput->Width();
+
+      CudaCtxPush ctxPush(cu_ctx);
+      auto err = nppiCopy_32f_C3P3R_Ctx(pSrc, nSrcStep, aDst, nDstStep,
+                                        oSizeRoi, nppCtx);
+      if (NPP_NO_ERROR != err) {
+        details.info = TaskExecInfo::FAIL;
+        return nullptr;
+      }
+
+      return pOutput;
+    }
+  };
+
+  struct p16_nv12 final : public NppConvertSurface_Impl {
+    /* Source format is needed because P10 and P12 to NV12 conversions share
+     * the same implementation. The only difference is bit depth value which
+     * is calculated at a runtime.
+     */
+    p16_nv12(uint32_t width, uint32_t height, CUcontext context,
+             CUstream stream, Pixel_Format src_fmt)
+        : NppConvertSurface_Impl(context, stream, src_fmt, NV12) {
+      pScratch = std::make_shared<SurfacePlane>(width, height, sizeof(uint16_t),
+                                                kDLUInt, context);
     }
 
-    return pOutput;
-  }
+    Token* Execute(Token* pSrcToken, Token* pDstToken,
+                   ColorspaceConversionContext* pCtx) override {
+      NvtxMark tick(GetNvtxTickName().c_str());
+      details.info = TaskExecInfo::SUCCESS;
 
-  std::shared_ptr<SurfacePlane> pScratch = nullptr;
-};
+      /* No Validate() call here because same code serves 2 different input
+       * pixel formats.
+       */
+      auto pInput = (Surface*)pSrcToken;
+      auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+      if (!pInput || !pOutput) {
+        details.info = TaskExecInfo::INVALID_INPUT;
+        return nullptr;
+      }
+
+      constexpr auto bit_depth = 16U;
+      for (int i = 0; i < pInput->NumPlanes(); i++) {
+        // Take 8 most significant bits, save result in 16-bit scratch buffer;
+        auto pSrc = (Npp16u*)pInput->PlanePtr(i);
+        int nSrcStep = pInput->Pitch(i);
+        Npp16u nConstant = 1 << (bit_depth - (int)pSurface->ElemSize() * 8);
+        auto pDstScratch = (Npp16u*)pScratch->GpuMem();
+        int nDstStep = pScratch->Pitch();
+        NppiSize oSizeRoi = {0};
+        oSizeRoi.height = pSurface->Height(i);
+        oSizeRoi.width = pSurface->Width(i);
+        auto const nScaleFactor = 0;
+        auto err =
+            nppiDivC_16u_C1RSfs_Ctx(pSrc, nSrcStep, nConstant, pDstScratch,
+                                    nDstStep, oSizeRoi, nScaleFactor, nppCtx);
+        if (NPP_NO_ERROR != err) {
+          details.info = TaskExecInfo::FAIL;
+          return nullptr;
+        }
+
+        // Bit depth conversion from 16-bit scratch to output;
+        pSrc = (Npp16u*)pScratch->GpuMem();
+        nSrcStep = pScratch->Pitch();
+        Npp8u* pDst = (Npp8u*)pOutput->PlanePtr(i);
+        nDstStep = pSurface->Pitch(i);
+        oSizeRoi.height = pSurface->Height(i);
+        oSizeRoi.width = pSurface->Width(i);
+        err = nppiConvert_16u8u_C1R_Ctx(pSrc, nSrcStep, pDst, nDstStep,
+                                        oSizeRoi, nppCtx);
+        if (NPP_NO_ERROR != err) {
+          details.info = TaskExecInfo::FAIL;
+          return nullptr;
+        }
+      }
+
+      return pOutput;
+    }
+
+    std::shared_ptr<SurfacePlane> pScratch = nullptr;
+  };
 
 } // namespace VPF
 
-auto const cuda_stream_sync = [](void* stream) {
-  cuStreamSynchronize((CUstream)stream);
-};
+auto const cuda_stream_sync =
+    [](void* stream) { cuStreamSynchronize((CUstream)stream); };
 
 ConvertSurface::ConvertSurface(uint32_t width, uint32_t height,
                                Pixel_Format inFormat, Pixel_Format outFormat,

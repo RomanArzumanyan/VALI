@@ -69,6 +69,20 @@ void ThrowOnCudaError(CUresult res, int lineNum) {
   }
 };
 
+void ThrowOnNppError(NppStatus res, int linuNum) {
+  if (NPP_NO_ERROR != err) {
+    std::stringstream ss("");
+
+    if (lineNum > 0) {
+      ss << __FILE__ << ":";
+      ss << lineNum << std::endl;
+    }
+
+    ss << "NPP error with code " << res << std::endl;
+    throw std::runtime_error(ss.str());
+  }
+}
+
 int GetDeviceIdByDptr(CUdeviceptr dptr) {
   CudaCtxPush ctxPush(GetContextByDptr(dptr));
   CUdevice device_id = 0U;

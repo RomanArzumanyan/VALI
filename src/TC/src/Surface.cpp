@@ -89,6 +89,8 @@ std::shared_ptr<Surface> Surface::Make(Pixel_Format format, uint32_t width,
   }
 }
 
+Surface::Surface() : m_planes(NumPlanes()) {}
+
 std::shared_ptr<Surface> Surface::Clone(CUstream stream) {
   if (Empty()) {
     return Surface::Make(PixelFormat());
@@ -270,6 +272,30 @@ bool Surface::IsValid() const noexcept {
       return false;
     }
   }
+}
+
+NppContext Surface::GetNppContext() {
+  if (!Valid()) {
+    throw std::runtime_error("Invalid surface");
+  }
+
+  Surface::NppContext ctx;
+  ctx.m_dptr.reserve(NumPlanes());
+  ctx.m_step.reserve(NumPlanes());
+
+  for (auto i = 0; i < NumPlanes(); i++) {
+    SurfacePlane plane;
+    if (!pInput->GetSurfacePlane(plane, i)) {
+      throw std::runtime_error("Invalid surface");
+    }
+    ctx.m_dptr[i] = plane.GpuMem();
+    ctx.m_step[i] = plane.Pitch();
+  }
+
+  m_size.width = Width();
+  m_size.height = Height();
+
+  return ctx;
 }
 
 } // namespace VPF

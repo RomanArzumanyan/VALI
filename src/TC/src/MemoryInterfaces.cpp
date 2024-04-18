@@ -35,7 +35,7 @@ Buffer::Buffer(size_t bufferSize, bool ownMemory, CUcontext ctx)
     : mem_size(bufferSize), own_memory(ownMemory), context(ctx) {
   if (own_memory) {
     if (!Allocate()) {
-      throw bad_alloc();
+      throw std::bad_alloc();
     }
   }
 }
@@ -47,7 +47,7 @@ Buffer::Buffer(size_t bufferSize, void* pCopyFrom, bool ownMemory,
     if (Allocate()) {
       memcpy(this->GetRawMemPtr(), pCopyFrom, bufferSize);
     } else {
-      throw bad_alloc();
+      throw std::bad_alloc();
     }
   } else {
     pRawData = pCopyFrom;
@@ -59,7 +59,7 @@ Buffer::Buffer(size_t bufferSize, const void* pCopyFrom, CUcontext ctx)
   if (Allocate()) {
     memcpy(this->GetRawMemPtr(), pCopyFrom, bufferSize);
   } else {
-    throw bad_alloc();
+    throw std::bad_alloc();
   }
 }
 
@@ -165,7 +165,7 @@ CudaBuffer::CudaBuffer(size_t elemSize, size_t numElems, CUcontext context) {
   ctx = context;
 
   if (!Allocate()) {
-    throw bad_alloc();
+    throw std::bad_alloc();
   }
 }
 
@@ -176,7 +176,7 @@ CudaBuffer::CudaBuffer(const void* ptr, size_t elemSize, size_t numElems,
   ctx = context;
 
   if (!Allocate()) {
-    throw bad_alloc();
+    throw std::bad_alloc();
   }
 
   CudaCtxPush lock(ctx);
@@ -206,17 +206,14 @@ void CudaBuffer::Deallocate() {
 }
 
 SurfaceY::SurfaceY(uint32_t width, uint32_t height, CUcontext context,
-                   bool pitched)
-    : m_planes(NumPlanes()) {
+                   bool pitched) {
   auto& ctx = m_planes.at(0);
   ctx.m_plane =
       SurfacePlane(width, height, ElemSize(), kDLUInt, context, pitched);
 }
 
 SurfaceNV12::SurfaceNV12(uint32_t width, uint32_t height, CUcontext context,
-                         bool pitched)
-    : m_planes(NumPlanes()) {
-
+                         bool pitched) {
   // Y plane;
   {
     auto& ctx = m_planes.at(0);
@@ -234,8 +231,7 @@ SurfaceNV12::SurfaceNV12(uint32_t width, uint32_t height, CUcontext context,
 }
 
 SurfaceYUV420::SurfaceYUV420(uint32_t width, uint32_t height, CUcontext context,
-                             bool pitched)
-    : m_planes(NumPlanes()) {
+                             bool pitched) {
   // Y plane;
   m_planes.at(0).m_plane =
       SurfacePlane(width, height, ElemSize(), kDLUInt, context, pitched);
@@ -251,8 +247,7 @@ SurfaceYUV420::SurfaceYUV420(uint32_t width, uint32_t height, CUcontext context,
 }
 
 SurfaceYUV422::SurfaceYUV422(uint32_t width, uint32_t height, CUcontext context,
-                             bool pitched)
-    : m_planes(NumPlanes()) {
+                             bool pitched) {
   // Y plane;
   m_planes.at(0).m_plane =
       SurfacePlane(width, height, ElemSize(), kDLUInt, context, pitched);
@@ -267,8 +262,7 @@ SurfaceYUV422::SurfaceYUV422(uint32_t width, uint32_t height, CUcontext context,
 }
 
 SurfaceRGB::SurfaceRGB(uint32_t width, uint32_t height, CUcontext context,
-                       bool pitched)
-    : m_planes(NumPlanes()) {
+                       bool pitched) {
   auto& ctx = m_planes.at(0);
   ctx.factor_x = 3.f;
   ctx.m_plane =
@@ -276,8 +270,7 @@ SurfaceRGB::SurfaceRGB(uint32_t width, uint32_t height, CUcontext context,
 }
 
 SurfaceBGR::SurfaceBGR(uint32_t width, uint32_t height, CUcontext context,
-                       bool pitched)
-    : m_planes(NumPlanes()) {
+                       bool pitched) {
   auto& ctx = m_planes.at(0);
   ctx.factor_x = 3.f;
   ctx.m_plane =
@@ -285,8 +278,7 @@ SurfaceBGR::SurfaceBGR(uint32_t width, uint32_t height, CUcontext context,
 }
 
 SurfaceRGBPlanar::SurfaceRGBPlanar(uint32_t width, uint32_t height,
-                                   CUcontext context, bool pitched)
-    : m_planes(NumPlanes()) {
+                                   CUcontext context, bool pitched) {
   auto& ctx = m_planes.at(0);
   ctx.factor_y = 3.f;
   ctx.m_plane =
@@ -294,8 +286,7 @@ SurfaceRGBPlanar::SurfaceRGBPlanar(uint32_t width, uint32_t height,
 }
 
 SurfaceYUV444::SurfaceYUV444(uint32_t width, uint32_t height, CUcontext context,
-                             bool pitched)
-    : m_planes(NumPlanes()) {
+                             bool pitched) {
   auto& ctx = m_planes.at(0);
   ctx.factor_y = 3.f;
   ctx.m_plane =
@@ -303,8 +294,7 @@ SurfaceYUV444::SurfaceYUV444(uint32_t width, uint32_t height, CUcontext context,
 }
 
 SurfaceRGB32F::SurfaceRGB32F(uint32_t width, uint32_t height, CUcontext context,
-                             bool pitched)
-    : m_planes(NumPlanes()) {
+                             bool pitched) {
   auto& ctx = m_planes.at(0);
   ctx.factor_x = 3.f;
   ctx.m_plane =
@@ -312,8 +302,7 @@ SurfaceRGB32F::SurfaceRGB32F(uint32_t width, uint32_t height, CUcontext context,
 }
 
 SurfaceRGB32FPlanar::SurfaceRGB32FPlanar(uint32_t width, uint32_t height,
-                                         CUcontext context, bool pitched)
-    : m_planes(NumPlanes()) {
+                                         CUcontext context, bool pitched) {
   auto& ctx = m_planes.at(0);
   ctx.factor_y = 3.f;
   ctx.m_plane =
@@ -321,8 +310,7 @@ SurfaceRGB32FPlanar::SurfaceRGB32FPlanar(uint32_t width, uint32_t height,
 }
 
 SurfaceYUV444_10bit::SurfaceYUV444_10bit(uint32_t width, uint32_t height,
-                                         CUcontext context, bool pitched)
-    : m_planes(NumPlanes()) {
+                                         CUcontext context, bool pitched) {
   auto& ctx = m_planes.at(0);
   ctx.factor_y = 3.f;
   ctx.m_plane =
@@ -330,9 +318,7 @@ SurfaceYUV444_10bit::SurfaceYUV444_10bit(uint32_t width, uint32_t height,
 }
 
 SurfaceP10::SurfaceP10(uint32_t width, uint32_t height, CUcontext context,
-                       bool pitched)
-    : m_planes(NumPlanes()) {
-
+                       bool pitched) {
   // Y plane;
   {
     auto& ctx = m_planes.at(0);
@@ -350,9 +336,7 @@ SurfaceP10::SurfaceP10(uint32_t width, uint32_t height, CUcontext context,
 }
 
 SurfaceP12::SurfaceP12(uint32_t width, uint32_t height, CUcontext context,
-                       bool pitched)
-    : m_planes(NumPlanes()) {
-
+                       bool pitched) {
   // Y plane;
   {
     auto& ctx = m_planes.at(0);

@@ -220,11 +220,11 @@ void DecodeContext::SetSei(Buffer* sei) {
   memcpy(pSei->mutable_data(), sei->GetRawMemPtr(), sei->GetRawMemSize());
 }
 
-void DecodeContext::SetCloneSurface(Surface* p_surface) {
+void DecodeContext::SetCloneSurface(std::shared_ptr<Surface> p_surface) {
   if (!p_surface) {
     throw runtime_error("Invalid data pointer");
   }
-  pSurface = shared_ptr<Surface>(p_surface->Clone());
+  pSurface = p_surface->Clone();
 }
 
 void Init_PyBufferUploader(py::module&);

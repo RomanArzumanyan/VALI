@@ -347,7 +347,7 @@ public:
   void SetOutPacketData(PacketData* out_pkt_data);
   void SetOutPacketData(const PacketData& out_pkt_data);
   void SetSei(Buffer* sei);
-  void SetCloneSurface(Surface* p_surface);
+  void SetCloneSurface(std::shared_ptr<Surface> p_surface);
 };
 
 class PyFfmpegDecoder {
@@ -523,9 +523,6 @@ public:
 
   bool EncodeSurface(std::shared_ptr<Surface> rawSurface,
                      py::array_t<uint8_t>& packet, bool sync);
-
-  bool EncodeFromNVCVImage(py::object nvcvImage, py::array_t<uint8_t>& packet,
-                           bool bIsNVCVImage);
 
   bool EncodeSurface(std::shared_ptr<Surface> rawSurface,
                      py::array_t<uint8_t>& packet,

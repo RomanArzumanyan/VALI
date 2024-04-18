@@ -13,20 +13,38 @@
  */
 
 #pragma once
+#include "NppCommon.hpp"
 #include "SurfacePlane.hpp"
+#include <vector>
+
+namespace VPF {
+
+enum Pixel_Format {
+  UNDEFINED = 0,
+  Y = 1,
+  RGB = 2,
+  NV12 = 3,
+  YUV420 = 4,
+  RGB_PLANAR = 5,
+  BGR = 6,
+  YUV444 = 7,
+  RGB_32F = 8,
+  RGB_32F_PLANAR = 9,
+  YUV422 = 10,
+  P10 = 11,
+  P12 = 12,
+  YUV444_10bit = 13,
+  YUV420_10bit = 14,
+  GRAY12 = 15,
+};
 
 /* Represents GPU-side memory.
  * Pure interface class, see ancestors;
  */
 class TC_EXPORT Surface : public Token {
-  /* Check if Surface has valid memory planes;
-   */
-  bool ValidatePlanes() const noexcept;
-
-protected:
-  Surface() = default;
-
 public:
+  virtual ~Surface() = default;
+
   /* Raw bytes + metadata;
    */
   struct SurfacePlaneContext {
@@ -45,12 +63,47 @@ public:
     SurfacePlane m_plane;
   };
 
-protected:
-  /* Actual pixels stored here;
+  /* Data often needed for NPP functions;
    */
-  std::vector<Surface::SurfacePlaneContext> m_planes;
+  struct NppContext {
+    /* CUDA device pointers to memory planes;
+     */
+    std::vector<CUdeviceptr> m_dptr;
 
-  virtual ~Surface() = default;
+    /* Pitch in bytes;
+     */
+    std::vector<int> m_step;
+
+    /* Full frame size in pixels;*/
+    NppiSize m_size;
+
+    /* Cuda device pointers getter;
+     */
+    template <typename T> std::vector<T*> GetDataAs() {
+      std::vector<T*> ret;
+      for (auto dptr : m_dptr) {
+        ret.push_back((T*)dptr);
+      }
+
+      return ret;
+    }
+
+    /* C-style pitch getter;
+     */
+    int* GetPitch() { return m_step.data(); }
+
+    /* Size getter;
+     */
+    NppiSize GetSize() const noexcept { return m_size; }
+
+    /* Get full size rect;
+     */
+    NppiRect GetRect() const noexcept {
+      NppiSize size = GetSize();
+      NppiRect rect = {0, 0, size.width, size.height};
+      return rect;
+    }
+  };
 
   /* Returns number of image planes;
    * In case of failure return 0U;
@@ -61,6 +114,11 @@ protected:
    */
   virtual Pixel_Format PixelFormat() const noexcept = 0;
 
+  /* Returns element size in bytes;
+   * In case of failure return 0U;
+   */
+  virtual size_t ElemSize() const noexcept = 0;
+
   /* Check if Surface is valid;
    */
   bool IsValid() const noexcept;
@@ -69,7 +127,7 @@ protected:
    * Returns true in case of success, false otherwise;
    */
   bool GetSurfacePlane(SurfacePlane& plane,
-                               uint32_t plane_number = 0U) noexcept;
+                       uint32_t plane_number = 0U) noexcept;
 
   /* Returns width in pixels;
    * In case of failure return 0U;
@@ -80,11 +138,6 @@ protected:
    * In case of failure return 0U;
    */
   uint32_t Height() const noexcept;
-
-  /* Returns element size in bytes;
-   * In case of failure return 0U;
-   */
-  virtual size_t ElemSize() const noexcept = 0;
 
   /* Returns true if surface is empty (no allocated data), false otherwise;
    */
@@ -114,7 +167,7 @@ protected:
    * Will return false if planes in initializer list have different CUDA
    * contexts;
    */
-  bool Update(std::initializer_list<SurfacePlane> planes) noexcept = 0;
+  bool Update(std::initializer_list<SurfacePlane> planes) noexcept;
 
   /* Make a deep copy.
    * If non-zero CUDA stream is given, async CUDA memcpy will be run.
@@ -122,6 +175,11 @@ protected:
    * Otherwise, blocking CUDA memcpy call will be issued.
    */
   std::shared_ptr<Surface> Clone(CUstream stream = 0U);
+
+  /* Get NPP context with related data.
+   * Usefull for all sorts of NPP operations;
+   */
+  NppContext GetNppContext();
 
   /* Make empty;
    */
@@ -133,5 +191,14 @@ protected:
                                        uint32_t height, CUcontext context);
 
 protected:
+  /* Actual pixels stored here;
+   */
+  std::vector<Surface::SurfacePlaneContext> m_planes;
+
+  /* Check if Surface has valid memory planes;
+   */
+  bool ValidatePlanes() const noexcept;
+
   Surface();
 };
+} // namespace VPF

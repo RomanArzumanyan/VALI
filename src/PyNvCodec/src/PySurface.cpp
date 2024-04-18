@@ -25,43 +25,6 @@ using namespace chrono;
 namespace py = pybind11;
 using namespace pybind11::literals;
 
-auto CopySurface_Ctx_Str = [](shared_ptr<Surface> self,
-                              shared_ptr<Surface> other, CUcontext cudaCtx,
-                              CUstream cudaStream) {
-  CudaCtxPush ctxPush(cudaCtx);
-
-  for (auto plane = 0U; plane < self->NumPlanes(); plane++) {
-    auto srcPlanePtr = self->PlanePtr(plane);
-    auto dstPlanePtr = other->PlanePtr(plane);
-
-    if (!srcPlanePtr || !dstPlanePtr) {
-      break;
-    }
-
-    CUDA_MEMCPY2D m = {0};
-    m.srcMemoryType = CU_MEMORYTYPE_DEVICE;
-    m.dstMemoryType = CU_MEMORYTYPE_DEVICE;
-    m.srcDevice = srcPlanePtr;
-    m.dstDevice = dstPlanePtr;
-    m.srcPitch = self->Pitch(plane);
-    m.dstPitch = other->Pitch(plane);
-    m.Height = self->Height(plane);
-    m.WidthInBytes = self->WidthInBytes(plane);
-
-    ThrowOnCudaError(cuMemcpy2DAsync(&m, cudaStream), __LINE__);
-  }
-
-  ThrowOnCudaError(cuStreamSynchronize(cudaStream), __LINE__);
-};
-
-auto CopySurface = [](shared_ptr<Surface> self, shared_ptr<Surface> other,
-                      int gpuID) {
-  auto ctx = CudaResMgr::Instance().GetCtx(gpuID);
-  auto str = CudaResMgr::Instance().GetStream(gpuID);
-
-  return CopySurface_Ctx_Str(self, other, ctx, str);
-};
-
 string ToString(Pixel_Format fmt) {
   static map<Pixel_Format, string> fmt_names = {
       {Y, "Y"},
@@ -86,24 +49,20 @@ string ToString(Pixel_Format fmt) {
   }
 };
 
-string ToString(SurfacePlane* self, int space = 0) {
-  if (!self) {
-    return string();
-  }
-
+string ToString(SurfacePlane& self, int space = 0) {
   stringstream spacer;
   for (int i = 0; i < space; i++) {
     spacer << " ";
   }
 
   stringstream ss;
-  ss << spacer.str() << "Owns mem:  " << self->OwnMemory() << "\n";
-  ss << spacer.str() << "Width:     " << self->Width() << "\n";
-  ss << spacer.str() << "Height:    " << self->Height() << "\n";
-  ss << spacer.str() << "Pitch:     " << self->Pitch() << "\n";
-  ss << spacer.str() << "Elem size: " << self->ElemSize() << "\n";
-  ss << spacer.str() << "Cuda ctx:  " << self->Context() << "\n";
-  ss << spacer.str() << "CUDA ptr:  " << self->GpuMem() << "\n";
+  ss << spacer.str() << "Owns mem:  " << self.OwnMemory() << "\n";
+  ss << spacer.str() << "Width:     " << self.Width() << "\n";
+  ss << spacer.str() << "Height:    " << self.Height() << "\n";
+  ss << spacer.str() << "Pitch:     " << self.Pitch() << "\n";
+  ss << spacer.str() << "Elem size: " << self.ElemSize() << "\n";
+  ss << spacer.str() << "Cuda ctx:  " << self.Context() << "\n";
+  ss << spacer.str() << "CUDA ptr:  " << self.GpuMem() << "\n";
 
   return ss.str();
 }
@@ -117,12 +76,15 @@ string ToString(Surface* self) {
   ss << "Width:            " << self->Width() << "\n";
   ss << "Height:           " << self->Height() << "\n";
   ss << "Format:           " << ToString(self->PixelFormat()) << "\n";
-  ss << "Pitch:            " << self->Pitch() << "\n";
   ss << "Elem size(bytes): " << self->ElemSize() << "\n";
 
-  for (int i = 0; i < self->NumPlanes() && self->GetSurfacePlane(i); i++) {
+  for (int i = 0; i < self->NumPlanes(); i++) {
+    SurfacePlane plane;
+    if (!self->GetSurfacePlane(plane, i)) {
+      break;
+    }
     ss << "Plane " << i << "\n";
-    ss << ToString(self->GetSurfacePlane(i), 2) << "\n";
+    ss << ToString(plane, 2) << "\n";
   }
 
   return ss.str();
@@ -203,11 +165,11 @@ void Init_PySurface(py::module& m) {
         DLPack: get capsule.
     )pbdoc")
       .def("__repr__",
-           [](shared_ptr<SurfacePlane> self) { return ToString(self.get()); });
+           [](shared_ptr<SurfacePlane> self) { return ToString(*self.get()); });
 
   py::class_<Surface, shared_ptr<Surface>>(
       m, "Surface", "Image stored in vRAM. Consists of 1+ SurfacePlane(s).")
-      .def("Width", &Surface::Width, py::arg("plane") = 0U,
+      .def("Width", &Surface::Width,
            R"pbdoc(
         Width in pixels.
         Please note that different SurfacePlane may have different dimensions
@@ -215,17 +177,9 @@ void Init_PySurface(py::module& m) {
 
         :param plane: SurfacePlane index
     )pbdoc")
-      .def("Height", &Surface::Height, py::arg("plane") = 0U,
+      .def("Height", &Surface::Height,
            R"pbdoc(
         Height in pixels.
-        Please note that different SurfacePlane may have different dimensions
-        depending on pixel format.
-
-        :param plane: SurfacePlane index
-    )pbdoc")
-      .def("Pitch", &Surface::Pitch, py::arg("plane") = 0U,
-           R"pbdoc(
-        Pitch in bytes.
         Please note that different SurfacePlane may have different dimensions
         depending on pixel format.
 
@@ -252,8 +206,13 @@ void Init_PySurface(py::module& m) {
         Return True if Surface owns memory, False if it only references actual
         memory allocation but doesn't own it.
     )pbdoc")
-      .def("Clone", &Surface::Clone, py::return_value_policy::take_ownership,
-           R"pbdoc(
+      .def(
+          "Clone",
+          [](std::shared_ptr<Surface> self, int stream) {
+            return self->Clone((CUstream)stream);
+          },
+          py::arg("stream") = 0, py::return_value_policy::take_ownership,
+          R"pbdoc(
         CUDA mem alloc + deep copy.
         Object returned is manager by Python interpreter.
     )pbdoc")
@@ -308,14 +267,12 @@ void Init_PySurface(py::module& m) {
               throw std::runtime_error("Capsule doesn't contain dltensor.");
             }
 
-            auto surface = std::shared_ptr<Surface>(Surface::Make(fmt));
+            auto surface = Surface::Make(fmt);
             if (!surface) {
               throw std::runtime_error("Failed to make Surface.");
             }
 
-            auto surface_plane = SurfacePlane(*managed);
-            SurfacePlane* planes[] = {&surface_plane};
-            surface->Update(planes, 1U);
+            surface->Update({SurfacePlane(*managed)});
             return surface;
           },
           py::arg("capsule"), py::arg("format") = Pixel_Format::RGB,
@@ -326,18 +283,6 @@ void Init_PySurface(py::module& m) {
         :param fmt: pixel format, by default PyNvCodec.PixelFormat.RGB
         :return: Surface
         :rtype: PyNvCodec.Surface
-    )pbdoc")
-      .def(
-          "PlanePtr",
-          [](shared_ptr<Surface> self, int plane) {
-            auto pPlane = self->GetSurfacePlane(plane);
-            return make_shared<SurfacePlane>(*pPlane);
-          },
-          py::arg("plane") = 0U, py::return_value_policy::take_ownership,
-          R"pbdoc(
-        Get SurfacePlane reference
-
-        :param plane: SurfacePlane index
     )pbdoc")
       .def("__repr__",
            [](shared_ptr<Surface> self) { return ToString(self.get()); });

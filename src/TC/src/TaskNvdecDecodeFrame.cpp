@@ -555,7 +555,7 @@ NvDecoder::NvDecoder(CUstream cuStream, CUcontext cuContext,
 #ifdef _WIN32
                                      "nvcuvid.dll");
 #else
-                                      "libnvcuvid.so.1");
+                                     "libnvcuvid.so.1");
 #endif
   if (err) {
     constexpr const char* explanation =
@@ -767,9 +767,9 @@ void NvDecoder::UnlockSurface(CUdeviceptr& lockedSurface) {
 namespace VPF {
 struct NvdecDecodeFrame_Impl {
   NvDecoder nvDecoder;
-  Surface* pLastSurface = nullptr;
-  Buffer* pPacketData = nullptr;
-  Buffer* PDetails = nullptr;
+  std::shared_ptr<Surface> pLastSurface = nullptr;
+  std::shared_ptr<Buffer> pPacketData = nullptr;
+  std::shared_ptr<Buffer> PDetails = nullptr;
   CUstream stream = 0;
   CUcontext context = nullptr;
   bool didDecode = false;
@@ -783,17 +783,15 @@ struct NvdecDecodeFrame_Impl {
       : stream(cuStream), context(cuContext),
         nvDecoder(cuStream, cuContext, videoCodec) {
     pLastSurface = Surface::Make(format);
-    pPacketData = Buffer::MakeOwnMem(sizeof(PacketData));
-    PDetails = Buffer::MakeOwnMem(sizeof(TaskExecDetails));
+    pPacketData =
+        std::shared_ptr<Buffer>(Buffer::MakeOwnMem(sizeof(PacketData)));
+    PDetails =
+        std::shared_ptr<Buffer>(Buffer::MakeOwnMem(sizeof(TaskExecDetails)));
   }
 
   DLDataTypeCode TypeCode() const { return kDLUInt; }
 
-  ~NvdecDecodeFrame_Impl() {
-    delete pLastSurface;
-    delete pPacketData;
-    delete PDetails;
-  }
+  ~NvdecDecodeFrame_Impl() = default;
 };
 } // namespace VPF
 

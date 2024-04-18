@@ -22,25 +22,6 @@ using namespace VPF;
 
 namespace VPF {
 
-enum Pixel_Format {
-  UNDEFINED = 0,
-  Y = 1,
-  RGB = 2,
-  NV12 = 3,
-  YUV420 = 4,
-  RGB_PLANAR = 5,
-  BGR = 6,
-  YUV444 = 7,
-  RGB_32F = 8,
-  RGB_32F_PLANAR = 9,
-  YUV422 = 10,
-  P10 = 11,
-  P12 = 12,
-  YUV444_10bit = 13,
-  YUV420_10bit = 14,
-  GRAY12 = 15,
-};
-
 enum ColorSpace {
   BT_601 = 0,
   BT_709 = 1,
@@ -138,6 +119,8 @@ private:
 /* 8-bit single plane image.
  */
 class TC_EXPORT SurfaceY final : public Surface {
+  using Surface::m_planes;
+
 public:
   ~SurfaceY() = default;
   SurfaceY() = default;
@@ -150,9 +133,9 @@ public:
   SurfaceY(uint32_t width, uint32_t height, CUcontext context = nullptr,
            bool pitched = true);
 
-  uint32_t NumPlanes() const noexcept override { return 1U; };
-  Pixel_Format PixelFormat() const noexcept override { return Y; };
-  size_t ElemSize() const noexcept override { return sizeof(uint8_t;) }
+  uint32_t NumPlanes() const noexcept { return 1U; };
+  Pixel_Format PixelFormat() const noexcept { return Y; };
+  size_t ElemSize() const noexcept { return sizeof(uint8_t); }
 };
 
 /* 8-bit NV12 image;
@@ -170,9 +153,9 @@ public:
   SurfaceNV12(uint32_t width, uint32_t height, CUcontext context = nullptr,
               bool pitched = true);
 
-  uint32_t NumPlanes() const noexcept override { return 2U; };
-  Pixel_Format PixelFormat() const noexcept override { return NV12; };
-  size_t ElemSize() const noexcept override { return sizeof(uint8_t;) }
+  uint32_t NumPlanes() const noexcept { return 2U; };
+  Pixel_Format PixelFormat() const noexcept { return NV12; };
+  size_t ElemSize() const noexcept { return sizeof(uint8_t); }
 };
 
 /* 8-bit YUV420P image;
@@ -190,12 +173,13 @@ public:
   SurfaceYUV420(uint32_t width, uint32_t height, CUcontext context = nullptr,
                 bool pitched = true);
 
-  Pixel_Format PixelFormat() const override { return YUV420; }
-  uint32_t NumPlanes() const override { return 3U; }
-  size_t ElemSize() const noexcept override { return sizeof(uint8_t;) }
+  Pixel_Format PixelFormat() const noexcept { return YUV420; }
+  uint32_t NumPlanes() const noexcept { return 3U; }
+  size_t ElemSize() const noexcept { return sizeof(uint8_t); }
 };
 
 class TC_EXPORT SurfaceYUV422 final : public Surface {
+public:
   ~SurfaceYUV422() = default;
   SurfaceYUV422() = default;
 
@@ -207,14 +191,15 @@ class TC_EXPORT SurfaceYUV422 final : public Surface {
   SurfaceYUV422(uint32_t width, uint32_t height, CUcontext context = nullptr,
                 bool pitched = true);
 
-  Pixel_Format PixelFormat() const override { return YUV422; }
-  uint32_t NumPlanes() const override { return 3U; }
-  size_t ElemSize() const noexcept override { return sizeof(uint8_t;) }
+  Pixel_Format PixelFormat() const noexcept { return YUV422; }
+  uint32_t NumPlanes() const noexcept { return 3U; }
+  size_t ElemSize() const noexcept { return sizeof(uint8_t); }
 };
 
 /* 8-bit RGB image;
  */
 class TC_EXPORT SurfaceRGB final : public Surface {
+public:
   ~SurfaceRGB() = default;
   SurfaceRGB() = default;
 
@@ -226,14 +211,15 @@ class TC_EXPORT SurfaceRGB final : public Surface {
   SurfaceRGB(uint32_t width, uint32_t height, CUcontext context = nullptr,
              bool pitched = true);
 
-  Pixel_Format PixelFormat() const override { return RGB; }
-  uint32_t NumPlanes() const override { return 3U; }
-  size_t ElemSize() const noexcept override { return sizeof(uint8_t;) }
+  Pixel_Format PixelFormat() const noexcept { return RGB; }
+  uint32_t NumPlanes() const noexcept { return 3U; }
+  size_t ElemSize() const noexcept { return sizeof(uint8_t); }
 };
 
 /* 8-bit BGR image;
  */
-class TC_EXPORT SurfaceBGR final : public SurfaceBGR {
+class TC_EXPORT SurfaceBGR final : public Surface {
+public:
   ~SurfaceBGR() = default;
   SurfaceBGR() = default;
 
@@ -245,14 +231,15 @@ class TC_EXPORT SurfaceBGR final : public SurfaceBGR {
   SurfaceBGR(uint32_t width, uint32_t height, CUcontext context = nullptr,
              bool pitched = true);
 
-  Pixel_Format PixelFormat() const override { return BGR; }
-  uint32_t NumPlanes() const override { return 3U; }
-  size_t ElemSize() const noexcept override { return sizeof(uint8_t;) }
+  Pixel_Format PixelFormat() const noexcept { return BGR; }
+  uint32_t NumPlanes() const noexcept { return 3U; }
+  size_t ElemSize() const noexcept { return sizeof(uint8_t); }
 };
 
 /* 8-bit planar RGB image;
  */
 class TC_EXPORT SurfaceRGBPlanar final : public Surface {
+public:
   ~SurfaceRGBPlanar() = default;
   SurfaceRGBPlanar() = default;
 
@@ -264,12 +251,13 @@ class TC_EXPORT SurfaceRGBPlanar final : public Surface {
   SurfaceRGBPlanar(uint32_t width, uint32_t height, CUcontext context = nullptr,
                    bool pitched = true);
 
-  Pixel_Format PixelFormat() const override { return RGB_PLANAR; }
-  uint32_t NumPlanes() const override { return 1U; }
-  size_t ElemSize() const noexcept override { return sizeof(uint8_t;) }
+  Pixel_Format PixelFormat() const noexcept { return RGB_PLANAR; }
+  uint32_t NumPlanes() const noexcept { return 1U; }
+  size_t ElemSize() const noexcept { return sizeof(uint8_t); }
 };
 
 class TC_EXPORT SurfaceYUV444 final : public Surface {
+public:
   ~SurfaceYUV444() = default;
   SurfaceYUV444() = default;
 
@@ -281,14 +269,15 @@ class TC_EXPORT SurfaceYUV444 final : public Surface {
   SurfaceYUV444(uint32_t width, uint32_t height, CUcontext context = nullptr,
                 bool pitched = true);
 
-  Pixel_Format PixelFormat() const override { return YUV444; }
-  uint32_t NumPlanes() const override { return 1U; }
-  size_t ElemSize() const noexcept override { return sizeof(uint8_t;) }
+  Pixel_Format PixelFormat() const noexcept { return YUV444; }
+  uint32_t NumPlanes() const noexcept { return 1U; }
+  size_t ElemSize() const noexcept { return sizeof(uint8_t); }
 };
 
 /* 32-bit float RGB image;
  */
 class TC_EXPORT SurfaceRGB32F final : public Surface {
+public:
   ~SurfaceRGB32F() = default;
   SurfaceRGB32F() = default;
 
@@ -300,14 +289,15 @@ class TC_EXPORT SurfaceRGB32F final : public Surface {
   SurfaceRGB32F(uint32_t width, uint32_t height, CUcontext context = nullptr,
                 bool pitched = true);
 
-  Pixel_Format PixelFormat() const override { return RGB_32F; }
-  uint32_t NumPlanes() const override { return 3U; }
-  size_t ElemSize() const noexcept override { return sizeof(float;) }
+  Pixel_Format PixelFormat() const noexcept { return RGB_32F; }
+  uint32_t NumPlanes() const noexcept { return 3U; }
+  size_t ElemSize() const noexcept { return sizeof(float); }
 };
 
 /* 32-bit float planar RGB image;
  */
 class TC_EXPORT SurfaceRGB32FPlanar final : public Surface {
+public:
   ~SurfaceRGB32FPlanar() = default;
   SurfaceRGB32FPlanar() = default;
 
@@ -319,12 +309,13 @@ class TC_EXPORT SurfaceRGB32FPlanar final : public Surface {
   SurfaceRGB32FPlanar(uint32_t width, uint32_t height,
                       CUcontext context = nullptr, bool pitched = true);
 
-  Pixel_Format PixelFormat() const override { return RGB_32F_PLANAR; }
-  uint32_t NumPlanes() const override { return 1U; }
-  size_t ElemSize() const noexcept override { return sizeof(float;) }
+  Pixel_Format PixelFormat() const noexcept { return RGB_32F_PLANAR; }
+  uint32_t NumPlanes() const noexcept { return 1U; }
+  size_t ElemSize() const noexcept { return sizeof(float); }
 };
 
 class TC_EXPORT SurfaceYUV444_10bit final : public Surface {
+public:
   ~SurfaceYUV444_10bit() = default;
   SurfaceYUV444_10bit() = default;
 
@@ -336,9 +327,9 @@ class TC_EXPORT SurfaceYUV444_10bit final : public Surface {
   SurfaceYUV444_10bit(uint32_t width, uint32_t height,
                       CUcontext context = nullptr, bool pitched = true);
 
-  Pixel_Format PixelFormat() const override { return YUV444; }
-  uint32_t NumPlanes() const override { return 1U; }
-  size_t ElemSize() const noexcept override { return sizeof(uint16_t;) }
+  Pixel_Format PixelFormat() const noexcept { return YUV444; }
+  uint32_t NumPlanes() const noexcept { return 1U; }
+  size_t ElemSize() const noexcept { return sizeof(uint16_t); }
 };
 
 /* 10-bit NV12 image;
@@ -356,9 +347,9 @@ public:
   SurfaceP10(uint32_t width, uint32_t height, CUcontext context = nullptr,
              bool pitched = true);
 
-  uint32_t NumPlanes() const noexcept override { return 2U; };
-  Pixel_Format PixelFormat() const noexcept override { return P10; };
-  size_t ElemSize() const noexcept override { return sizeof(uint16_t;) }
+  uint32_t NumPlanes() const noexcept { return 2U; };
+  Pixel_Format PixelFormat() const noexcept { return P10; };
+  size_t ElemSize() const noexcept { return sizeof(uint16_t); }
 };
 
 /* 12-bit NV12 image;
@@ -376,8 +367,8 @@ public:
   SurfaceP12(uint32_t width, uint32_t height, CUcontext context = nullptr,
              bool pitched = true);
 
-  uint32_t NumPlanes() const noexcept override { return 2U; };
-  Pixel_Format PixelFormat() const noexcept override { return P10; };
-  size_t ElemSize() const noexcept override { return sizeof(uint16_t;) }
+  uint32_t NumPlanes() const noexcept { return 2U; };
+  Pixel_Format PixelFormat() const noexcept { return P10; };
+  size_t ElemSize() const noexcept { return sizeof(uint16_t); }
 };
 } // namespace VPF
