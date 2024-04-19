@@ -36,6 +36,7 @@ enum Pixel_Format {
   YUV444_10bit = 13,
   YUV420_10bit = 14,
   GRAY12 = 15,
+  GRAY16 = 16
 };
 
 /* Represents GPU-side memory.

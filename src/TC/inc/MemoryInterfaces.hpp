@@ -138,6 +138,28 @@ public:
   size_t ElemSize() const noexcept { return sizeof(uint8_t); }
 };
 
+/* 16-bit single plane image.
+ */
+class TC_EXPORT SurfaceY16 final : public Surface {
+  using Surface::m_planes;
+
+public:
+  ~SurfaceY16() = default;
+  SurfaceY16() = default;
+
+  SurfaceY16(const SurfaceY16& other) = delete;
+  SurfaceY16(const SurfaceY16&& other) = delete;
+  SurfaceY16& operator=(const SurfaceY16& other) = delete;
+  SurfaceY16& operator=(const SurfaceY16&& other) = delete;
+
+  SurfaceY16(uint32_t width, uint32_t height, CUcontext context = nullptr,
+           bool pitched = true);
+
+  uint32_t NumPlanes() const noexcept { return 1U; };
+  Pixel_Format PixelFormat() const noexcept { return GRAY16; };
+  size_t ElemSize() const noexcept { return sizeof(uint16_t); }
+};
+
 /* 8-bit NV12 image;
  */
 class TC_EXPORT SurfaceNV12 final : public Surface {

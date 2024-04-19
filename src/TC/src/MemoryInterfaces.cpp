@@ -212,6 +212,13 @@ SurfaceY::SurfaceY(uint32_t width, uint32_t height, CUcontext context,
       SurfacePlane(width, height, ElemSize(), kDLUInt, context, pitched);
 }
 
+SurfaceY16::SurfaceY16(uint32_t width, uint32_t height, CUcontext context,
+                   bool pitched) {
+  auto& ctx = m_planes.at(0);
+  ctx.m_plane =
+      SurfacePlane(width, height, ElemSize(), kDLUInt, context, pitched);
+}
+
 SurfaceNV12::SurfaceNV12(uint32_t width, uint32_t height, CUcontext context,
                          bool pitched) {
   // Y plane;

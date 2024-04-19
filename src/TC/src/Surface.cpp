@@ -46,6 +46,8 @@ std::shared_ptr<Surface> Surface::Make(Pixel_Format format) {
     return std::make_shared<SurfaceP10>();
   case P12:
     return std::make_shared<SurfaceP12>();
+  case GRAY16:
+    return std::make_shared<SurfaceY16>();
   default:
     ss << __FUNCTION__ << ": unsupported pixel format";
     throw std::runtime_error(ss.str());
@@ -83,6 +85,8 @@ std::shared_ptr<Surface> Surface::Make(Pixel_Format format, uint32_t width,
     return std::make_shared<SurfaceP10>(width, height, context);
   case P12:
     return std::make_shared<SurfaceP12>(width, height, context);
+  case GRAY16:
+    return std::make_shared<SurfaceY16>(width, height, context);
   default:
     ss << __FUNCTION__ << ": unsupported pixel format";
     throw std::runtime_error(ss.str());
