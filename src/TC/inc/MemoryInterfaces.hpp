@@ -212,7 +212,7 @@ public:
              bool pitched = true);
 
   Pixel_Format PixelFormat() const noexcept { return RGB; }
-  uint32_t NumPlanes() const noexcept { return 3U; }
+  uint32_t NumPlanes() const noexcept { return 1U; }
   size_t ElemSize() const noexcept { return sizeof(uint8_t); }
 };
 
@@ -232,7 +232,7 @@ public:
              bool pitched = true);
 
   Pixel_Format PixelFormat() const noexcept { return BGR; }
-  uint32_t NumPlanes() const noexcept { return 3U; }
+  uint32_t NumPlanes() const noexcept { return 1U; }
   size_t ElemSize() const noexcept { return sizeof(uint8_t); }
 };
 
@@ -252,7 +252,7 @@ public:
                    bool pitched = true);
 
   Pixel_Format PixelFormat() const noexcept { return RGB_PLANAR; }
-  uint32_t NumPlanes() const noexcept { return 1U; }
+  uint32_t NumPlanes() const noexcept { return 3U; }
   size_t ElemSize() const noexcept { return sizeof(uint8_t); }
 };
 
@@ -270,7 +270,7 @@ public:
                 bool pitched = true);
 
   Pixel_Format PixelFormat() const noexcept { return YUV444; }
-  uint32_t NumPlanes() const noexcept { return 1U; }
+  uint32_t NumPlanes() const noexcept { return 3U; }
   size_t ElemSize() const noexcept { return sizeof(uint8_t); }
 };
 
@@ -290,7 +290,7 @@ public:
                 bool pitched = true);
 
   Pixel_Format PixelFormat() const noexcept { return RGB_32F; }
-  uint32_t NumPlanes() const noexcept { return 3U; }
+  uint32_t NumPlanes() const noexcept { return 1U; }
   size_t ElemSize() const noexcept { return sizeof(float); }
 };
 
@@ -310,7 +310,7 @@ public:
                       CUcontext context = nullptr, bool pitched = true);
 
   Pixel_Format PixelFormat() const noexcept { return RGB_32F_PLANAR; }
-  uint32_t NumPlanes() const noexcept { return 1U; }
+  uint32_t NumPlanes() const noexcept { return 3U; }
   size_t ElemSize() const noexcept { return sizeof(float); }
 };
 
@@ -328,7 +328,7 @@ public:
                       CUcontext context = nullptr, bool pitched = true);
 
   Pixel_Format PixelFormat() const noexcept { return YUV444; }
-  uint32_t NumPlanes() const noexcept { return 1U; }
+  uint32_t NumPlanes() const noexcept { return 3U; }
   size_t ElemSize() const noexcept { return sizeof(uint16_t); }
 };
 
@@ -368,7 +368,7 @@ public:
              bool pitched = true);
 
   uint32_t NumPlanes() const noexcept { return 2U; };
-  Pixel_Format PixelFormat() const noexcept { return P10; };
+  Pixel_Format PixelFormat() const noexcept { return P12; };
   size_t ElemSize() const noexcept { return sizeof(uint16_t); }
 };
 } // namespace VPF

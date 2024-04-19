@@ -279,18 +279,20 @@ SurfaceBGR::SurfaceBGR(uint32_t width, uint32_t height, CUcontext context,
 
 SurfaceRGBPlanar::SurfaceRGBPlanar(uint32_t width, uint32_t height,
                                    CUcontext context, bool pitched) {
-  auto& ctx = m_planes.at(0);
-  ctx.factor_y = 3.f;
-  ctx.m_plane =
-      SurfacePlane(width, height, ElemSize(), kDLUInt, context, pitched);
+  for (auto i : {0U, 1U, 2U}) {
+    auto& ctx = m_planes.at(i);
+    ctx.m_plane =
+        SurfacePlane(width, height, ElemSize(), kDLUInt, context, pitched);
+  }
 }
 
 SurfaceYUV444::SurfaceYUV444(uint32_t width, uint32_t height, CUcontext context,
                              bool pitched) {
-  auto& ctx = m_planes.at(0);
-  ctx.factor_y = 3.f;
-  ctx.m_plane =
-      SurfacePlane(width, height, ElemSize(), kDLUInt, context, pitched);
+  for (auto i : {0U, 1U, 2U}) {
+    auto& ctx = m_planes.at(i);
+    ctx.m_plane =
+        SurfacePlane(width, height, ElemSize(), kDLUInt, context, pitched);
+  }
 }
 
 SurfaceRGB32F::SurfaceRGB32F(uint32_t width, uint32_t height, CUcontext context,
@@ -298,23 +300,26 @@ SurfaceRGB32F::SurfaceRGB32F(uint32_t width, uint32_t height, CUcontext context,
   auto& ctx = m_planes.at(0);
   ctx.factor_x = 3.f;
   ctx.m_plane =
-      SurfacePlane(width, height, ElemSize(), kDLUInt, context, pitched);
+      SurfacePlane(width, height, ElemSize(), kDLFloat, context, pitched);
 }
 
 SurfaceRGB32FPlanar::SurfaceRGB32FPlanar(uint32_t width, uint32_t height,
                                          CUcontext context, bool pitched) {
-  auto& ctx = m_planes.at(0);
-  ctx.factor_y = 3.f;
-  ctx.m_plane =
-      SurfacePlane(width, height, ElemSize(), kDLUInt, context, pitched);
+
+  for (auto i : {0U, 1U, 2U}) {
+    auto& ctx = m_planes.at(i);
+    ctx.m_plane =
+        SurfacePlane(width, height, ElemSize(), kDLFloat, context, pitched);
+  }
 }
 
 SurfaceYUV444_10bit::SurfaceYUV444_10bit(uint32_t width, uint32_t height,
                                          CUcontext context, bool pitched) {
-  auto& ctx = m_planes.at(0);
-  ctx.factor_y = 3.f;
-  ctx.m_plane =
-      SurfacePlane(width, height, ElemSize(), kDLUInt, context, pitched);
+  for (auto i : {0U, 1U, 2U}) {
+    auto& ctx = m_planes.at(i);
+    ctx.m_plane =
+        SurfacePlane(width, height, ElemSize(), kDLUInt, context, pitched);
+  }
 }
 
 SurfaceP10::SurfaceP10(uint32_t width, uint32_t height, CUcontext context,
