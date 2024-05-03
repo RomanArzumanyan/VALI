@@ -67,6 +67,7 @@ add_library(
     src/NvCodecCliOptions.cpp
     src/Utils.cpp
     src/SurfacePlane.cpp
+    src/CudaUtils.cpp
 )
 
 if (WIN32)

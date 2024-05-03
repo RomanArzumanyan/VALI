@@ -141,18 +141,8 @@ private:
   size_t num_elems = 0U;
 
 #ifdef TRACK_TOKEN_ALLOCATIONS
-  uint64_t id = 0U;
+  uint64_t id = 0;
 #endif
-};
-
-/* RAII-style CUDA Context sync;
- */
-class TC_EXPORT CudaStrSync final {
-  CUstream str;
-
-public:
-  explicit CudaStrSync(CUstream stream) { str = stream; }
-  ~CudaStrSync() { cuStreamSynchronize(str); }
 };
 
 /* Represents GPU-side memory.
