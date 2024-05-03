@@ -198,6 +198,10 @@ public:
 
   inline DLPackContext& DLPackCtx() noexcept { return m_dlpack_ctx; }
 
+  /* Returns true if SurfacePlane has no GPU memory allocated;
+   */
+  inline bool Empty() const noexcept { return 0x0 == GpuMem(); }
+
   /* Get CUDA context associated with memory object (borrowed ot its own);
    * May throw exception with reason in message;
    */

@@ -185,10 +185,6 @@ public:
    */
   virtual Pixel_Format PixelFormat() const = 0;
 
-  /* Returns true if surface is empty (no allocated data), false otherwise;
-   */
-  virtual bool Empty() const = 0;
-
   /* Returns DLPack data type code;
    */
   virtual DLDataTypeCode DataType() const = 0;
@@ -220,7 +216,13 @@ public:
   /* Returns total amount of memory in bytes needed
    * to store all pixels of Surface in Host memory;
    */
+  // TODO (r.arzumanyan): remove virtual
   virtual uint32_t HostMemSize() const;
+
+  /* Returns true if surface is empty (no allocated data), false otherwise;
+   */
+  // TODO (r.arzumanyan): remove virtual
+  virtual bool Empty() const;
 
   /* Make empty;
    */
@@ -240,14 +242,13 @@ protected:
  */
 class TC_EXPORT SurfaceY final : public Surface {
 public:
-  ~SurfaceY() = default;
-  SurfaceY() = default;
-
+  virtual ~SurfaceY() = default;
   SurfaceY(const SurfaceY& other) = delete;
-  SurfaceY(const SurfaceY&& other) = delete;
+  SurfaceY(SurfaceY&& other) = delete;
   SurfaceY& operator=(const SurfaceY& other) = delete;
-  SurfaceY& operator=(const SurfaceY&& other) = delete;
+  SurfaceY& operator=(SurfaceY&& other) = delete;
 
+  SurfaceY();
   SurfaceY(uint32_t width, uint32_t height, CUcontext context);
 
   Surface* Create();
@@ -261,7 +262,6 @@ public:
   Pixel_Format PixelFormat() const { return Y; };
   uint32_t NumPlanes() const { return 1U; };
   uint32_t ElemSize() const { return sizeof(uint8_t); }
-  bool Empty() const { return 0UL == m_planes.at(0U).GpuMem(); }
   DLDataTypeCode DataType() const { return kDLUInt; }
 
   bool Update(SurfacePlane& newPlane);
@@ -273,37 +273,34 @@ public:
  */
 class TC_EXPORT SurfaceNV12 : public Surface {
 public:
-  ~SurfaceNV12();
+  virtual ~SurfaceNV12() = default;
+  SurfaceNV12(const SurfaceNV12& other) = delete;
+  SurfaceNV12(SurfaceNV12&& other) = delete;
+  SurfaceNV12& operator=(const SurfaceNV12& other) = delete;
+  SurfaceNV12& operator=(SurfaceNV12&& other) = delete;
 
   SurfaceNV12();
-  SurfaceNV12(const SurfaceNV12& other);
   SurfaceNV12(uint32_t width, uint32_t height, CUcontext context);
   SurfaceNV12(uint32_t width, uint32_t height, uint32_t alignBy,
               CUdeviceptr pNewPtrToLumaPlane);
-  SurfaceNV12& operator=(const SurfaceNV12& other);
 
   virtual Surface* Create() override;
 
-  uint32_t Width(uint32_t planeNumber = 0U) const override;
-  uint32_t WidthInBytes(uint32_t planeNumber = 0U) const override;
-  uint32_t Height(uint32_t planeNumber = 0U) const override;
-  uint32_t Pitch(uint32_t planeNumber = 0U) const override;
+  uint32_t Width(uint32_t plane = 0U) const override;
+  uint32_t WidthInBytes(uint32_t plane = 0U) const override;
+  uint32_t Height(uint32_t plane = 0U) const override;
+  uint32_t Pitch(uint32_t plane = 0U) const override;
 
-  CUdeviceptr PlanePtr(uint32_t planeNumber = 0U) override;
+  CUdeviceptr PlanePtr(uint32_t plane = 0U) override;
   virtual Pixel_Format PixelFormat() const override { return NV12; }
   uint32_t NumPlanes() const override { return 2; }
   virtual uint32_t ElemSize() const override { return sizeof(uint8_t); }
-  bool Empty() const override { return 0UL == plane.GpuMem(); }
   DLDataTypeCode DataType() const override { return kDLUInt; }
 
   bool Update(SurfacePlane& newPlane);
   bool Update(SurfacePlane** pPlanes, size_t planesNum) override;
 
-  SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) override;
-  virtual uint32_t HostMemSize() const override { return plane.HostMemSize(); }
-
-private:
-  SurfacePlane plane;
+  SurfacePlane* GetSurfacePlane(uint32_t plane = 0U) override;
 };
 
 /* 8-bit YUV420P image;
