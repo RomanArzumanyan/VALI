@@ -28,7 +28,7 @@ void ThrowOnCudaError(CUresult res, int lineNum);
 /* Check NPP return code, throw std::runtime_error with description
  * in case of failure;
  */
-void ThrowOnNppError(NppStatus res, int linuNum);
+void ThrowOnNppError(NppStatus res, int lineNum);
 
 /* Get CUDA context associated with given device pointer.
  * May throw exception with reason in message;

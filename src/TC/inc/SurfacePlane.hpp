@@ -108,10 +108,10 @@ public:
    */
   SurfacePlane& operator=(const SurfacePlane& other) noexcept;
 
-  /* Update from another, take memory ownership is another owns it;
+  /* Update from another, take memory ownership if another owns it;
    * Another object will cease memory ownership;
    */
-  SurfacePlane& operator=(SurfacePlane& other) noexcept;
+  SurfacePlane& operator=(SurfacePlane&& other) noexcept;
 
   /* Construct from another, don't own memory;
    */

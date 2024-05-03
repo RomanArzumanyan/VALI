@@ -58,7 +58,7 @@ SurfacePlane& SurfacePlane::operator=(SurfacePlane&& other) noexcept {
   MakeBlank();
 
   m_own_mem = other.OwnMemory();
-  if (m_own_mem()) {
+  if (m_own_mem) {
     m_own_gpu_mem = other.GpuMemImpl();
   } else {
     m_borrowed_gpu_mem = other.GpuMemImpl();
@@ -77,7 +77,7 @@ SurfacePlane& SurfacePlane::operator=(SurfacePlane&& other) noexcept {
 SurfacePlane::SurfacePlane(SurfacePlane&& other) noexcept
     : m_width(other.Width()), m_height(other.Height()), m_pitch(other.Pitch()),
       m_elem_size(other.ElemSize()), m_dlpack_ctx(other.m_dlpack_ctx) {
-  if (m_own_mem()) {
+  if (m_own_mem) {
     m_own_gpu_mem = other.GpuMemImpl();
   } else {
     m_borrowed_gpu_mem = other.GpuMemImpl();

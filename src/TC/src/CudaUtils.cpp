@@ -70,8 +70,8 @@ void ThrowOnCudaError(CUresult res, int lineNum) {
   }
 };
 
-void ThrowOnNppError(NppStatus res, int linuNum) {
-  if (NPP_NO_ERROR != err) {
+void ThrowOnNppError(NppStatus res, int lineNum) {
+  if (NPP_NO_ERROR != res) {
     std::stringstream ss("");
 
     if (lineNum > 0) {
