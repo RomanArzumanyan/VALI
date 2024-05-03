@@ -654,7 +654,7 @@ void NvEncoder::RegisterInputResources(vector<void *> const &input_frames,
     NvEncoder::GetChromaSubPlaneOffsets(bufferFormat, pitch, height,
                                         _chromaOffsets);
     NvEncInputFrame encInputFrame = {};
-    encInputFrame.inputPtr = (void *)inputFrame;
+    encInputFrame.inputPtr = (CUdeviceptr)inputFrame;
     encInputFrame.chromaOffsets[0] = 0;
     encInputFrame.chromaOffsets[1] = 0;
     for (uint32_t ch = 0; ch < _chromaOffsets.size(); ch++) {

@@ -44,10 +44,12 @@ struct NppResizeSurfacePacked3C_Impl final : ResizeSurface_Impl {
     try {
       CudaCtxPush ctxPush(cu_ctx);
       ThrowOnNppError(nppiResize_8u_C3R_Ctx(
-          src_ctx.GetDataAs<Npp8u>()[0], src_ctx.GetPitch()[0],
-          src_ctx.GetSize(), src_ctx.GetRect(), dst_ctx.GetDataAs<Npp8u>()[0],
-          dst_ctx.GetPitch()[0], dst_ctx.GetSize(), dst_ctx.GetRect(),
-          NPPI_INTER_LANCZOS, nppCtx));
+                          src_ctx.GetDataAs<Npp8u>()[0], src_ctx.GetPitch()[0],
+                          src_ctx.GetSize(), src_ctx.GetRect(),
+                          dst_ctx.GetDataAs<Npp8u>()[0], dst_ctx.GetPitch()[0],
+                          dst_ctx.GetSize(), dst_ctx.GetRect(),
+                          NPPI_INTER_LANCZOS, nppCtx),
+                      __LINE__);
     } catch (...) {
       return TaskExecStatus::TASK_EXEC_FAIL;
     }
@@ -77,20 +79,20 @@ struct NppResizeSurfacePlanar_Impl final : ResizeSurface_Impl {
       auto srcPlane = source.GetSurfacePlane(i);
       auto dstPlane = pSurface->GetSurfacePlane(i);
 
-      const Npp8u* pSrc = (const Npp8u*)srcPlane->GpuMem();
-      int nSrcStep = (int)srcPlane->Pitch();
+      const Npp8u* pSrc = (const Npp8u*)srcPlane.GpuMem();
+      int nSrcStep = (int)srcPlane.Pitch();
       NppiSize oSrcSize = {0};
-      oSrcSize.width = srcPlane->Width();
-      oSrcSize.height = srcPlane->Height();
+      oSrcSize.width = srcPlane.Width();
+      oSrcSize.height = srcPlane.Height();
       NppiRect oSrcRectROI = {0};
       oSrcRectROI.width = oSrcSize.width;
       oSrcRectROI.height = oSrcSize.height;
 
-      Npp8u* pDst = (Npp8u*)dstPlane->GpuMem();
-      int nDstStep = (int)dstPlane->Pitch();
+      Npp8u* pDst = (Npp8u*)dstPlane.GpuMem();
+      int nDstStep = (int)dstPlane.Pitch();
       NppiSize oDstSize = {0};
-      oDstSize.width = dstPlane->Width();
-      oDstSize.height = dstPlane->Height();
+      oDstSize.width = dstPlane.Width();
+      oDstSize.height = dstPlane.Height();
       NppiRect oDstRectROI = {0};
       oDstRectROI.width = oDstSize.width;
       oDstRectROI.height = oDstSize.height;
@@ -98,9 +100,11 @@ struct NppResizeSurfacePlanar_Impl final : ResizeSurface_Impl {
 
       try {
         CudaCtxPush ctxPush(cu_ctx);
-        ThrowOnNppError(nppiResize_8u_C1R_Ctx(
-            pSrc, nSrcStep, oSrcSize, oSrcRectROI, pDst, nDstStep, oDstSize,
-            oDstRectROI, eInterpolation, nppCtx));
+        ThrowOnNppError(nppiResize_8u_C1R_Ctx(pSrc, nSrcStep, oSrcSize,
+                                              oSrcRectROI, pDst, nDstStep,
+                                              oDstSize, oDstRectROI,
+                                              eInterpolation, nppCtx),
+                        __LINE__);
       } catch (...) {
         return TaskExecStatus::TASK_EXEC_FAIL;
       }
@@ -118,7 +122,7 @@ struct ResizeSurfaceSemiPlanar_Impl final : ResizeSurface_Impl {
         _str(str), last_h(0U), last_w(0U) {
     pResizeYuv = std::shared_ptr<ResizeSurface>(
         ResizeSurface::Make(width, height, YUV420, ctx, str));
-    yuv420_nv12 = std::shared_ptr<std::shared_ptr>(
+    yuv420_nv12 = std::shared_ptr<ConvertSurface>(
         ConvertSurface::Make(width, height, YUV420, NV12, ctx, str));
   }
 
@@ -192,7 +196,7 @@ struct NppResizeSurfacePacked32F3C_Impl final : ResizeSurface_Impl {
     auto srcPlane = source.GetSurfacePlane();
     auto dstPlane = pSurface->GetSurfacePlane();
 
-    const Npp32f* pSrc = (const Npp32f*)srcPlane->GpuMem();
+    const Npp32f* pSrc = (const Npp32f*)srcPlane.GpuMem();
     int nSrcStep = (int)source.Pitch();
     NppiSize oSrcSize = {0};
     oSrcSize.width = source.Width();
@@ -201,11 +205,11 @@ struct NppResizeSurfacePacked32F3C_Impl final : ResizeSurface_Impl {
     oSrcRectROI.width = oSrcSize.width;
     oSrcRectROI.height = oSrcSize.height;
 
-    Npp32f* pDst = (Npp32f*)dstPlane->GpuMem();
-    int nDstStep = (int)pSurface->Pitch();
+    Npp32f* pDst = (Npp32f*)dstPlane.GpuMem();
+    int nDstStep = (int)pSurface.Pitch();
     NppiSize oDstSize = {0};
-    oDstSize.width = pSurface->Width();
-    oDstSize.height = pSurface->Height();
+    oDstSize.width = pSurface.Width();
+    oDstSize.height = pSurface.Height();
     NppiRect oDstRectROI = {0};
     oDstRectROI.width = oDstSize.width;
     oDstRectROI.height = oDstSize.height;
