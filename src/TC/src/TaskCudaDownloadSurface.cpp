@@ -68,26 +68,26 @@ TaskExecStatus CudaDownloadSurface::Run() {
   auto context = pImpl->cuContext;
   auto pDstHost = pImpl->pHostFrame->GetDataAs<uint8_t>();
 
-  CUDA_MEMCPY2D m = {0};
-  m.srcMemoryType = CU_MEMORYTYPE_DEVICE;
-  m.dstMemoryType = CU_MEMORYTYPE_HOST;
+  try {
+    CUDA_MEMCPY2D m = {0};
+    m.srcMemoryType = CU_MEMORYTYPE_DEVICE;
+    m.dstMemoryType = CU_MEMORYTYPE_HOST;
 
-  for (auto plane = 0; plane < pSurface->NumPlanes(); plane++) {
-    CudaCtxPush lock(context);
+    for (auto& plane : *pSurface) {
+      CudaCtxPush lock(context);
 
-    m.srcDevice = pSurface->PlanePtr(plane);
-    m.srcPitch = pSurface->Pitch(plane);
-    m.dstHost = pDstHost;
-    m.dstPitch = pSurface->WidthInBytes(plane);
-    m.WidthInBytes = pSurface->WidthInBytes(plane);
-    m.Height = pSurface->Height(plane);
+      m.srcDevice = plane.GpuMem();
+      m.srcPitch = plane.Pitch();
+      m.dstHost = pDstHost;
+      m.WidthInBytes = plane.Width() * plane.ElemSize();
+      m.dstPitch = m.WidthInBytes;
+      m.Height = plane.Height();
 
-    auto const ret = cuMemcpy2DAsync(&m, stream);
-    if (CUDA_SUCCESS != ret) {
-      return TaskExecStatus::TASK_EXEC_FAIL;
+      ThrowOnCudaError(cuMemcpy2DAsync(&m, stream), __LINE__);
+      pDstHost += m.WidthInBytes * m.Height;
     }
-
-    pDstHost += m.WidthInBytes * m.Height;
+  } catch (...) {
+    return TaskExecStatus::TASK_EXEC_FAIL;
   }
 
   SetOutput(pImpl->pHostFrame.get(), 0);

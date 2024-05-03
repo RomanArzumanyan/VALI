@@ -74,7 +74,7 @@ inline NVENCException NVENCException::makeNVENCException(
   } while (0)
 
 struct NvEncInputFrame {
-  void *inputPtr = nullptr;
+  CUdeviceptr inputPtr;
   uint32_t chromaOffsets[2] = {0};
   uint32_t numChromaPlanes = 0;
   uint32_t pitch = 0;

@@ -23,7 +23,7 @@
 #include <stdint.h>
 
 struct DecodedFrameContext {
-  CUdeviceptr mem;
+  std::shared_ptr<Surface> mem;
   uint64_t pts;
   uint64_t bsl;
   PacketData out_pdata;
@@ -32,16 +32,13 @@ struct DecodedFrameContext {
   // flag;
   bool no_eos;
 
-  DecodedFrameContext(CUdeviceptr new_ptr, uint64_t new_pts, uint64_t new_poc)
-      : mem(new_ptr), pts(new_pts), no_eos(false)
-  {
-  }
+  DecodedFrameContext(std::shared_ptr<Surface> new_ptr, uint64_t new_pts,
+                      uint64_t new_poc)
+      : mem(new_ptr), pts(new_pts), no_eos(false) {}
 
-  DecodedFrameContext(CUdeviceptr new_ptr, uint64_t new_pts, uint64_t new_poc,
-                      bool new_no_eos)
-      : mem(new_ptr), pts(new_pts), no_eos(new_no_eos)
-  {
-  }
+  DecodedFrameContext(std::shared_ptr<Surface> new_ptr, uint64_t new_pts,
+                      uint64_t new_poc, bool new_no_eos)
+      : mem(new_ptr), pts(new_pts), no_eos(new_no_eos) {}
 
   DecodedFrameContext() : mem(0U), pts(0U), no_eos(false) {}
 };
@@ -94,7 +91,7 @@ public:
                          struct PacketData const& pdata,
                          DecodedFrameContext& decCtx);
 
-  void UnlockSurface(CUdeviceptr& lockedSurface);
+  void UnlockSurface(std::shared_ptr<Surface> surface);
 
   void Init(CUVIDEOFORMAT* format) { HandleVideoSequence(format); }
 

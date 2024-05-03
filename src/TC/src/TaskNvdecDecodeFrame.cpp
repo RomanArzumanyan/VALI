@@ -426,20 +426,7 @@ int NvDecoder::HandlePictureDisplay(CUVIDPARSERDISPINFO* pDispInfo) noexcept {
   try {
     CudaCtxPush ctxPush(p_impl->m_cuContext);
 
-    CUVIDPROCPARAMS videoProcParams = {};
-    videoProcParams.progressive_frame = pDispInfo->progressive_frame;
-    videoProcParams.second_field = pDispInfo->repeat_first_field + 1;
-    videoProcParams.top_field_first = pDispInfo->top_field_first;
-    videoProcParams.unpaired_field = pDispInfo->repeat_first_field < 0;
-    videoProcParams.output_stream = p_impl->m_cuvidStream;
-
-    CUdeviceptr dpSrcFrame = 0;
-    unsigned int nSrcPitch = 0;
-    ThrowOnCudaError(
-        m_api.cuvidMapVideoFrame64(p_impl->m_hDecoder, pDispInfo->picture_index,
-                                   &dpSrcFrame, &nSrcPitch, &videoProcParams),
-        __LINE__);
-
+    // 1. Check decode status;
     CUVIDGETDECODESTATUS DecodeStatus;
     memset(&DecodeStatus, 0, sizeof(DecodeStatus));
 
@@ -458,26 +445,38 @@ int NvDecoder::HandlePictureDisplay(CUVIDPARSERDISPINFO* pDispInfo) noexcept {
       throw runtime_error(ss.str());
     }
 
-    CUdeviceptr pDecodedFrame = 0;
+    // 2. Fill up decoded frame parameters, map frame to CUDA device pointer;
+    CUVIDPROCPARAMS videoProcParams = {};
+    videoProcParams.progressive_frame = pDispInfo->progressive_frame;
+    videoProcParams.second_field = pDispInfo->repeat_first_field + 1;
+    videoProcParams.top_field_first = pDispInfo->top_field_first;
+    videoProcParams.unpaired_field = pDispInfo->repeat_first_field < 0;
+    videoProcParams.output_stream = p_impl->m_cuvidStream;
+
+    CUdeviceptr dpSrcFrame = 0;
+    unsigned int nSrcPitch = 0;
+    ThrowOnCudaError(
+        m_api.cuvidMapVideoFrame64(p_impl->m_hDecoder, pDispInfo->picture_index,
+                                   &dpSrcFrame, &nSrcPitch, &videoProcParams),
+        __LINE__);
+
+    /* 3. Increment counters, allocate memory if needed in critical section
+     * because this is done in separate callback thread;
+     */
+    std::shared_ptr<Surface> pDecodedFrame = nullptr;
     int64_t pDecodedFrameIdx = 0;
     {
       lock_guard<mutex> lock(p_impl->m_mtxVPFrame);
       p_impl->m_nDecodedFrame++;
-      bool isNotEnoughFrames =
+      const bool isNotEnoughFrames =
           (p_impl->m_nDecodedFrame > p_impl->m_DecFramesCtxVec.size());
 
       if (isNotEnoughFrames) {
         p_impl->m_nFrameAlloc++;
-        CUdeviceptr pFrame = 0;
-
-        auto const height =
-            p_impl->m_nLumaHeight +
-            p_impl->m_nChromaHeight * p_impl->m_nNumChromaPlanes;
-
-        ThrowOnCudaError(cuMemAllocPitch(&pFrame, &p_impl->m_nDeviceFramePitch,
-                                         p_impl->m_nWidth * p_impl->m_nBPP,
-                                         height, 16),
-                         __LINE__);
+        auto pFrame = Surface::Make(
+            fromCuvidSurfaceFormat(p_impl->m_eOutputFormat,
+                                   p_impl->m_nBitDepthMinus8 + 8),
+            p_impl->m_nWidth, p_impl->m_nLumaHeight, p_impl->m_cuContext);
 
         p_impl->m_DecFramesCtxVec.push_back(DecodedFrameContext(
             pFrame, pDispInfo->timestamp, pDispInfo->picture_index));
@@ -502,40 +501,29 @@ int NvDecoder::HandlePictureDisplay(CUVIDPARSERDISPINFO* pDispInfo) noexcept {
       }
     }
 
-    // Copy data from decoded frame;
-    CUDA_MEMCPY2D m = {0};
-    m.srcMemoryType = CU_MEMORYTYPE_DEVICE;
-    m.srcDevice = dpSrcFrame;
-    m.srcPitch = nSrcPitch;
-    m.dstMemoryType = CU_MEMORYTYPE_DEVICE;
-    m.dstDevice = pDecodedFrame;
-    m.dstPitch = p_impl->m_nDeviceFramePitch
-                     ? p_impl->m_nDeviceFramePitch
-                     : p_impl->m_nWidth * p_impl->m_nBPP;
-    m.WidthInBytes = p_impl->m_nWidth * p_impl->m_nBPP;
-    m.Height = p_impl->m_nLumaHeight;
-    ThrowOnCudaError(cuMemcpy2DAsync(&m, p_impl->m_cuvidStream), __LINE__);
+    // 4. Copy data from decoded frame;
+    for (auto &plane : *pDecodedFrame.get()) {
+      CUDA_MEMCPY2D m = {0};
+      m.srcMemoryType = CU_MEMORYTYPE_DEVICE;
+      m.srcDevice = dpSrcFrame;
+      m.srcPitch = nSrcPitch;
 
-    m.srcDevice = (CUdeviceptr)((uint8_t*)dpSrcFrame +
-                                m.srcPitch * p_impl->m_nSurfaceHeight);
-    m.dstDevice = (CUdeviceptr)((uint8_t*)pDecodedFrame +
-                                m.dstPitch * p_impl->m_nLumaHeight);
-    m.Height = p_impl->m_nChromaHeight;
-    ThrowOnCudaError(cuMemcpy2DAsync(&m, p_impl->m_cuvidStream), __LINE__);
+      m.dstMemoryType = CU_MEMORYTYPE_DEVICE;
+      m.dstDevice = plane.GpuMem();
+      m.dstPitch = plane.Pitch();
 
-    if (p_impl->m_nNumChromaPlanes == 2) {
-      m.srcDevice = (CUdeviceptr)((uint8_t*)dpSrcFrame +
-                                  m.srcPitch * p_impl->m_nSurfaceHeight * 2);
-      m.dstDevice = (CUdeviceptr)((uint8_t*)pDecodedFrame +
-                                  m.dstPitch * p_impl->m_nLumaHeight * 2);
-      m.Height = p_impl->m_nChromaHeight;
+      m.Height = plane.Height();
+      m.WidthInBytes = plane.Width() * plane.ElemSize();
+
       ThrowOnCudaError(cuMemcpy2DAsync(&m, p_impl->m_cuvidStream), __LINE__);
+      dpSrcFrame += m.srcPitch * m.Height;
     }
 
+    ThrowOnCudaError(cuStreamSynchronize(p_impl->m_cuvidStream), __LINE__);
     ThrowOnCudaError(m_api.cuvidUnmapVideoFrame(p_impl->m_hDecoder, dpSrcFrame),
                      __LINE__);
 
-    // Copy timestamp and amount of bitsream consumed by decoder;
+    // 5. Copy timestamp and amount of bitsream consumed by decoder;
     p_impl->m_DecFramesCtxVec[pDecodedFrameIdx].pts = pDispInfo->timestamp;
     p_impl->m_DecFramesCtxVec[pDecodedFrameIdx].bsl =
         p_impl->bit_stream_len.exchange(0U);
@@ -624,7 +612,7 @@ NvDecoder::~NvDecoder() {
     }
 
     for (auto& dec_frame_ctx : p_impl->m_DecFramesCtxVec) {
-      cuMemFree(dec_frame_ctx.mem);
+      dec_frame_ctx.mem.reset();
     }
   }
 
@@ -756,7 +744,7 @@ bool NvDecoder::DecodeLockSurface(Buffer const* encFrame,
 }
 
 // Adds frame back to pool of decoder-owned frames;
-void NvDecoder::UnlockSurface(CUdeviceptr& lockedSurface) {
+void NvDecoder::UnlockSurface(std::shared_ptr<Surface> lockedSurface) {
   if (lockedSurface) {
     lock_guard<mutex> lock(p_impl->m_mtxVPFrame);
     p_impl->m_DecFramesCtxVec.push_back(
@@ -819,8 +807,7 @@ NvdecDecodeFrame::NvdecDecodeFrame(CUstream cuStream, CUcontext cuContext,
 }
 
 NvdecDecodeFrame::~NvdecDecodeFrame() {
-  auto lastSurface = pImpl->pLastSurface->PlanePtr();
-  pImpl->nvDecoder.UnlockSurface(lastSurface);
+  pImpl->nvDecoder.UnlockSurface(pImpl->pLastSurface);
   delete pImpl;
 }
 
@@ -879,43 +866,22 @@ TaskExecStatus NvdecDecodeFrame::Run() {
 
     if (isSurfaceReturned) {
       // Unlock last surface because we will use it later;
-      auto lastSurface = pImpl->pLastSurface->PlanePtr();
-      decoder.UnlockSurface(lastSurface);
+      decoder.UnlockSurface(pImpl->pLastSurface);
 
       // Update the reconstructed frame data;
       auto rawW = decoder.GetWidth();
       auto rawH = decoder.GetHeight() + decoder.GetChromaHeight();
       auto rawP = decoder.GetDeviceFramePitch();
 
-      // Element size for different bit depth;
-      auto elem_size = 0U;
-      switch (pImpl->nvDecoder.GetBitDepth()) {
-      case 8U:
-        elem_size = sizeof(uint8_t);
-        break;
-      case 10U:
-        elem_size = sizeof(uint16_t);
-        break;
-      case 12U:
-        elem_size = sizeof(uint16_t);
-        break;
-      default:
-        SetExecDetails(TaskExecDetails(TaskExecInfo::BIT_DEPTH_NOT_SUPPORTED));
-        return TaskExecStatus::TASK_EXEC_FAIL;
-      }
-
-      auto dlmt_ptr = SurfacePlane::DLPackContext::ToDLPackSmart(
-          rawW, rawH, rawP, elem_size, dec_ctx.mem, pImpl->TypeCode());
-      SurfacePlane tmpPlane(*dlmt_ptr.get());
-      SurfacePlane* tmpPlanes[] = {&tmpPlane};
-      pImpl->pLastSurface->Update(tmpPlanes, 1);
-      SetOutput(pImpl->pLastSurface, 0U);
+      // Update the last surface;
+      pImpl->pLastSurface = dec_ctx.mem;
+      SetOutput(pImpl->pLastSurface.get(), 0U);
 
       // Update the reconstructed frame timestamp;
       auto p_packet_data = pImpl->pPacketData->GetDataAs<PacketData>();
       memset(p_packet_data, 0, sizeof(*p_packet_data));
       *p_packet_data = dec_ctx.out_pdata;
-      SetOutput(pImpl->pPacketData, 1U);
+      SetOutput(pImpl->pPacketData.get(), 1U);
 
       {
         stringstream ss;

@@ -171,7 +171,7 @@ struct nv12_bgr final : public NppConvertSurface_Impl {
 
       CudaCtxPush ctxPush(cu_ctx);
       ThrowOnNppError(func(src_ctx.GetDataAs<Npp8u>().data(),
-                           src_ctx.GetPitch()[0], src_ctx.GetDataAs<Npp8u>()[0],
+                           src_ctx.GetPitch()[0], dst_ctx.GetDataAs<Npp8u>()[0],
                            dst_ctx.GetPitch()[0], src_ctx.GetSize(), nppCtx),
                       __LINE__);
     } catch (...) {

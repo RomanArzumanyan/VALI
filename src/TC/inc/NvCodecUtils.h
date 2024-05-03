@@ -71,6 +71,8 @@ AVPixelFormat toFfmpegPixelFormat(Pixel_Format fmt);
 
 Pixel_Format fromFfmpegPixelFormat(AVPixelFormat fmt);
 
+Pixel_Format fromCuvidSurfaceFormat(cudaVideoSurfaceFormat fmt, int bpp);
+
 AVColorSpace toFfmpegColorSpace(ColorSpace space);
 
 ColorSpace fromFfmpegColorSpace(AVColorSpace space);

@@ -136,6 +136,32 @@ size_t getBufferSize(int width, int height, AVPixelFormat format,
   return av_image_get_buffer_size(format, width, height, alignment);
 }
 
+Pixel_Format fromCuvidSurfaceFormat(cudaVideoSurfaceFormat fmt, , int bpp) {
+  if (cudaVideoSurfaceFormat_NV12 == fmt) {
+    return NV12;
+  }
+
+  if (cudaVideoSurfaceFormat_YUV444 == fmt) {
+    return YUV444;
+  }
+
+  if (cudaVideoSurfaceFormat_P016 == fmt) {
+    if (bpp == 10) {
+      return P10;
+    } else if (bpp == 12) {
+      return P12;
+    }
+  }
+
+  if (cudaVideoSurfaceFormat_YUV444_16Bit == fmt) {
+    if (bpp == 10) {
+      return YUV444_10bit;
+    }
+  }
+
+  return UNDEFINED;
+}
+
 static const std::vector<std::pair<Pixel_Format, AVPixelFormat>>
     formats({{UNDEFINED, AV_PIX_FMT_NONE},
              {Y, AV_PIX_FMT_GRAY8},

@@ -106,6 +106,33 @@ public:
     }
   };
 
+  /* Iterator over planes;
+   */
+  class SurfacePlaneIterator {
+    Surface* const m_surface;
+    size_t m_idx;
+
+  public:
+    SurfacePlaneIterator(Surface* self, size_t idx)
+        : m_surface(self), m_idx(idx) {}
+
+    bool operator!=(const SurfacePlaneIterator& other) {
+      return (m_surface != other.m_surface) && (m_idx != other.m_idx);
+    }
+
+    SurfacePlaneIterator operator++() {
+      ++m_idx;
+      return *this;
+    }
+
+    SurfacePlane& operator*() { return m_surface->GetSurfacePlane(m_idx); }
+  };
+
+  /* More iterator stuff;
+   */
+  SurfacePlaneIterator begin() { return SurfacePlaneIterator(this, 0U); }
+  SurfacePlaneIterator end() { return SurfacePlaneIterator(this, NumPlanes()); }
+
   /* Returns number of image planes;
    * In case of failure return 0U;
    */
@@ -181,6 +208,22 @@ public:
    * Usefull for all sorts of NPP operations;
    */
   NppContext GetNppContext();
+
+  /* Get SurfacePlane by reference. May throw;
+   */
+  SurfacePlane& GetSurfacePlane(uint32_t plane_number = 0U);
+
+  /* Copy Surface to single 2D memory chunk.
+   * All Surface Planes must have same pitch equal to that of 2D chunk;
+   */
+  void ToChunk2D(CUdeviceptr dst, CUstream str, size_t dst_pitch,
+                          bool async = false) const;
+
+  /* Copy single 2D memory chunk to Surface.
+   * All Surface Planes must have same pitch equal to that of 2D chunk;
+   */
+  void FromChunk2D(CUdeviceptr src, CUstream str, size_t src_pitch,
+                            bool async = false);
 
   /* Make empty;
    */

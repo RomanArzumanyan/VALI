@@ -132,64 +132,6 @@ void NvEncoderCuda::ReleaseCudaResources() {
   m_cuContext = nullptr;
 }
 
-void NvEncoderCuda::CopyToDeviceFrame(
-    CUcontext ctx, CUstream stream, void *pSrcFrame, uint32_t nSrcPitch,
-    CUdeviceptr pDstFrame, uint32_t dstPitch, int width, int height,
-    CUmemorytype srcMemoryType, NV_ENC_BUFFER_FORMAT pixelFormat,
-    const uint32_t dstChromaOffsets[], uint32_t numChromaPlanes) {
-  if (srcMemoryType != CU_MEMORYTYPE_HOST &&
-      srcMemoryType != CU_MEMORYTYPE_DEVICE) {
-    NVENC_THROW_ERROR("Invalid source memory type for copy",
-                      NV_ENC_ERR_INVALID_PARAM);
-  }
-
-  CudaCtxPush lock(ctx);
-
-  uint32_t srcPitch =
-      nSrcPitch ? nSrcPitch : NvEncoder::GetWidthInBytes(pixelFormat, width);
-  CUDA_MEMCPY2D m = {0};
-  m.srcMemoryType = srcMemoryType;
-  if (srcMemoryType == CU_MEMORYTYPE_HOST) {
-    m.srcHost = pSrcFrame;
-  } else {
-    m.srcDevice = (CUdeviceptr)pSrcFrame;
-  }
-  m.srcPitch = srcPitch;
-  m.dstMemoryType = CU_MEMORYTYPE_DEVICE;
-  m.dstDevice = pDstFrame;
-  m.dstPitch = dstPitch;
-  m.WidthInBytes = NvEncoder::GetWidthInBytes(pixelFormat, width);
-  m.Height = height;
-
-  CHECK_CUDA_CALL(cuMemcpy2DAsync(&m, stream));
-
-  vector<uint32_t> srcChromaOffsets;
-  NvEncoder::GetChromaSubPlaneOffsets(pixelFormat, srcPitch, height,
-                                      srcChromaOffsets);
-  uint32_t chromaHeight = NvEncoder::GetChromaHeight(pixelFormat, height);
-  uint32_t destChromaPitch = NvEncoder::GetChromaPitch(pixelFormat, dstPitch);
-  uint32_t srcChromaPitch = NvEncoder::GetChromaPitch(pixelFormat, srcPitch);
-  uint32_t chromaWidthInBytes =
-      NvEncoder::GetChromaWidthInBytes(pixelFormat, width);
-
-  for (uint32_t i = 0; i < numChromaPlanes; ++i) {
-    if (chromaHeight) {
-      if (srcMemoryType == CU_MEMORYTYPE_HOST) {
-        m.srcHost = ((uint8_t *)pSrcFrame + srcChromaOffsets[i]);
-      } else {
-        m.srcDevice = (CUdeviceptr)((uint8_t *)pSrcFrame + srcChromaOffsets[i]);
-      }
-      m.srcPitch = srcChromaPitch;
-
-      m.dstDevice = (CUdeviceptr)((uint8_t *)pDstFrame + dstChromaOffsets[i]);
-      m.dstPitch = destChromaPitch;
-      m.WidthInBytes = chromaWidthInBytes;
-      m.Height = chromaHeight;
-      CHECK_CUDA_CALL(cuMemcpy2DAsync(&m, stream));
-    }
-  }
-}
-
 NV_ENCODE_API_FUNCTION_LIST NvEncoderCuda::GetApi() const { return m_nvenc; }
 
 void *NvEncoderCuda::GetEncoder() const { return m_hEncoder; }
@@ -1154,8 +1096,7 @@ TaskExecStatus NvencEncodeFrame::Run() {
       auto &stream = pImpl->stream;
       const NvEncInputFrame *encoderInputFrame =
           pEncoderCuda->GetNextInputFrame();
-      auto width = input->Width(), height = input->Height(),
-           pitch = input->Pitch();
+      auto width = input->Width(), height = input->Height();
 
       bool is_resize_needed = (pEncoderCuda->GetEncodeWidth() != width) ||
                               (pEncoderCuda->GetEncodeHeight() != height);
@@ -1163,13 +1104,8 @@ TaskExecStatus NvencEncodeFrame::Run() {
       if (is_resize_needed) {
         return TaskExecStatus::TASK_EXEC_FAIL;
       } else {
-        NvEncoderCuda::CopyToDeviceFrame(
-            context, stream, (void *)input->PlanePtr(), pitch,
-            (CUdeviceptr)encoderInputFrame->inputPtr,
-            (int32_t)encoderInputFrame->pitch, pEncoderCuda->GetEncodeWidth(),
-            pEncoderCuda->GetEncodeHeight(), CU_MEMORYTYPE_DEVICE,
-            encoderInputFrame->bufferFormat, encoderInputFrame->chromaOffsets,
-            encoderInputFrame->numChromaPlanes);
+        input->ToChunk2D(encoderInputFrame->inputPtr, stream,
+                         encoderInputFrame->pitch);
       }
 
       auto pSEI = (Buffer *)GetInput(2U);

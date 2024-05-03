@@ -186,20 +186,22 @@ size_t Surface::HostMemSize() const noexcept {
 
 bool Surface::ValidatePlanes() {
   // Checks if all planes have same CUDA context;
-  auto cuda_ctx = planes.begin()->Context();
-  auto res = std::all_of(planes.begin(), planes.end(), [](SurfacePlane& plane) {
-    return plane.Context() == cuda_ctx;
-  });
+  auto cuda_ctx = m_planes.begin().m_plane.Context();
+  auto res = std::all_of(m_planes.begin(), m_planes.end(),
+                         [](SurfacePlaneContext& ctx) {
+                           return ctx.m_plane.Context() == cuda_ctx;
+                         });
 
   if (!res) {
     return false;
   }
 
   // Checks if all planes have same element size;
-  auto elem_size = planes.begin()->ElemSize();
-  res = std::all_of(planes.begin(), planes.end(), [](SurfacePlane& plane) {
-    return plane.ElemSize() == elem_size;
-  });
+  auto elem_size = m_planes.begin()->ElemSize();
+  res = std::all_of(m_planes.begin(), m_planes.end(),
+                    [](SurfacePlaneContext& ctx) {
+                      return ctx.m_plane.ElemSize() == elem_size;
+                    });
 
   if (!res) {
     return false;
@@ -300,6 +302,88 @@ NppContext Surface::GetNppContext() {
   m_size.height = Height();
 
   return ctx;
+}
+
+SurfacePlane& Surface::GetSurfacePlane(uint32_t plane_number = 0U) {
+  return m_planes.at(plane_number).m_plane;
+}
+
+void Surface::FromChunk2D(CUdeviceptr src, CUstream str, size_t src_pitch,
+                          bool async) {
+  res = std::all_of(m_planes.begin(), m_planes.end(),
+                    [](SurfacePlaneContext& plane_ctx) {
+                      return plane_ctx.m_plane.Pitch() == src_pitch;
+                    });
+
+  if (!res) {
+    throw std::runtime_error("Surface have planes with different pitches.");
+  }
+
+  CudaCtxPush ctxPush(plane.Context());
+  for (auto i = 0U; i < NumPlanes(); i++) {
+    SurfacePlane plane;
+    if (!GetSurfacePlane(plane, i)) {
+      throw std::runtime_error("Failed to get SurfacePlane.");
+    }
+
+    CUDA_MEMCPY2D m = {0};
+    m.srcMemoryType = CU_MEMORYTYPE_DEVICE;
+    m.srcDevice = src;
+    m.srcPitch = src_pitch;
+
+    m.dstMemoryType = CU_MEMORYTYPE_DEVICE;
+    m.dstDevice = plane.GpuMem();
+    m.dstPitch = plane.Pitch();
+
+    m.Height = plane.Height();
+    m.WidthInBytes = plane.Width() * plane.ElemSize();
+
+    ThrowOnCudaError(cuMemcpy2DAsync(&m, str), __LINE__);
+    dpSrcFrame += m.srcPitch * m.Height;
+  }
+
+  if (!async) {
+    ThrowOnCudaError(cuStreamSynchronize(str), __LINE__);
+  }
+}
+
+void Surface::ToChunk2D(CUdeviceptr dst, CUstream str, size_t dst_pitch,
+                        bool async = false) const {
+  res = std::all_of(m_planes.begin(), m_planes.end(),
+                    [](SurfacePlaneContext& plane_ctx) {
+                      return plane_ctx.m_plane.Pitch() == dst_pitch;
+                    });
+
+  if (!res) {
+    throw std::runtime_error("Surface have planes with different pitches.");
+  }
+
+  CudaCtxPush ctxPush(plane.Context());
+  for (auto i = 0U; i < NumPlanes(); i++) {
+    SurfacePlane plane;
+    if (!GetSurfacePlane(plane, i)) {
+      throw std::runtime_error("Failed to get SurfacePlane.");
+    }
+
+    CUDA_MEMCPY2D m = {0};
+    m.srcMemoryType = CU_MEMORYTYPE_DEVICE;
+    m.srcDevice = plane.GpuMem();
+    m.srcPitch = plane.Pitch();
+
+    m.dstMemoryType = CU_MEMORYTYPE_DEVICE;
+    m.dstDevice = dst;
+    m.dstPitch = dst_pitch;
+
+    m.Height = plane.Height();
+    m.WidthInBytes = plane.Width() * plane.ElemSize();
+
+    ThrowOnCudaError(cuMemcpy2DAsync(&m, str), __LINE__);
+    dpSrcFrame += m.srcPitch * m.Height;
+  }
+
+  if (!async) {
+    ThrowOnCudaError(cuStreamSynchronize(str), __LINE__);
+  }
 }
 
 } // namespace VPF

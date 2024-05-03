@@ -46,12 +46,6 @@ public:
 
   ~NvEncoderCuda() override;
 
-  static void CopyToDeviceFrame(
-      CUcontext device, CUstream stream, void *pSrcFrame, uint32_t nSrcPitch,
-      CUdeviceptr pDstFrame, uint32_t dstPitch, int width, int height,
-      CUmemorytype srcMemoryType, NV_ENC_BUFFER_FORMAT pixelFormat,
-      const uint32_t dstChromaOffsets[], uint32_t numChromaPlanes);
-
   NV_ENCODE_API_FUNCTION_LIST GetApi() const;
 
   void* GetEncoder() const;
