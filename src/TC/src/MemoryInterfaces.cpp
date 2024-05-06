@@ -847,6 +847,14 @@ bool SurfaceYUV444::Update(SurfacePlane** pPlanes, size_t planesNum) {
   return false;
 }
 
+SurfaceYUV444_10bit::SurfaceYUV444_10bit() : SurfaceYUV444() {}
+
+SurfaceYUV444_10bit::SurfaceYUV444_10bit(uint32_t width, uint32_t height,
+                                         CUcontext context)
+    : SurfaceYUV444(width, height, context) {}
+
+Surface* VPF::SurfaceYUV444_10bit::Create() { return new SurfaceYUV444_10bit; }
+
 SurfaceRGB::~SurfaceRGB() = default;
 
 SurfaceRGB::SurfaceRGB() = default;
@@ -1247,17 +1255,6 @@ bool SurfaceRGB32FPlanar::Update(SurfacePlane** pPlanes, size_t planesNum) {
 SurfacePlane* SurfaceRGB32FPlanar::GetSurfacePlane(uint32_t planeNumber) {
   return planeNumber ? nullptr : &plane;
 }
-
-SurfaceYUV444_10bit::SurfaceYUV444_10bit() : SurfaceRGBPlanar() {}
-
-SurfaceYUV444_10bit::SurfaceYUV444_10bit(const SurfaceYUV444_10bit& other)
-    : SurfaceRGBPlanar(other) {}
-
-SurfaceYUV444_10bit::SurfaceYUV444_10bit(uint32_t width, uint32_t height,
-                                         CUcontext context)
-    : SurfaceRGBPlanar(width, height, sizeof(uint16_t), context) {}
-
-Surface* VPF::SurfaceYUV444_10bit::Create() { return new SurfaceYUV444_10bit; }
 
 SurfaceP12::SurfaceP12(const SurfaceP12& other) : plane(other.plane) {}
 
