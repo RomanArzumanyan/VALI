@@ -779,6 +779,74 @@ bool SurfaceYUV422::Update(SurfacePlane** pPlanes, size_t planesNum) {
   return false;
 }
 
+SurfaceYUV444::SurfaceYUV444() {
+  m_planes.clear();
+  for (auto i = 0; i < NumPlanes(); i++) {
+    m_planes.emplace_back();
+  }
+}
+
+SurfaceYUV444::SurfaceYUV444(uint32_t width, uint32_t height,
+                             CUcontext context) {
+  m_planes.clear();
+  /* Need to reserve place, otherwise vector may reallocate and SurfacePlane
+   * instances will be copied to new address loosing the memory ownership. Sic!
+   */
+  m_planes.reserve(NumPlanes());
+  for (auto i = 0; i < NumPlanes(); i++) {
+    m_planes.emplace_back(width, height, ElemSize(), DataType(), context);
+  }
+}
+
+Surface* SurfaceYUV444::Create() { return new SurfaceYUV444; }
+
+uint32_t SurfaceYUV444::Width(uint32_t plane) const {
+  return m_planes.at(plane).Width();
+}
+
+uint32_t SurfaceYUV444::WidthInBytes(uint32_t plane) const {
+  return Width(plane) * ElemSize();
+}
+
+uint32_t SurfaceYUV444::Height(uint32_t plane) const {
+  return m_planes.at(plane).Height();
+}
+
+uint32_t SurfaceYUV444::Pitch(uint32_t plane) const {
+  return m_planes.at(plane).Pitch();
+}
+
+CUdeviceptr SurfaceYUV444::PlanePtr(uint32_t plane) {
+  return m_planes.at(plane).GpuMem();
+}
+
+SurfacePlane* SurfaceYUV444::GetSurfacePlane(uint32_t plane) {
+  try {
+    return &m_planes.at(plane);
+  } catch (...) {
+    return nullptr;
+  }
+}
+
+bool SurfaceYUV444::Update(SurfacePlane& newPlaneY, SurfacePlane& newPlaneU,
+                           SurfacePlane& newPlaneV) {
+  SurfacePlane* planes[] = {&newPlaneY, &newPlaneU, &newPlaneV};
+  return Update(planes, 3);
+}
+
+bool SurfaceYUV444::Update(SurfacePlane** pPlanes, size_t planesNum) {
+  if (OwnMemory() || !ValidatePlanes(pPlanes, planesNum, ElemSize(), 3)) {
+    return false;
+  }
+
+  for (auto i = 0; i < NumPlanes(); i++) {
+    m_planes.at(i) = *pPlanes[i];
+    return true;
+  }
+
+  return false;
+}
+
 SurfaceRGB::~SurfaceRGB() = default;
 
 SurfaceRGB::SurfaceRGB() = default;
@@ -1019,16 +1087,6 @@ SurfacePlane* SurfaceRGBPlanar::GetSurfacePlane(uint32_t planeNumber) {
   // return planeNumber ? nullptr : &plane;
   return planeNumber < NumPlanes() ? &plane : nullptr;
 }
-
-SurfaceYUV444::SurfaceYUV444() : SurfaceRGBPlanar() {}
-
-SurfaceYUV444::SurfaceYUV444(const SurfaceYUV444& other)
-    : SurfaceRGBPlanar(other) {}
-
-SurfaceYUV444::SurfaceYUV444(uint32_t width, uint32_t height, CUcontext context)
-    : SurfaceRGBPlanar(width, height, context) {}
-
-Surface* VPF::SurfaceYUV444::Create() { return new SurfaceYUV444; }
 
 SurfaceRGB32F::~SurfaceRGB32F() = default;
 

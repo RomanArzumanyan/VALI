@@ -364,6 +364,36 @@ public:
   SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) override;
 };
 
+class TC_EXPORT SurfaceYUV444 : public Surface {
+public:
+  virtual ~SurfaceYUV444() = default;
+  SurfaceYUV444(const SurfaceYUV444& other) = delete;
+  SurfaceYUV444(SurfaceYUV444&& other) = delete;
+  SurfaceYUV444& operator=(const SurfaceYUV444& other) = delete;
+  SurfaceYUV444& operator=(SurfaceYUV444&& other) = delete;
+
+  SurfaceYUV444();
+  SurfaceYUV444(uint32_t width, uint32_t height, CUcontext context);
+
+  virtual Surface* Create() override;
+
+  uint32_t Width(uint32_t planeNumber = 0U) const override;
+  uint32_t WidthInBytes(uint32_t planeNumber = 0U) const override;
+  uint32_t Height(uint32_t planeNumber = 0U) const override;
+  uint32_t Pitch(uint32_t planeNumber = 0U) const override;
+
+  CUdeviceptr PlanePtr(uint32_t planeNumber = 0U) override;
+  virtual Pixel_Format PixelFormat() const override { return YUV422; }
+  uint32_t NumPlanes() const override { return 3; }
+  uint32_t ElemSize() const override { return sizeof(uint8_t); }
+  DLDataTypeCode DataType() const override { return kDLUInt; }
+
+  bool Update(SurfacePlane& newPlaneY, SurfacePlane& newPlaneU,
+              SurfacePlane& newPlaneV);
+  bool Update(SurfacePlane** pPlanes, size_t planesNum) override;
+  SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) override;
+};
+
 class TC_EXPORT SurfaceP10 : public Surface {
 public:
   ~SurfaceP10() = default;
@@ -534,18 +564,6 @@ public:
 
 protected:
   SurfacePlane plane;
-};
-
-class TC_EXPORT SurfaceYUV444 : public SurfaceRGBPlanar {
-public:
-  Pixel_Format PixelFormat() const override { return YUV444; }
-
-  SurfaceYUV444();
-  SurfaceYUV444(const SurfaceYUV444& other);
-  SurfaceYUV444(uint32_t width, uint32_t height, CUcontext context);
-  SurfaceYUV444& operator=(const SurfaceYUV444& other);
-
-  Surface* Create() override;
 };
 
 #ifdef TRACK_TOKEN_ALLOCATIONS
