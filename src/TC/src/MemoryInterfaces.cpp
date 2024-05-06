@@ -702,103 +702,62 @@ bool SurfaceYUV420::Update(SurfacePlane** pPlanes, size_t planesNum) {
 }
 
 SurfacePlane* SurfaceYUV420::GetSurfacePlane(uint32_t plane) {
-  if (plane < NumPlanes()) {
+  try {
     return &m_planes.at(plane);
+  } catch (...) {
+    return nullptr;
   }
-
-  return nullptr;
 }
 
-SurfaceYUV422::~SurfaceYUV422() = default;
+SurfaceYUV422::SurfaceYUV422() {
+  m_planes.clear();
+  for (auto i = 0; i < NumPlanes(); i++) {
+    m_planes.emplace_back();
+  }
+}
 
-SurfaceYUV422::SurfaceYUV422() = default;
-
-SurfaceYUV422::SurfaceYUV422(const SurfaceYUV422& other)
-    : planeY(other.planeY), planeU(other.planeU), planeV(other.planeV) {}
-
-SurfaceYUV422::SurfaceYUV422(uint32_t width, uint32_t height, CUcontext context)
-    : planeY(width, height, ElemSize(), DataType(), context),
-      planeU(width / 2, height, ElemSize(), DataType(), context),
-      planeV(width / 2, height, ElemSize(), DataType(), context) {}
-
-SurfaceYUV422& SurfaceYUV422::operator=(const SurfaceYUV422& other) {
-  planeY = other.planeY;
-  planeU = other.planeU;
-  planeV = other.planeV;
-
-  return *this;
+SurfaceYUV422::SurfaceYUV422(uint32_t width, uint32_t height,
+                             CUcontext context) {
+  m_planes.clear();
+  /* Need to reserve place, otherwise vector may reallocate and SurfacePlane
+   * instances will be copied to new address loosing the memory ownership. Sic!
+   */
+  m_planes.reserve(NumPlanes());
+  // Y plane, full size;
+  m_planes.emplace_back(width, height, ElemSize(), DataType(), context);
+  // U and V planes, decimated size;
+  m_planes.emplace_back(width / 2, height, ElemSize(), DataType(), context);
+  m_planes.emplace_back(width / 2, height, ElemSize(), DataType(), context);
 }
 
 Surface* SurfaceYUV422::Create() { return new SurfaceYUV422; }
 
-uint32_t SurfaceYUV422::Width(uint32_t planeNumber) const {
-  switch (planeNumber) {
-  case 0:
-    return planeY.Width();
-  case 1:
-    return planeU.Width();
-  case 2:
-    return planeV.Width();
-  default:
-    break;
-  }
-  throw invalid_argument("Invalid plane number");
+uint32_t SurfaceYUV422::Width(uint32_t plane) const {
+  return m_planes.at(plane).Width();
 }
 
-uint32_t SurfaceYUV422::WidthInBytes(uint32_t planeNumber) const {
-  switch (planeNumber) {
-  case 0:
-    return planeY.Width() * planeY.ElemSize();
-  case 1:
-    return planeU.Width() * planeU.ElemSize();
-  case 2:
-    return planeV.Width() * planeV.ElemSize();
-  default:
-    break;
-  }
-  throw invalid_argument("Invalid plane number");
+uint32_t SurfaceYUV422::WidthInBytes(uint32_t plane) const {
+  return Width(plane) * ElemSize();
 }
 
-uint32_t SurfaceYUV422::Height(uint32_t planeNumber) const {
-  switch (planeNumber) {
-  case 0:
-    return planeY.Height();
-  case 1:
-    return planeU.Height();
-  case 2:
-    return planeV.Height();
-  default:
-    break;
-  }
-  throw invalid_argument("Invalid plane number");
+uint32_t SurfaceYUV422::Height(uint32_t plane) const {
+  return m_planes.at(plane).Height();
 }
 
-uint32_t SurfaceYUV422::Pitch(uint32_t planeNumber) const {
-  switch (planeNumber) {
-  case 0:
-    return planeY.Pitch();
-  case 1:
-    return planeU.Pitch();
-  case 2:
-    return planeV.Pitch();
-  default:
-    break;
-  }
-  throw invalid_argument("Invalid plane number");
+uint32_t SurfaceYUV422::Pitch(uint32_t plane) const {
+  return m_planes.at(plane).Pitch();
 }
 
-CUdeviceptr SurfaceYUV422::PlanePtr(uint32_t planeNumber) {
-  switch (planeNumber) {
-  case 0:
-    return planeY.GpuMem();
-  case 1:
-    return planeU.GpuMem();
-  case 2:
-    return planeV.GpuMem();
-  default:
-    break;
+CUdeviceptr SurfaceYUV422::PlanePtr(uint32_t plane) {
+  return m_planes.at(plane).GpuMem();
+}
+
+SurfacePlane* SurfaceYUV422::GetSurfacePlane(uint32_t plane) {
+  try {
+    return &m_planes.at(plane);
+  } catch (...) {
+    return nullptr;
   }
-  throw invalid_argument("Invalid plane number");
 }
 
 bool SurfaceYUV422::Update(SurfacePlane& newPlaneY, SurfacePlane& newPlaneU,
@@ -808,35 +767,16 @@ bool SurfaceYUV422::Update(SurfacePlane& newPlaneY, SurfacePlane& newPlaneU,
 }
 
 bool SurfaceYUV422::Update(SurfacePlane** pPlanes, size_t planesNum) {
-  if (!ValidatePlanes(pPlanes, planesNum, ElemSize(), 3)) {
+  if (OwnMemory() || !ValidatePlanes(pPlanes, planesNum, ElemSize(), 3)) {
     return false;
   }
 
-  bool ownMemory =
-      planeY.OwnMemory() || planeU.OwnMemory() || planeV.OwnMemory();
-
-  if (!ownMemory) {
-    planeY = *pPlanes[0];
-    planeU = *pPlanes[1];
-    planeV = *pPlanes[2];
-
+  for (auto i = 0; i < NumPlanes(); i++) {
+    m_planes.at(i) = *pPlanes[i];
     return true;
   }
 
   return false;
-}
-
-SurfacePlane* SurfaceYUV422::GetSurfacePlane(uint32_t planeNumber) {
-  switch (planeNumber) {
-  case 0U:
-    return &planeY;
-  case 1U:
-    return &planeU;
-  case 2U:
-    return &planeV;
-  default:
-    return nullptr;
-  }
 }
 
 SurfaceRGB::~SurfaceRGB() = default;
