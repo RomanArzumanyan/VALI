@@ -942,6 +942,13 @@ SurfaceBGR::SurfaceBGR(uint32_t width, uint32_t height, CUcontext context)
 
 Surface* VPF::SurfaceBGR::Create() { return new SurfaceBGR; }
 
+SurfaceRGB32F::SurfaceRGB32F() : SurfaceRGB() {}
+
+SurfaceRGB32F::SurfaceRGB32F(uint32_t width, uint32_t height, CUcontext context)
+    : SurfaceRGB(width, height, ElemSize(), context) {}
+
+Surface* VPF::SurfaceRGB32F::Create() { return new SurfaceRGB32F; }
+
 SurfaceRGBPlanar::SurfaceRGBPlanar() {
   m_planes.clear();
   m_planes.emplace_back();
@@ -1002,162 +1009,10 @@ bool SurfaceRGBPlanar::Update(SurfacePlane** pPlanes, size_t planesNum) {
   return false;
 }
 
-SurfaceRGB32F::~SurfaceRGB32F() = default;
-
-SurfaceRGB32F::SurfaceRGB32F() = default;
-
-SurfaceRGB32F::SurfaceRGB32F(const SurfaceRGB32F& other) : plane(other.plane) {}
-
-SurfaceRGB32F::SurfaceRGB32F(uint32_t width, uint32_t height, CUcontext context)
-    : plane(width * 3, height, ElemSize(), DataType(), context) {}
-
-SurfaceRGB32F& SurfaceRGB32F::operator=(const SurfaceRGB32F& other) {
-  plane = other.plane;
-  return *this;
-}
-
-Surface* SurfaceRGB32F::Create() { return new SurfaceRGB32F; }
-
-uint32_t SurfaceRGB32F::Width(uint32_t planeNumber) const {
-  if (planeNumber < NumPlanes()) {
-    return plane.Width() / 3;
-  }
-
-  throw invalid_argument("Invalid plane number");
-}
-
-uint32_t SurfaceRGB32F::WidthInBytes(uint32_t planeNumber) const {
-  if (planeNumber < NumPlanes()) {
-    return plane.Width() * plane.ElemSize();
-  }
-
-  throw invalid_argument("Invalid plane number");
-}
-
-uint32_t SurfaceRGB32F::Height(uint32_t planeNumber) const {
-  if (planeNumber < NumPlanes()) {
-    return plane.Height();
-  }
-
-  throw invalid_argument("Invalid plane number");
-}
-
-uint32_t SurfaceRGB32F::Pitch(uint32_t planeNumber) const {
-  if (planeNumber < NumPlanes()) {
-    return plane.Pitch();
-  }
-
-  throw invalid_argument("Invalid plane number");
-}
-
-CUdeviceptr SurfaceRGB32F::PlanePtr(uint32_t planeNumber) {
-  if (planeNumber < NumPlanes()) {
-    return plane.GpuMem();
-  }
-
-  throw invalid_argument("Invalid plane number");
-}
-
-bool SurfaceRGB32F::Update(SurfacePlane& newPlane) {
-  SurfacePlane* planes[] = {&newPlane};
-  return Update(planes, 1);
-}
-
-bool SurfaceRGB32F::Update(SurfacePlane** pPlanes, size_t planesNum) {
-  if (!ValidatePlanes(pPlanes, planesNum, ElemSize(), 1)) {
-    return false;
-  }
-
-  if (!plane.OwnMemory()) {
-    plane = *pPlanes[0];
-    return true;
-  }
-
-  return false;
-}
-
-SurfacePlane* SurfaceRGB32F::GetSurfacePlane(uint32_t planeNumber) {
-  return planeNumber ? nullptr : &plane;
-}
-
-SurfaceRGB32FPlanar::~SurfaceRGB32FPlanar() = default;
-
-SurfaceRGB32FPlanar::SurfaceRGB32FPlanar() = default;
-
-SurfaceRGB32FPlanar::SurfaceRGB32FPlanar(const SurfaceRGB32FPlanar& other)
-    : plane(other.plane) {}
+SurfaceRGB32FPlanar::SurfaceRGB32FPlanar() : SurfaceRGBPlanar() {}
 
 SurfaceRGB32FPlanar::SurfaceRGB32FPlanar(uint32_t width, uint32_t height,
                                          CUcontext context)
-    : plane(width, height * 3, ElemSize(), DataType(), context) {}
+    : SurfaceRGBPlanar(width, height, ElemSize(), context) {}
 
-SurfaceRGB32FPlanar&
-SurfaceRGB32FPlanar::operator=(const SurfaceRGB32FPlanar& other) {
-  plane = other.plane;
-  return *this;
-}
-
-Surface* SurfaceRGB32FPlanar::Create() { return new SurfaceRGB32FPlanar; }
-
-uint32_t SurfaceRGB32FPlanar::Width(uint32_t planeNumber) const {
-  if (planeNumber < NumPlanes()) {
-    return plane.Width();
-  }
-
-  throw invalid_argument("Invalid plane number");
-}
-
-uint32_t SurfaceRGB32FPlanar::WidthInBytes(uint32_t planeNumber) const {
-  if (planeNumber < NumPlanes()) {
-    return plane.Width() * plane.ElemSize();
-  }
-
-  throw invalid_argument("Invalid plane number");
-}
-
-uint32_t SurfaceRGB32FPlanar::Height(uint32_t planeNumber) const {
-  if (planeNumber < NumPlanes()) {
-    return plane.Height() / 3;
-  }
-
-  throw invalid_argument("Invalid plane number");
-}
-
-uint32_t SurfaceRGB32FPlanar::Pitch(uint32_t planeNumber) const {
-  if (planeNumber < NumPlanes()) {
-    return plane.Pitch();
-  }
-
-  throw invalid_argument("Invalid plane number");
-}
-
-CUdeviceptr SurfaceRGB32FPlanar::PlanePtr(uint32_t planeNumber) {
-  if (planeNumber < NumPlanes()) {
-    auto dptr = plane.GpuMem();
-    return dptr + planeNumber * Height() * plane.Pitch();
-  }
-
-  throw invalid_argument("Invalid plane number");
-}
-
-bool SurfaceRGB32FPlanar::Update(SurfacePlane& newPlane) {
-  SurfacePlane* planes[] = {&newPlane};
-  return Update(planes, 1);
-}
-
-bool SurfaceRGB32FPlanar::Update(SurfacePlane** pPlanes, size_t planesNum) {
-  if (!ValidatePlanes(pPlanes, planesNum, ElemSize(), 1)) {
-    return false;
-  }
-
-  if (!plane.OwnMemory()) {
-    plane = *pPlanes[0];
-    return true;
-  }
-
-  return false;
-}
-
-SurfacePlane* SurfaceRGB32FPlanar::GetSurfacePlane(uint32_t planeNumber) {
-  return planeNumber ? nullptr : &plane;
-}
+Surface* VPF::SurfaceRGB32FPlanar::Create() { return new SurfaceRGB32FPlanar; }
