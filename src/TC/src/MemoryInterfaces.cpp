@@ -935,83 +935,12 @@ bool SurfaceRGB::Update(SurfacePlane** pPlanes, size_t planesNum) {
   return false;
 }
 
-SurfaceBGR::~SurfaceBGR() = default;
-
-SurfaceBGR::SurfaceBGR() = default;
-
-SurfaceBGR::SurfaceBGR(const SurfaceBGR& other) : plane(other.plane) {}
+SurfaceBGR::SurfaceBGR() : SurfaceRGB() {}
 
 SurfaceBGR::SurfaceBGR(uint32_t width, uint32_t height, CUcontext context)
-    : plane(width * 3, height, ElemSize(), DataType(), context) {}
+    : SurfaceRGB(width, height, context) {}
 
-SurfaceBGR& SurfaceBGR::operator=(const SurfaceBGR& other) {
-  plane = other.plane;
-  return *this;
-}
-
-Surface* SurfaceBGR::Create() { return new SurfaceBGR; }
-
-uint32_t SurfaceBGR::Width(uint32_t planeNumber) const {
-  if (planeNumber < NumPlanes()) {
-    return plane.Width() / 3;
-  }
-
-  throw invalid_argument("Invalid plane number");
-}
-
-uint32_t SurfaceBGR::WidthInBytes(uint32_t planeNumber) const {
-  if (planeNumber < NumPlanes()) {
-    return plane.Width() * plane.ElemSize();
-  }
-
-  throw invalid_argument("Invalid plane number");
-}
-
-uint32_t SurfaceBGR::Height(uint32_t planeNumber) const {
-  if (planeNumber < NumPlanes()) {
-    return plane.Height();
-  }
-
-  throw invalid_argument("Invalid plane number");
-}
-
-uint32_t SurfaceBGR::Pitch(uint32_t planeNumber) const {
-  if (planeNumber < NumPlanes()) {
-    return plane.Pitch();
-  }
-
-  throw invalid_argument("Invalid plane number");
-}
-
-CUdeviceptr SurfaceBGR::PlanePtr(uint32_t planeNumber) {
-  if (planeNumber < NumPlanes()) {
-    return plane.GpuMem();
-  }
-
-  throw invalid_argument("Invalid plane number");
-}
-
-bool SurfaceBGR::Update(SurfacePlane& newPlane) {
-  SurfacePlane* planes[] = {&newPlane};
-  return Update(planes, 1);
-}
-
-bool SurfaceBGR::Update(SurfacePlane** pPlanes, size_t planesNum) {
-  if (!ValidatePlanes(pPlanes, planesNum, ElemSize(), 1)) {
-    return false;
-  }
-
-  if (!plane.OwnMemory()) {
-    plane = *pPlanes[0];
-    return true;
-  }
-
-  return false;
-}
-
-SurfacePlane* SurfaceBGR::GetSurfacePlane(uint32_t planeNumber) {
-  return planeNumber ? nullptr : &plane;
-}
+Surface* VPF::SurfaceBGR::Create() { return new SurfaceBGR; }
 
 SurfaceRGBPlanar::~SurfaceRGBPlanar() = default;
 
