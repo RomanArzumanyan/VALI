@@ -67,6 +67,13 @@ struct ColorspaceConversionContext {
       : color_space(cspace), color_range(crange) {}
 };
 
+#ifdef TRACK_TOKEN_ALLOCATIONS
+/* Returns true if allocation counters are equal to zero, false otherwise;
+ * If you want to check for dangling pointers, call this function at exit;
+ */
+bool TC_EXPORT CheckAllocationCounters();
+#endif
+
 /* Represents CPU-side memory.
  * May own the memory or be a wrapper around existing ponter;
  */
@@ -342,7 +349,7 @@ public:
 
 /* 8-bit YUV420P image;
  */
-class TC_EXPORT SurfaceYUV420 final: public Surface {
+class TC_EXPORT SurfaceYUV420 final : public Surface {
 public:
   virtual ~SurfaceYUV420() = default;
   SurfaceYUV420(const SurfaceYUV420& other) = delete;
@@ -437,7 +444,7 @@ protected:
                 CUcontext context);
 };
 
-class TC_EXPORT SurfaceYUV444_10bit final: public SurfaceYUV444 {
+class TC_EXPORT SurfaceYUV444_10bit final : public SurfaceYUV444 {
 public:
   virtual ~SurfaceYUV444_10bit() = default;
   SurfaceYUV444_10bit(const SurfaceYUV444_10bit& other) = delete;
@@ -486,7 +493,7 @@ public:
 protected:
   // For high bit depth ancestors;
   SurfaceRGB(uint32_t width, uint32_t height, uint32_t hbd_elem_size,
-                CUcontext context);
+             CUcontext context);
 };
 
 /* 8-bit BGR image;
@@ -511,44 +518,37 @@ public:
  */
 class TC_EXPORT SurfaceRGBPlanar : public Surface {
 public:
-  ~SurfaceRGBPlanar();
+  virtual ~SurfaceRGBPlanar() = default;
+  SurfaceRGBPlanar(const SurfaceRGBPlanar& other) = delete;
+  SurfaceRGBPlanar(SurfaceRGBPlanar&& other) = delete;
+  SurfaceRGBPlanar& operator=(const SurfaceRGBPlanar& other) = delete;
+  SurfaceRGBPlanar& operator=(SurfaceRGBPlanar&& other) = delete;
 
   SurfaceRGBPlanar();
-  SurfaceRGBPlanar(const SurfaceRGBPlanar& other);
   SurfaceRGBPlanar(uint32_t width, uint32_t height, CUcontext context);
-  SurfaceRGBPlanar(uint32_t width, uint32_t height, uint32_t elemSize,
-                   CUcontext context);
-  SurfaceRGBPlanar& operator=(const SurfaceRGBPlanar& other);
 
   virtual Surface* Create() override;
-
-  uint32_t Width(uint32_t planeNumber = 0U) const override;
-  uint32_t WidthInBytes(uint32_t planeNumber = 0U) const override;
-  uint32_t Height(uint32_t planeNumber = 0U) const override;
-  uint32_t Pitch(uint32_t planeNumber = 0U) const override;
+  virtual Pixel_Format PixelFormat() const override { return RGB_PLANAR; }
   virtual uint32_t ElemSize() const override { return sizeof(uint8_t); }
 
-  CUdeviceptr PlanePtr(uint32_t planeNumber = 0U) override;
-  Pixel_Format PixelFormat() const override { return RGB_PLANAR; }
-  uint32_t NumPlanes() const override { return 1; }
-  bool Empty() const override { return 0UL == plane.GpuMem(); }
-  DLDataTypeCode DataType() const override { return kDLUInt; }
+  uint32_t Width(uint32_t planeNumber = 0U) const;
+  uint32_t WidthInBytes(uint32_t planeNumber = 0U) const;
+  uint32_t Height(uint32_t planeNumber = 0U) const;
+  uint32_t Pitch(uint32_t planeNumber = 0U) const;
+  uint32_t NumPlanes() const { return 3; }
+  DLDataTypeCode DataType() const { return kDLUInt; }
+
+  CUdeviceptr PlanePtr(uint32_t planeNumber = 0U);
+  SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U);
 
   bool Update(SurfacePlane& newPlane);
-  bool Update(SurfacePlane** pPlanes, size_t planesNum) override;
-  SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) override;
-  virtual uint32_t HostMemSize() const override { return plane.HostMemSize(); }
+  bool Update(SurfacePlane** pPlanes, size_t planesNum);
 
 protected:
-  SurfacePlane plane;
+  // For high bit depth ancestors;
+  SurfaceRGBPlanar(uint32_t width, uint32_t height, uint32_t hbd_elem_size,
+                   CUcontext context);
 };
-
-#ifdef TRACK_TOKEN_ALLOCATIONS
-/* Returns true if allocation counters are equal to zero, false otherwise;
- * If you want to check for dangling pointers, call this function at exit;
- */
-bool TC_EXPORT CheckAllocationCounters();
-#endif
 
 /* 32-bit float RGB image;
  */
