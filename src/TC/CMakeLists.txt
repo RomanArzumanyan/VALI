@@ -68,6 +68,7 @@ add_library(
     src/Utils.cpp
     src/SurfacePlane.cpp
     src/CudaUtils.cpp
+    src/Surfaces.cpp
 )
 
 if (WIN32)

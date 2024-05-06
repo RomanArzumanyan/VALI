@@ -555,7 +555,7 @@ NvDecoder::NvDecoder(CUstream cuStream, CUcontext cuContext,
 #ifdef _WIN32
                                      "nvcuvid.dll");
 #else
-                                      "libnvcuvid.so.1");
+                                     "libnvcuvid.so.1");
 #endif
   if (err) {
     constexpr const char* explanation =
@@ -909,8 +909,7 @@ TaskExecStatus NvdecDecodeFrame::Run() {
       auto dlmt_ptr = SurfacePlane::DLPackContext::ToDLPackSmart(
           rawW, rawH, rawP, elem_size, dec_ctx.mem, pImpl->TypeCode());
       SurfacePlane tmpPlane(*dlmt_ptr.get());
-      SurfacePlane* tmpPlanes[] = {&tmpPlane};
-      pImpl->pLastSurface->Update(tmpPlanes, 1);
+      pImpl->pLastSurface->Update({&tmpPlane});
       SetOutput(pImpl->pLastSurface, 0U);
 
       // Update the reconstructed frame timestamp;

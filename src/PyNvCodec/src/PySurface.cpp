@@ -314,8 +314,7 @@ void Init_PySurface(py::module& m) {
             }
 
             auto surface_plane = SurfacePlane(*managed);
-            SurfacePlane* planes[] = {&surface_plane};
-            surface->Update(planes, 1U);
+            surface->Update({&surface_plane});
             return surface;
           },
           py::arg("capsule"), py::arg("format") = Pixel_Format::RGB,

@@ -12,7 +12,7 @@
  */
 
 #include "CodecsSupport.hpp"
-#include "MemoryInterfaces.hpp"
+#include "Surfaces.hpp"
 #include "NppCommon.hpp"
 #include "NvCodecUtils.h"
 #include "Tasks.hpp"
