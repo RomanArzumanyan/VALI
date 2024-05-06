@@ -877,60 +877,44 @@ SurfaceYUV444_10bit::SurfaceYUV444_10bit(uint32_t width, uint32_t height,
 
 Surface* VPF::SurfaceYUV444_10bit::Create() { return new SurfaceYUV444_10bit; }
 
-SurfaceRGB::~SurfaceRGB() = default;
-
-SurfaceRGB::SurfaceRGB() = default;
-
-SurfaceRGB::SurfaceRGB(const SurfaceRGB& other) : plane(other.plane) {}
+SurfaceRGB::SurfaceRGB() {
+  m_planes.clear();
+  m_planes.emplace_back();
+}
 
 SurfaceRGB::SurfaceRGB(uint32_t width, uint32_t height, CUcontext context)
-    : plane(width * 3, height, ElemSize(), DataType(), context) {}
+    : SurfaceRGB(width, height, ElemSize(), context) {}
 
-SurfaceRGB& SurfaceRGB::operator=(const SurfaceRGB& other) {
-  plane = other.plane;
-  return *this;
+SurfaceRGB::SurfaceRGB(uint32_t width, uint32_t height, uint32_t hbd_elem_size,
+                       CUcontext context) {
+  m_planes.clear();
+  m_planes.emplace_back(width * 3, height, hbd_elem_size, DataType(), context);
 }
 
 Surface* SurfaceRGB::Create() { return new SurfaceRGB; }
 
-uint32_t SurfaceRGB::Width(uint32_t planeNumber) const {
-  if (planeNumber < NumPlanes()) {
-    return plane.Width() / 3;
-  }
-
-  throw invalid_argument("Invalid plane number");
+uint32_t SurfaceRGB::Width(uint32_t plane) const {
+  return m_planes.at(plane).Width() / 3;
 }
 
-uint32_t SurfaceRGB::WidthInBytes(uint32_t planeNumber) const {
-  if (planeNumber < NumPlanes()) {
-    return plane.Width() * plane.ElemSize();
-  }
-
-  throw invalid_argument("Invalid plane number");
+uint32_t SurfaceRGB::WidthInBytes(uint32_t plane) const {
+  return m_planes.at(plane).Width() * ElemSize();
 }
 
-uint32_t SurfaceRGB::Height(uint32_t planeNumber) const {
-  if (planeNumber < NumPlanes()) {
-    return plane.Height();
-  }
-
-  throw invalid_argument("Invalid plane number");
+uint32_t SurfaceRGB::Height(uint32_t plane) const {
+  return m_planes.at(plane).Height();
 }
 
-uint32_t SurfaceRGB::Pitch(uint32_t planeNumber) const {
-  if (planeNumber < NumPlanes()) {
-    return plane.Pitch();
-  }
-
-  throw invalid_argument("Invalid plane number");
+uint32_t SurfaceRGB::Pitch(uint32_t plane) const {
+  return m_planes.at(plane).Pitch();
 }
 
-CUdeviceptr SurfaceRGB::PlanePtr(uint32_t planeNumber) {
-  if (planeNumber < NumPlanes()) {
-    return plane.GpuMem();
-  }
+CUdeviceptr SurfaceRGB::PlanePtr(uint32_t plane) {
+  return m_planes.at(plane).GpuMem();
+}
 
-  throw invalid_argument("Invalid plane number");
+SurfacePlane* SurfaceRGB::GetSurfacePlane(uint32_t plane) {
+  return &m_planes.at(plane);
 }
 
 bool SurfaceRGB::Update(SurfacePlane& newPlane) {
@@ -943,16 +927,12 @@ bool SurfaceRGB::Update(SurfacePlane** pPlanes, size_t planesNum) {
     return false;
   }
 
-  if (!plane.OwnMemory()) {
-    plane = *pPlanes[0];
+  if (!OwnMemory()) {
+    m_planes.at(0U) = *pPlanes[0];
     return true;
   }
 
   return false;
-}
-
-SurfacePlane* SurfaceRGB::GetSurfacePlane(uint32_t planeNumber) {
-  return planeNumber ? nullptr : &plane;
 }
 
 SurfaceBGR::~SurfaceBGR() = default;

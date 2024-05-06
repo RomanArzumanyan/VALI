@@ -457,34 +457,36 @@ public:
  */
 class TC_EXPORT SurfaceRGB : public Surface {
 public:
-  ~SurfaceRGB();
+  virtual ~SurfaceRGB() = default;
+  SurfaceRGB(const SurfaceRGB& other) = delete;
+  SurfaceRGB(SurfaceRGB&& other) = delete;
+  SurfaceRGB& operator=(const SurfaceRGB& other) = delete;
+  SurfaceRGB& operator=(SurfaceRGB&& other) = delete;
 
   SurfaceRGB();
-  SurfaceRGB(const SurfaceRGB& other);
   SurfaceRGB(uint32_t width, uint32_t height, CUcontext context);
-  SurfaceRGB& operator=(const SurfaceRGB& other);
 
-  Surface* Create() override;
-
-  uint32_t Width(uint32_t planeNumber = 0U) const override;
-  uint32_t WidthInBytes(uint32_t planeNumber = 0U) const override;
-  uint32_t Height(uint32_t planeNumber = 0U) const override;
-  uint32_t Pitch(uint32_t planeNumber = 0U) const override;
+  virtual Surface* Create() override;
+  virtual Pixel_Format PixelFormat() const override { return RGB; }
   virtual uint32_t ElemSize() const override { return sizeof(uint8_t); }
 
-  CUdeviceptr PlanePtr(uint32_t planeNumber = 0U) override;
-  Pixel_Format PixelFormat() const override { return RGB; }
-  uint32_t NumPlanes() const override { return 1; }
-  bool Empty() const override { return 0UL == plane.GpuMem(); }
-  DLDataTypeCode DataType() const override { return kDLUInt; }
+  uint32_t Width(uint32_t planeNumber = 0U) const;
+  uint32_t WidthInBytes(uint32_t planeNumber = 0U) const;
+  uint32_t Height(uint32_t planeNumber = 0U) const;
+  uint32_t Pitch(uint32_t planeNumber = 0U) const;
+  uint32_t NumPlanes() const { return 1; }
+  DLDataTypeCode DataType() const { return kDLUInt; }
+
+  CUdeviceptr PlanePtr(uint32_t planeNumber = 0U);
+  SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U);
 
   bool Update(SurfacePlane& newPlane);
-  bool Update(SurfacePlane** pPlanes, size_t planesNum) override;
-  SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) override;
-  virtual uint32_t HostMemSize() const override { return plane.HostMemSize(); }
+  bool Update(SurfacePlane** pPlanes, size_t planesNum);
 
 protected:
-  SurfacePlane plane;
+  // For high bit depth ancestors;
+  SurfaceRGB(uint32_t width, uint32_t height, uint32_t hbd_elem_size,
+                CUcontext context);
 };
 
 /* 8-bit BGR image;
