@@ -18,7 +18,6 @@ except VersionConflict:
 if __name__ == "__main__":
     import skbuild
 
-    PytorchNvCodec = "PytorchNvCodec @ git+https://github.com/RomanArzumanyan/VALI.git#subdirectory=src/PytorchNvCodec/"
     skbuild.setup(
         name="PyNvCodec",
         version="2.1.3",
@@ -27,12 +26,11 @@ if __name__ == "__main__":
         license="Apache 2.0",
         install_requires=["numpy"],
         extras_require={
-            # , "PyOpenGL-accelerate" # does not compile on 3.10
-            "dev": ["pycuda", "pyopengl", "torch", "torchvision", "opencv-python", "onnx", "tensorrt", f"PytorchNvCodec @ file://{os.getcwd()}/src/PytorchNvCodec/"],
-            "samples": ["pycuda", "pyopengl", "torch", "torchvision", "opencv-python", "onnx", "tensorrt", "tqdm", PytorchNvCodec],
-            "tests": ["pycuda", "pyopengl", "torch", "torchvision", "opencv-python", "pydantic", PytorchNvCodec],
-            "torch": ["torch", "torchvision", PytorchNvCodec],
-            "tensorrt": ["torch", "torchvision", PytorchNvCodec],
+            "dev": ["pycuda", "pyopengl", "torch", "torchvision", "opencv-python", "onnx", "tensorrt",],
+            "samples": ["pycuda", "pyopengl", "torch", "torchvision", "opencv-python", "onnx", "tensorrt", "tqdm"],
+            "tests": ["pycuda", "pyopengl", "torch", "torchvision", "opencv-python", "pydantic"],
+            "torch": ["torch", "torchvision"],
+            "tensorrt": ["torch", "torchvision"],
         },
         dependency_links=[
             "https://pypi.ngc.nvidia.com"
@@ -41,5 +39,5 @@ if __name__ == "__main__":
         package_data={"PyNvCodec": ["__init__.pyi"]},
         package_dir={"": "src"},
         cmake_install_dir="src",
-        cmake_args=["-DCMAKE_BUILD_TYPE=Debug"]
+        #cmake_args=["-DCMAKE_BUILD_TYPE=Debug"]
     )

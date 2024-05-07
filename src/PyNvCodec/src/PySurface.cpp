@@ -12,7 +12,6 @@
  * limitations under the License.
  */
 
-#include "Common.hpp"
 #include "PyNvCodec.hpp"
 #include "dlpack.h"
 #include <map>
@@ -336,13 +335,4 @@ void Init_PySurface(py::module& m) {
     )pbdoc")
       .def("__repr__",
            [](shared_ptr<Surface> self) { return ToString(self.get()); });
-
-  typedef PyContextManager<Surface> SurfCtxMgr;
-
-  py::class_<SurfCtxMgr, shared_ptr<SurfCtxMgr>>(m, "SurfaceView")
-      .def(py::init<std::shared_ptr<Surface>>(), py::arg("surface"))
-      .def("__enter__", [&](SurfCtxMgr& self) { return self.Get(); })
-      .def("__exit__",
-           [&](SurfCtxMgr& self, const py::object& type,
-               const py::object& value, const py::object& traceback) {});
 }
