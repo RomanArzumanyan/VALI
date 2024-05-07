@@ -44,7 +44,7 @@ public:
 
   bool Update(SurfacePlane& newPlane);
   bool Update(std::initializer_list<SurfacePlane*> planes);
-  SurfacePlane* GetSurfacePlane(uint32_t plane = 0U);
+  SurfacePlane& GetSurfacePlane(uint32_t plane = 0U);
 };
 
 /* 8-bit NV12 image;
@@ -73,7 +73,7 @@ public:
   DLDataTypeCode DataType() const { return kDLUInt; }
 
   CUdeviceptr PlanePtr(uint32_t plane = 0U);
-  SurfacePlane* GetSurfacePlane(uint32_t plane = 0U);
+  SurfacePlane& GetSurfacePlane(uint32_t plane = 0U);
 
   bool Update(SurfacePlane& newPlane);
   bool Update(std::initializer_list<SurfacePlane*> planes);
@@ -147,7 +147,7 @@ public:
   bool Update(SurfacePlane& newPlaneY, SurfacePlane& newPlaneU,
               SurfacePlane& newPlaneV);
   bool Update(std::initializer_list<SurfacePlane*> planes);
-  SurfacePlane* GetSurfacePlane(uint32_t plane = 0U);
+  SurfacePlane& GetSurfacePlane(uint32_t plane = 0U);
 };
 
 class TC_EXPORT SurfaceYUV422 final : public Surface {
@@ -173,7 +173,7 @@ public:
   uint32_t ElemSize() const { return sizeof(uint8_t); }
 
   CUdeviceptr PlanePtr(uint32_t planeNumber = 0U);
-  SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U);
+  SurfacePlane& GetSurfacePlane(uint32_t planeNumber = 0U);
 
   bool Update(SurfacePlane& newPlaneY, SurfacePlane& newPlaneU,
               SurfacePlane& newPlaneV);
@@ -203,7 +203,7 @@ public:
   DLDataTypeCode DataType() const { return kDLUInt; }
 
   CUdeviceptr PlanePtr(uint32_t planeNumber = 0U);
-  SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U);
+  SurfacePlane& GetSurfacePlane(uint32_t planeNumber = 0U);
 
   bool Update(SurfacePlane& newPlaneY, SurfacePlane& newPlaneU,
               SurfacePlane& newPlaneV);
@@ -256,7 +256,7 @@ public:
   DLDataTypeCode DataType() const { return kDLUInt; }
 
   CUdeviceptr PlanePtr(uint32_t planeNumber = 0U);
-  SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U);
+  SurfacePlane& GetSurfacePlane(uint32_t planeNumber = 0U);
 
   bool Update(SurfacePlane& newPlane);
   bool Update(std::initializer_list<SurfacePlane*> planes);
@@ -328,7 +328,7 @@ public:
   DLDataTypeCode DataType() const { return kDLUInt; }
 
   CUdeviceptr PlanePtr(uint32_t planeNumber = 0U);
-  SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U);
+  SurfacePlane& GetSurfacePlane(uint32_t planeNumber = 0U);
 
   bool Update(SurfacePlane& newPlane);
   bool Update(std::initializer_list<SurfacePlane*> planes);

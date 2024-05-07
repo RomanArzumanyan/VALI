@@ -73,8 +73,8 @@ CUdeviceptr SurfaceY::PlanePtr(uint32_t plane) {
   return m_planes.at(plane).GpuMem();
 }
 
-SurfacePlane* SurfaceY::GetSurfacePlane(uint32_t plane) {
-  return &m_planes.at(plane);
+SurfacePlane& SurfaceY::GetSurfacePlane(uint32_t plane) {
+  return m_planes.at(plane);
 }
 
 bool SurfaceY::Update(SurfacePlane& newPlane) { return Update({&newPlane}); }
@@ -182,12 +182,12 @@ bool SurfaceNV12::Update(std::initializer_list<SurfacePlane*> planes) {
   return true;
 }
 
-SurfacePlane* SurfaceNV12::GetSurfacePlane(uint32_t plane) {
+SurfacePlane& SurfaceNV12::GetSurfacePlane(uint32_t plane) {
   if (plane < NumPlanes()) {
-    return &m_planes.at(0U);
+    return m_planes.at(0U);
   }
 
-  return nullptr;
+  throw std::invalid_argument("Invalid plane number");
 }
 
 SurfaceP10::SurfaceP10() : SurfaceNV12() {}
@@ -264,12 +264,8 @@ bool SurfaceYUV420::Update(std::initializer_list<SurfacePlane*> planes) {
   return true;
 }
 
-SurfacePlane* SurfaceYUV420::GetSurfacePlane(uint32_t plane) {
-  try {
-    return &m_planes.at(plane);
-  } catch (...) {
-    return nullptr;
-  }
+SurfacePlane& SurfaceYUV420::GetSurfacePlane(uint32_t plane) {
+  return m_planes.at(plane);
 }
 
 SurfaceYUV422::SurfaceYUV422() {
@@ -315,12 +311,8 @@ CUdeviceptr SurfaceYUV422::PlanePtr(uint32_t plane) {
   return m_planes.at(plane).GpuMem();
 }
 
-SurfacePlane* SurfaceYUV422::GetSurfacePlane(uint32_t plane) {
-  try {
-    return &m_planes.at(plane);
-  } catch (...) {
-    return nullptr;
-  }
+SurfacePlane& SurfaceYUV422::GetSurfacePlane(uint32_t plane) {
+  return m_planes.at(plane);
 }
 
 bool SurfaceYUV422::Update(SurfacePlane& newPlaneY, SurfacePlane& newPlaneU,
@@ -384,12 +376,8 @@ CUdeviceptr SurfaceYUV444::PlanePtr(uint32_t plane) {
   return m_planes.at(plane).GpuMem();
 }
 
-SurfacePlane* SurfaceYUV444::GetSurfacePlane(uint32_t plane) {
-  try {
-    return &m_planes.at(plane);
-  } catch (...) {
-    return nullptr;
-  }
+SurfacePlane& SurfaceYUV444::GetSurfacePlane(uint32_t plane) {
+  return m_planes.at(plane);
 }
 
 bool SurfaceYUV444::Update(SurfacePlane& newPlaneY, SurfacePlane& newPlaneU,
@@ -453,8 +441,8 @@ CUdeviceptr SurfaceRGB::PlanePtr(uint32_t plane) {
   return m_planes.at(plane).GpuMem();
 }
 
-SurfacePlane* SurfaceRGB::GetSurfacePlane(uint32_t plane) {
-  return &m_planes.at(plane);
+SurfacePlane& SurfaceRGB::GetSurfacePlane(uint32_t plane) {
+  return m_planes.at(plane);
 }
 
 bool SurfaceRGB::Update(SurfacePlane& newPlane) { return Update({&newPlane}); }
@@ -520,8 +508,8 @@ CUdeviceptr SurfaceRGBPlanar::PlanePtr(uint32_t plane) {
   return m_planes.at(plane).GpuMem();
 }
 
-SurfacePlane* SurfaceRGBPlanar::GetSurfacePlane(uint32_t plane) {
-  return &m_planes.at(plane);
+SurfacePlane& SurfaceRGBPlanar::GetSurfacePlane(uint32_t plane) {
+  return m_planes.at(plane);
 }
 
 bool SurfaceRGBPlanar::Update(SurfacePlane& newPlane) {

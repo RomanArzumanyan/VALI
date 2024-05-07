@@ -196,9 +196,9 @@ public:
    */
   virtual DLDataTypeCode DataType() const = 0;
 
-  /* Returns pointer to plane by number;
+  /* Returns Surface Plane by number;
    */
-  virtual SurfacePlane* GetSurfacePlane(uint32_t planeNumber = 0U) = 0;
+  virtual SurfacePlane& GetSurfacePlane(uint32_t planeNumber = 0U) = 0;
 
   /* Update from set of image planes, don't own the memory;
    */

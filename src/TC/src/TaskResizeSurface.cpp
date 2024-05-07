@@ -6,7 +6,7 @@
 
 namespace VPF {
 struct ResizeSurface_Impl {
-  Surface *pSurface = nullptr;
+  Surface* pSurface = nullptr;
   CUcontext cu_ctx;
   CUstream cu_str;
   NppStreamContext nppCtx;
@@ -19,7 +19,7 @@ struct ResizeSurface_Impl {
 
   virtual ~ResizeSurface_Impl() = default;
 
-  virtual TaskExecStatus Run(Surface &source) = 0;
+  virtual TaskExecStatus Run(Surface& source) = 0;
 };
 
 struct NppResizeSurfacePacked3C_Impl final : ResizeSurface_Impl {
@@ -31,7 +31,7 @@ struct NppResizeSurfacePacked3C_Impl final : ResizeSurface_Impl {
 
   ~NppResizeSurfacePacked3C_Impl() { delete pSurface; }
 
-  TaskExecStatus Run(Surface &source) {
+  TaskExecStatus Run(Surface& source) {
     NvtxMark tick("NppResizeSurfacePacked3C");
 
     if (pSurface->PixelFormat() != source.PixelFormat()) {
@@ -41,7 +41,7 @@ struct NppResizeSurfacePacked3C_Impl final : ResizeSurface_Impl {
     auto srcPlane = source.GetSurfacePlane();
     auto dstPlane = pSurface->GetSurfacePlane();
 
-    const Npp8u *pSrc = (const Npp8u *)srcPlane->GpuMem();
+    const Npp8u* pSrc = (const Npp8u*)srcPlane.GpuMem();
     int nSrcStep = (int)source.Pitch();
     NppiSize oSrcSize = {0};
     oSrcSize.width = source.Width();
@@ -50,7 +50,7 @@ struct NppResizeSurfacePacked3C_Impl final : ResizeSurface_Impl {
     oSrcRectROI.width = oSrcSize.width;
     oSrcRectROI.height = oSrcSize.height;
 
-    Npp8u *pDst = (Npp8u *)dstPlane->GpuMem();
+    Npp8u* pDst = (Npp8u*)dstPlane.GpuMem();
     int nDstStep = (int)pSurface->Pitch();
     NppiSize oDstSize = {0};
     oDstSize.width = pSurface->Width();
@@ -82,7 +82,7 @@ struct NppResizeSurfacePlanar_Impl final : ResizeSurface_Impl {
 
   ~NppResizeSurfacePlanar_Impl() { delete pSurface; }
 
-  TaskExecStatus Run(Surface &source) {
+  TaskExecStatus Run(Surface& source) {
     NvtxMark tick("NppResizeSurfacePlanar");
 
     if (pSurface->PixelFormat() != source.PixelFormat()) {
@@ -93,20 +93,20 @@ struct NppResizeSurfacePlanar_Impl final : ResizeSurface_Impl {
       auto srcPlane = source.GetSurfacePlane(plane);
       auto dstPlane = pSurface->GetSurfacePlane(plane);
 
-      const Npp8u *pSrc = (const Npp8u *)srcPlane->GpuMem();
-      int nSrcStep = (int)srcPlane->Pitch();
+      const Npp8u* pSrc = (const Npp8u*)srcPlane.GpuMem();
+      int nSrcStep = (int)srcPlane.Pitch();
       NppiSize oSrcSize = {0};
-      oSrcSize.width = srcPlane->Width();
-      oSrcSize.height = srcPlane->Height();
+      oSrcSize.width = srcPlane.Width();
+      oSrcSize.height = srcPlane.Height();
       NppiRect oSrcRectROI = {0};
       oSrcRectROI.width = oSrcSize.width;
       oSrcRectROI.height = oSrcSize.height;
 
-      Npp8u *pDst = (Npp8u *)dstPlane->GpuMem();
-      int nDstStep = (int)dstPlane->Pitch();
+      Npp8u* pDst = (Npp8u*)dstPlane.GpuMem();
+      int nDstStep = (int)dstPlane.Pitch();
       NppiSize oDstSize = {0};
-      oDstSize.width = dstPlane->Width();
-      oDstSize.height = dstPlane->Height();
+      oDstSize.width = dstPlane.Width();
+      oDstSize.height = dstPlane.Height();
       NppiRect oDstRectROI = {0};
       oDstRectROI.width = oDstSize.width;
       oDstRectROI.height = oDstSize.height;
@@ -144,7 +144,7 @@ struct ResizeSurfaceSemiPlanar_Impl final : ResizeSurface_Impl {
     delete yuv420_nv12;
   }
 
-  TaskExecStatus Run(Surface &source) {
+  TaskExecStatus Run(Surface& source) {
     NvtxMark tick("NppResizeSurfaceSemiPlanar");
 
     auto const resolution_change =
@@ -161,7 +161,7 @@ struct ResizeSurfaceSemiPlanar_Impl final : ResizeSurface_Impl {
     }
 
     // Convert from NV12 to YUV420;
-    nv12_yuv420->SetInput((Token *)&source, 0U);
+    nv12_yuv420->SetInput((Token*)&source, 0U);
     if (TaskExecStatus::TASK_EXEC_SUCCESS != nv12_yuv420->Execute())
       return TaskExecStatus::TASK_EXEC_FAIL;
     auto surf_yuv420 = nv12_yuv420->GetOutput(0U);
@@ -176,7 +176,7 @@ struct ResizeSurfaceSemiPlanar_Impl final : ResizeSurface_Impl {
     yuv420_nv12->SetInput(surf_res, 0U);
     if (TaskExecStatus::TASK_EXEC_SUCCESS != yuv420_nv12->Execute())
       return TaskExecStatus::TASK_EXEC_FAIL;
-    pSurface = (Surface *)yuv420_nv12->GetOutput(0U);
+    pSurface = (Surface*)yuv420_nv12->GetOutput(0U);
 
     last_w = source.Width();
     last_h = source.Height();
@@ -184,9 +184,9 @@ struct ResizeSurfaceSemiPlanar_Impl final : ResizeSurface_Impl {
     return TaskExecStatus::TASK_EXEC_SUCCESS;
   }
 
-  ResizeSurface *pResizeYuv;
-  ConvertSurface *nv12_yuv420;
-  ConvertSurface *yuv420_nv12;
+  ResizeSurface* pResizeYuv;
+  ConvertSurface* nv12_yuv420;
+  ConvertSurface* yuv420_nv12;
   CUcontext _ctx;
   CUstream _str;
   uint32_t last_w, last_h;
@@ -202,7 +202,7 @@ struct NppResizeSurfacePacked32F3C_Impl final : ResizeSurface_Impl {
 
   ~NppResizeSurfacePacked32F3C_Impl() { delete pSurface; }
 
-  TaskExecStatus Run(Surface &source) {
+  TaskExecStatus Run(Surface& source) {
     NvtxMark tick("NppResizeSurfacePacked32F3C");
 
     if (pSurface->PixelFormat() != source.PixelFormat()) {
@@ -212,7 +212,7 @@ struct NppResizeSurfacePacked32F3C_Impl final : ResizeSurface_Impl {
     auto srcPlane = source.GetSurfacePlane();
     auto dstPlane = pSurface->GetSurfacePlane();
 
-    const Npp32f *pSrc = (const Npp32f *)srcPlane->GpuMem();
+    const Npp32f* pSrc = (const Npp32f*)srcPlane.GpuMem();
     int nSrcStep = (int)source.Pitch();
     NppiSize oSrcSize = {0};
     oSrcSize.width = source.Width();
@@ -221,7 +221,7 @@ struct NppResizeSurfacePacked32F3C_Impl final : ResizeSurface_Impl {
     oSrcRectROI.width = oSrcSize.width;
     oSrcRectROI.height = oSrcSize.height;
 
-    Npp32f *pDst = (Npp32f *)dstPlane->GpuMem();
+    Npp32f* pDst = (Npp32f*)dstPlane.GpuMem();
     int nDstStep = (int)pSurface->Pitch();
     NppiSize oDstSize = {0};
     oDstSize.width = pSurface->Width();
@@ -253,7 +253,7 @@ struct NppResizeSurface32FPlanar_Impl final : ResizeSurface_Impl {
 
   ~NppResizeSurface32FPlanar_Impl() { delete pSurface; }
 
-  TaskExecStatus Run(Surface &source) {
+  TaskExecStatus Run(Surface& source) {
     NvtxMark tick("NppResizeSurface32FPlanar");
 
     if (pSurface->PixelFormat() != source.PixelFormat()) {
@@ -264,20 +264,20 @@ struct NppResizeSurface32FPlanar_Impl final : ResizeSurface_Impl {
       auto srcPlane = source.GetSurfacePlane(plane);
       auto dstPlane = pSurface->GetSurfacePlane(plane);
 
-      const Npp32f *pSrc = (const Npp32f *)srcPlane->GpuMem();
-      int nSrcStep = (int)srcPlane->Pitch();
+      const Npp32f* pSrc = (const Npp32f*)srcPlane.GpuMem();
+      int nSrcStep = (int)srcPlane.Pitch();
       NppiSize oSrcSize = {0};
-      oSrcSize.width = srcPlane->Width();
-      oSrcSize.height = srcPlane->Height();
+      oSrcSize.width = srcPlane.Width();
+      oSrcSize.height = srcPlane.Height();
       NppiRect oSrcRectROI = {0};
       oSrcRectROI.width = oSrcSize.width;
       oSrcRectROI.height = oSrcSize.height;
 
-      Npp32f *pDst = (Npp32f *)dstPlane->GpuMem();
-      int nDstStep = (int)dstPlane->Pitch();
+      Npp32f* pDst = (Npp32f*)dstPlane.GpuMem();
+      int nDstStep = (int)dstPlane.Pitch();
       NppiSize oDstSize = {0};
-      oDstSize.width = dstPlane->Width();
-      oDstSize.height = dstPlane->Height();
+      oDstSize.width = dstPlane.Width();
+      oDstSize.height = dstPlane.Height();
       NppiRect oDstRectROI = {0};
       oDstRectROI.width = oDstSize.width;
       oDstRectROI.height = oDstSize.height;
@@ -304,11 +304,10 @@ auto const cuda_stream_sync = [](void* stream) {
 ResizeSurface::ResizeSurface(uint32_t width, uint32_t height,
                              Pixel_Format format, CUcontext ctx, CUstream str)
     : Task("NppResizeSurface", ResizeSurface::numInputs,
-           ResizeSurface::numOutputs, cuda_stream_sync, (void *)str) {
+           ResizeSurface::numOutputs, cuda_stream_sync, (void*)str) {
   if (RGB == format || BGR == format) {
     pImpl = new NppResizeSurfacePacked3C_Impl(width, height, ctx, str, format);
-  } else if (YUV420 == format || YUV444 == format ||
-             RGB_PLANAR == format) {
+  } else if (YUV420 == format || YUV444 == format || RGB_PLANAR == format) {
     pImpl = new NppResizeSurfacePlanar_Impl(width, height, ctx, str, format);
   } else if (RGB_32F == format) {
     pImpl =
@@ -328,7 +327,7 @@ TaskExecStatus ResizeSurface::Run() {
   NvtxMark tick(GetName());
   ClearOutputs();
 
-  auto pInputSurface = (Surface *)GetInput();
+  auto pInputSurface = (Surface*)GetInput();
   if (!pInputSurface) {
     return TaskExecStatus::TASK_EXEC_FAIL;
   }
@@ -341,7 +340,7 @@ TaskExecStatus ResizeSurface::Run() {
   return TaskExecStatus::TASK_EXEC_SUCCESS;
 }
 
-ResizeSurface *ResizeSurface::Make(uint32_t width, uint32_t height,
+ResizeSurface* ResizeSurface::Make(uint32_t width, uint32_t height,
                                    Pixel_Format format, CUcontext ctx,
                                    CUstream str) {
   return new ResizeSurface(width, height, format, ctx, str);

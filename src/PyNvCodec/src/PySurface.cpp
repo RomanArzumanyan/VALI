@@ -86,24 +86,20 @@ string ToString(Pixel_Format fmt) {
   }
 };
 
-string ToString(SurfacePlane* self, int space = 0) {
-  if (!self) {
-    return string();
-  }
-
+string ToString(SurfacePlane& self, int space = 0) {
   stringstream spacer;
   for (int i = 0; i < space; i++) {
     spacer << " ";
   }
 
   stringstream ss;
-  ss << spacer.str() << "Owns mem:  " << self->OwnMemory() << "\n";
-  ss << spacer.str() << "Width:     " << self->Width() << "\n";
-  ss << spacer.str() << "Height:    " << self->Height() << "\n";
-  ss << spacer.str() << "Pitch:     " << self->Pitch() << "\n";
-  ss << spacer.str() << "Elem size: " << self->ElemSize() << "\n";
-  ss << spacer.str() << "Cuda ctx:  " << self->Context() << "\n";
-  ss << spacer.str() << "CUDA ptr:  " << self->GpuMem() << "\n";
+  ss << spacer.str() << "Owns mem:  " << self.OwnMemory() << "\n";
+  ss << spacer.str() << "Width:     " << self.Width() << "\n";
+  ss << spacer.str() << "Height:    " << self.Height() << "\n";
+  ss << spacer.str() << "Pitch:     " << self.Pitch() << "\n";
+  ss << spacer.str() << "Elem size: " << self.ElemSize() << "\n";
+  ss << spacer.str() << "Cuda ctx:  " << self.Context() << "\n";
+  ss << spacer.str() << "CUDA ptr:  " << self.GpuMem() << "\n";
 
   return ss.str();
 }
@@ -120,7 +116,7 @@ string ToString(Surface* self) {
   ss << "Pitch:            " << self->Pitch() << "\n";
   ss << "Elem size(bytes): " << self->ElemSize() << "\n";
 
-  for (int i = 0; i < self->NumPlanes() && self->GetSurfacePlane(i); i++) {
+  for (int i = 0; i < self->NumPlanes(); i++) {
     ss << "Plane " << i << "\n";
     ss << ToString(self->GetSurfacePlane(i), 2) << "\n";
   }
@@ -203,7 +199,7 @@ void Init_PySurface(py::module& m) {
         DLPack: get capsule.
     )pbdoc")
       .def("__repr__",
-           [](shared_ptr<SurfacePlane> self) { return ToString(self.get()); });
+           [](shared_ptr<SurfacePlane> self) { return ToString(*self.get()); });
 
   py::class_<Surface, shared_ptr<Surface>>(
       m, "Surface", "Image stored in vRAM. Consists of 1+ SurfacePlane(s).")
@@ -328,9 +324,9 @@ void Init_PySurface(py::module& m) {
     )pbdoc")
       .def(
           "PlanePtr",
-          [](shared_ptr<Surface> self, int plane) {
-            auto pPlane = self->GetSurfacePlane(plane);
-            return make_shared<SurfacePlane>(*pPlane);
+          [](shared_ptr<Surface> self, int i) {
+            auto plane = self->GetSurfacePlane(i);
+            return make_shared<SurfacePlane>(plane);
           },
           py::arg("plane") = 0U, py::return_value_policy::take_ownership,
           R"pbdoc(

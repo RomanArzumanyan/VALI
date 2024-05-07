@@ -429,8 +429,8 @@ Surface* Surface::Clone() {
 
 bool Surface::OwnMemory() {
   bool res = true;
-  for (int i = 0; i < NumPlanes() && GetSurfacePlane(i); i++) {
-    if (!GetSurfacePlane(i)->OwnMemory()) {
+  for (int i = 0; i < NumPlanes(); i++) {
+    if (!GetSurfacePlane(i).OwnMemory()) {
       res = false;
     }
   }
@@ -451,4 +451,4 @@ bool Surface::Empty() const {
                      [&](const SurfacePlane& plane) { return plane.Empty(); });
 }
 
-CUcontext Surface::Context() { return GetSurfacePlane()->Context(); }
+CUcontext Surface::Context() { return GetSurfacePlane().Context(); }
