@@ -12,9 +12,9 @@
  */
 
 #include "CodecsSupport.hpp"
-#include "Surfaces.hpp"
 #include "NppCommon.hpp"
 #include "NvCodecUtils.h"
+#include "Surfaces.hpp"
 #include "Tasks.hpp"
 
 #include <memory>
@@ -135,10 +135,10 @@ struct nv12_bgr final : public NppConvertSurface_Impl {
     auto const color_space = std::get<0>(params);
     auto const color_range = std::get<1>(params);
 
-    const Npp8u* const pSrc[] = {(const Npp8u* const)pInput->PlanePtr(0U),
-                                 (const Npp8u* const)pInput->PlanePtr(1U)};
+    const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PixelPtr(0U),
+                                 (const Npp8u*)pInput->PixelPtr(1U)};
 
-    auto pDst = (Npp8u*)pOutput->PlanePtr();
+    auto pDst = (Npp8u*)pOutput->PixelPtr(0U);
     NppiSize oSizeRoi = {(int)pInput->Width(), (int)pInput->Height()};
 
     CudaCtxPush ctxPush(cu_ctx);
@@ -198,10 +198,10 @@ struct nv12_rgb final : public NppConvertSurface_Impl {
     auto const color_space = std::get<0>(params);
     auto const color_range = std::get<1>(params);
 
-    const Npp8u* const pSrc[] = {(const Npp8u* const)pInput->PlanePtr(0U),
-                                 (const Npp8u* const)pInput->PlanePtr(1U)};
+    const Npp8u* const pSrc[] = {(const Npp8u* const)pInput->PixelPtr(0U),
+                                 (const Npp8u* const)pInput->PixelPtr(1U)};
 
-    auto pDst = (Npp8u*)pOutput->PlanePtr();
+    auto pDst = (Npp8u*)pOutput->PixelPtr();
     NppiSize oSizeRoi = {(int)pInput->Width(), (int)pInput->Height()};
 
     CudaCtxPush ctxPush(cu_ctx);
@@ -258,12 +258,12 @@ struct nv12_yuv420 final : public NppConvertSurface_Impl {
       return nullptr;
     }
 
-    const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PlanePtr(0U),
-                                 (const Npp8u*)pInput->PlanePtr(1U)};
+    const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PixelPtr(0U),
+                                 (const Npp8u*)pInput->PixelPtr(1U)};
 
-    Npp8u* pDst[] = {(Npp8u*)pOutput->PlanePtr(0U),
-                     (Npp8u*)pOutput->PlanePtr(1U),
-                     (Npp8u*)pOutput->PlanePtr(2U)};
+    Npp8u* pDst[] = {(Npp8u*)pOutput->PixelPtr(0U),
+                     (Npp8u*)pOutput->PixelPtr(1U),
+                     (Npp8u*)pOutput->PixelPtr(2U)};
 
     int dstStep[] = {(int)pOutput->Pitch(0U), (int)pOutput->Pitch(1U),
                      (int)pOutput->Pitch(2U)};
@@ -317,8 +317,8 @@ struct nv12_y final : public NppConvertSurface_Impl {
     CUDA_MEMCPY2D m = {0};
     m.srcMemoryType = CU_MEMORYTYPE_DEVICE;
     m.dstMemoryType = CU_MEMORYTYPE_DEVICE;
-    m.srcDevice = pInput->PlanePtr();
-    m.dstDevice = pOutput->PlanePtr();
+    m.srcDevice = pInput->PixelPtr();
+    m.dstDevice = pOutput->PixelPtr();
     m.srcPitch = pInput->Pitch();
     m.dstPitch = pOutput->Pitch();
     m.Height = pInput->Height();
@@ -352,8 +352,8 @@ struct rbg8_y final : public NppConvertSurface_Impl {
     NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
 
     auto ret = nppiRGBToGray_8u_C3C1R_Ctx(
-        (const Npp8u*)pInput->PlanePtr(), pInput->Pitch(),
-        (Npp8u*)pOutput->PlanePtr(), pOutput->Pitch(), roi, nppCtx);
+        (const Npp8u*)pInput->PixelPtr(), pInput->Pitch(),
+        (Npp8u*)pOutput->PixelPtr(), pOutput->Pitch(), roi, nppCtx);
 
     return pOutput;
   }
@@ -381,10 +381,10 @@ struct yuv420_rgb final : public NppConvertSurface_Impl {
       return nullptr;
     }
 
-    const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PlanePtr(0U),
-                                 (const Npp8u*)pInput->PlanePtr(1U),
-                                 (const Npp8u*)pInput->PlanePtr(2U)};
-    Npp8u* pDst = (Npp8u*)pOutput->PlanePtr();
+    const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PixelPtr(0U),
+                                 (const Npp8u*)pInput->PixelPtr(1U),
+                                 (const Npp8u*)pInput->PixelPtr(2U)};
+    Npp8u* pDst = (Npp8u*)pOutput->PixelPtr();
     int srcStep[] = {(int)pInput->Pitch(0U), (int)pInput->Pitch(1U),
                      (int)pInput->Pitch(2U)};
     int dstStep = (int)pOutput->Pitch();
@@ -441,10 +441,10 @@ struct yuv420_bgr final : public NppConvertSurface_Impl {
       return nullptr;
     }
 
-    const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PlanePtr(0U),
-                                 (const Npp8u*)pInput->PlanePtr(1U),
-                                 (const Npp8u*)pInput->PlanePtr(2U)};
-    Npp8u* pDst = (Npp8u*)pOutput->PlanePtr();
+    const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PixelPtr(0U),
+                                 (const Npp8u*)pInput->PixelPtr(1U),
+                                 (const Npp8u*)pInput->PixelPtr(2U)};
+    Npp8u* pDst = (Npp8u*)pOutput->PixelPtr();
     int srcStep[] = {(int)pInput->Pitch(0U), (int)pInput->Pitch(1U),
                      (int)pInput->Pitch(2U)};
     int dstStep = (int)pOutput->Pitch();
@@ -506,10 +506,10 @@ struct yuv444_bgr final : public NppConvertSurface_Impl {
       return nullptr;
     }
 
-    const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PlanePtr(0U),
-                                 (const Npp8u*)pInput->PlanePtr(1U),
-                                 (const Npp8u*)pInput->PlanePtr(2U)};
-    Npp8u* pDst = (Npp8u*)pOutput->PlanePtr();
+    const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PixelPtr(0U),
+                                 (const Npp8u*)pInput->PixelPtr(1U),
+                                 (const Npp8u*)pInput->PixelPtr(2U)};
+    Npp8u* pDst = (Npp8u*)pOutput->PixelPtr();
     int srcStep = (int)pInput->Pitch();
     int dstStep = (int)pOutput->Pitch();
     NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
@@ -566,10 +566,10 @@ struct yuv444_rgb final : public NppConvertSurface_Impl {
       return nullptr;
     }
 
-    const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PlanePtr(0U),
-                                 (const Npp8u*)pInput->PlanePtr(1U),
-                                 (const Npp8u*)pInput->PlanePtr(2U)};
-    Npp8u* pDst = (Npp8u*)pOutput->PlanePtr();
+    const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PixelPtr(0U),
+                                 (const Npp8u*)pInput->PixelPtr(1U),
+                                 (const Npp8u*)pInput->PixelPtr(2U)};
+    Npp8u* pDst = (Npp8u*)pOutput->PixelPtr();
     int srcStep = (int)pInput->Pitch();
     int dstStep = (int)pOutput->Pitch();
     NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
@@ -622,11 +622,11 @@ struct yuv444_rgb_planar final : public NppConvertSurface_Impl {
       return nullptr;
     }
 
-    const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PlanePtr(0U),
-                                 (const Npp8u*)pInput->PlanePtr(1U),
-                                 (const Npp8u*)pInput->PlanePtr(2U)};
-    Npp8u* pDst[] = {(Npp8u*)pOutput->PlanePtr(0), (Npp8u*)pOutput->PlanePtr(1),
-                     (Npp8u*)pOutput->PlanePtr(2)};
+    const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PixelPtr(0U),
+                                 (const Npp8u*)pInput->PixelPtr(1U),
+                                 (const Npp8u*)pInput->PixelPtr(2U)};
+    Npp8u* pDst[] = {(Npp8u*)pOutput->PixelPtr(0), (Npp8u*)pOutput->PixelPtr(1),
+                     (Npp8u*)pOutput->PixelPtr(2)};
     int srcStep = (int)pInput->Pitch();
     int dstStep = (int)pOutput->Pitch();
     NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
@@ -678,10 +678,10 @@ struct bgr_yuv444 final : public NppConvertSurface_Impl {
       return nullptr;
     }
 
-    const Npp8u* pSrc = (const Npp8u*)pInput->PlanePtr();
-    Npp8u* pDst[] = {(Npp8u*)pOutput->PlanePtr(0U),
-                     (Npp8u*)pOutput->PlanePtr(1U),
-                     (Npp8u*)pOutput->PlanePtr(2U)};
+    const Npp8u* pSrc = (const Npp8u*)pInput->PixelPtr();
+    Npp8u* pDst[] = {(Npp8u*)pOutput->PixelPtr(0U),
+                     (Npp8u*)pOutput->PixelPtr(1U),
+                     (Npp8u*)pOutput->PixelPtr(2U)};
     int srcStep = (int)pInput->Pitch();
     int dstStep = (int)pOutput->Pitch();
     NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
@@ -738,11 +738,11 @@ struct rgb_yuv444 final : public NppConvertSurface_Impl {
       return nullptr;
     }
 
-    const Npp8u* pSrc = (const Npp8u*)pInput->PlanePtr();
+    const Npp8u* pSrc = (const Npp8u*)pInput->PixelPtr();
     int srcStep = pInput->Pitch();
-    Npp8u* pDst[] = {(Npp8u*)pOutput->PlanePtr(0U),
-                     (Npp8u*)pOutput->PlanePtr(1U),
-                     (Npp8u*)pOutput->PlanePtr(2U)};
+    Npp8u* pDst[] = {(Npp8u*)pOutput->PixelPtr(0U),
+                     (Npp8u*)pOutput->PixelPtr(1U),
+                     (Npp8u*)pOutput->PixelPtr(2U)};
     int dstStep = pOutput->Pitch();
     NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
 
@@ -797,13 +797,13 @@ struct rgb_planar_yuv444 final : public NppConvertSurface_Impl {
       return nullptr;
     }
 
-    const Npp8u* pSrc[] = {(const Npp8u*)pInput->PlanePtr(0U),
-                           (const Npp8u*)pInput->PlanePtr(1U),
-                           (const Npp8u*)pInput->PlanePtr(2U)};
+    const Npp8u* pSrc[] = {(const Npp8u*)pInput->PixelPtr(0U),
+                           (const Npp8u*)pInput->PixelPtr(1U),
+                           (const Npp8u*)pInput->PixelPtr(2U)};
     int srcStep = pInput->Pitch();
-    Npp8u* pDst[] = {(Npp8u*)pOutput->PlanePtr(0U),
-                     (Npp8u*)pOutput->PlanePtr(1U),
-                     (Npp8u*)pOutput->PlanePtr(2U)};
+    Npp8u* pDst[] = {(Npp8u*)pOutput->PixelPtr(0U),
+                     (Npp8u*)pOutput->PixelPtr(1U),
+                     (Npp8u*)pOutput->PixelPtr(2U)};
     int dstStep = pOutput->Pitch();
     NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
 
@@ -851,7 +851,7 @@ struct y_yuv444 final : public NppConvertSurface_Impl {
     // Make gray U and V channels;
     for (int i = 1; i < pOutput->NumPlanes(); i++) {
       const Npp8u nValue = 128U;
-      Npp8u* pDst = (Npp8u*)pOutput->PlanePtr(i);
+      Npp8u* pDst = (Npp8u*)pOutput->PixelPtr(i);
       int nDstStep = pOutput->Pitch(i);
       NppiSize roi = {(int)pOutput->Width(i), (int)pOutput->Height(i)};
       auto err = nppiSet_8u_C1R_Ctx(nValue, pDst, nDstStep, roi, nppCtx);
@@ -862,9 +862,9 @@ struct y_yuv444 final : public NppConvertSurface_Impl {
     }
 
     // Copy Y channel;
-    const Npp8u* pSrc = (const Npp8u*)pInput->PlanePtr();
+    const Npp8u* pSrc = (const Npp8u*)pInput->PixelPtr();
     int nSrcStep = pInput->Pitch();
-    Npp8u* pDst = (Npp8u*)pOutput->PlanePtr(0U);
+    Npp8u* pDst = (Npp8u*)pOutput->PixelPtr(0U);
     int nDstStep = pOutput->Pitch(0U);
     NppiSize roi = {(int)pInput->Width(), (int)pInput->Height()};
     auto err = nppiCopy_8u_C1R_Ctx(pSrc, nSrcStep, pDst, nDstStep, roi, nppCtx);
@@ -904,11 +904,11 @@ struct rgb_yuv420 final : public NppConvertSurface_Impl {
       return nullptr;
     }
 
-    const Npp8u* pSrc = (const Npp8u*)pInput->PlanePtr();
+    const Npp8u* pSrc = (const Npp8u*)pInput->PixelPtr();
     int srcStep = pInput->Pitch();
-    Npp8u* pDst[] = {(Npp8u*)pOutput->PlanePtr(0U),
-                     (Npp8u*)pOutput->PlanePtr(1U),
-                     (Npp8u*)pOutput->PlanePtr(2U)};
+    Npp8u* pDst[] = {(Npp8u*)pOutput->PixelPtr(0U),
+                     (Npp8u*)pOutput->PixelPtr(1U),
+                     (Npp8u*)pOutput->PixelPtr(2U)};
     int dstStep[] = {(int)pOutput->Pitch(0U), (int)pOutput->Pitch(1U),
                      (int)pOutput->Pitch(2U)};
     NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
@@ -958,12 +958,12 @@ struct yuv420_nv12 final : public NppConvertSurface_Impl {
       return nullptr;
     }
 
-    const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PlanePtr(0U),
-                                 (const Npp8u*)pInput->PlanePtr(1U),
-                                 (const Npp8u*)pInput->PlanePtr(2U)};
+    const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PixelPtr(0U),
+                                 (const Npp8u*)pInput->PixelPtr(1U),
+                                 (const Npp8u*)pInput->PixelPtr(2U)};
 
-    Npp8u* pDst[] = {(Npp8u*)pOutput->PlanePtr(0U),
-                     (Npp8u*)pOutput->PlanePtr(1U)};
+    Npp8u* pDst[] = {(Npp8u*)pOutput->PixelPtr(0U),
+                     (Npp8u*)pOutput->PixelPtr(1U)};
 
     int srcStep[] = {(int)pInput->Pitch(0U), (int)pInput->Pitch(1U),
                      (int)pInput->Pitch(2U)};
@@ -1000,12 +1000,12 @@ struct rgb8_deinterleave final : public NppConvertSurface_Impl {
       return nullptr;
     }
 
-    const Npp8u* pSrc = (const Npp8u*)pInput->PlanePtr();
+    const Npp8u* pSrc = (const Npp8u*)pInput->PixelPtr();
     int nSrcStep = pInput->Pitch();
     Npp8u* aDst[] = {
-        (Npp8u*)pOutput->PlanePtr(),
-        (Npp8u*)pOutput->PlanePtr() + pOutput->Height() * pOutput->Pitch(),
-        (Npp8u*)pOutput->PlanePtr() + pOutput->Height() * pOutput->Pitch() * 2};
+        (Npp8u*)pOutput->PixelPtr(),
+        (Npp8u*)pOutput->PixelPtr() + pOutput->Height() * pOutput->Pitch(),
+        (Npp8u*)pOutput->PixelPtr() + pOutput->Height() * pOutput->Pitch() * 2};
     int nDstStep = pOutput->Pitch();
     NppiSize oSizeRoi = {0};
     oSizeRoi.height = pOutput->Height();
@@ -1042,11 +1042,11 @@ struct rgb8_interleave final : public NppConvertSurface_Impl {
     }
 
     const Npp8u* const pSrc[] = {
-        (Npp8u*)pInput->PlanePtr(),
-        (Npp8u*)pInput->PlanePtr() + pInput->Height() * pInput->Pitch(),
-        (Npp8u*)pInput->PlanePtr() + pInput->Height() * pInput->Pitch() * 2};
+        (Npp8u*)pInput->PixelPtr(),
+        (Npp8u*)pInput->PixelPtr() + pInput->Height() * pInput->Pitch(),
+        (Npp8u*)pInput->PixelPtr() + pInput->Height() * pInput->Pitch() * 2};
     int nSrcStep = pInput->Pitch();
-    Npp8u* pDst = (Npp8u*)pOutput->PlanePtr();
+    Npp8u* pDst = (Npp8u*)pOutput->PixelPtr();
     int nDstStep = pOutput->Pitch();
     NppiSize oSizeRoi = {0};
     oSizeRoi.height = pOutput->Height();
@@ -1081,9 +1081,9 @@ struct rgb_bgr final : public NppConvertSurface_Impl {
       return nullptr;
     }
 
-    const Npp8u* pSrc = (const Npp8u*)pInput->PlanePtr();
+    const Npp8u* pSrc = (const Npp8u*)pInput->PixelPtr();
     int nSrcStep = pInput->Pitch();
-    Npp8u* pDst = (Npp8u*)pOutput->PlanePtr();
+    Npp8u* pDst = (Npp8u*)pOutput->PixelPtr();
     int nDstStep = pOutput->Pitch();
     NppiSize oSizeRoi = {0};
     oSizeRoi.height = pOutput->Height();
@@ -1119,9 +1119,9 @@ struct bgr_rgb final : public NppConvertSurface_Impl {
       return nullptr;
     }
 
-    const Npp8u* pSrc = (const Npp8u*)pInput->PlanePtr();
+    const Npp8u* pSrc = (const Npp8u*)pInput->PixelPtr();
     int nSrcStep = pInput->Pitch();
-    Npp8u* pDst = (Npp8u*)pOutput->PlanePtr();
+    Npp8u* pDst = (Npp8u*)pOutput->PixelPtr();
     int nDstStep = pOutput->Pitch();
     NppiSize oSizeRoi = {0};
     oSizeRoi.height = pOutput->Height();
@@ -1158,10 +1158,10 @@ struct rbg8_rgb32f final : public NppConvertSurface_Impl {
       return nullptr;
     }
 
-    const Npp8u* pSrc = (const Npp8u*)pInput->PlanePtr();
+    const Npp8u* pSrc = (const Npp8u*)pInput->PixelPtr();
 
     int nSrcStep = pInput->Pitch();
-    Npp32f* pDst = (Npp32f*)pOutput->PlanePtr();
+    Npp32f* pDst = (Npp32f*)pOutput->PixelPtr();
     int nDstStep = pOutput->Pitch();
     NppiSize oSizeRoi = {0};
     oSizeRoi.height = pOutput->Height();
@@ -1201,12 +1201,12 @@ struct rgb32f_deinterleave final : public NppConvertSurface_Impl {
       return nullptr;
     }
 
-    const Npp32f* pSrc = (const Npp32f*)pInput->PlanePtr();
+    const Npp32f* pSrc = (const Npp32f*)pInput->PixelPtr();
     int nSrcStep = pInput->Pitch();
-    Npp32f* aDst[] = {(Npp32f*)((uint8_t*)pOutput->PlanePtr()),
-                      (Npp32f*)((uint8_t*)pOutput->PlanePtr() +
+    Npp32f* aDst[] = {(Npp32f*)((uint8_t*)pOutput->PixelPtr()),
+                      (Npp32f*)((uint8_t*)pOutput->PixelPtr() +
                                 pOutput->Height() * pOutput->Pitch()),
-                      (Npp32f*)((uint8_t*)pOutput->PlanePtr() +
+                      (Npp32f*)((uint8_t*)pOutput->PixelPtr() +
                                 pOutput->Height() * pOutput->Pitch() * 2)};
     int nDstStep = pOutput->Pitch();
     NppiSize oSizeRoi = {0};
@@ -1255,7 +1255,7 @@ struct p16_nv12 final : public NppConvertSurface_Impl {
     constexpr auto bit_depth = 16U;
     for (int i = 0; i < pInput->NumPlanes(); i++) {
       // Take 8 most significant bits, save result in 16-bit scratch buffer;
-      auto pSrc = (Npp16u*)pInput->PlanePtr(i);
+      auto pSrc = (Npp16u*)pInput->PixelPtr(i);
       int nSrcStep = pInput->Pitch(i);
       Npp16u nConstant = 1 << (bit_depth - (int)pSurface->ElemSize() * 8);
       auto pDstScratch = (Npp16u*)pScratch->GpuMem();
@@ -1275,7 +1275,7 @@ struct p16_nv12 final : public NppConvertSurface_Impl {
       // Bit depth conversion from 16-bit scratch to output;
       pSrc = (Npp16u*)pScratch->GpuMem();
       nSrcStep = pScratch->Pitch();
-      Npp8u* pDst = (Npp8u*)pOutput->PlanePtr(i);
+      Npp8u* pDst = (Npp8u*)pOutput->PixelPtr(i);
       nDstStep = pSurface->Pitch(i);
       oSizeRoi.height = pSurface->Height(i);
       oSizeRoi.width = pSurface->Width(i);

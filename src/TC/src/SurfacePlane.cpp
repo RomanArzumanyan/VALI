@@ -200,7 +200,7 @@ DLManagedTensor* SurfacePlane::DLPackContext::ToDLPack(
 
     dlmt->dl_tensor.device.device_type = kDLCUDA;
     dlmt->dl_tensor.device.device_id = GetDeviceIdByDptr(dptr);
-    dlmt->dl_tensor.data = (void*)dptr;
+    dlmt->dl_tensor.data = (void*)GetDevicePointer(dptr);
     dlmt->dl_tensor.ndim = 2;
     dlmt->dl_tensor.byte_offset = 0U;
 

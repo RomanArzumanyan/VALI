@@ -10,9 +10,9 @@ struct CudaDownloadSurface_Impl {
   std::shared_ptr<Buffer> pHostFrame = nullptr;
 
   CudaDownloadSurface_Impl() = delete;
-  CudaDownloadSurface_Impl(const CudaDownloadSurface_Impl &other) = delete;
-  CudaDownloadSurface_Impl &
-  operator=(const CudaDownloadSurface_Impl &other) = delete;
+  CudaDownloadSurface_Impl(const CudaDownloadSurface_Impl& other) = delete;
+  CudaDownloadSurface_Impl&
+  operator=(const CudaDownloadSurface_Impl& other) = delete;
 
   CudaDownloadSurface_Impl(CUstream stream, CUcontext context, uint32_t _width,
                            uint32_t _height, Pixel_Format _pix_fmt)
@@ -22,7 +22,7 @@ struct CudaDownloadSurface_Impl {
 };
 } // namespace VPF
 
-CudaDownloadSurface *CudaDownloadSurface::Make(CUstream cuStream,
+CudaDownloadSurface* CudaDownloadSurface::Make(CUstream cuStream,
                                                CUcontext cuContext,
                                                uint32_t width, uint32_t height,
                                                Pixel_Format pixelFormat) {
@@ -30,7 +30,7 @@ CudaDownloadSurface *CudaDownloadSurface::Make(CUstream cuStream,
                                  pixelFormat);
 }
 
-auto const cuda_stream_sync = [](void *stream) {
+auto const cuda_stream_sync = [](void* stream) {
   cuStreamSynchronize((CUstream)stream);
 };
 
@@ -40,8 +40,7 @@ CudaDownloadSurface::CudaDownloadSurface(CUstream cuStream, CUcontext cuContext,
     :
 
       Task("CudaDownloadSurface", CudaDownloadSurface::numInputs,
-           CudaDownloadSurface::numOutputs, cuda_stream_sync,
-           (void *)cuStream) {
+           CudaDownloadSurface::numOutputs, cuda_stream_sync, (void*)cuStream) {
   pImpl =
       new CudaDownloadSurface_Impl(cuStream, cuContext, width, height, pix_fmt);
 }
@@ -57,7 +56,7 @@ TaskExecStatus CudaDownloadSurface::Run() {
 
   ClearOutputs();
 
-  auto pSurface = (Surface *)GetInput();
+  auto pSurface = (Surface*)GetInput();
   if (!pImpl->pHostFrame ||
       pImpl->pHostFrame->GetRawMemSize() != pSurface->HostMemSize()) {
     pImpl->pHostFrame.reset(
@@ -72,22 +71,24 @@ TaskExecStatus CudaDownloadSurface::Run() {
   m.srcMemoryType = CU_MEMORYTYPE_DEVICE;
   m.dstMemoryType = CU_MEMORYTYPE_HOST;
 
-  for (auto plane = 0; plane < pSurface->NumPlanes(); plane++) {
+  try {
     CudaCtxPush lock(context);
+    for (auto i = 0; i < pSurface->NumPlanes(); i++) {
+      auto plane = pSurface->GetSurfacePlane(i);
 
-    m.srcDevice = pSurface->PlanePtr(plane);
-    m.srcPitch = pSurface->Pitch(plane);
-    m.dstHost = pDstHost;
-    m.dstPitch = pSurface->WidthInBytes(plane);
-    m.WidthInBytes = pSurface->WidthInBytes(plane);
-    m.Height = pSurface->Height(plane);
+      m.srcDevice = plane.GpuMem();
+      m.srcPitch = plane.Pitch();
+      m.dstHost = pDstHost;
+      m.dstPitch = plane.Width() * plane.ElemSize();
+      m.WidthInBytes = m.dstPitch;
+      m.Height = plane.Height();
 
-    auto const ret = cuMemcpy2DAsync(&m, stream);
-    if (CUDA_SUCCESS != ret) {
-      return TaskExecStatus::TASK_EXEC_FAIL;
+      ThrowOnCudaError(cuMemcpy2DAsync(&m, stream), __LINE__);
+      pDstHost += m.WidthInBytes * m.Height;
     }
-
-    pDstHost += m.WidthInBytes * m.Height;
+    ThrowOnCudaError(cuStreamSynchronize(stream), __LINE__);
+  } catch (...) {
+    return TaskExecStatus::TASK_EXEC_FAIL;
   }
 
   SetOutput(pImpl->pHostFrame.get(), 0);

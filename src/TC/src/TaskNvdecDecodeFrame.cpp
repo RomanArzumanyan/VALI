@@ -821,7 +821,7 @@ NvdecDecodeFrame::NvdecDecodeFrame(CUstream cuStream, CUcontext cuContext,
 }
 
 NvdecDecodeFrame::~NvdecDecodeFrame() {
-  auto lastSurface = pImpl->pLastSurface->PlanePtr();
+  auto lastSurface = pImpl->pLastSurface->PixelPtr();
   pImpl->nvDecoder.UnlockSurface(lastSurface);
   delete pImpl;
 }
@@ -881,7 +881,7 @@ TaskExecStatus NvdecDecodeFrame::Run() {
 
     if (isSurfaceReturned) {
       // Unlock last surface because we will use it later;
-      auto lastSurface = pImpl->pLastSurface->PlanePtr();
+      auto lastSurface = pImpl->pLastSurface->PixelPtr();
       decoder.UnlockSurface(lastSurface);
 
       // Update the reconstructed frame data;

@@ -40,6 +40,11 @@ CUcontext GetContextByDptr(CUdeviceptr dptr);
  */
 int GetDeviceIdByDptr(CUdeviceptr dptr);
 
+/* Get CUDA device pointer attribute;
+ * May throw exception with reason in message; 
+ */
+CUdeviceptr GetDevicePointer(CUdeviceptr dptr);
+
 /* RAII-style CUDA Context sync;
  */
 class TC_EXPORT CudaStrSync final {

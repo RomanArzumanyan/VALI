@@ -72,5 +72,14 @@
         "num_frames": 16,
         "color_space": "ColorSpace.BT_709",
         "color_range": "ColorRange.MPEG"
-    }
+    },
+    "basic_rgb_planar": {
+        "uri": "data/test.rgb_planar",
+        "width": 848,
+        "height": 464,
+        "pix_fmt": "PixelFormat.RGB_PLANAR",
+        "num_frames": 16,
+        "color_space": "ColorSpace.BT_709",
+        "color_range": "ColorRange.MPEG"
+    }    
 }

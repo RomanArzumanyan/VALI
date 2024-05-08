@@ -69,8 +69,8 @@ uint32_t SurfaceY::Pitch(uint32_t plane) const {
   return m_planes.at(plane).Pitch();
 }
 
-CUdeviceptr SurfaceY::PlanePtr(uint32_t plane) {
-  return m_planes.at(plane).GpuMem();
+CUdeviceptr SurfaceY::PixelPtr(uint32_t component) {
+  return m_planes.at(component).GpuMem();
 }
 
 SurfacePlane& SurfaceY::GetSurfacePlane(uint32_t plane) {
@@ -159,16 +159,12 @@ uint32_t SurfaceNV12::Pitch(uint32_t plane) const {
   throw std::invalid_argument("Invalid plane number");
 }
 
-CUdeviceptr SurfaceNV12::PlanePtr(uint32_t plane) {
-  if (Empty()) {
-    return 0x0;
+CUdeviceptr SurfaceNV12::PixelPtr(uint32_t component) {
+  if (component < NumComponents()) {
+    return m_planes.at(0U).GpuMem() + component * Height() * Pitch();
   }
 
-  if (plane < NumPlanes()) {
-    return m_planes.at(0U).GpuMem() + plane * Height() * Pitch();
-  }
-
-  throw std::invalid_argument("Invalid plane number");
+  throw std::invalid_argument("Invalid component number");
 }
 
 bool SurfaceNV12::Update(SurfacePlane& newPlane) { return Update({&newPlane}); }
@@ -243,8 +239,8 @@ uint32_t SurfaceYUV420::Pitch(uint32_t plane) const {
   return m_planes.at(plane).Pitch();
 }
 
-CUdeviceptr SurfaceYUV420::PlanePtr(uint32_t plane) {
-  return m_planes.at(plane).GpuMem();
+CUdeviceptr SurfaceYUV420::PixelPtr(uint32_t component) {
+  return m_planes.at(component).GpuMem();
 }
 
 bool SurfaceYUV420::Update(SurfacePlane& newPlaneY, SurfacePlane& newPlaneU,
@@ -307,8 +303,8 @@ uint32_t SurfaceYUV422::Pitch(uint32_t plane) const {
   return m_planes.at(plane).Pitch();
 }
 
-CUdeviceptr SurfaceYUV422::PlanePtr(uint32_t plane) {
-  return m_planes.at(plane).GpuMem();
+CUdeviceptr SurfaceYUV422::PixelPtr(uint32_t component) {
+  return m_planes.at(component).GpuMem();
 }
 
 SurfacePlane& SurfaceYUV422::GetSurfacePlane(uint32_t plane) {
@@ -372,8 +368,8 @@ uint32_t SurfaceYUV444::Pitch(uint32_t plane) const {
   return m_planes.at(plane).Pitch();
 }
 
-CUdeviceptr SurfaceYUV444::PlanePtr(uint32_t plane) {
-  return m_planes.at(plane).GpuMem();
+CUdeviceptr SurfaceYUV444::PixelPtr(uint32_t component) {
+  return m_planes.at(component).GpuMem();
 }
 
 SurfacePlane& SurfaceYUV444::GetSurfacePlane(uint32_t plane) {
@@ -437,8 +433,8 @@ uint32_t SurfaceRGB::Pitch(uint32_t plane) const {
   return m_planes.at(plane).Pitch();
 }
 
-CUdeviceptr SurfaceRGB::PlanePtr(uint32_t plane) {
-  return m_planes.at(plane).GpuMem();
+CUdeviceptr SurfaceRGB::PixelPtr(uint32_t component) {
+  return m_planes.at(component).GpuMem();
 }
 
 SurfacePlane& SurfaceRGB::GetSurfacePlane(uint32_t plane) {
@@ -477,7 +473,7 @@ SurfaceRGBPlanar::SurfaceRGBPlanar() {
 
 SurfaceRGBPlanar::SurfaceRGBPlanar(uint32_t width, uint32_t height,
                                    CUcontext context)
-    : SurfaceRGBPlanar(width, height * 3, ElemSize(), context) {}
+    : SurfaceRGBPlanar(width, height, ElemSize(), context) {}
 
 VPF::SurfaceRGBPlanar::SurfaceRGBPlanar(uint32_t width, uint32_t height,
                                         uint32_t hbd_elem_size,
@@ -504,8 +500,10 @@ uint32_t SurfaceRGBPlanar::Pitch(uint32_t plane) const {
   return m_planes.at(plane).Pitch();
 }
 
-CUdeviceptr SurfaceRGBPlanar::PlanePtr(uint32_t plane) {
-  return m_planes.at(plane).GpuMem();
+CUdeviceptr SurfaceRGBPlanar::PixelPtr(uint32_t component) {
+  if (component < NumComponents()) {
+    return m_planes.at(component).GpuMem() + Height() * Pitch() * component;
+  }
 }
 
 SurfacePlane& SurfaceRGBPlanar::GetSurfacePlane(uint32_t plane) {

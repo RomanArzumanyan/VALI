@@ -13,6 +13,7 @@
  */
 
 #include "PyNvCodec.hpp"
+#include "CudaUtils.hpp"
 #include "dlpack.h"
 #include <map>
 #include <sstream>
@@ -23,43 +24,6 @@ using namespace chrono;
 
 namespace py = pybind11;
 using namespace pybind11::literals;
-
-auto CopySurface_Ctx_Str = [](shared_ptr<Surface> self,
-                              shared_ptr<Surface> other, CUcontext cudaCtx,
-                              CUstream cudaStream) {
-  CudaCtxPush ctxPush(cudaCtx);
-
-  for (auto plane = 0U; plane < self->NumPlanes(); plane++) {
-    auto srcPlanePtr = self->PlanePtr(plane);
-    auto dstPlanePtr = other->PlanePtr(plane);
-
-    if (!srcPlanePtr || !dstPlanePtr) {
-      break;
-    }
-
-    CUDA_MEMCPY2D m = {0};
-    m.srcMemoryType = CU_MEMORYTYPE_DEVICE;
-    m.dstMemoryType = CU_MEMORYTYPE_DEVICE;
-    m.srcDevice = srcPlanePtr;
-    m.dstDevice = dstPlanePtr;
-    m.srcPitch = self->Pitch(plane);
-    m.dstPitch = other->Pitch(plane);
-    m.Height = self->Height(plane);
-    m.WidthInBytes = self->WidthInBytes(plane);
-
-    ThrowOnCudaError(cuMemcpy2DAsync(&m, cudaStream), __LINE__);
-  }
-
-  ThrowOnCudaError(cuStreamSynchronize(cudaStream), __LINE__);
-};
-
-auto CopySurface = [](shared_ptr<Surface> self, shared_ptr<Surface> other,
-                      int gpuID) {
-  auto ctx = CudaResMgr::Instance().GetCtx(gpuID);
-  auto str = CudaResMgr::Instance().GetStream(gpuID);
-
-  return CopySurface_Ctx_Str(self, other, ctx, str);
-};
 
 string ToString(Pixel_Format fmt) {
   static map<Pixel_Format, string> fmt_names = {

@@ -84,7 +84,65 @@ class TestSurfaceConverter(unittest.TestCase):
         self.assertTrue(surf_dst.Empty())
         self.assertEqual(details, nvc.TaskExecInfo.UNSUPPORTED_FMT_CONV_PARAMS)
 
-    def test_nv12_rgb(self, ):
+    def test_rgb_deinterleave(self):
+        with open("gt_files.json") as f:
+            gt_values = json.load(f)
+            rgbInfo = tc.GroundTruth(**gt_values["basic_rgb"])
+            plnInfo = tc.GroundTruth(**gt_values["basic_rgb_planar"])
+
+            nvUpl = nvc.PyFrameUploader(rgbInfo.width, rgbInfo.height,
+                                        nvc.PixelFormat.RGB, gpu_id=0)
+
+            cc_ctx = nvc.ColorspaceConversionContext(
+                nvc.ColorSpace.BT_709, nvc.ColorRange.MPEG)
+
+            toPLN = nvc.PySurfaceConverter(
+                rgbInfo.width, rgbInfo.height,
+                nvc.PixelFormat.RGB, nvc.PixelFormat.RGB_PLANAR, gpu_id=0)
+
+            nvDwn = nvc.PySurfaceDownloader(rgbInfo.width, rgbInfo.height,
+                                            nvc.PixelFormat.RGB_PLANAR, gpu_id=0)
+
+            f_in = open(rgbInfo.uri, "rb")
+            f_gt = open(plnInfo.uri, "rb")
+            for i in range(0, rgbInfo.num_frames):
+                frame_size = rgbInfo.width * rgbInfo.height * 3
+                # Read from ethalon RGB file
+                rgb_frame = np.fromfile(
+                    file=f_in, dtype=np.uint8, count=frame_size)
+
+                # Read from ethalon planar RGB file
+                pln_frame = np.fromfile(
+                    file=f_gt, dtype=np.uint8, count=frame_size)
+
+                # Upload to GPU
+                surf_rgb = nvUpl.UploadSingleFrame(rgb_frame)
+                if surf_rgb.Empty():
+                    self.fail("Fail to convert NV12 > RGB: ")
+
+                # Deinterleave
+                surf_pln, status = toPLN.Execute(surf_rgb, cc_ctx)
+                if surf_pln.Empty():
+                    self.fail("Fail to convert RGB > RGB_PLANAR: " + status)
+
+                # Download and save to disk
+                dst_frame = np.ndarray(shape=(frame_size), dtype=np.uint8)
+                success = nvDwn.DownloadSingleSurface(surf_pln, dst_frame)
+                if not success:
+                    self.fail("Failed to download surface.")
+
+                # Compare against GT
+                score = tc.measurePSNR(pln_frame, dst_frame)
+                if score < psnr_threshold:
+                    tc.dumpFrameToDisk(dst_frame, "cc", rgbInfo.width,
+                                        rgbInfo.height, "rgb")
+                    self.fail(
+                        "PSNR score is below threshold: " + str(score))
+
+            f_in.close()
+            f_gt.close()
+
+    def test_nv12_rgb(self):
         modes = ['inplace', 'generic']
         for mode in modes:
             with self.subTest(mode):

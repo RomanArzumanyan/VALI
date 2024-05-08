@@ -402,24 +402,20 @@ Surface* Surface::Clone() {
 
   auto newSurf = Surface::Make(PixelFormat(), Width(), Height(), Context());
 
-  CudaCtxPush ctxPush(Context());
-  for (auto plane = 0U; plane < NumPlanes(); plane++) {
-    auto srcPlanePtr = PlanePtr(plane);
-    auto dstPlanePtr = newSurf->PlanePtr(plane);
-
-    if (!srcPlanePtr || !dstPlanePtr) {
-      break;
-    }
+  for (auto i = 0U; i < NumPlanes(); i++) {
+    auto src = GetSurfacePlane(i);
+    auto dst = newSurf->GetSurfacePlane(i);
+    CudaCtxPush ctxPush(GetContextByDptr(src.GpuMem()));
 
     CUDA_MEMCPY2D m = {0};
     m.srcMemoryType = CU_MEMORYTYPE_DEVICE;
     m.dstMemoryType = CU_MEMORYTYPE_DEVICE;
-    m.srcDevice = srcPlanePtr;
-    m.dstDevice = dstPlanePtr;
-    m.srcPitch = Pitch(plane);
-    m.dstPitch = newSurf->Pitch(plane);
-    m.Height = Height(plane);
-    m.WidthInBytes = WidthInBytes(plane);
+    m.srcDevice = src.GpuMem();
+    m.dstDevice = dst.GpuMem();
+    m.srcPitch = src.Pitch();
+    m.dstPitch = dst.Pitch();
+    m.Height = src.Height();
+    m.WidthInBytes = src.Width() * src.ElemSize();
 
     ThrowOnCudaError(cuMemcpy2D(&m), __LINE__);
   }

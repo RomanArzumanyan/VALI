@@ -162,31 +162,27 @@ public:
 
   /* Returns width in pixels;
    */
-  virtual uint32_t Width(uint32_t planeNumber = 0U) const = 0;
+  virtual uint32_t Width(uint32_t plane = 0U) const = 0;
 
   /* Returns width in bytes;
    */
-  virtual uint32_t WidthInBytes(uint32_t planeNumber = 0U) const = 0;
+  virtual uint32_t WidthInBytes(uint32_t plane = 0U) const = 0;
 
   /* Returns height in pixels;
    */
-  virtual uint32_t Height(uint32_t planeNumber = 0U) const = 0;
+  virtual uint32_t Height(uint32_t plane = 0U) const = 0;
 
   /* Returns pitch in bytes;
    */
-  virtual uint32_t Pitch(uint32_t planeNumber = 0U) const = 0;
-
-  /* Returns number of image planes;
-   */
-  virtual uint32_t NumPlanes() const = 0;
+  virtual uint32_t Pitch(uint32_t plane = 0U) const = 0;
 
   /* Returns element size in bytes;
    */
   virtual uint32_t ElemSize() const = 0;
 
-  /* Returns SurfacePlane CUDA device pointer;
+  /* Return number of components;
    */
-  virtual CUdeviceptr PlanePtr(uint32_t planeNumber = 0U) = 0;
+  virtual uint32_t NumComponents() const = 0;
 
   /* Returns pixel format;
    */
@@ -198,11 +194,19 @@ public:
 
   /* Returns Surface Plane by number;
    */
-  virtual SurfacePlane& GetSurfacePlane(uint32_t planeNumber = 0U) = 0;
+  virtual SurfacePlane& GetSurfacePlane(uint32_t plane = 0U) = 0;
 
   /* Update from set of image planes, don't own the memory;
    */
   virtual bool Update(std::initializer_list<SurfacePlane*> planes) = 0;
+
+  /* Get CUDA device pointer to first pixel of given component;
+   */
+  virtual CUdeviceptr PixelPtr(uint32_t component = 0U) = 0;
+
+  /* Returns number of image planes;
+   */
+  virtual uint32_t NumPlanes() const = 0;
 
   /* Copy constructor which does CUDA memalloc + deep copy;
    */

@@ -36,15 +36,16 @@ public:
   uint32_t Height(uint32_t plane = 0U) const;
   uint32_t Pitch(uint32_t plane = 0U) const;
   uint32_t ElemSize() const { return sizeof(uint8_t); }
+  uint32_t NumComponents() const { return 1U; }
+  uint32_t NumPlanes() const { return 1U; }
 
-  CUdeviceptr PlanePtr(uint32_t plane = 0U);
   Pixel_Format PixelFormat() const { return Y; };
-  uint32_t NumPlanes() const { return 1U; };
   DLDataTypeCode DataType() const { return kDLUInt; }
 
   bool Update(SurfacePlane& newPlane);
   bool Update(std::initializer_list<SurfacePlane*> planes);
   SurfacePlane& GetSurfacePlane(uint32_t plane = 0U);
+  CUdeviceptr PixelPtr(uint32_t component = 0U);
 };
 
 /* 8-bit NV12 image;
@@ -64,15 +65,16 @@ public:
   virtual Surface* Create() override;
   virtual Pixel_Format PixelFormat() const override { return NV12; }
   virtual uint32_t ElemSize() const override { return sizeof(uint8_t); }
+  virtual uint32_t NumComponents() const override { return 2U; }
+  virtual uint32_t NumPlanes() const override { return 1U; }
+  virtual CUdeviceptr PixelPtr(uint32_t component = 0U) override;
 
   uint32_t Width(uint32_t plane = 0U) const;
   uint32_t WidthInBytes(uint32_t plane = 0U) const;
   uint32_t Height(uint32_t plane = 0U) const;
   uint32_t Pitch(uint32_t plane = 0U) const;
-  uint32_t NumPlanes() const { return 2; }
   DLDataTypeCode DataType() const { return kDLUInt; }
 
-  CUdeviceptr PlanePtr(uint32_t plane = 0U);
   SurfacePlane& GetSurfacePlane(uint32_t plane = 0U);
 
   bool Update(SurfacePlane& newPlane);
@@ -138,16 +140,17 @@ public:
   uint32_t Height(uint32_t plane = 0U) const;
   uint32_t Pitch(uint32_t plane = 0U) const;
   uint32_t ElemSize() const { return sizeof(uint8_t); }
+  uint32_t NumComponents() const { return 3U; }
+  uint32_t NumPlanes() const { return 3U; }
 
-  CUdeviceptr PlanePtr(uint32_t plane = 0U);
   Pixel_Format PixelFormat() const { return YUV420; }
-  uint32_t NumPlanes() const { return 3; }
   DLDataTypeCode DataType() const { return kDLUInt; }
 
   bool Update(SurfacePlane& newPlaneY, SurfacePlane& newPlaneU,
               SurfacePlane& newPlaneV);
   bool Update(std::initializer_list<SurfacePlane*> planes);
   SurfacePlane& GetSurfacePlane(uint32_t plane = 0U);
+  CUdeviceptr PixelPtr(uint32_t component = 0U);
 };
 
 class TC_EXPORT SurfaceYUV422 final : public Surface {
@@ -163,21 +166,22 @@ public:
 
   Surface* Create() override;
 
-  uint32_t Width(uint32_t planeNumber = 0U) const;
-  uint32_t WidthInBytes(uint32_t planeNumber = 0U) const;
-  uint32_t Height(uint32_t planeNumber = 0U) const;
-  uint32_t Pitch(uint32_t planeNumber = 0U) const;
-  Pixel_Format PixelFormat() const { return YUV422; }
-  uint32_t NumPlanes() const { return 3; }
-  DLDataTypeCode DataType() const { return kDLUInt; }
+  uint32_t Width(uint32_t plane = 0U) const;
+  uint32_t WidthInBytes(uint32_t plane = 0U) const;
+  uint32_t Height(uint32_t plane = 0U) const;
+  uint32_t Pitch(uint32_t plane = 0U) const;
   uint32_t ElemSize() const { return sizeof(uint8_t); }
+  uint32_t NumComponents() const { return 3U; }
+  uint32_t NumPlanes() const { return 3U; }
 
-  CUdeviceptr PlanePtr(uint32_t planeNumber = 0U);
-  SurfacePlane& GetSurfacePlane(uint32_t planeNumber = 0U);
+  Pixel_Format PixelFormat() const { return YUV422; }
+  DLDataTypeCode DataType() const { return kDLUInt; }
 
   bool Update(SurfacePlane& newPlaneY, SurfacePlane& newPlaneU,
               SurfacePlane& newPlaneV);
   bool Update(std::initializer_list<SurfacePlane*> planes);
+  SurfacePlane& GetSurfacePlane(uint32_t plane = 0U);
+  CUdeviceptr PixelPtr(uint32_t component = 0U);
 };
 
 class TC_EXPORT SurfaceYUV444 : public Surface {
@@ -194,16 +198,17 @@ public:
   virtual Surface* Create() override;
   virtual Pixel_Format PixelFormat() const override { return YUV422; }
   virtual uint32_t ElemSize() const override { return sizeof(uint8_t); }
+  virtual uint32_t NumComponents() const override { return 3U; }
+  virtual uint32_t NumPlanes() const override { return 3U; }
+  virtual CUdeviceptr PixelPtr(uint32_t component = 0U) override;  
 
-  uint32_t Width(uint32_t planeNumber = 0U) const;
-  uint32_t WidthInBytes(uint32_t planeNumber = 0U) const;
-  uint32_t Height(uint32_t planeNumber = 0U) const;
-  uint32_t Pitch(uint32_t planeNumber = 0U) const;
-  uint32_t NumPlanes() const { return 3; }
+  uint32_t Width(uint32_t plane = 0U) const;
+  uint32_t WidthInBytes(uint32_t plane = 0U) const;
+  uint32_t Height(uint32_t plane = 0U) const;
+  uint32_t Pitch(uint32_t plane = 0U) const;
   DLDataTypeCode DataType() const { return kDLUInt; }
 
-  CUdeviceptr PlanePtr(uint32_t planeNumber = 0U);
-  SurfacePlane& GetSurfacePlane(uint32_t planeNumber = 0U);
+  SurfacePlane& GetSurfacePlane(uint32_t plane = 0U);
 
   bool Update(SurfacePlane& newPlaneY, SurfacePlane& newPlaneU,
               SurfacePlane& newPlaneV);
@@ -247,16 +252,17 @@ public:
   virtual Surface* Create() override;
   virtual Pixel_Format PixelFormat() const override { return RGB; }
   virtual uint32_t ElemSize() const override { return sizeof(uint8_t); }
+  virtual uint32_t NumComponents() const override { return 1U; }
+  virtual uint32_t NumPlanes() const override { return 1U; }
+  virtual CUdeviceptr PixelPtr(uint32_t component = 0U) override;
 
-  uint32_t Width(uint32_t planeNumber = 0U) const;
-  uint32_t WidthInBytes(uint32_t planeNumber = 0U) const;
-  uint32_t Height(uint32_t planeNumber = 0U) const;
-  uint32_t Pitch(uint32_t planeNumber = 0U) const;
-  uint32_t NumPlanes() const { return 1; }
+  uint32_t Width(uint32_t plane = 0U) const;
+  uint32_t WidthInBytes(uint32_t plane = 0U) const;
+  uint32_t Height(uint32_t plane = 0U) const;
+  uint32_t Pitch(uint32_t plane = 0U) const;
   DLDataTypeCode DataType() const { return kDLUInt; }
 
-  CUdeviceptr PlanePtr(uint32_t planeNumber = 0U);
-  SurfacePlane& GetSurfacePlane(uint32_t planeNumber = 0U);
+  SurfacePlane& GetSurfacePlane(uint32_t plane = 0U);
 
   bool Update(SurfacePlane& newPlane);
   bool Update(std::initializer_list<SurfacePlane*> planes);
@@ -319,16 +325,17 @@ public:
   virtual Surface* Create() override;
   virtual Pixel_Format PixelFormat() const override { return RGB_PLANAR; }
   virtual uint32_t ElemSize() const override { return sizeof(uint8_t); }
+  virtual uint32_t NumComponents() const override { return 3U; }
+  virtual uint32_t NumPlanes() const override { return 1U; }
+  virtual CUdeviceptr PixelPtr(uint32_t component = 0U) override;
 
-  uint32_t Width(uint32_t planeNumber = 0U) const;
-  uint32_t WidthInBytes(uint32_t planeNumber = 0U) const;
-  uint32_t Height(uint32_t planeNumber = 0U) const;
-  uint32_t Pitch(uint32_t planeNumber = 0U) const;
-  uint32_t NumPlanes() const { return 3; }
+  uint32_t Width(uint32_t plane = 0U) const;
+  uint32_t WidthInBytes(uint32_t plane = 0U) const;
+  uint32_t Height(uint32_t plane = 0U) const;
+  uint32_t Pitch(uint32_t plane = 0U) const;
   DLDataTypeCode DataType() const { return kDLUInt; }
 
-  CUdeviceptr PlanePtr(uint32_t planeNumber = 0U);
-  SurfacePlane& GetSurfacePlane(uint32_t planeNumber = 0U);
+  SurfacePlane& GetSurfacePlane(uint32_t plane = 0U);
 
   bool Update(SurfacePlane& newPlane);
   bool Update(std::initializer_list<SurfacePlane*> planes);

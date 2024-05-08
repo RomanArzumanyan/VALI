@@ -98,4 +98,15 @@ CUcontext GetContextByDptr(CUdeviceptr dptr) {
                    __LINE__);
   return cuda_ctx;
 }
+
+CUdeviceptr GetDevicePointer(CUdeviceptr dptr) {
+  CudaCtxPush ctxPush(GetContextByDptr(dptr));
+  CUdeviceptr gpu_ptr = 0U;
+
+  ThrowOnCudaError(cuPointerGetAttribute((void*)&gpu_ptr,
+                                         CU_POINTER_ATTRIBUTE_DEVICE_POINTER,
+                                         dptr),
+                   __LINE__);
+  return gpu_ptr;
+}
 } // namespace VPF
