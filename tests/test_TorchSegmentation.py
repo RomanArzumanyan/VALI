@@ -169,14 +169,13 @@ def count_detections(types: dict, detections: dict) -> dict:
 class TestTorchSegmentation(unittest.TestCase):
     def __init__(self, methodName):
         super().__init__(methodName=methodName)
+        # Init resnet
+        self.model = torchvision.models.detection.ssd300_vgg16(
+            weights=torchvision.models.detection.SSD300_VGG16_Weights.COCO_V1)
+        self.model.eval()
+        self.model.to("cuda")
 
     def run_inference_on_video(self, gpu_id: int, input_video: str):
-        # Init resnet
-        model = torchvision.models.detection.ssd300_vgg16(
-            weights=torchvision.models.detection.SSD300_VGG16_Weights.COCO_V1)
-        model.eval()
-        model.to("cuda")
-
         # Init HW decoder
         nvDec = nvc.PyNvDecoder(input_video, gpu_id)
 
@@ -237,7 +236,7 @@ class TestTorchSegmentation(unittest.TestCase):
 
             # Run inference.
             with torch.no_grad():
-                outputs = model(input_batch)
+                outputs = self.model(input_batch)
 
             # Collect segmentation results.
             pred_classes = [coco_names[i]
