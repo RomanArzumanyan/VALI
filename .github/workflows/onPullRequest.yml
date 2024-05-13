@@ -33,7 +33,7 @@ jobs:
           --workdir /src/tests \
           --entrypoint "python3" vali-gpu -m unittest discover .
 
-  test_linux:
+  build_linux:
     runs-on: [self-hosted, Linux]
 
     steps:
@@ -53,11 +53,11 @@ jobs:
         python3 -mpip install torch torchvision
         python3 -mpip install . --verbose
 
-    - name: 'Run tests'
-      run: |
-        source /tmp/venv_vali/bin/activate
-        cd tests
-        python3 -m unittest discover .
+    # - name: 'Run tests'
+    #   run: |
+    #     source /tmp/venv_vali/bin/activate
+    #     cd tests
+    #     python3 -m unittest discover .
 
     - name: 'Build docs'
       run: |

@@ -44,7 +44,7 @@ RUN python3 -m pip install --no-cache-dir setuptools wheel
 RUN python3 -m pip install --no-cache-dir .[$PIP_INSTALL_EXTRAS]
 RUN python3 -m pip install pydantic torch torchvision
 
-RUN MKDIR /.cache
+RUN mkdir -p /.cache
 RUN chown -r ${USER} /.cache
 
 RUN mkdir /cwd
