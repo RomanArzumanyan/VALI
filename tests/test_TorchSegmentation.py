@@ -1,5 +1,6 @@
 #
 # Copyright 2022 NVIDIA Corporation
+# Copyright 2024 Vision Labs LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -165,7 +166,7 @@ def count_detections(types: dict, detections: dict) -> dict:
     return my_types
 
 
-class TestSurfacePycuda(unittest.TestCase):
+class TestTorchSegmentation(unittest.TestCase):
     def __init__(self, methodName):
         super().__init__(methodName=methodName)
 
