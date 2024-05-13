@@ -25,7 +25,11 @@ jobs:
     - name: 'Docker build and test'
       run: |
         git submodule update --init --recursive
-        DOCKER_BUILDKIT=1 docker build --tag vali-gpu  -f docker/Dockerfile --build-arg PIP_INSTALL_EXTRAS=torch .
+        DOCKER_BUILDKIT=1 docker build \
+          --tag vali-gpu  \
+          -f docker/Dockerfile \
+          --build-arg USER_NAME=$UID \
+          --build-arg PIP_INSTALL_EXTRAS=torch .
         docker run \
           --rm \
           --gpus all \
