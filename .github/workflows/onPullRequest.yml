@@ -51,17 +51,12 @@ jobs:
         python3 -mpip install pydantic
         python3 -mpip install pycuda
         python3 -mpip install . --verbose
-        python3 -mpip install src/PytorchNvCodec --verbose
 
     - name: 'Run tests'
       run: |
         source /tmp/venv_vali/bin/activate
         cd tests
-        python3 ./test_PyFFmpegDecoder.py
-        python3 ./test_PyFfmpegDemuxer.py
-        python3 ./test_PyNvDecoder.py
-        python3 ./test_PyNvEncoder.py
-        python3 ./test_PySurface.py
+        python3 -m unittest discover .
 
     - name: 'Build docs'
       run: |
@@ -113,10 +108,7 @@ jobs:
       run: |
         ./tmp/venv_vali/Scripts/activate
         cd tests
-        python ./test_PyFFmpegDecoder.py
-        python ./test_PyFfmpegDemuxer.py
-        python ./test_PyNvDecoder.py
-        python ./test_PyNvEncoder.py
+        python -m unittest discover .
 
     - name: 'Upload Artifacts'
       uses: actions/upload-artifact@v3
