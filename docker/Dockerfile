@@ -41,10 +41,10 @@ COPY CMakeLists.txt CMakeLists.txt
 COPY common.cmake common.cmake
 COPY FindFFmpeg.cmake FindFFmpeg.cmake
 RUN python3 -m pip install --no-cache-dir setuptools wheel
-RUN python3 -m pip install pydantic torch torchvision
+RUN python3 -m pip install --no-cache-dir .[$PIP_INSTALL_EXTRAS]
+RUN python3 -m pip install pydantic
 
 RUN mkdir /.cache
-
 RUN mkdir /cwd
 WORKDIR /cwd
 
