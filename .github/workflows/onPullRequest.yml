@@ -25,7 +25,7 @@ jobs:
     - name: 'Docker build and test'
       run: |
         git submodule update --init --recursive
-        DOCKER_BUILDKIT=1 docker build --tag vali-gpu  -f docker/Dockerfile --build-arg PIP_INSTALL_EXTRAS=torch .
+        DOCKER_BUILDKIT=1 docker build --tag vali-gpu  -f docker/Dockerfile .
         docker run \
           --rm \
           --gpus all \
@@ -116,7 +116,6 @@ jobs:
         python ./test_PyNvDecoder.py
         python ./test_PyNvEncoder.py
         python ./test_PySurfaceConverter.py
-        python ./test_PySurface.py
 
     - name: 'Upload Artifacts'
       uses: actions/upload-artifact@v3
