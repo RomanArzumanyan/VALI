@@ -14,7 +14,6 @@
 
 #include "Surfaces.hpp"
 #include <algorithm>
-#include <stdexcept>
 
 static bool ValidatePlanes(std::initializer_list<SurfacePlane*> planes,
                            size_t elem_size, size_t num_planes) {
@@ -88,6 +87,8 @@ bool SurfaceY::Update(std::initializer_list<SurfacePlane*> planes) {
   m_planes.at(0U) = **planes.begin();
   return true;
 }
+
+DLManagedTensor* SurfaceY::ToDLPack() { return m_planes.begin()->ToDLPack(); }
 
 SurfaceNV12::SurfaceNV12() {
   m_planes.clear();
@@ -186,19 +187,27 @@ SurfacePlane& SurfaceNV12::GetSurfacePlane(uint32_t plane) {
   throw std::invalid_argument("Invalid plane number");
 }
 
+DLManagedTensor* SurfaceNV12::ToDLPack() {
+  /* NV12 is semi-planar which means it either has to be packed and shipped
+   * outside VALI as is or it has to be split in 2 tensors, one for Y and
+   * another for UV planes. Here we decide to pack it as-is;
+   */
+  return m_planes.begin()->ToDLPack();
+}
+
 SurfaceP10::SurfaceP10() : SurfaceNV12() {}
 
 SurfaceP10::SurfaceP10(uint32_t width, uint32_t height, CUcontext context)
     : SurfaceNV12(width, height, ElemSize(), context) {}
 
-Surface* VPF::SurfaceP10::Create() { return new SurfaceP10; }
+Surface* SurfaceP10::Create() { return new SurfaceP10; }
 
 SurfaceP12::SurfaceP12() : SurfaceNV12() {}
 
 SurfaceP12::SurfaceP12(uint32_t width, uint32_t height, CUcontext context)
     : SurfaceNV12(width, height, ElemSize(), context) {}
 
-Surface* VPF::SurfaceP12::Create() { return new SurfaceP12; }
+Surface* SurfaceP12::Create() { return new SurfaceP12; }
 
 SurfaceYUV420::SurfaceYUV420() {
   m_planes.clear();
@@ -399,7 +408,7 @@ SurfaceYUV444_10bit::SurfaceYUV444_10bit(uint32_t width, uint32_t height,
                                          CUcontext context)
     : SurfaceYUV444(width, height, ElemSize(), context) {}
 
-Surface* VPF::SurfaceYUV444_10bit::Create() { return new SurfaceYUV444_10bit; }
+Surface* SurfaceYUV444_10bit::Create() { return new SurfaceYUV444_10bit; }
 
 SurfaceRGB::SurfaceRGB() {
   m_planes.clear();
@@ -452,19 +461,51 @@ bool SurfaceRGB::Update(std::initializer_list<SurfacePlane*> planes) {
   return true;
 }
 
+DLManagedTensor* SurfaceRGB::ToDLPack() {
+  auto dlmt = m_planes.begin()->ToDLPack();
+
+  /* Re-pack tensor partially because SurfacePlane doesn't store information
+   * about pixel format.
+   */
+  try {
+    dlmt->dl_tensor.ndim = 3;
+
+    delete[] dlmt->dl_tensor.shape;
+    dlmt->dl_tensor.shape = new int64_t[dlmt->dl_tensor.ndim];
+    dlmt->dl_tensor.shape[0] = Height();
+    dlmt->dl_tensor.shape[1] = Width();
+    dlmt->dl_tensor.shape[2] = 3U;
+
+    delete[] dlmt->dl_tensor.strides;
+    dlmt->dl_tensor.strides = new int64_t[dlmt->dl_tensor.ndim];
+    // Distance between rows within single picture;
+    dlmt->dl_tensor.strides[0] = Pitch() / ElemSize();
+    // Distance between pixels within single row;
+    dlmt->dl_tensor.strides[1] = 3U;
+    // Distance between components (R, G, B) within single pixel;
+    dlmt->dl_tensor.strides[2] = 1U;
+  } catch (...) {
+    auto deleter = dlmt->deleter;
+    deleter(dlmt);
+    throw std::runtime_error("Failed to create DLManagedTensor");
+  }
+
+  return dlmt;
+}
+
 SurfaceBGR::SurfaceBGR() : SurfaceRGB() {}
 
 SurfaceBGR::SurfaceBGR(uint32_t width, uint32_t height, CUcontext context)
     : SurfaceRGB(width, height, context) {}
 
-Surface* VPF::SurfaceBGR::Create() { return new SurfaceBGR; }
+Surface* SurfaceBGR::Create() { return new SurfaceBGR; }
 
 SurfaceRGB32F::SurfaceRGB32F() : SurfaceRGB() {}
 
 SurfaceRGB32F::SurfaceRGB32F(uint32_t width, uint32_t height, CUcontext context)
     : SurfaceRGB(width, height, ElemSize(), context) {}
 
-Surface* VPF::SurfaceRGB32F::Create() { return new SurfaceRGB32F; }
+Surface* SurfaceRGB32F::Create() { return new SurfaceRGB32F; }
 
 SurfaceRGBPlanar::SurfaceRGBPlanar() {
   m_planes.clear();
@@ -475,9 +516,8 @@ SurfaceRGBPlanar::SurfaceRGBPlanar(uint32_t width, uint32_t height,
                                    CUcontext context)
     : SurfaceRGBPlanar(width, height, ElemSize(), context) {}
 
-VPF::SurfaceRGBPlanar::SurfaceRGBPlanar(uint32_t width, uint32_t height,
-                                        uint32_t hbd_elem_size,
-                                        CUcontext context) {
+SurfaceRGBPlanar::SurfaceRGBPlanar(uint32_t width, uint32_t height,
+                                   uint32_t hbd_elem_size, CUcontext context) {
   m_planes.clear();
   m_planes.emplace_back(width, height * 3, hbd_elem_size, DataType(), context);
 }
@@ -523,10 +563,42 @@ bool SurfaceRGBPlanar::Update(std::initializer_list<SurfacePlane*> planes) {
   return true;
 }
 
+DLManagedTensor* SurfaceRGBPlanar::ToDLPack() {
+  auto dlmt = m_planes.begin()->ToDLPack();
+
+  /* Re-pack tensor partially because SurfacePlane doesn't store information
+   * about pixel format.
+   */
+  try {
+    dlmt->dl_tensor.ndim = 3;
+
+    delete[] dlmt->dl_tensor.shape;
+    dlmt->dl_tensor.shape = new int64_t[dlmt->dl_tensor.ndim];
+    dlmt->dl_tensor.shape[0] = 3U;
+    dlmt->dl_tensor.shape[1] = Height();
+    dlmt->dl_tensor.shape[2] = Width();
+
+    delete[] dlmt->dl_tensor.strides;
+    dlmt->dl_tensor.strides = new int64_t[dlmt->dl_tensor.ndim];
+    // Distance between channels (R, G, B) within single picture;
+    dlmt->dl_tensor.strides[0] = Pitch() * Height() / ElemSize();
+    // Distance between rows within single channel;
+    dlmt->dl_tensor.strides[1] = Pitch() / ElemSize();
+    // Distance between elements within single row;
+    dlmt->dl_tensor.strides[2] = 1U;
+  } catch (...) {
+    auto deleter = dlmt->deleter;
+    deleter(dlmt);
+    throw std::runtime_error("Failed to create DLManagedTensor");
+  }
+
+  return dlmt;
+}
+
 SurfaceRGB32FPlanar::SurfaceRGB32FPlanar() : SurfaceRGBPlanar() {}
 
 SurfaceRGB32FPlanar::SurfaceRGB32FPlanar(uint32_t width, uint32_t height,
                                          CUcontext context)
     : SurfaceRGBPlanar(width, height, ElemSize(), context) {}
 
-Surface* VPF::SurfaceRGB32FPlanar::Create() { return new SurfaceRGB32FPlanar; }
+Surface* SurfaceRGB32FPlanar::Create() { return new SurfaceRGB32FPlanar; }

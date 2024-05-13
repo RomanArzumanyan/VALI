@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#include "PyNvCodec.hpp"
 #include "CudaUtils.hpp"
+#include "PyNvCodec.hpp"
 #include "dlpack.h"
 #include <map>
 #include <sstream>
@@ -252,6 +252,44 @@ void Init_PySurface(py::module& m) {
         :param width: width in pixels
         :param height: height in pixels
         :param context: CUDA contet to use
+    )pbdoc")
+      .def(
+          "__dlpack_device__",
+          [](shared_ptr<Surface> self) {
+            if (self->NumPlanes() > 1U) {
+              throw(
+                  std::runtime_error("Surface has multiple planes. Use DLPack "
+                                     "methods for particular plane instead."));
+            }
+
+            auto plane = self->GetSurfacePlane(0U);
+            if (plane.FromDLPack()) {
+              throw(std::runtime_error(
+                  "Cant get __dlpack_device__ attribute from "
+                  "SurfacePlane already created from DLPack."));
+            }
+
+            return std::make_tuple(plane.DLPackCtx().DeviceType(),
+                                   plane.DeviceId());
+          },
+          R"pbdoc(
+        DLPack: get device information.
+    )pbdoc")
+      .def(
+          "__dlpack__",
+          [](shared_ptr<Surface> self, int stream) {
+            if (self->NumPlanes() > 1U) {
+              throw(
+                  std::runtime_error("Surface has multiple planes. Use DLPack "
+                                     "methods for particular plane instead."));
+            }
+
+            auto dlmt = self->ToDLPack();
+            return py::capsule(dlmt, "dltensor", dlpack_capsule_deleter);
+          },
+          py::arg("stream") = 0,
+          R"pbdoc(
+        DLPack: get capsule.
     )pbdoc")
       .def_static(
           "from_dlpack",

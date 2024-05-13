@@ -208,6 +208,10 @@ public:
    */
   virtual uint32_t NumPlanes() const = 0;
 
+  /* Get DLPack descriptor;
+   */
+  virtual DLManagedTensor* ToDLPack() = 0;
+
   /* Copy constructor which does CUDA memalloc + deep copy;
    */
   Surface* Clone();

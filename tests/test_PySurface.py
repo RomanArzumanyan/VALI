@@ -112,6 +112,59 @@ class TestSurfacePycuda(unittest.TestCase):
                     self.fail("Failed to download decoded surface")
                 self.assertTrue(np.array_equal(rgb_frame, frame_dst))
 
+    def test_tensor_from_surface(self):
+        with open("gt_files.json") as f:
+            gtInfo = tc.GroundTruth(**json.load(f)["basic"])
+
+            nvDec = nvc.PyNvDecoder(
+                input=gtInfo.uri,
+                gpu_id=0)
+
+            nvCvt = nvc.PySurfaceConverter(
+                nvDec.Width(),
+                nvDec.Height(),
+                nvc.PixelFormat.NV12,
+                nvc.PixelFormat.RGB,
+                gpu_id=0)
+            
+            nvDwn = nvc.PySurfaceDownloader(
+                nvDec.Width(),
+                nvDec.Height(),
+                nvCvt.Format(),
+                gpu_id=0)
+
+            # Use color space and range of original file.
+            cc_ctx = nvc.ColorspaceConversionContext(
+                nvc.ColorSpace.BT_709,
+                nvc.ColorRange.MPEG)
+
+            for i in range(0, gtInfo.num_frames):
+                surf_src, _ = nvDec.DecodeSingleSurface()
+                if surf_src.Empty():
+                    self.fail("Fail to decode surface")
+
+                surf_dst, _ = nvCvt.Execute(surf_src, cc_ctx)
+                if surf_dst.Empty():
+                    self.fail("Fail to convert surface")
+
+                src_tensor = torch.from_dlpack(surf_dst)
+                
+                # Check dimensions
+                self.assertEqual(len(src_tensor.shape), 3)
+                self.assertEqual(src_tensor.shape[0], surf_dst.Height())
+                self.assertEqual(src_tensor.shape[1], surf_dst.Width())
+                self.assertEqual(src_tensor.shape[2], 3)
+                
+                # Check if sizes are equal
+                rgb_frame = src_tensor.cpu().numpy().flatten()
+                self.assertEqual(rgb_frame.size, surf_dst.HostSize())
+                
+                # Check if memory is bit 2 bit equal
+                frame_dst = np.ndarray(shape=(0), dtype=np.uint8)
+                if not nvDwn.DownloadSingleSurface(surf_dst, frame_dst):
+                    self.fail("Failed to download decoded surface")
+                self.assertTrue(np.array_equal(rgb_frame, frame_dst))                
+
     def test_surface_from_tensor(self):
         with open("gt_files.json") as f:
             gt_values = json.load(f)

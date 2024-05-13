@@ -14,6 +14,7 @@
 
 #pragma once
 #include "MemoryInterfaces.hpp"
+#include <stdexcept>
 
 namespace VPF {
 /* 8-bit single plane image.
@@ -41,6 +42,7 @@ public:
 
   Pixel_Format PixelFormat() const { return Y; };
   DLDataTypeCode DataType() const { return kDLUInt; }
+  DLManagedTensor* ToDLPack();
 
   bool Update(SurfacePlane& newPlane);
   bool Update(std::initializer_list<SurfacePlane*> planes);
@@ -67,7 +69,7 @@ public:
   virtual uint32_t ElemSize() const override { return sizeof(uint8_t); }
   virtual uint32_t NumComponents() const override { return 2U; }
   virtual uint32_t NumPlanes() const override { return 1U; }
-  virtual CUdeviceptr PixelPtr(uint32_t component = 0U) override;
+  virtual CUdeviceptr PixelPtr(uint32_t component = 0U) override;  
 
   uint32_t Width(uint32_t plane = 0U) const;
   uint32_t WidthInBytes(uint32_t plane = 0U) const;
@@ -79,6 +81,7 @@ public:
 
   bool Update(SurfacePlane& newPlane);
   bool Update(std::initializer_list<SurfacePlane*> planes);
+  DLManagedTensor* ToDLPack();
 
 protected:
   // For high bit depth ancestors;
@@ -151,6 +154,14 @@ public:
   bool Update(std::initializer_list<SurfacePlane*> planes);
   SurfacePlane& GetSurfacePlane(uint32_t plane = 0U);
   CUdeviceptr PixelPtr(uint32_t component = 0U);
+
+  /* Will throw exception, because nuber of planes > 1;
+   * DLPack specification allows for 1 CUDA device ptr only;
+   */
+  DLManagedTensor* ToDLPack() {
+    throw std::runtime_error("Number of CUDA memory allocations > 1, cant "
+                             "seriaize into DLPack tensor.");
+  }
 };
 
 class TC_EXPORT SurfaceYUV422 final : public Surface {
@@ -182,6 +193,14 @@ public:
   bool Update(std::initializer_list<SurfacePlane*> planes);
   SurfacePlane& GetSurfacePlane(uint32_t plane = 0U);
   CUdeviceptr PixelPtr(uint32_t component = 0U);
+
+  /* Will throw exception, because nuber of planes > 1;
+   * DLPack specification allows for 1 CUDA device ptr only;
+   */
+  DLManagedTensor* ToDLPack() {
+    throw std::runtime_error("Number of CUDA memory allocations > 1, cant "
+                             "seriaize into DLPack tensor.");
+  } 
 };
 
 class TC_EXPORT SurfaceYUV444 : public Surface {
@@ -213,6 +232,14 @@ public:
   bool Update(SurfacePlane& newPlaneY, SurfacePlane& newPlaneU,
               SurfacePlane& newPlaneV);
   bool Update(std::initializer_list<SurfacePlane*> planes);
+
+  /* Will throw exception, because nuber of planes > 1;
+   * DLPack specification allows for 1 CUDA device ptr only;
+   */
+  DLManagedTensor* ToDLPack() {
+    throw std::runtime_error("Number of CUDA memory allocations > 1, cant "
+                             "seriaize into DLPack tensor.");
+  } 
 
 protected:
   // For high bit depth ancestors;
@@ -255,6 +282,7 @@ public:
   virtual uint32_t NumComponents() const override { return 1U; }
   virtual uint32_t NumPlanes() const override { return 1U; }
   virtual CUdeviceptr PixelPtr(uint32_t component = 0U) override;
+  virtual DLManagedTensor* ToDLPack() override;
 
   uint32_t Width(uint32_t plane = 0U) const;
   uint32_t WidthInBytes(uint32_t plane = 0U) const;
@@ -328,6 +356,7 @@ public:
   virtual uint32_t NumComponents() const override { return 3U; }
   virtual uint32_t NumPlanes() const override { return 1U; }
   virtual CUdeviceptr PixelPtr(uint32_t component = 0U) override;
+  virtual DLManagedTensor* ToDLPack() override;
 
   uint32_t Width(uint32_t plane = 0U) const;
   uint32_t WidthInBytes(uint32_t plane = 0U) const;
