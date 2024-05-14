@@ -93,9 +93,6 @@ class TestSurfaceConverter(unittest.TestCase):
             plnInfo = tc.GroundTruth(**gt_values["basic_rgb_planar"])
 
             nvUpl = nvc.PyFrameUploader(
-                rgbInfo.width,
-                rgbInfo.height,
-                nvc.PixelFormat.RGB,
                 gpu_id=0)
 
             toPLN = nvc.PySurfaceConverter(
@@ -121,14 +118,13 @@ class TestSurfaceConverter(unittest.TestCase):
             for i in range(0, rgbInfo.num_frames):
                 frame_size = rgbInfo.width * rgbInfo.height * 3
                 # Read from ethalon RGB file
-                rgb_frame = np.fromfile(
-                    file=f_in,
-                    dtype=np.uint8,
-                    count=frame_size)
+                rgb_frame = np.fromfile(file=f_in, dtype=np.uint8, count=frame_size)
 
                 # Upload to GPU
-                surf_rgb = nvUpl.UploadSingleFrame(rgb_frame)
-                if surf_rgb.Empty():
+                surf_rgb = nvc.Surface.Make(nvc.PixelFormat.RGB, rgbInfo.width, 
+                                            rgbInfo.height, gpu_id=0)
+                success = nvUpl.Run(rgb_frame, surf_rgb)
+                if not success:
                     self.fail("Fail to upload frame.")
 
                 # Deinterleave
@@ -170,9 +166,6 @@ class TestSurfaceConverter(unittest.TestCase):
             rgbInfo = tc.GroundTruth(**gt_values["basic_rgb"])
 
         nvUpl = nvc.PyFrameUploader(
-            nv12Info.width,
-            nv12Info.height,
-            nvc.PixelFormat.NV12,
             gpu_id=0)
 
         nvCvt = nvc.PySurfaceConverter(
@@ -204,8 +197,10 @@ class TestSurfaceConverter(unittest.TestCase):
                 int(nv12Info.width * nv12Info.height * 3 / 2))
 
             # Upload to GPU
-            surf_src = nvUpl.UploadSingleFrame(frame_src)
-            if surf_src.Empty():
+            surf_src = nvc.Surface.Make(nvc.PixelFormat.NV12, nv12Info.width, 
+                                            nv12Info.height, gpu_id=0)
+            success = nvUpl.Run(frame_src, surf_src)
+            if not success:
                 self.fail("Failed to upload frame")
 
             # Convert to RGB

@@ -157,26 +157,23 @@ private:
   FfmpegDecodeFrame(const char* URL, NvDecoderClInterface& cli_iface);
 };
 
-class TC_CORE_EXPORT CudaUploadFrame final : public Task
-{
+class TC_CORE_EXPORT CudaUploadFrame final : public Task {
 public:
   CudaUploadFrame() = delete;
   CudaUploadFrame(const CudaUploadFrame& other) = delete;
   CudaUploadFrame& operator=(const CudaUploadFrame& other) = delete;
 
-  TaskExecStatus Run() final;
-  size_t GetUploadSize() const;
-  ~CudaUploadFrame() final;
-  static CudaUploadFrame* Make(CUstream cuStream, CUcontext cuContext,
-                               uint32_t width, uint32_t height,
-                               Pixel_Format pixelFormat);
+  TaskExecStatus Run();
+  ~CudaUploadFrame() = default;
+  CudaUploadFrame(CUstream stream);
 
 private:
-  CudaUploadFrame(CUstream cuStream, CUcontext cuContext, uint32_t width,
-                  uint32_t height, Pixel_Format pixelFormat);
-  static const uint32_t numInputs = 1U;
-  static const uint32_t numOutputs = 1U;
-  struct CudaUploadFrame_Impl* pImpl = nullptr;
+  /* First input is src Buffer.
+   * Second input is dst Surface.
+   */
+  static const uint32_t numInputs = 2U;
+  static const uint32_t numOutputs = 0U;
+  CUstream m_stream;
 };
 
 class TC_CORE_EXPORT UploadBuffer final : public Task

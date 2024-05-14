@@ -61,25 +61,6 @@ bool PyFfmpegDecoder::DecodeSingleFrame(DecodeContext& ctx, py::array& frame,
   return false;
 }
 
-bool PyFfmpegDecoder::DecodeSingleSurface(DecodeContext& ctx,
-                                          TaskExecDetails& details) {
-  std::shared_ptr<Surface> p_surf = nullptr;
-
-  UploaderLazyInit();
-  if (DecodeImpl(ctx, details)) {
-    auto frame = (Buffer*)upDecoder->GetOutput(0U);
-    p_surf = upUploader->UploadSingleFrame(frame);
-  }
-
-  if (!p_surf) {
-    ctx.SetCloneSurface(Surface::Make(PixelFormat()));
-    return false;
-  }
-
-  ctx.SetCloneSurface(p_surf.get());
-  return true;
-}
-
 void* PyFfmpegDecoder::GetSideData(AVFrameSideDataType data_type,
                                    size_t& raw_size) {
   if (TASK_EXEC_SUCCESS == upDecoder->GetSideData(data_type)) {
@@ -107,18 +88,6 @@ bool PyFfmpegDecoder::IsResolutionChanged() {
   }
 
   return false;
-}
-
-void PyFfmpegDecoder::UploaderLazyInit() {
-  if (IsResolutionChanged() && upUploader) {
-    upUploader.reset();
-    upUploader = nullptr;
-  }
-
-  if (!upUploader) {
-    upUploader.reset(
-        new PyFrameUploader(Width(), Height(), PixelFormat(), gpu_id));
-  }
 }
 
 std::vector<MotionVector> PyFfmpegDecoder::GetMotionVectors() {
@@ -260,40 +229,6 @@ void Init_PyFFMpegDecoder(py::module& m) {
         :param frame: decoded video frame
         :param pktData: decoded video frame packet data
         :return: tuple, first element is True in case of success, False otherwise. Second elements is TaskExecInfo.
-    )pbdoc")
-      .def(
-          "DecodeSingleSurface",
-          [](shared_ptr<PyFfmpegDecoder> self) {
-            TaskExecDetails details;
-            PacketData pktData;
-            DecodeContext ctx(nullptr, nullptr, nullptr, &pktData, nullptr,
-                              false);
-            self->DecodeSingleSurface(ctx, details);
-            return std::make_tuple(ctx.GetSurfaceMutable(), details.info);
-          },
-          py::return_value_policy::take_ownership,
-          py::call_guard<py::gil_scoped_release>(),
-          R"pbdoc(
-        Decode single video frame from input file and upload to GPU memory.
-
-        :return: tuple, first element is the surface, second is TaskExecInfo.
-    )pbdoc")
-      .def(
-          "DecodeSingleSurface",
-          [](shared_ptr<PyFfmpegDecoder> self, PacketData& pktData) {
-            TaskExecDetails details;
-            DecodeContext ctx(nullptr, nullptr, nullptr, &pktData, nullptr,
-                              false);
-            self->DecodeSingleSurface(ctx, details);
-            return std::make_tuple(ctx.GetSurfaceMutable(), details.info);
-          },
-          py::arg("pktData"), py::return_value_policy::take_ownership,
-          py::call_guard<py::gil_scoped_release>(),
-          R"pbdoc(
-        Decode single video frame from input file and upload to GPU memory.
-
-        :param pktData: decoded video frame packet data
-        :return: tuple, first element is the surface, second is TaskExecInfo.
     )pbdoc")
       .def("Codec", &PyFfmpegDecoder::Codec,
            R"pbdoc(

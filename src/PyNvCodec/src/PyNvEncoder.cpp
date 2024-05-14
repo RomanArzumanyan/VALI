@@ -98,8 +98,6 @@ bool PyNvEncoder::Reconfigure(const map<string, string>& encodeOptions,
     } else {
       encWidth = upEncoder->GetWidth();
       encHeight = upEncoder->GetHeight();
-      uploader.reset(
-          new PyFrameUploader(encWidth, encHeight, eFormat, cuda_str));
     }
   }
 
@@ -114,8 +112,8 @@ PyNvEncoder::PyNvEncoder(const map<string, string>& encodeOptions, int gpuID,
 PyNvEncoder::PyNvEncoder(const map<string, string>& encodeOptions,
                          CUcontext ctx, CUstream str, Pixel_Format format,
                          bool verbose)
-    : upEncoder(nullptr), uploader(nullptr), options(encodeOptions),
-      verbose_ctor(verbose), eFormat(format) {
+    : upEncoder(nullptr), options(encodeOptions), verbose_ctor(verbose),
+      eFormat(format) {
 
   // Parse resolution;
   auto ParseResolution = [&](const string& res_string, uint32_t& width,
@@ -174,7 +172,7 @@ PyNvEncoder::PyNvEncoder(const map<string, string>& encodeOptions,
   cuda_ctx = ctx;
   cuda_str = str;
 
-  /* Don't initialize uploader & encoder here, just prepare config params;
+  /* Don't initialize encoder here, just prepare config params;
    */
   Reconfigure(options, false, false, verbose);
 }
@@ -260,59 +258,6 @@ bool PyNvEncoder::EncodeSingleSurface(EncodeContext& ctx) {
   }
 
   return false;
-}
-
-bool PyNvEncoder::EncodeFrame(py::array_t<uint8_t>& inRawFrame,
-                              py::array_t<uint8_t>& packet) {
-  if (!uploader) {
-    uploader.reset(new PyFrameUploader(encWidth, encHeight, eFormat, cuda_str));
-  }
-
-  return EncodeSurface(uploader->UploadSingleFrame(inRawFrame), packet);
-}
-
-bool PyNvEncoder::EncodeFrame(py::array_t<uint8_t>& inRawFrame,
-                              py::array_t<uint8_t>& packet,
-                              const py::array_t<uint8_t>& messageSEI) {
-  if (!uploader) {
-    uploader.reset(new PyFrameUploader(encWidth, encHeight, eFormat, cuda_str));
-  }
-
-  return EncodeSurface(uploader->UploadSingleFrame(inRawFrame), packet,
-                       messageSEI);
-}
-
-bool PyNvEncoder::EncodeFrame(py::array_t<uint8_t>& inRawFrame,
-                              py::array_t<uint8_t>& packet,
-                              const py::array_t<uint8_t>& messageSEI,
-                              bool sync) {
-  if (!uploader) {
-    uploader.reset(new PyFrameUploader(encWidth, encHeight, eFormat, cuda_str));
-  }
-
-  return EncodeSurface(uploader->UploadSingleFrame(inRawFrame), packet,
-                       messageSEI, sync);
-}
-
-bool PyNvEncoder::EncodeFrame(py::array_t<uint8_t>& inRawFrame,
-                              py::array_t<uint8_t>& packet, bool sync) {
-  if (!uploader) {
-    uploader.reset(new PyFrameUploader(encWidth, encHeight, eFormat, cuda_str));
-  }
-
-  return EncodeSurface(uploader->UploadSingleFrame(inRawFrame), packet, sync);
-}
-
-bool PyNvEncoder::EncodeFrame(py::array_t<uint8_t>& inRawFrame,
-                              py::array_t<uint8_t>& packet,
-                              const py::array_t<uint8_t>& messageSEI, bool sync,
-                              bool append) {
-  if (!uploader) {
-    uploader.reset(new PyFrameUploader(encWidth, encHeight, eFormat, cuda_str));
-  }
-
-  return EncodeSurface(uploader->UploadSingleFrame(inRawFrame), packet,
-                       messageSEI, sync, append);
 }
 
 bool PyNvEncoder::FlushSinglePacket(py::array_t<uint8_t>& packet) {
@@ -572,77 +517,6 @@ void Init_PyNvEncoder(py::module& m) {
         compressed video packet.
 
         :param surface: raw input Surface
-        :param packet: output compressed packet
-        :return: True in case of success, False otherwise.
-    )pbdoc")
-      .def("EncodeSingleFrame",
-           py::overload_cast<py::array_t<uint8_t>&, py::array_t<uint8_t>&,
-                             const py::array_t<uint8_t>&, bool, bool>(
-               &PyNvEncoder::EncodeFrame),
-           py::arg("frame"), py::arg("packet"), py::arg("sei"), py::arg("sync"),
-           py::arg("append"), py::call_guard<py::gil_scoped_release>(),
-           R"pbdoc(
-        Combination of UploadSingleFrame + EncodeSingleSurface.
-
-        :param frame: raw video frame
-        :param packet: output compressed packet
-        :param sei: unregistered user data SEI information to be attached to encoded bitstream
-        :param sync: run function in sync mode, will ensure encoded packet is returned when function returns
-        :param append: append encoded packet to input packet
-        :return: True in case of success, False otherwise.
-    )pbdoc")
-      .def("EncodeSingleFrame",
-           py::overload_cast<py::array_t<uint8_t>&, py::array_t<uint8_t>&,
-                             const py::array_t<uint8_t>&, bool>(
-               &PyNvEncoder::EncodeFrame),
-           py::arg("frame"), py::arg("packet"), py::arg("sei"), py::arg("sync"),
-           py::call_guard<py::gil_scoped_release>(),
-           R"pbdoc(
-        Combination of UploadSingleFrame + EncodeSingleSurface.
-
-        :param frame: raw video frame
-        :param packet: output compressed packet
-        :param sei: unregistered user data SEI information to be attached to encoded bitstream
-        :param sync: run function in sync mode, will ensure encoded packet is returned when function returns
-        :return: True in case of success, False otherwise.
-    )pbdoc")
-      .def(
-          "EncodeSingleFrame",
-          py::overload_cast<py::array_t<uint8_t>&, py::array_t<uint8_t>&, bool>(
-              &PyNvEncoder::EncodeFrame),
-          py::arg("frame"), py::arg("packet"), py::arg("sync"),
-          py::call_guard<py::gil_scoped_release>(),
-          R"pbdoc(
-        Combination of UploadSingleFrame + EncodeSingleSurface.
-
-        :param frame: raw video frame
-        :param packet: output compressed packet
-        :param sync: run function in sync mode, will ensure encoded packet is returned when function returns
-        :return: True in case of success, False otherwise.
-    )pbdoc")
-      .def("EncodeSingleFrame",
-           py::overload_cast<py::array_t<uint8_t>&, py::array_t<uint8_t>&,
-                             const py::array_t<uint8_t>&>(
-               &PyNvEncoder::EncodeFrame),
-           py::arg("frame"), py::arg("packet"), py::arg("sei"),
-           py::call_guard<py::gil_scoped_release>(),
-           R"pbdoc(
-        Combination of UploadSingleFrame + EncodeSingleSurface.
-
-        :param frame: raw video frame
-        :param packet: output compressed packet
-        :param sei: unregistered user data SEI information to be attached to encoded bitstream
-        :return: True in case of success, False otherwise.
-    )pbdoc")
-      .def("EncodeSingleFrame",
-           py::overload_cast<py::array_t<uint8_t>&, py::array_t<uint8_t>&>(
-               &PyNvEncoder::EncodeFrame),
-           py::arg("frame"), py::arg("packet"),
-           py::call_guard<py::gil_scoped_release>(),
-           R"pbdoc(
-        Combination of UploadSingleFrame + EncodeSingleSurface.
-
-        :param frame: raw video frame
         :param packet: output compressed packet
         :return: True in case of success, False otherwise.
     )pbdoc")

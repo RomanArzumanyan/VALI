@@ -109,17 +109,6 @@ class TestDecoderBasic(unittest.TestCase):
         self.assertEqual(self.gtInfo.num_frames, dec_frames)
         self.assertEqual(details, nvc.TaskExecInfo.END_OF_STREAM)
 
-    def test_decode_all_surfaces(self):
-        ffDec = nvc.PyFfmpegDecoder(self.gtInfo.uri, {})
-        dec_frames = 0
-        while True:
-            surf, details = ffDec.DecodeSingleSurface()
-            if not surf or surf.Empty():
-                break
-            dec_frames += 1
-        self.assertEqual(self.gtInfo.num_frames, dec_frames)
-        self.assertEqual(details, nvc.TaskExecInfo.END_OF_STREAM)
-
     def test_check_decode_status(self):
         ffDec = nvc.PyFfmpegDecoder(self.gtInfo.uri, {})
         frame = np.ndarray(dtype=np.uint8, shape=())
@@ -130,7 +119,7 @@ class TestDecoderBasic(unittest.TestCase):
                 break
             self.assertEqual(details, nvc.TaskExecInfo.SUCCESS)
 
-    def test_decodesinglesurface_outpktdata(self):
+    def test_decode_single_frame_out_pkt_data(self):
         with open("gt_files.json") as f:
             gtInfo = GroundTruth(**json.load(f)["basic"])
 

@@ -91,24 +91,15 @@ public:
 };
 
 class PyFrameUploader {
-  std::unique_ptr<CudaUploadFrame> uploader = nullptr;
-  Pixel_Format m_format = UNDEFINED;
+  std::unique_ptr<CudaUploadFrame> m_uploader = nullptr;
 
 public:
-  PyFrameUploader(uint32_t width, uint32_t height, Pixel_Format format,
-                  uint32_t gpu_id);
+  PyFrameUploader(uint32_t gpu_id);
+  PyFrameUploader(CUstream str);
+  PyFrameUploader(size_t str) : PyFrameUploader((CUstream)str) {}
 
-  PyFrameUploader(uint32_t width, uint32_t height, Pixel_Format format,
-                  CUstream str);
-
-  PyFrameUploader(uint32_t width, uint32_t height, Pixel_Format format,
-                  size_t str)
-      : PyFrameUploader(width, height, format, (CUstream)str) {}
-
-  Pixel_Format GetFormat();
-
-  std::shared_ptr<Surface> UploadSingleFrame(py::array& frame);
-  std::shared_ptr<Surface> UploadSingleFrame(Buffer* buf);
+  bool Run(py::array& src, Surface& dst);
+  bool Run(Buffer& src, Surface& dst);
 };
 
 class PySurfaceDownloader {
@@ -291,7 +282,6 @@ public:
 
 class PyFfmpegDecoder {
   std::unique_ptr<FfmpegDecodeFrame> upDecoder = nullptr;
-  std::unique_ptr<PyFrameUploader> upUploader = nullptr;
 
   void* GetSideData(AVFrameSideDataType data_type, size_t& raw_size);
 
@@ -302,8 +292,6 @@ class PyFfmpegDecoder {
   void UpdateState();
   bool IsResolutionChanged();
 
-  void UploaderLazyInit();
-
 public:
   PyFfmpegDecoder(const std::string& pathToFile,
                   const std::map<std::string, std::string>& ffmpeg_options,
@@ -311,7 +299,6 @@ public:
 
   bool DecodeSingleFrame(DecodeContext& ctx, py::array& frame,
                          TaskExecDetails& details);
-  bool DecodeSingleSurface(DecodeContext& ctx, TaskExecDetails& details);
 
   std::vector<MotionVector> GetMotionVectors();
 
@@ -419,7 +406,6 @@ public:
 };
 
 class PyNvEncoder {
-  std::unique_ptr<PyFrameUploader> uploader;
   std::unique_ptr<NvencEncodeFrame> upEncoder;
   uint32_t encWidth, encHeight;
   Pixel_Format eFormat;
@@ -469,25 +455,6 @@ public:
 
   bool EncodeSurface(std::shared_ptr<Surface> rawSurface,
                      py::array_t<uint8_t>& packet);
-
-  bool EncodeFrame(py::array_t<uint8_t>& inRawFrame,
-                   py::array_t<uint8_t>& packet);
-
-  bool EncodeFrame(py::array_t<uint8_t>& inRawFrame,
-                   py::array_t<uint8_t>& packet,
-                   const py::array_t<uint8_t>& messageSEI);
-
-  bool EncodeFrame(py::array_t<uint8_t>& inRawFrame,
-                   py::array_t<uint8_t>& packet, bool sync);
-
-  bool EncodeFrame(py::array_t<uint8_t>& inRawFrame,
-                   py::array_t<uint8_t>& packet,
-                   const py::array_t<uint8_t>& messageSEI, bool sync);
-
-  bool EncodeFrame(py::array_t<uint8_t>& inRawFrame,
-                   py::array_t<uint8_t>& packet,
-                   const py::array_t<uint8_t>& messageSEI, bool sync,
-                   bool append);
 
   // Flush all the encoded frames (packets)
   bool Flush(py::array_t<uint8_t>& packets);
