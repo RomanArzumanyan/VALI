@@ -309,7 +309,7 @@ public:
                   const std::map<std::string, std::string>& ffmpeg_options,
                   uint32_t gpuID);
 
-  bool DecodeSingleFrame(DecodeContext& ctx, py::array_t<uint8_t>& frame,
+  bool DecodeSingleFrame(DecodeContext& ctx, py::array& frame,
                          TaskExecDetails& details);
   bool DecodeSingleSurface(DecodeContext& ctx, TaskExecDetails& details);
 
