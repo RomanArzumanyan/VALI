@@ -29,6 +29,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive \
     pkg-config
 
 ARG PIP_INSTALL_EXTRAS=""
+ARG USER_NAME
 
 RUN mkdir /src
 WORKDIR /src
@@ -42,7 +43,11 @@ COPY common.cmake common.cmake
 COPY FindFFmpeg.cmake FindFFmpeg.cmake
 RUN python3 -m pip install --no-cache-dir setuptools wheel
 RUN python3 -m pip install --no-cache-dir .[$PIP_INSTALL_EXTRAS]
-RUN python3 -m pip install pydantic
+RUN python3 -m pip install pydantic torch torchvision
+
+RUN mkdir -p /.cache
+RUN echo ${USER_NAME}
+RUN chown -R ${USER_NAME} /.cache
 
 RUN mkdir /cwd
 WORKDIR /cwd

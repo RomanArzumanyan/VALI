@@ -85,7 +85,7 @@ struct NppRemapSurfacePacked3C_Impl final : RemapSurface_Impl {
     auto srcPlane = source.GetSurfacePlane();
     auto dstPlane = pSurface->GetSurfacePlane();
 
-    const Npp8u *pSrc = (const Npp8u *)srcPlane->GpuMem();
+    const Npp8u *pSrc = (const Npp8u *)srcPlane.GpuMem();
     int nSrcStep = (int)source.Pitch();
     NppiSize oSrcSize = {0};
     oSrcSize.width = source.Width();
@@ -94,7 +94,7 @@ struct NppRemapSurfacePacked3C_Impl final : RemapSurface_Impl {
     oSrcRectROI.width = oSrcSize.width;
     oSrcRectROI.height = oSrcSize.height;
 
-    Npp8u *pDst = (Npp8u *)dstPlane->GpuMem();
+    Npp8u *pDst = (Npp8u *)dstPlane.GpuMem();
     int nDstStep = (int)pSurface->Pitch();
     NppiSize oDstSize = {0};
     oDstSize.width = pSurface->Width();

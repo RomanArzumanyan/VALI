@@ -1,4 +1,4 @@
-name: Tests
+name: OnPullRequest
 
 on:
   push:
@@ -25,7 +25,11 @@ jobs:
     - name: 'Docker build and test'
       run: |
         git submodule update --init --recursive
-        DOCKER_BUILDKIT=1 docker build --tag vali-gpu  -f docker/Dockerfile --build-arg PIP_INSTALL_EXTRAS=torch .
+        DOCKER_BUILDKIT=1 docker build \
+          --tag vali-gpu  \
+          -f docker/Dockerfile \
+          --build-arg USER_NAME=$UID \
+          --build-arg PIP_INSTALL_EXTRAS=torch .
         docker run \
           --rm \
           --gpus all \
@@ -33,7 +37,7 @@ jobs:
           --workdir /src/tests \
           --entrypoint "python3" vali-gpu -m unittest discover .
 
-  test_linux:
+  build_linux:
     runs-on: [self-hosted, Linux]
 
     steps:
@@ -50,18 +54,8 @@ jobs:
         source /tmp/venv_vali/bin/activate
         python3 -mpip install pydantic
         python3 -mpip install pycuda
+        python3 -mpip install torch torchvision
         python3 -mpip install . --verbose
-        python3 -mpip install src/PytorchNvCodec --verbose
-
-    - name: 'Run tests'
-      run: |
-        source /tmp/venv_vali/bin/activate
-        cd tests
-        python3 ./test_PyFFmpegDecoder.py
-        python3 ./test_PyFfmpegDemuxer.py
-        python3 ./test_PyNvDecoder.py
-        python3 ./test_PyNvEncoder.py
-        python3 ./test_PySurface.py
 
     - name: 'Build docs'
       run: |
@@ -106,6 +100,7 @@ jobs:
         ./tmp/venv_vali/Scripts/activate
         python -mpip install pydantic
         python -mpip install pycuda
+        python -mpip install torch torchvision
         python -mpip install . --verbose
 
     - name: 'Run tests'
@@ -115,8 +110,10 @@ jobs:
         cd tests
         python ./test_PyFFmpegDecoder.py
         python ./test_PyFfmpegDemuxer.py
+        python ./test_PyFrameConverter.py
         python ./test_PyNvDecoder.py
         python ./test_PyNvEncoder.py
+        python ./test_PySurfaceConverter.py
 
     - name: 'Upload Artifacts'
       uses: actions/upload-artifact@v3

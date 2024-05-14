@@ -35,43 +35,11 @@ PySurfaceConverter::PySurfaceConverter(uint32_t width, uint32_t height,
 
 PySurfaceConverter::PySurfaceConverter(uint32_t width, uint32_t height,
                                        Pixel_Format inFormat,
-                                       Pixel_Format outFormat, CUcontext ctx,
-                                       CUstream str)
+                                       Pixel_Format outFormat, CUstream str)
     : outputFormat(outFormat) {
-  upConverter.reset(
-      ConvertSurface::Make(width, height, inFormat, outFormat, ctx, str));
+  upConverter.reset(ConvertSurface::Make(width, height, inFormat, outFormat,
+                                         GetContextByStream(str), str));
   upCtxBuffer.reset(Buffer::MakeOwnMem(sizeof(ColorspaceConversionContext)));
-}
-
-std::shared_ptr<Surface> PySurfaceConverter::Execute(
-    std::shared_ptr<Surface> surface,
-    std::shared_ptr<ColorspaceConversionContext> context,
-    TaskExecDetails& details) {
-  if (!surface) {
-    return std::shared_ptr<Surface>(Surface::Make(outputFormat));
-  }
-
-  upConverter->ClearInputs();
-
-  upConverter->SetInput(surface.get(), 0U);
-
-  if (context) {
-    upCtxBuffer->CopyFrom(sizeof(ColorspaceConversionContext), context.get());
-    upConverter->SetInput((Token*)upCtxBuffer.get(), 2U);
-  }
-
-  if (TASK_EXEC_SUCCESS != upConverter->Execute()) {
-    return std::shared_ptr<Surface>(Surface::Make(outputFormat));
-  }
-
-  auto pDetails = (Buffer*)upConverter->GetOutput(1U);
-  if (pDetails) {
-    details = *(pDetails->GetDataAs<TaskExecDetails>());
-  }
-
-  auto pSurface = (Surface*)upConverter->GetOutput(0U);
-  return std::shared_ptr<Surface>(pSurface ? pSurface->Clone()
-                                           : Surface::Make(outputFormat));
 }
 
 bool PySurfaceConverter::Execute(
@@ -90,7 +58,7 @@ bool PySurfaceConverter::Execute(
   upConverter->SetInput((Token*)upCtxBuffer.get(), 2U);
 
   auto ret = upConverter->Execute();
-  
+
   auto pDetails = (Buffer*)upConverter->GetOutput(1U);
   if (pDetails) {
     details = *(pDetails->GetDataAs<TaskExecDetails>());
@@ -117,10 +85,9 @@ void Init_PySurfaceConverter(py::module& m) {
         :param dst_format: output Surface pixel format
         :param gpu_id: what GPU to run conversion on
     )pbdoc")
-      .def(py::init<uint32_t, uint32_t, Pixel_Format, Pixel_Format, size_t,
-                    size_t>(),
+      .def(py::init<uint32_t, uint32_t, Pixel_Format, Pixel_Format, size_t>(),
            py::arg("width"), py::arg("height"), py::arg("src_format"),
-           py::arg("dst_format"), py::arg("context"), py::arg("stream"),
+           py::arg("dst_format"), py::arg("stream"),
            R"pbdoc(
         Constructor method.
 
@@ -128,33 +95,10 @@ void Init_PySurfaceConverter(py::module& m) {
         :param height: target Surface height
         :param src_format: input Surface pixel format
         :param dst_format: output Surface pixel format
-        :param context: CUDA context to use for conversion
         :param stream: CUDA stream to use for conversion
     )pbdoc")
       .def("Format", &PySurfaceConverter::GetFormat, R"pbdoc(
         Get pixel format.
-    )pbdoc")
-      .def(
-          "Execute",
-          [](std::shared_ptr<PySurfaceConverter> self,
-             std::shared_ptr<Surface> src,
-             std::shared_ptr<ColorspaceConversionContext> cc_ctx) {
-            TaskExecDetails details;
-            return std::make_tuple(self->Execute(src, cc_ctx, details),
-                                   details.info);
-          },
-          py::arg("src"), py::arg("cc_ctx"),
-          py::return_value_policy::take_ownership,
-          py::call_guard<py::gil_scoped_release>(),
-          R"pbdoc(
-        Perform pixel format conversion.
-
-        :param src: input Surface. Must be of same format class instance was created with.
-        :param cc_ctx: colorspace conversion context. Describes color space and color range used for conversion.
-        :return: tuple containing:
-          surface (PyNvCodec.Surface) output surface. Empty in case of failure.
-          info (TaskExecInfo) task execution information.
-        :rtype: tuple
     )pbdoc")
       .def(
           "Execute",

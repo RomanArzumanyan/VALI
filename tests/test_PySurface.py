@@ -89,11 +89,17 @@ class TestSurfacePycuda(unittest.TestCase):
             for i in range(0, gtInfo.num_frames):
                 surf_src, _ = nvDec.DecodeSingleSurface()
                 if surf_src.Empty():
-                    self.fail("Fail to decode surface")
+                    self.fail("Failed to decode surface")
 
-                surf_dst, _ = nvCvt.Execute(surf_src, cc_ctx)
-                if surf_dst.Empty():
-                    self.fail("Fail to convert surface")
+                surf_dst = nvc.Surface.Make(
+                    nvc.PixelFormat.RGB, 
+                    surf_src.Width(), 
+                    surf_src.Height(), 
+                    gpu_id=0)
+                
+                success, details = nvCvt.Execute(surf_src, surf_dst, cc_ctx)
+                if not success:
+                    self.fail("Failed to convert surface: " + details)
 
                 src_tensor = torch.from_dlpack(surf_dst.PlanePtr())
                 
@@ -107,10 +113,69 @@ class TestSurfacePycuda(unittest.TestCase):
                 self.assertEqual(rgb_frame.size, surf_dst.HostSize())
                 
                 # Check if memory is bit 2 bit equal
-                frame_dst = np.ndarray(shape=(0), dtype=np.uint8)
+                frame_dst = np.ndarray(shape=(surf_dst.HostSize()), dtype=np.uint8)
                 if not nvDwn.DownloadSingleSurface(surf_dst, frame_dst):
                     self.fail("Failed to download decoded surface")
                 self.assertTrue(np.array_equal(rgb_frame, frame_dst))
+
+    def test_tensor_from_surface(self):
+        with open("gt_files.json") as f:
+            gtInfo = tc.GroundTruth(**json.load(f)["basic"])
+
+            nvDec = nvc.PyNvDecoder(
+                input=gtInfo.uri,
+                gpu_id=0)
+
+            nvCvt = nvc.PySurfaceConverter(
+                nvDec.Width(),
+                nvDec.Height(),
+                nvc.PixelFormat.NV12,
+                nvc.PixelFormat.RGB,
+                gpu_id=0)
+            
+            nvDwn = nvc.PySurfaceDownloader(
+                nvDec.Width(),
+                nvDec.Height(),
+                nvCvt.Format(),
+                gpu_id=0)
+
+            # Use color space and range of original file.
+            cc_ctx = nvc.ColorspaceConversionContext(
+                nvc.ColorSpace.BT_709,
+                nvc.ColorRange.MPEG)
+
+            for i in range(0, gtInfo.num_frames):
+                surf_src, _ = nvDec.DecodeSingleSurface()
+                if surf_src.Empty():
+                    self.fail("Fail to decode surface")
+
+                surf_dst = nvc.Surface.Make(
+                    nvc.PixelFormat.RGB, 
+                    surf_src.Width(), 
+                    surf_src.Height(), 
+                    gpu_id=0)
+                
+                success, details = nvCvt.Execute(surf_src, surf_dst, cc_ctx)
+                if not success:
+                    self.fail("Failed to convert surface: " + details)
+
+                src_tensor = torch.from_dlpack(surf_dst)
+                
+                # Check dimensions
+                self.assertEqual(len(src_tensor.shape), 3)
+                self.assertEqual(src_tensor.shape[0], surf_dst.Height())
+                self.assertEqual(src_tensor.shape[1], surf_dst.Width())
+                self.assertEqual(src_tensor.shape[2], 3)
+                
+                # Check if sizes are equal
+                rgb_frame = src_tensor.cpu().numpy().flatten()
+                self.assertEqual(rgb_frame.size, surf_dst.HostSize())
+                
+                # Check if memory is bit 2 bit equal
+                frame_dst = np.ndarray(shape=(surf_dst.HostSize()), dtype=np.uint8)
+                if not nvDwn.DownloadSingleSurface(surf_dst, frame_dst):
+                    self.fail("Failed to download decoded surface")
+                self.assertTrue(np.array_equal(rgb_frame, frame_dst))                
 
     def test_surface_from_tensor(self):
         with open("gt_files.json") as f:
@@ -140,120 +205,12 @@ class TestSurfacePycuda(unittest.TestCase):
         self.assertEqual(tensor.shape[0] * tensor.shape[1], surface.HostSize())
 
         # Check if memory is bit 2 bit equal
-        frame = np.ndarray(shape=(0), dtype=np.uint8)
+        frame = np.ndarray(shape=(surface.HostSize()), dtype=np.uint8)
         if not nvDwn.DownloadSingleSurface(surface, frame):
             self.fail("Failed to download decoded surface")
 
         array = tensor.cpu().numpy().flatten()
         self.assertTrue(np.array_equal(array, frame))
-
-    def test_pycuda_memcpy_Surface_Surface(self):
-        with open("gt_files.json") as f:
-            gtInfo = tc.GroundTruth(**json.load(f)["basic"])
-
-        gpu_id = 0
-        enc_file = gtInfo.uri
-        cuda_ctx = cuda.Device(gpu_id).retain_primary_context()
-        cuda_ctx.push()
-        cuda_str = cuda.Stream()
-        cuda_ctx.pop()
-
-        nvDec = nvc.PyNvDecoder(enc_file, cuda_ctx.handle, cuda_str.handle)
-        nvDwn = nvc.PySurfaceDownloader(
-            nvDec.Width(),
-            nvDec.Height(),
-            nvDec.Format(),
-            cuda_ctx.handle,
-            cuda_str.handle)
-
-        while True:
-            surf_src, _ = nvDec.DecodeSingleSurface()
-            if surf_src.Empty():
-                break
-            src_plane = surf_src.PlanePtr()
-
-            surf_dst = nvc.Surface.Make(
-                nvDec.Format(),
-                nvDec.Width(),
-                nvDec.Height(),
-                gpu_id)
-            self.assertFalse(surf_dst.Empty())
-            dst_plane = surf_dst.PlanePtr()
-
-            memcpy_2d = cuda.Memcpy2D()
-            memcpy_2d.width_in_bytes = src_plane.Width() * src_plane.ElemSize()
-            memcpy_2d.src_pitch = src_plane.Pitch()
-            memcpy_2d.dst_pitch = dst_plane.Pitch()
-            memcpy_2d.width = src_plane.Width()
-            memcpy_2d.height = src_plane.Height()
-            memcpy_2d.set_src_device(src_plane.GpuMem())
-            memcpy_2d.set_dst_device(dst_plane.GpuMem())
-            memcpy_2d(cuda_str)
-
-            frame_src = np.ndarray(shape=(0), dtype=np.uint8)
-            if not nvDwn.DownloadSingleSurface(surf_src, frame_src):
-                self.fail("Failed to download decoded surface")
-
-            frame_dst = np.ndarray(shape=(0), dtype=np.uint8)
-            if not nvDwn.DownloadSingleSurface(surf_dst, frame_dst):
-                self.fail("Failed to download decoded surface")
-
-            if not np.array_equal(frame_src, frame_dst):
-                self.fail("Video frames are not equal")
-
-    def test_pycuda_memcpy_Surface_Tensor(self):
-        with open("gt_files.json") as f:
-            gtInfo = tc.GroundTruth(**json.load(f)["basic"])
-
-        gpu_id = 0
-        enc_file = gtInfo.uri
-        cuda_ctx = cuda.Device(gpu_id).retain_primary_context()
-        cuda_ctx.push()
-        cuda_str = cuda.Stream()
-        cuda_ctx.pop()
-
-        nvDec = nvc.PyNvDecoder(enc_file, cuda_ctx.handle, cuda_str.handle)
-        nvDwn = nvc.PySurfaceDownloader(
-            nvDec.Width(),
-            nvDec.Height(),
-            nvDec.Format(),
-            cuda_ctx.handle,
-            cuda_str.handle,
-        )
-
-        while True:
-            surf_src, _ = nvDec.DecodeSingleSurface()
-            if surf_src.Empty():
-                break
-            src_plane = surf_src.PlanePtr()
-
-            surface_tensor = torch.empty(
-                size=(src_plane.Height(), src_plane.Width()),
-                dtype=torch.uint8,
-                device=torch.device(f"cuda:{gpu_id}"),
-            )
-            dst_plane = surface_tensor.data_ptr()
-
-            memcpy_2d = cuda.Memcpy2D()
-            memcpy_2d.width_in_bytes = src_plane.Width() * src_plane.ElemSize()
-            memcpy_2d.src_pitch = src_plane.Pitch()
-            memcpy_2d.dst_pitch = nvDec.Width()
-            memcpy_2d.width = src_plane.Width()
-            memcpy_2d.height = src_plane.Height()
-            memcpy_2d.set_src_device(src_plane.GpuMem())
-            memcpy_2d.set_dst_device(dst_plane)
-            memcpy_2d(cuda_str)
-
-            frame_src = np.ndarray(shape=(0), dtype=np.uint8)
-            if not nvDwn.DownloadSingleSurface(surf_src, frame_src):
-                self.fail("Failed to download decoded surface")
-
-            frame_dst = surface_tensor.to("cpu").numpy()
-            frame_dst = frame_dst.reshape(
-                (src_plane.Height() * src_plane.Width()))
-
-            if not np.array_equal(frame_src, frame_dst):
-                self.fail("Video frames are not equal")
 
     @unittest.skip("Known issue: unstable test")
     def test_list_append(self):
@@ -277,8 +234,8 @@ class TestSurfacePycuda(unittest.TestCase):
                                         nvDec.Format(), gpu_id=0)
 
         for surf in dec_surfaces:
-            dec_frame = np.ndarray(shape=(0), dtype=np.uint8)
-            svd_frame = np.ndarray(shape=(0), dtype=np.uint8)
+            dec_frame = np.ndarray(shape=(surf.HostSize()), dtype=np.uint8)
+            svd_frame = np.ndarray(shape=(surf.HostSize()), dtype=np.uint8)
 
             nvDwn.DownloadSingleSurface(surf, svd_frame)
             nvDec.DecodeSingleFrame(dec_frame)
@@ -289,17 +246,6 @@ class TestSurfacePycuda(unittest.TestCase):
                 tc.dumpFrameToDisk(svd_frame, "svd_frame", nvDec.Width(),
                                    nvDec.Height(), "nv12.yuv")
                 self.fail("Frames are not same")
-
-    def test_context_manager(self):
-        with open("gt_files.json") as f:
-            gtInfo = tc.GroundTruth(**json.load(f)["basic"])
-
-        nvDec = nvc.PyNvDecoder(input=gtInfo.uri, gpu_id=0)
-        surf, _ = nvDec.DecodeSingleSurface()
-
-        with nvc.SurfaceView(surf) as surfView:
-            self.assertIsNotNone(surfView)
-            self.assertEqual(surfView.Width(), surf.Width())
 
 
 if __name__ == "__main__":

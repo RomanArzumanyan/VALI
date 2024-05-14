@@ -5,12 +5,12 @@ namespace VPF {
 struct CudaUploadFrame_Impl {
   CUstream cuStream;
   CUcontext cuContext;
-  Surface *pSurface = nullptr;
+  Surface* pSurface = nullptr;
   Pixel_Format pixelFormat;
 
   CudaUploadFrame_Impl() = delete;
-  CudaUploadFrame_Impl(const CudaUploadFrame_Impl &other) = delete;
-  CudaUploadFrame_Impl &operator=(const CudaUploadFrame_Impl &other) = delete;
+  CudaUploadFrame_Impl(const CudaUploadFrame_Impl& other) = delete;
+  CudaUploadFrame_Impl& operator=(const CudaUploadFrame_Impl& other) = delete;
 
   CudaUploadFrame_Impl(CUstream stream, CUcontext context, uint32_t _width,
                        uint32_t _height, Pixel_Format _pix_fmt)
@@ -22,15 +22,11 @@ struct CudaUploadFrame_Impl {
 };
 } // namespace VPF
 
-CudaUploadFrame *CudaUploadFrame::Make(CUstream cuStream, CUcontext cuContext,
+CudaUploadFrame* CudaUploadFrame::Make(CUstream cuStream, CUcontext cuContext,
                                        uint32_t width, uint32_t height,
                                        Pixel_Format pixelFormat) {
   return new CudaUploadFrame(cuStream, cuContext, width, height, pixelFormat);
 }
-
-auto const cuda_stream_sync = [](void *stream) {
-  cuStreamSynchronize((CUstream)stream);
-};
 
 CudaUploadFrame::CudaUploadFrame(CUstream cuStream, CUcontext cuContext,
                                  uint32_t width, uint32_t height,
@@ -38,7 +34,7 @@ CudaUploadFrame::CudaUploadFrame(CUstream cuStream, CUcontext cuContext,
     :
 
       Task("CudaUploadFrame", CudaUploadFrame::numInputs,
-           CudaUploadFrame::numOutputs, cuda_stream_sync, (void *)cuStream) {
+           CudaUploadFrame::numOutputs, nullptr, nullptr) {
   pImpl = new CudaUploadFrame_Impl(cuStream, cuContext, width, height, pix_fmt);
 }
 
@@ -46,7 +42,9 @@ CudaUploadFrame::~CudaUploadFrame() { delete pImpl; }
 
 TaskExecStatus CudaUploadFrame::Run() {
   NvtxMark tick(GetName());
-  if (!GetInput()) {
+
+  auto input_buf = (Buffer*)GetInput();
+  if (!input_buf) {
     return TaskExecStatus::TASK_EXEC_FAIL;
   }
 
@@ -55,27 +53,34 @@ TaskExecStatus CudaUploadFrame::Run() {
   auto stream = pImpl->cuStream;
   auto context = pImpl->cuContext;
   auto pSurface = pImpl->pSurface;
-  auto pSrcHost = ((Buffer *)GetInput())->GetDataAs<uint8_t>();
+  auto pSrcHost = input_buf->GetDataAs<uint8_t>();
+
+  if (input_buf->GetRawMemSize() != pSurface->HostMemSize()) {
+    return TaskExecStatus::TASK_EXEC_FAIL;
+  }
 
   CUDA_MEMCPY2D m = {0};
   m.srcMemoryType = CU_MEMORYTYPE_HOST;
   m.dstMemoryType = CU_MEMORYTYPE_DEVICE;
 
-  for (auto plane = 0; plane < pSurface->NumPlanes(); plane++) {
+  try {
     CudaCtxPush lock(context);
+    for (auto i = 0; i < pSurface->NumPlanes(); i++) {
+      auto plane = pSurface->GetSurfacePlane(i);
 
-    m.srcHost = pSrcHost;
-    m.srcPitch = pSurface->WidthInBytes(plane);
-    m.dstDevice = pSurface->PlanePtr(plane);
-    m.dstPitch = pSurface->Pitch(plane);
-    m.WidthInBytes = pSurface->WidthInBytes(plane);
-    m.Height = pSurface->Height(plane);
+      m.srcHost = pSrcHost;
+      m.srcPitch = plane.Width() * plane.ElemSize();
+      m.dstDevice = plane.GpuMem();
+      m.dstPitch = plane.Pitch();
+      m.WidthInBytes = m.srcPitch;
+      m.Height = plane.Height();
 
-    if (CUDA_SUCCESS != cuMemcpy2DAsync(&m, stream)) {
-      return TaskExecStatus::TASK_EXEC_FAIL;
+      ThrowOnCudaError(cuMemcpy2DAsync(&m, stream), __LINE__);
+      pSrcHost += m.WidthInBytes * m.Height;
     }
-
-    pSrcHost += m.WidthInBytes * m.Height;
+    ThrowOnCudaError(cuStreamSynchronize(stream), __LINE__);
+  } catch (...) {
+    return TaskExecStatus::TASK_EXEC_FAIL;
   }
 
   SetOutput(pSurface, 0);

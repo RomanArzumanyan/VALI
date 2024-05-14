@@ -1164,7 +1164,7 @@ TaskExecStatus NvencEncodeFrame::Run() {
         return TaskExecStatus::TASK_EXEC_FAIL;
       } else {
         NvEncoderCuda::CopyToDeviceFrame(
-            context, stream, (void *)input->PlanePtr(), pitch,
+            context, stream, (void *)input->PixelPtr(), pitch,
             (CUdeviceptr)encoderInputFrame->inputPtr,
             (int32_t)encoderInputFrame->pitch, pEncoderCuda->GetEncodeWidth(),
             pEncoderCuda->GetEncodeHeight(), CU_MEMORYTYPE_DEVICE,

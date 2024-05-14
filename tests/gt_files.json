@@ -13,14 +13,14 @@
         "len_s": 3.23
     },
     "hevc10": {
-        "uri": "data/hevc10.mkv",
+        "uri": "data/test_hevc10.mkv",
         "width": 848,
         "height": 464,
         "is_vfr": false,
         "pix_fmt": "PixelFormat.P10",
         "framerate": 29.97,
         "num_frames": 110
-    },    
+    },
     "basic_mpeg4": {
         "uri": "data/test_mpeg4.mpg",
         "width": 848,
@@ -33,7 +33,7 @@
         "color_space": "ColorSpace.BT_709",
         "color_range": "ColorRange.MPEG",
         "len_s": 3.23
-    },    
+    },
     "res_change": {
         "uri": "data/test_res_change.h264",
         "width": 848,
@@ -69,6 +69,24 @@
         "width": 848,
         "height": 464,
         "pix_fmt": "PixelFormat.RGB",
+        "num_frames": 16,
+        "color_space": "ColorSpace.BT_709",
+        "color_range": "ColorRange.MPEG"
+    },
+    "basic_rgb_planar": {
+        "uri": "data/test.rgb_planar",
+        "width": 848,
+        "height": 464,
+        "pix_fmt": "PixelFormat.RGB_PLANAR",
+        "num_frames": 16,
+        "color_space": "ColorSpace.BT_709",
+        "color_range": "ColorRange.MPEG"
+    },
+    "basic_nv12": {
+        "uri": "data/test.nv12",
+        "width": 848,
+        "height": 464,
+        "pix_fmt": "PixelFormat.NV12",
         "num_frames": 16,
         "color_space": "ColorSpace.BT_709",
         "color_range": "ColorRange.MPEG"

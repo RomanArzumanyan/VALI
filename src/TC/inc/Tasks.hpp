@@ -216,8 +216,8 @@ public:
 private:
   CudaDownloadSurface(CUstream cuStream, CUcontext cuContext, uint32_t width,
                       uint32_t height, Pixel_Format pixelFormat);
-  static const uint32_t numInputs = 1U;
-  static const uint32_t numOutputs = 1U;
+  static const uint32_t numInputs = 2U;
+  static const uint32_t numOutputs = 0U;
   struct CudaDownloadSurface_Impl* pImpl = nullptr;
 };
 

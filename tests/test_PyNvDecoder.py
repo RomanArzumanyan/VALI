@@ -116,7 +116,6 @@ class TestDecoderStandalone(unittest.TestCase):
             surf, _ = nvDec.DecodeSurfaceFromPacket(packet)
             self.assertIsNotNone(surf)
             if not surf.Empty():
-                self.assertNotEqual(0, surf.PlanePtr().GpuMem())
                 self.assertEqual(nvDmx.Width(), surf.Width())
                 self.assertEqual(nvDmx.Height(), surf.Height())
                 self.assertEqual(nvDmx.Format(), surf.Format())
@@ -195,7 +194,7 @@ class TestDecoderStandalone(unittest.TestCase):
 
 
 class TestDecoderBuiltin(unittest.TestCase):
-    def test_decodesinglesurface(self):
+    def test_decode_single_surface(self):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
 
@@ -207,7 +206,7 @@ class TestDecoderBuiltin(unittest.TestCase):
         except:
             self.fail("Test case raised exception unexpectedly!")
 
-    def test_decodesinglesurface_outpktdata(self):
+    def test_decode_single_surface_outpktdata(self):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
 
@@ -226,7 +225,7 @@ class TestDecoderBuiltin(unittest.TestCase):
             dec_frame += 1
             last_pts = pdata.pts
 
-    def test_decodesinglesurface_sei(self):
+    def test_decode_single_surface_sei(self):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
 
@@ -241,7 +240,7 @@ class TestDecoderBuiltin(unittest.TestCase):
             total_sei_size += sei.size
         self.assertNotEqual(0, total_sei_size)
 
-    def test_decodesinglesurface_seek(self):
+    def test_decode_single_surface_seek(self):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
 
@@ -259,8 +258,8 @@ class TestDecoderBuiltin(unittest.TestCase):
             dec_frames += 1
         self.assertEqual(gtInfo.num_frames - start_frame, dec_frames)
 
-    @unittest.skip("Known issue: unstable test")
-    def test_decodesinglesurface_cmp_vs_continuous(self):
+    @unittest.skip("Disable test: unstable on runner (but OK on local machine)")
+    def test_decode_single_surface_cmp_vs_continuous(self):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
 
@@ -313,7 +312,11 @@ class TestDecoderBuiltin(unittest.TestCase):
                 self.assertEqual(details, nvc.TaskExecInfo.SUCCESS)
 
     def test_decode_all_surfaces(self):
-        for test_case in ["basic", "basic_mpeg4", "hevc10"]:
+        for test_case in [
+            "basic",
+            "basic_mpeg4",
+            "hevc10"
+        ]:
             with open("gt_files.json") as f:
                 gtInfo = tc.GroundTruth(**json.load(f)[test_case])
 
