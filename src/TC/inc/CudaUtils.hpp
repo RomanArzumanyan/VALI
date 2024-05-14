@@ -35,6 +35,11 @@ void ThrowOnNppError(NppStatus res, int lineNum);
  */
 CUcontext GetContextByDptr(CUdeviceptr dptr);
 
+/* Get CUDA context associated with given stream.
+ * May throw exception with reason in message;
+ */
+CUcontext GetContextByStream(CUstream str);
+
 /* Get CUDA device id for given CUdeviceptr;
  * May throw exception with reason in message;
  */
@@ -44,6 +49,10 @@ int GetDeviceIdByDptr(CUdeviceptr dptr);
  * May throw exception with reason in message; 
  */
 CUdeviceptr GetDevicePointer(CUdeviceptr dptr);
+
+/* Callback to sync CUDA stream;
+ */
+void CudaStreamSync(void* args);
 
 /* RAII-style CUDA Context sync;
  */

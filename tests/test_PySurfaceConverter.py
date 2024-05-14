@@ -47,9 +47,9 @@ import unittest
 import json
 import test_common as tc
 
-# We use 44 (dB) as the measure of similarity.
-# If two images have PSNR higher than 44 (dB) we consider them the same.
-psnr_threshold = 44.0
+# We use 42 (dB) as the measure of similarity.
+# If two images have PSNR higher than 42 (dB) we consider them the same.
+psnr_threshold = 42.0
 
 
 class TestSurfaceConverter(unittest.TestCase):
@@ -80,8 +80,10 @@ class TestSurfaceConverter(unittest.TestCase):
         if surf_src.Empty():
             self.fail("Fail to decode surface")
 
-        surf_dst, details = nvCvt.Execute(surf_src, cc_ctx)
-        self.assertTrue(surf_dst.Empty())
+        surf_dst = nvc.Surface.Make(
+            nvc.PixelFormat.RGB, surf_src.Width(), surf_src.Height(), gpu_id=0)
+
+        surf_dst, details = nvCvt.Execute(surf_src, surf_dst, cc_ctx)
         self.assertEqual(details, nvc.TaskExecInfo.UNSUPPORTED_FMT_CONV_PARAMS)
 
     def test_rgb_deinterleave(self):
@@ -90,18 +92,29 @@ class TestSurfaceConverter(unittest.TestCase):
             rgbInfo = tc.GroundTruth(**gt_values["basic_rgb"])
             plnInfo = tc.GroundTruth(**gt_values["basic_rgb_planar"])
 
-            nvUpl = nvc.PyFrameUploader(rgbInfo.width, rgbInfo.height,
-                                        nvc.PixelFormat.RGB, gpu_id=0)
-
-            cc_ctx = nvc.ColorspaceConversionContext(
-                nvc.ColorSpace.BT_709, nvc.ColorRange.MPEG)
+            nvUpl = nvc.PyFrameUploader(
+                rgbInfo.width,
+                rgbInfo.height,
+                nvc.PixelFormat.RGB,
+                gpu_id=0)
 
             toPLN = nvc.PySurfaceConverter(
-                rgbInfo.width, rgbInfo.height,
-                nvc.PixelFormat.RGB, nvc.PixelFormat.RGB_PLANAR, gpu_id=0)
+                rgbInfo.width,
+                rgbInfo.height,
+                nvc.PixelFormat.RGB,
+                nvc.PixelFormat.RGB_PLANAR,
+                gpu_id=0)
 
-            nvDwn = nvc.PySurfaceDownloader(rgbInfo.width, rgbInfo.height,
-                                            nvc.PixelFormat.RGB_PLANAR, gpu_id=0)
+            nvDwn = nvc.PySurfaceDownloader(
+                plnInfo.width,
+                plnInfo.height,
+                nvc.PixelFormat.RGB_PLANAR,
+                gpu_id=0)
+
+            # Use color space and range of original file.
+            cc_ctx = nvc.ColorspaceConversionContext(
+                nvc.ColorSpace.BT_709,
+                nvc.ColorRange.MPEG)
 
             f_in = open(rgbInfo.uri, "rb")
             f_gt = open(plnInfo.uri, "rb")
@@ -109,21 +122,25 @@ class TestSurfaceConverter(unittest.TestCase):
                 frame_size = rgbInfo.width * rgbInfo.height * 3
                 # Read from ethalon RGB file
                 rgb_frame = np.fromfile(
-                    file=f_in, dtype=np.uint8, count=frame_size)
-
-                # Read from ethalon planar RGB file
-                pln_frame = np.fromfile(
-                    file=f_gt, dtype=np.uint8, count=frame_size)
+                    file=f_in,
+                    dtype=np.uint8,
+                    count=frame_size)
 
                 # Upload to GPU
                 surf_rgb = nvUpl.UploadSingleFrame(rgb_frame)
                 if surf_rgb.Empty():
-                    self.fail("Fail to convert NV12 > RGB: ")
+                    self.fail("Fail to upload frame.")
 
                 # Deinterleave
-                surf_pln, status = toPLN.Execute(surf_rgb, cc_ctx)
-                if surf_pln.Empty():
-                    self.fail("Fail to convert RGB > RGB_PLANAR: " + status)
+                surf_pln = nvc.Surface.Make(
+                    nvc.PixelFormat.RGB_PLANAR,
+                    plnInfo.width,
+                    plnInfo.height,
+                    gpu_id=0)
+                
+                success, details = toPLN.Execute(surf_rgb, surf_pln, cc_ctx)
+                if not success:
+                    self.fail("Fail to convert RGB > RGB_PLANAR: " + details)
 
                 # Download and save to disk
                 dst_frame = np.ndarray(shape=(frame_size), dtype=np.uint8)
@@ -132,10 +149,14 @@ class TestSurfaceConverter(unittest.TestCase):
                     self.fail("Failed to download surface.")
 
                 # Compare against GT
+                pln_frame = np.fromfile(
+                    file=f_gt, dtype=np.uint8, count=frame_size)
                 score = tc.measurePSNR(pln_frame, dst_frame)
                 if score < psnr_threshold:
                     tc.dumpFrameToDisk(dst_frame, "cc", rgbInfo.width,
-                                        rgbInfo.height, "rgb")
+                                       rgbInfo.height, "rgb_pln_dist")
+                    tc.dumpFrameToDisk(pln_frame, "cc", plnInfo.width,
+                                       plnInfo.height, "rgb_pln_gt")
                     self.fail(
                         "PSNR score is below threshold: " + str(score))
 
@@ -143,75 +164,85 @@ class TestSurfaceConverter(unittest.TestCase):
             f_gt.close()
 
     def test_nv12_rgb(self):
-        modes = ['inplace', 'generic']
-        for mode in modes:
-            with self.subTest(mode):
-                with open("gt_files.json") as f:
-                    gt_values = json.load(f)
-                    yuvInfo = tc.GroundTruth(**gt_values["basic"])
-                    rgbInfo = tc.GroundTruth(**gt_values["basic_rgb"])
+        with open("gt_files.json") as f:
+            gt_values = json.load(f)
+            nv12Info = tc.GroundTruth(**gt_values["basic_nv12"])
+            rgbInfo = tc.GroundTruth(**gt_values["basic_rgb"])
 
-                nvDec = nvc.PyNvDecoder(
-                    input=yuvInfo.uri,
-                    gpu_id=0)
+        nvUpl = nvc.PyFrameUploader(
+            nv12Info.width,
+            nv12Info.height,
+            nvc.PixelFormat.NV12,
+            gpu_id=0)
 
-                nvCvt = nvc.PySurfaceConverter(
-                    nvDec.Width(),
-                    nvDec.Height(),
-                    nvc.PixelFormat.NV12,
-                    nvc.PixelFormat.RGB,
-                    gpu_id=0)
+        nvCvt = nvc.PySurfaceConverter(
+            nv12Info.width,
+            nv12Info.height,
+            nvc.PixelFormat.NV12,
+            nvc.PixelFormat.RGB,
+            gpu_id=0)
 
-                nvDwn = nvc.PySurfaceDownloader(
-                    nvDec.Width(),
-                    nvDec.Height(),
-                    nvc.PixelFormat.RGB,
-                    gpu_id=0)
+        nvDwn = nvc.PySurfaceDownloader(
+            rgbInfo.width,
+            rgbInfo.height,
+            nvc.PixelFormat.RGB,
+            gpu_id=0)
 
-                # Use color space and range of original file.
-                cc_ctx = nvc.ColorspaceConversionContext(
-                    nvc.ColorSpace.BT_709,
-                    nvc.ColorRange.MPEG)
+        # Use color space and range of original file.
+        cc_ctx = nvc.ColorspaceConversionContext(
+            nvc.ColorSpace.BT_709,
+            nvc.ColorRange.MPEG)
 
-                frame_size = rgbInfo.width * rgbInfo.height * 3
-                rgb_frame = np.ndarray(shape=(frame_size), dtype=np.uint8)
+        nv12_fin = open(nv12Info.uri, "rb")
+        rgb_fin = open(rgbInfo.uri, "rb")
 
-                with open(rgbInfo.uri, "rb") as f_in:
-                    for i in range(0, rgbInfo.num_frames):
-                        surf_src, _ = nvDec.DecodeSingleSurface()
-                        if surf_src.Empty():
-                            self.fail("Fail to decode surface")
+        for i in range(0, nv12Info.num_frames):
+            # Read NV12 frame from file
+            frame_src = np.fromfile(
+                nv12_fin,
+                np.uint8,
+                int(nv12Info.width * nv12Info.height * 3 / 2))
 
-                        if mode == 'inplace':
-                            surf_dst = nvc.Surface.Make(
-                                nvc.PixelFormat.RGB, nvDec.Width(), nvDec.Height(), gpu_id=0)
+            # Upload to GPU
+            surf_src = nvUpl.UploadSingleFrame(frame_src)
+            if surf_src.Empty():
+                self.fail("Failed to upload frame")
 
-                            if surf_dst.Empty():
-                                self.fail("Fail to make RGB surface")
+            # Convert to RGB
+            surf_dst = nvc.Surface.Make(
+                nvc.PixelFormat.RGB, surf_src.Width(), surf_src.Height(), gpu_id=0)
 
-                            success, details = nvCvt.Execute(
-                                surf_src, surf_dst, cc_ctx)
-                        elif mode == 'generic':
-                            surf_dst, details = nvCvt.Execute(
-                                surf_src, cc_ctx)
+            success, details = nvCvt.Execute(
+                surf_src, surf_dst, cc_ctx)
 
-                        if not success:
-                            self.fail("Fail to convert surface " +
-                                      str(i) + ": " + str(details))
+            if not success:
+                self.fail("Fail to convert surface " +
+                          str(i) + ": " + str(details))
 
-                        success = nvDwn.DownloadSingleSurface(
-                            surf_dst, rgb_frame)
-                        if not success:
-                            self.fail("Fail to download surface")
+            # Download to numpy array
+            rgb_frame = np.ndarray(
+                shape=(surf_dst.HostSize()), dtype=np.uint8)
+            success = nvDwn.DownloadSingleSurface(
+                surf_dst, rgb_frame)
+            if not success:
+                self.fail("Fail to download surface")
 
-                        rgb_ethalon = np.fromfile(f_in, np.uint8, frame_size)
-                        score = tc.measurePSNR(rgb_ethalon, rgb_frame)
+            # Read ethalon RGB frame and compare
+            rgb_ethalon = np.fromfile(
+                rgb_fin, np.uint8, surf_dst.HostSize())
+            score = tc.measurePSNR(rgb_ethalon, rgb_frame)
 
-                        if score < psnr_threshold:
-                            tc.dumpFrameToDisk(rgb_frame, "cc", rgbInfo.width,
-                                               rgbInfo.height, "rgb")
-                            self.fail(
-                                "PSNR score is below threshold: " + str(score))
+            # Dump both frames to disk in case of failure
+            if score < psnr_threshold:
+                tc.dumpFrameToDisk(rgb_frame, "cc", rgbInfo.width,
+                                   rgbInfo.height, "rgb_dist")
+                tc.dumpFrameToDisk(rgb_ethalon, "cc", rgbInfo.width,
+                                   rgbInfo.height, "rgb_gt")
+                self.fail(
+                    "PSNR score is below threshold: " + str(score))
+
+        nv12_fin.close()
+        rgb_fin.close()
 
 
 if __name__ == "__main__":

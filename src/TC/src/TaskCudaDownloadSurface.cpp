@@ -7,7 +7,6 @@ struct CudaDownloadSurface_Impl {
   CUstream cuStream;
   CUcontext cuContext;
   Pixel_Format format;
-  std::shared_ptr<Buffer> pHostFrame = nullptr;
 
   CudaDownloadSurface_Impl() = delete;
   CudaDownloadSurface_Impl(const CudaDownloadSurface_Impl& other) = delete;
@@ -30,17 +29,12 @@ CudaDownloadSurface* CudaDownloadSurface::Make(CUstream cuStream,
                                  pixelFormat);
 }
 
-auto const cuda_stream_sync = [](void* stream) {
-  cuStreamSynchronize((CUstream)stream);
-};
-
 CudaDownloadSurface::CudaDownloadSurface(CUstream cuStream, CUcontext cuContext,
                                          uint32_t width, uint32_t height,
                                          Pixel_Format pix_fmt)
     :
-
       Task("CudaDownloadSurface", CudaDownloadSurface::numInputs,
-           CudaDownloadSurface::numOutputs, cuda_stream_sync, (void*)cuStream) {
+           CudaDownloadSurface::numOutputs, nullptr, nullptr) {
   pImpl =
       new CudaDownloadSurface_Impl(cuStream, cuContext, width, height, pix_fmt);
 }
@@ -50,22 +44,21 @@ CudaDownloadSurface::~CudaDownloadSurface() { delete pImpl; }
 TaskExecStatus CudaDownloadSurface::Run() {
   NvtxMark tick(GetName());
 
-  if (!GetInput()) {
+  auto pSurface = (Surface*)GetInput(0U);
+  if (!pSurface) {
+    return TaskExecStatus::TASK_EXEC_FAIL;
+  }
+
+  auto pBuffer = (Buffer*)GetInput(1U);
+  if (!pBuffer) {
     return TaskExecStatus::TASK_EXEC_FAIL;
   }
 
   ClearOutputs();
 
-  auto pSurface = (Surface*)GetInput();
-  if (!pImpl->pHostFrame ||
-      pImpl->pHostFrame->GetRawMemSize() != pSurface->HostMemSize()) {
-    pImpl->pHostFrame.reset(
-        Buffer::MakeOwnMem(pSurface->HostMemSize(), pImpl->cuContext));
-  }
-
   auto stream = pImpl->cuStream;
   auto context = pImpl->cuContext;
-  auto pDstHost = pImpl->pHostFrame->GetDataAs<uint8_t>();
+  auto pDstHost = pBuffer->GetDataAs<uint8_t>();
 
   CUDA_MEMCPY2D m = {0};
   m.srcMemoryType = CU_MEMORYTYPE_DEVICE;
@@ -91,6 +84,5 @@ TaskExecStatus CudaDownloadSurface::Run() {
     return TaskExecStatus::TASK_EXEC_FAIL;
   }
 
-  SetOutput(pImpl->pHostFrame.get(), 0);
   return TaskExecStatus::TASK_EXEC_SUCCESS;
 }

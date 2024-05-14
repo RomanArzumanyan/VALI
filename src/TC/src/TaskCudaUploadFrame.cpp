@@ -28,17 +28,13 @@ CudaUploadFrame* CudaUploadFrame::Make(CUstream cuStream, CUcontext cuContext,
   return new CudaUploadFrame(cuStream, cuContext, width, height, pixelFormat);
 }
 
-auto const cuda_stream_sync = [](void* stream) {
-  cuStreamSynchronize((CUstream)stream);
-};
-
 CudaUploadFrame::CudaUploadFrame(CUstream cuStream, CUcontext cuContext,
                                  uint32_t width, uint32_t height,
                                  Pixel_Format pix_fmt)
     :
 
       Task("CudaUploadFrame", CudaUploadFrame::numInputs,
-           CudaUploadFrame::numOutputs, cuda_stream_sync, (void*)cuStream) {
+           CudaUploadFrame::numOutputs, nullptr, nullptr) {
   pImpl = new CudaUploadFrame_Impl(cuStream, cuContext, width, height, pix_fmt);
 }
 
@@ -70,7 +66,7 @@ TaskExecStatus CudaUploadFrame::Run() {
   try {
     CudaCtxPush lock(context);
     for (auto i = 0; i < pSurface->NumPlanes(); i++) {
-      auto plane = pSurface->GetSurfacePlane(i);      
+      auto plane = pSurface->GetSurfacePlane(i);
 
       m.srcHost = pSrcHost;
       m.srcPitch = plane.Width() * plane.ElemSize();

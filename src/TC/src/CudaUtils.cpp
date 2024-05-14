@@ -109,4 +109,20 @@ CUdeviceptr GetDevicePointer(CUdeviceptr dptr) {
                    __LINE__);
   return gpu_ptr;
 }
+
+CUcontext GetContextByStream(CUstream str) {
+  CUcontext ctx;
+  ThrowOnCudaError(cuStreamGetCtx(str, &ctx), __LINE__);
+  return ctx;
+}
+
+void CudaStreamSync(void* args) {
+  if (!args) {
+    throw std::runtime_error("Empty argument given.");
+  }
+
+  auto stream = (CUstream)args;
+  CudaCtxPush lock(GetContextByStream(stream));
+  ThrowOnCudaError(cuStreamSynchronize(stream), __LINE__);
+};
 } // namespace VPF

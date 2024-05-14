@@ -89,11 +89,17 @@ class TestSurfacePycuda(unittest.TestCase):
             for i in range(0, gtInfo.num_frames):
                 surf_src, _ = nvDec.DecodeSingleSurface()
                 if surf_src.Empty():
-                    self.fail("Fail to decode surface")
+                    self.fail("Failed to decode surface")
 
-                surf_dst, _ = nvCvt.Execute(surf_src, cc_ctx)
-                if surf_dst.Empty():
-                    self.fail("Fail to convert surface")
+                surf_dst = nvc.Surface.Make(
+                    nvc.PixelFormat.RGB, 
+                    surf_src.Width(), 
+                    surf_src.Height(), 
+                    gpu_id=0)
+                
+                success, details = nvCvt.Execute(surf_src, surf_dst, cc_ctx)
+                if not success:
+                    self.fail("Failed to convert surface: " + details)
 
                 src_tensor = torch.from_dlpack(surf_dst.PlanePtr())
                 
@@ -107,7 +113,7 @@ class TestSurfacePycuda(unittest.TestCase):
                 self.assertEqual(rgb_frame.size, surf_dst.HostSize())
                 
                 # Check if memory is bit 2 bit equal
-                frame_dst = np.ndarray(shape=(0), dtype=np.uint8)
+                frame_dst = np.ndarray(shape=(surf_dst.HostSize()), dtype=np.uint8)
                 if not nvDwn.DownloadSingleSurface(surf_dst, frame_dst):
                     self.fail("Failed to download decoded surface")
                 self.assertTrue(np.array_equal(rgb_frame, frame_dst))
@@ -143,9 +149,15 @@ class TestSurfacePycuda(unittest.TestCase):
                 if surf_src.Empty():
                     self.fail("Fail to decode surface")
 
-                surf_dst, _ = nvCvt.Execute(surf_src, cc_ctx)
-                if surf_dst.Empty():
-                    self.fail("Fail to convert surface")
+                surf_dst = nvc.Surface.Make(
+                    nvc.PixelFormat.RGB, 
+                    surf_src.Width(), 
+                    surf_src.Height(), 
+                    gpu_id=0)
+                
+                success, details = nvCvt.Execute(surf_src, surf_dst, cc_ctx)
+                if not success:
+                    self.fail("Failed to convert surface: " + details)
 
                 src_tensor = torch.from_dlpack(surf_dst)
                 
@@ -160,7 +172,7 @@ class TestSurfacePycuda(unittest.TestCase):
                 self.assertEqual(rgb_frame.size, surf_dst.HostSize())
                 
                 # Check if memory is bit 2 bit equal
-                frame_dst = np.ndarray(shape=(0), dtype=np.uint8)
+                frame_dst = np.ndarray(shape=(surf_dst.HostSize()), dtype=np.uint8)
                 if not nvDwn.DownloadSingleSurface(surf_dst, frame_dst):
                     self.fail("Failed to download decoded surface")
                 self.assertTrue(np.array_equal(rgb_frame, frame_dst))                
@@ -193,7 +205,7 @@ class TestSurfacePycuda(unittest.TestCase):
         self.assertEqual(tensor.shape[0] * tensor.shape[1], surface.HostSize())
 
         # Check if memory is bit 2 bit equal
-        frame = np.ndarray(shape=(0), dtype=np.uint8)
+        frame = np.ndarray(shape=(surface.HostSize()), dtype=np.uint8)
         if not nvDwn.DownloadSingleSurface(surface, frame):
             self.fail("Failed to download decoded surface")
 
@@ -222,8 +234,8 @@ class TestSurfacePycuda(unittest.TestCase):
                                         nvDec.Format(), gpu_id=0)
 
         for surf in dec_surfaces:
-            dec_frame = np.ndarray(shape=(0), dtype=np.uint8)
-            svd_frame = np.ndarray(shape=(0), dtype=np.uint8)
+            dec_frame = np.ndarray(shape=(surf.HostSize()), dtype=np.uint8)
+            svd_frame = np.ndarray(shape=(surf.HostSize()), dtype=np.uint8)
 
             nvDwn.DownloadSingleSurface(surf, svd_frame)
             nvDec.DecodeSingleFrame(dec_frame)

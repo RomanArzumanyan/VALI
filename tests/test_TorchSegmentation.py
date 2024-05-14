@@ -208,15 +208,19 @@ class TestTorchSegmentation(unittest.TestCase):
                 break
 
             # Convert NV12 > RGB.
-            surg_rgb, _ = to_rgb.Execute(surf_nv12, cc_ctx)
-            if surg_rgb.Empty():
-                print("Can not convert nv12 -> rgb")
+            surg_rgb = nvc.Surface.Make(
+                nvc.PixelFormat.RGB, surf_nv12.Width(), surf_nv12.Height(), gpu_id=0)
+            success, details = to_rgb.Execute(surf_nv12, surg_rgb, cc_ctx)
+            if not success:
+                print("Can not convert nv12 -> rgb: " + details)
                 break
 
             # Convert RGB > planar RGB.
-            surf_pln, _ = to_pln.Execute(surg_rgb, cc_ctx)
-            if surf_pln.Empty():
-                print("Can not convert rgb -> rgb planar")
+            surf_pln = nvc.Surface.Make(
+                nvc.PixelFormat.RGB_PLANAR, surg_rgb.Width(), surg_rgb.Height(), gpu_id=0)
+            success, details = to_pln.Execute(surg_rgb, surf_pln, cc_ctx)
+            if not success:
+                print("Can not convert rgb -> rgb planar: " + details)
                 break
 
             # Export to PyTorch tensor.
