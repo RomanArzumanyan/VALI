@@ -104,23 +104,13 @@ public:
 
 class PySurfaceDownloader {
   std::unique_ptr<CudaDownloadSurface> upDownloader = nullptr;
-  Pixel_Format m_format = UNDEFINED;
 
 public:
-  PySurfaceDownloader(uint32_t width, uint32_t height, Pixel_Format format,
-                      uint32_t gpu_id);
+  PySurfaceDownloader(uint32_t gpu_id);
+  PySurfaceDownloader(CUstream str);
+  PySurfaceDownloader(size_t str) : PySurfaceDownloader((CUstream)str) {}
 
-  PySurfaceDownloader(uint32_t width, uint32_t height, Pixel_Format format,
-                      CUstream str);
-
-  PySurfaceDownloader(uint32_t width, uint32_t height, Pixel_Format format,
-                      size_t str)
-      : PySurfaceDownloader(width, height, format, (CUstream)str) {}
-
-  Pixel_Format GetFormat();
-
-  bool DownloadSingleSurface(std::shared_ptr<Surface> surface,
-                             py::array& frame);
+  bool Run(Surface& src, py::array& dst);
 };
 
 class PySurfaceConverter {
@@ -320,7 +310,6 @@ private:
 class PyNvDecoder {
   std::unique_ptr<DemuxFrame> upDemuxer;
   std::unique_ptr<NvdecDecodeFrame> upDecoder;
-  std::unique_ptr<PySurfaceDownloader> upDownloader;
   uint32_t gpuID;
   static uint32_t const poolFrameSize = 4U;
   Pixel_Format format;
@@ -333,11 +322,11 @@ class PyNvDecoder {
 
 public:
   PyNvDecoder(uint32_t width, uint32_t height, Pixel_Format format,
-              cudaVideoCodec codec, uint32_t gpuOrdinal);
+              cudaVideoCodec codec, uint32_t gpu_id);
 
-  PyNvDecoder(const std::string& pathToFile, int gpuOrdinal);
+  PyNvDecoder(const std::string& pathToFile, int gpu_id);
 
-  PyNvDecoder(const std::string& pathToFile, int gpuOrdinal,
+  PyNvDecoder(const std::string& pathToFile, int gpu_id,
               const std::map<std::string, std::string>& ffmpeg_options);
 
   PyNvDecoder(uint32_t width, uint32_t height, Pixel_Format format,
@@ -393,14 +382,9 @@ public:
 
   bool DecodeSurface(DecodeContext& ctx, TaskExecDetails& details);
 
-  bool DecodeFrame(DecodeContext& ctx, TaskExecDetails& details,
-                   py::array_t<uint8_t>& frame);
-
   Surface* getDecodedSurfaceFromPacket(
       const py::array_t<uint8_t>* pPacket, TaskExecDetails& details,
       const PacketData* p_packet_data = nullptr, bool no_eos = false);
-
-  void DownloaderLazyInit();
 
   std::map<NV_DEC_CAPS, int> Capabilities() const;
 };
@@ -425,7 +409,7 @@ public:
                    bool verbose = false);
 
   PyNvEncoder(const std::map<std::string, std::string>& encodeOptions,
-              int gpuOrdinal, Pixel_Format format = NV12, bool verbose = false);
+              int gpu_id, Pixel_Format format = NV12, bool verbose = false);
 
   PyNvEncoder(const std::map<std::string, std::string>& encodeOptions,
               CUcontext ctx, CUstream str, Pixel_Format format = NV12,

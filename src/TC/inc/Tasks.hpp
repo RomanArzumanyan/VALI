@@ -176,66 +176,23 @@ private:
   CUstream m_stream;
 };
 
-class TC_CORE_EXPORT UploadBuffer final : public Task
-{
-public:
-  UploadBuffer() = delete;
-  UploadBuffer(const UploadBuffer& other) = delete;
-  UploadBuffer& operator=(const UploadBuffer& other) = delete;
-
-  TaskExecStatus Run() final;
-  size_t GetUploadSize() const;
-  ~UploadBuffer() final;
-  static UploadBuffer* Make(CUstream cuStream, CUcontext cuContext,
-                            uint32_t elem_size, uint32_t num_elems);
-
-private:
-  UploadBuffer(CUstream cuStream, CUcontext cuContext, uint32_t elem_size,
-               uint32_t num_elems);
-  static const uint32_t numInputs = 1U;
-  static const uint32_t numOutputs = 1U;
-  struct UploadBuffer_Impl* pImpl = nullptr;
-};
-
-class TC_CORE_EXPORT CudaDownloadSurface final : public Task
-{
+class TC_CORE_EXPORT CudaDownloadSurface final : public Task {
 public:
   CudaDownloadSurface() = delete;
   CudaDownloadSurface(const CudaDownloadSurface& other) = delete;
   CudaDownloadSurface& operator=(const CudaDownloadSurface& other) = delete;
 
-  ~CudaDownloadSurface() final;
-  TaskExecStatus Run() final;
-  static CudaDownloadSurface* Make(CUstream cuStream, CUcontext cuContext,
-                                   uint32_t width, uint32_t height,
-                                   Pixel_Format pixelFormat);
+  TaskExecStatus Run();
+  ~CudaDownloadSurface() = default;
+  CudaDownloadSurface(CUstream cuStream);
 
 private:
-  CudaDownloadSurface(CUstream cuStream, CUcontext cuContext, uint32_t width,
-                      uint32_t height, Pixel_Format pixelFormat);
+  /* First input is src Surface.
+   * Second input is dst Buffer.
+   */
   static const uint32_t numInputs = 2U;
   static const uint32_t numOutputs = 0U;
-  struct CudaDownloadSurface_Impl* pImpl = nullptr;
-};
-
-class TC_CORE_EXPORT DownloadCudaBuffer final : public Task
-{
-public:
-  DownloadCudaBuffer() = delete;
-  DownloadCudaBuffer(const DownloadCudaBuffer& other) = delete;
-  DownloadCudaBuffer& operator=(const DownloadCudaBuffer& other) = delete;
-
-  ~DownloadCudaBuffer() final;
-  TaskExecStatus Run() final;
-  static DownloadCudaBuffer* Make(CUstream cuStream, CUcontext cuContext,
-                                  uint32_t elem_size, uint32_t num_elems);
-
-private:
-  DownloadCudaBuffer(CUstream cuStream, CUcontext cuContext, uint32_t elem_size,
-                     uint32_t num_elems);
-  static const uint32_t numInputs = 1U;
-  static const uint32_t numOutputs = 1U;
-  struct DownloadCudaBuffer_Impl* pImpl = nullptr;
+  CUstream m_stream;
 };
 
 class TC_CORE_EXPORT DemuxFrame final : public Task

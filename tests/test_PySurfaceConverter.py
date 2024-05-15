@@ -102,11 +102,7 @@ class TestSurfaceConverter(unittest.TestCase):
                 nvc.PixelFormat.RGB_PLANAR,
                 gpu_id=0)
 
-            nvDwn = nvc.PySurfaceDownloader(
-                plnInfo.width,
-                plnInfo.height,
-                nvc.PixelFormat.RGB_PLANAR,
-                gpu_id=0)
+            nvDwn = nvc.PySurfaceDownloader(gpu_id=0)
 
             # Use color space and range of original file.
             cc_ctx = nvc.ColorspaceConversionContext(
@@ -140,7 +136,7 @@ class TestSurfaceConverter(unittest.TestCase):
 
                 # Download and save to disk
                 dst_frame = np.ndarray(shape=(frame_size), dtype=np.uint8)
-                success = nvDwn.DownloadSingleSurface(surf_pln, dst_frame)
+                success = nvDwn.Run(surf_pln, dst_frame)
                 if not success:
                     self.fail("Failed to download surface.")
 
@@ -175,11 +171,7 @@ class TestSurfaceConverter(unittest.TestCase):
             nvc.PixelFormat.RGB,
             gpu_id=0)
 
-        nvDwn = nvc.PySurfaceDownloader(
-            rgbInfo.width,
-            rgbInfo.height,
-            nvc.PixelFormat.RGB,
-            gpu_id=0)
+        nvDwn = nvc.PySurfaceDownloader(gpu_id=0)
 
         # Use color space and range of original file.
         cc_ctx = nvc.ColorspaceConversionContext(
@@ -217,7 +209,7 @@ class TestSurfaceConverter(unittest.TestCase):
             # Download to numpy array
             rgb_frame = np.ndarray(
                 shape=(surf_dst.HostSize()), dtype=np.uint8)
-            success = nvDwn.DownloadSingleSurface(
+            success = nvDwn.Run(
                 surf_dst, rgb_frame)
             if not success:
                 self.fail("Fail to download surface")

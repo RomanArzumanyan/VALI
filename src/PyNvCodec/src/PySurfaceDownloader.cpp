@@ -14,45 +14,29 @@
  * limitations under the License.
  */
 
-#include "CudaUtils.hpp"
 #include "PyNvCodec.hpp"
+#include "memory"
 
-using namespace std;
 using namespace VPF;
-using namespace chrono;
-
 namespace py = pybind11;
 
 constexpr auto TASK_EXEC_SUCCESS = TaskExecStatus::TASK_EXEC_SUCCESS;
 constexpr auto TASK_EXEC_FAIL = TaskExecStatus::TASK_EXEC_FAIL;
 
-PySurfaceDownloader::PySurfaceDownloader(uint32_t width, uint32_t height,
-                                         Pixel_Format format, uint32_t gpu_ID)
-    : m_format(format) {
-  upDownloader.reset(CudaDownloadSurface::Make(
-      CudaResMgr::Instance().GetStream(gpu_ID),
-      CudaResMgr::Instance().GetCtx(gpu_ID), width, height, format));
+PySurfaceDownloader::PySurfaceDownloader(uint32_t gpu_id) {
+  upDownloader = std::make_unique<CudaDownloadSurface>(
+      CudaResMgr::Instance().GetStream(gpu_id));
 }
 
-PySurfaceDownloader::PySurfaceDownloader(uint32_t width, uint32_t height,
-                                         Pixel_Format format, CUstream str)
-    : m_format(format) {
-  upDownloader.reset(CudaDownloadSurface::Make(str, GetContextByStream(str),
-                                               width, height, format));
+PySurfaceDownloader::PySurfaceDownloader(CUstream str) {
+  upDownloader = std::make_unique<CudaDownloadSurface>(str);
 }
 
-Pixel_Format PySurfaceDownloader::GetFormat() { return m_format; }
-
-bool PySurfaceDownloader::DownloadSingleSurface(shared_ptr<Surface> surface,
-                                                py::array& frame) {
-  if (!surface || frame.size() != surface->HostMemSize()) {
-    return false;
-  }
-
+bool PySurfaceDownloader::Run(Surface& src, py::array& dst) {
   auto buffer =
-      std::shared_ptr<Buffer>(Buffer::Make(frame.size(), frame.mutable_data()));
+      std::shared_ptr<Buffer>(Buffer::Make(dst.size(), dst.mutable_data()));
 
-  upDownloader->SetInput(surface.get(), 0U);
+  upDownloader->SetInput(&src, 0U);
   upDownloader->SetInput(buffer.get(), 1U);
 
   if (TASK_EXEC_FAIL == upDownloader->Execute()) {
@@ -66,41 +50,27 @@ void Init_PySurfaceDownloader(py::module& m) {
   py::class_<PySurfaceDownloader>(m, "PySurfaceDownloader",
                                   "This class is used to copy Surface to numpy "
                                   "ndarray using CUDA DtoH memcpy.")
-      .def(py::init<uint32_t, uint32_t, Pixel_Format, uint32_t>(),
-           py::arg("width"), py::arg("height"), py::arg("format"),
-           py::arg("gpu_id"),
+      .def(py::init<uint32_t>(), py::arg("gpu_id"),
            R"pbdoc(
         Constructor method.
 
-        :param width: Surface width
-        :param height: Surface height
-        :param format: Surface pixel format
         :param gpu_id: what GPU does Surface belong to
     )pbdoc")
-      .def(py::init<uint32_t, uint32_t, Pixel_Format, size_t>(),
-           py::arg("width"), py::arg("height"), py::arg("format"),
-           py::arg("stream"),
+      .def(py::init<uint32_t>(), py::arg("stream"),
            R"pbdoc(
         Constructor method.
 
-        :param width: Surface width
-        :param height: Surface height
-        :param format: Surface pixel format
         :param stream: CUDA stream to use for HtoD memcopy
     )pbdoc")
-      .def("Format", &PySurfaceDownloader::GetFormat,
-           R"pbdoc(
-        Get pixel format.
-    )pbdoc")
-      .def("DownloadSingleSurface", &PySurfaceDownloader::DownloadSingleSurface,
-           py::arg("surface"), py::arg("frame"),
+      .def("Run", &PySurfaceDownloader::Run, py::arg("src"), py::arg("dst"),
            py::call_guard<py::gil_scoped_release>(),
            R"pbdoc(
         Perform DtoH memcpy.
 
-        :param surface: input Surface
-        :param frame: output numpy array
-        :type frame: numpy.ndarray
+        :param src: input Surface
+        :type src: Surface
+        :param dst: output numpy array
+        :type dst: numpy.ndarray
         :return: True in case of success False otherwise
         :rtype: Bool
     )pbdoc");

@@ -17,10 +17,7 @@
 #include "PyNvCodec.hpp"
 #include "memory"
 
-using namespace std;
 using namespace VPF;
-using namespace chrono;
-
 namespace py = pybind11;
 
 constexpr auto TASK_EXEC_SUCCESS = TaskExecStatus::TASK_EXEC_SUCCESS;
@@ -48,7 +45,6 @@ bool PyFrameUploader::Run(Buffer& src, Surface& dst) {
   auto res = m_uploader->Execute();
 
   if (TASK_EXEC_FAIL == res) {
-    throw runtime_error("Error uploading frame to GPU");
     return false;
   }
 
