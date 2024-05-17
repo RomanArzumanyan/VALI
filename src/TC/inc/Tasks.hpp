@@ -220,29 +220,28 @@ private:
   struct DemuxFrame_Impl* pImpl = nullptr;
 };
 
-class TC_CORE_EXPORT ConvertSurface final : public Task
-{
+class TC_CORE_EXPORT ConvertSurface final : public Task {
 public:
   ConvertSurface() = delete;
   ConvertSurface(const ConvertSurface& other) = delete;
   ConvertSurface& operator=(const ConvertSurface& other) = delete;
 
-  static ConvertSurface* Make(uint32_t width, uint32_t height,
-                              Pixel_Format inFormat, Pixel_Format outFormat,
-                              CUcontext ctx, CUstream str);
-
   ~ConvertSurface();
+  ConvertSurface(Pixel_Format src, Pixel_Format dst, CUcontext ctx,
+                 CUstream str);
 
   TaskExecStatus Run() final;
 
 private:
+  /* 0) Source Surface.
+   * 1) Destination Surface.
+   * 2) Colorspace conversion context.
+   */
   static const uint32_t numInputs = 3U;
-  static const uint32_t numOutputs = 2U;
-
+  /* 0) Task exec details.
+   */
+  static const uint32_t numOutputs = 1U;
   struct NppConvertSurface_Impl* pImpl;
-
-  ConvertSurface(uint32_t width, uint32_t height, Pixel_Format inFormat,
-                 Pixel_Format outFormat, CUcontext ctx, CUstream str);
 };
 
 class TC_CORE_EXPORT ConvertFrame final : public Task {

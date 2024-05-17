@@ -47,8 +47,8 @@ struct NppConvertSurface_Impl {
 
   virtual ~NppConvertSurface_Impl() = default;
 
-  virtual Token* Execute(Token* pSrcToken, Token* pDstToken,
-                         ColorspaceConversionContext* pCtx) = 0;
+  virtual TaskExecStatus Execute(Token* pSrcToken, Token* pDstToken,
+                                 ColorspaceConversionContext* pCtx) = 0;
 
   bool Validate(Surface* pSrc, Surface* pDst) {
     if (!pSrc || !pDst) {
@@ -65,23 +65,6 @@ struct NppConvertSurface_Impl {
     }
 
     return true;
-  }
-
-  Surface* GetOutput(Surface* pSrc, Surface* pDst) {
-    if (!pSrc) {
-      return nullptr;
-    }
-
-    if (pDst) {
-      return pDst;
-    }
-
-    if (!pSurface) {
-      pSurface.reset(
-          Surface::Make(dstFmt, pSrc->Width(), pSrc->Height(), cu_ctx));
-    }
-
-    return pSurface.get();
   }
 
   std::string GetNvtxTickName() const {
@@ -115,20 +98,20 @@ struct NppConvertSurface_Impl {
 };
 
 struct nv12_bgr final : public NppConvertSurface_Impl {
-  nv12_bgr(uint32_t width, uint32_t height, CUcontext context, CUstream stream)
+  nv12_bgr(CUcontext context, CUstream stream)
       : NppConvertSurface_Impl(context, stream, NV12, BGR) {}
 
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
+  TaskExecStatus Execute(Token* pSrcToken, Token* pDstToken,
+                         ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
     details.info = TaskExecInfo::SUCCESS;
 
     auto pInput = (Surface*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+    auto pOutput = (Surface*)pDstToken;
 
     if (!Validate(pInput, pOutput)) {
       details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     auto const params = GetParams(pCtx);
@@ -160,38 +143,38 @@ struct nv12_bgr final : public NppConvertSurface_Impl {
                                          pOutput->Pitch(), oSizeRoi, nppCtx);
       } else {
         details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-        return nullptr;
+        return TASK_EXEC_FAIL;
       }
       break;
     default:
       details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     if (NPP_NO_ERROR != err) {
       details.info = TaskExecInfo::FAIL;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
-    return pOutput;
+    return TASK_EXEC_SUCCESS;
   }
 };
 
 struct nv12_rgb final : public NppConvertSurface_Impl {
-  nv12_rgb(uint32_t width, uint32_t height, CUcontext context, CUstream stream)
+  nv12_rgb(CUcontext context, CUstream stream)
       : NppConvertSurface_Impl(context, stream, NV12, RGB) {}
 
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
+  TaskExecStatus Execute(Token* pSrcToken, Token* pDstToken,
+                         ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
     details.info = TaskExecInfo::SUCCESS;
 
     auto pInput = (Surface*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+    auto pOutput = (Surface*)pDstToken;
 
     if (!Validate(pInput, pOutput)) {
       details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     auto const params = GetParams(pCtx);
@@ -223,39 +206,38 @@ struct nv12_rgb final : public NppConvertSurface_Impl {
                                          pOutput->Pitch(), oSizeRoi, nppCtx);
       } else {
         details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-        return nullptr;
+        return TASK_EXEC_FAIL;
       }
       break;
     default:
       details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     if (NPP_NO_ERROR != err) {
       details.info = TaskExecInfo::FAIL;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
-    return pOutput;
+    return TASK_EXEC_SUCCESS;
   }
 };
 
 struct nv12_yuv420 final : public NppConvertSurface_Impl {
-  nv12_yuv420(uint32_t width, uint32_t height, CUcontext context,
-              CUstream stream)
+  nv12_yuv420(CUcontext context, CUstream stream)
       : NppConvertSurface_Impl(context, stream, NV12, YUV420) {}
 
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
+  TaskExecStatus Execute(Token* pSrcToken, Token* pDstToken,
+                         ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
     details.info = TaskExecInfo::SUCCESS;
 
     auto pInput = (Surface*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+    auto pOutput = (Surface*)pDstToken;
 
     if (!Validate(pInput, pOutput)) {
       details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PixelPtr(0U),
@@ -285,33 +267,33 @@ struct nv12_yuv420 final : public NppConvertSurface_Impl {
       break;
     default:
       details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     if (NPP_NO_ERROR != err) {
       details.info = TaskExecInfo::FAIL;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
-    return pOutput;
+    return TASK_EXEC_SUCCESS;
   }
 };
 
 struct nv12_y final : public NppConvertSurface_Impl {
-  nv12_y(uint32_t width, uint32_t height, CUcontext context, CUstream stream)
+  nv12_y(CUcontext context, CUstream stream)
       : NppConvertSurface_Impl(context, stream, NV12, Y) {}
 
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
+  TaskExecStatus Execute(Token* pSrcToken, Token* pDstToken,
+                         ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
     details.info = TaskExecInfo::SUCCESS;
 
     auto pInput = (Surface*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+    auto pOutput = (Surface*)pDstToken;
 
     if (!Validate(pInput, pOutput)) {
       details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     CUDA_MEMCPY2D m = {0};
@@ -328,25 +310,25 @@ struct nv12_y final : public NppConvertSurface_Impl {
     cuMemcpy2DAsync(&m, cu_str);
     cuStreamSynchronize(cu_str);
 
-    return pOutput;
+    return TASK_EXEC_SUCCESS;
   }
 };
 
 struct rbg8_y final : public NppConvertSurface_Impl {
-  rbg8_y(uint32_t width, uint32_t height, CUcontext context, CUstream stream)
+  rbg8_y(CUcontext context, CUstream stream)
       : NppConvertSurface_Impl(context, stream, RGB, Y) {}
 
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
+  TaskExecStatus Execute(Token* pSrcToken, Token* pDstToken,
+                         ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
     details.info = TaskExecInfo::SUCCESS;
 
     auto pInput = (SurfaceRGB*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+    auto pOutput = (Surface*)pDstToken;
 
     if (!Validate(pInput, pOutput)) {
       details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
@@ -355,17 +337,16 @@ struct rbg8_y final : public NppConvertSurface_Impl {
         (const Npp8u*)pInput->PixelPtr(), pInput->Pitch(),
         (Npp8u*)pOutput->PixelPtr(), pOutput->Pitch(), roi, nppCtx);
 
-    return pOutput;
+    return TASK_EXEC_SUCCESS;
   }
 };
 
 struct yuv420_rgb final : public NppConvertSurface_Impl {
-  yuv420_rgb(uint32_t width, uint32_t height, CUcontext context,
-             CUstream stream)
+  yuv420_rgb(CUcontext context, CUstream stream)
       : NppConvertSurface_Impl(context, stream, YUV420, RGB) {}
 
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
+  TaskExecStatus Execute(Token* pSrcToken, Token* pDstToken,
+                         ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
     details.info = TaskExecInfo::SUCCESS;
 
@@ -374,11 +355,11 @@ struct yuv420_rgb final : public NppConvertSurface_Impl {
     auto const color_range = std::get<1>(params);
 
     auto pInput = (SurfaceYUV420*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+    auto pOutput = (Surface*)pDstToken;
 
     if (!Validate(pInput, pOutput)) {
       details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PixelPtr(0U),
@@ -395,7 +376,7 @@ struct yuv420_rgb final : public NppConvertSurface_Impl {
     switch (color_space) {
     case BT_709:
       details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     case BT_601:
       if (JPEG == color_range) {
         err = nppiYUV420ToRGB_8u_P3C3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
@@ -407,25 +388,24 @@ struct yuv420_rgb final : public NppConvertSurface_Impl {
       break;
     default:
       details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     if (NPP_NO_ERROR != err) {
       details.info = TaskExecInfo::FAIL;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
-    return pOutput;
+    return TASK_EXEC_SUCCESS;
   }
 };
 
 struct yuv420_bgr final : public NppConvertSurface_Impl {
-  yuv420_bgr(uint32_t width, uint32_t height, CUcontext context,
-             CUstream stream)
+  yuv420_bgr(CUcontext context, CUstream stream)
       : NppConvertSurface_Impl(context, stream, YUV420, BGR) {}
 
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
+  TaskExecStatus Execute(Token* pSrcToken, Token* pDstToken,
+                         ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
     details.info = TaskExecInfo::SUCCESS;
 
@@ -434,11 +414,11 @@ struct yuv420_bgr final : public NppConvertSurface_Impl {
     auto const color_range = std::get<1>(params);
 
     auto pInput = (SurfaceYUV420*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+    auto pOutput = (Surface*)pDstToken;
 
     if (!Validate(pInput, pOutput)) {
       details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PixelPtr(0U),
@@ -455,7 +435,7 @@ struct yuv420_bgr final : public NppConvertSurface_Impl {
     switch (color_space) {
     case BT_709:
       details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     case BT_601:
       if (JPEG == color_range) {
         err = nppiYUV420ToBGR_8u_P3C3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
@@ -467,25 +447,24 @@ struct yuv420_bgr final : public NppConvertSurface_Impl {
       break;
     default:
       details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     if (NPP_NO_ERROR != err) {
       details.info = TaskExecInfo::FAIL;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
-    return pOutput;
+    return TASK_EXEC_SUCCESS;
   }
 };
 
 struct yuv444_bgr final : public NppConvertSurface_Impl {
-  yuv444_bgr(uint32_t width, uint32_t height, CUcontext context,
-             CUstream stream)
+  yuv444_bgr(CUcontext context, CUstream stream)
       : NppConvertSurface_Impl(context, stream, YUV444, BGR) {}
 
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
+  TaskExecStatus Execute(Token* pSrcToken, Token* pDstToken,
+                         ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
     details.info = TaskExecInfo::SUCCESS;
 
@@ -495,15 +474,15 @@ struct yuv444_bgr final : public NppConvertSurface_Impl {
 
     if (BT_601 != color_space) {
       details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     auto pInput = (SurfaceYUV444*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+    auto pOutput = (Surface*)pDstToken;
 
     if (!Validate(pInput, pOutput)) {
       details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PixelPtr(0U),
@@ -532,20 +511,19 @@ struct yuv444_bgr final : public NppConvertSurface_Impl {
 
     if (NPP_NO_ERROR != err) {
       details.info = TaskExecInfo::FAIL;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
-    return pOutput;
+    return TASK_EXEC_SUCCESS;
   }
 };
 
 struct yuv444_rgb final : public NppConvertSurface_Impl {
-  yuv444_rgb(uint32_t width, uint32_t height, CUcontext context,
-             CUstream stream)
+  yuv444_rgb(CUcontext context, CUstream stream)
       : NppConvertSurface_Impl(context, stream, YUV444, RGB) {}
 
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
+  TaskExecStatus Execute(Token* pSrcToken, Token* pDstToken,
+                         ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
     details.info = TaskExecInfo::SUCCESS;
 
@@ -555,15 +533,15 @@ struct yuv444_rgb final : public NppConvertSurface_Impl {
 
     if (BT_601 != color_space) {
       details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     auto pInput = (SurfaceYUV444*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+    auto pOutput = (Surface*)pDstToken;
 
     if (!Validate(pInput, pOutput)) {
       details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PixelPtr(0U),
@@ -588,20 +566,19 @@ struct yuv444_rgb final : public NppConvertSurface_Impl {
 
     if (NPP_NO_ERROR != err) {
       details.info = TaskExecInfo::FAIL;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
-    return pOutput;
+    return TASK_EXEC_SUCCESS;
   }
 };
 
 struct yuv444_rgb_planar final : public NppConvertSurface_Impl {
-  yuv444_rgb_planar(uint32_t width, uint32_t height, CUcontext context,
-                    CUstream stream)
+  yuv444_rgb_planar(CUcontext context, CUstream stream)
       : NppConvertSurface_Impl(context, stream, YUV444, RGB_PLANAR) {}
 
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
+  TaskExecStatus Execute(Token* pSrcToken, Token* pDstToken,
+                         ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
     details.info = TaskExecInfo::SUCCESS;
 
@@ -611,15 +588,15 @@ struct yuv444_rgb_planar final : public NppConvertSurface_Impl {
 
     if (BT_601 != color_space) {
       details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     auto pInput = (SurfaceYUV444*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+    auto pOutput = (Surface*)pDstToken;
 
     if (!Validate(pInput, pOutput)) {
       details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PixelPtr(0U),
@@ -644,20 +621,19 @@ struct yuv444_rgb_planar final : public NppConvertSurface_Impl {
 
     if (NPP_NO_ERROR != err) {
       details.info = TaskExecInfo::FAIL;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
-    return pOutput;
+    return TASK_EXEC_SUCCESS;
   }
 };
 
 struct bgr_yuv444 final : public NppConvertSurface_Impl {
-  bgr_yuv444(uint32_t width, uint32_t height, CUcontext context,
-             CUstream stream)
+  bgr_yuv444(CUcontext context, CUstream stream)
       : NppConvertSurface_Impl(context, stream, BGR, YUV444) {}
 
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
+  TaskExecStatus Execute(Token* pSrcToken, Token* pDstToken,
+                         ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
     details.info = TaskExecInfo::SUCCESS;
 
@@ -667,15 +643,15 @@ struct bgr_yuv444 final : public NppConvertSurface_Impl {
 
     if (BT_601 != color_space) {
       details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     auto pInput = (SurfaceBGR*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+    auto pOutput = (Surface*)pDstToken;
 
     if (!Validate(pInput, pOutput)) {
       details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     const Npp8u* pSrc = (const Npp8u*)pInput->PixelPtr();
@@ -704,29 +680,28 @@ struct bgr_yuv444 final : public NppConvertSurface_Impl {
 
     if (NPP_NO_ERROR != err) {
       details.info = TaskExecInfo::FAIL;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
-    return pOutput;
+    return TASK_EXEC_SUCCESS;
   }
 };
 
 struct rgb_yuv444 final : public NppConvertSurface_Impl {
-  rgb_yuv444(uint32_t width, uint32_t height, CUcontext context,
-             CUstream stream)
+  rgb_yuv444(CUcontext context, CUstream stream)
       : NppConvertSurface_Impl(context, stream, RGB, YUV444) {}
 
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
+  TaskExecStatus Execute(Token* pSrcToken, Token* pDstToken,
+                         ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
     details.info = TaskExecInfo::SUCCESS;
 
     auto pInput = (SurfaceRGB*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+    auto pOutput = (Surface*)pDstToken;
 
     if (!Validate(pInput, pOutput)) {
       details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     auto const params = GetParams(pCtx);
@@ -735,7 +710,7 @@ struct rgb_yuv444 final : public NppConvertSurface_Impl {
 
     if (BT_601 != color_space) {
       details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     const Npp8u* pSrc = (const Npp8u*)pInput->PixelPtr();
@@ -763,29 +738,28 @@ struct rgb_yuv444 final : public NppConvertSurface_Impl {
 
     if (NPP_NO_ERROR != err) {
       details.info = TaskExecInfo::FAIL;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
-    return pOutput;
+    return TASK_EXEC_SUCCESS;
   }
 };
 
 struct rgb_planar_yuv444 final : public NppConvertSurface_Impl {
-  rgb_planar_yuv444(uint32_t width, uint32_t height, CUcontext context,
-                    CUstream stream)
+  rgb_planar_yuv444(CUcontext context, CUstream stream)
       : NppConvertSurface_Impl(context, stream, RGB_PLANAR, YUV444) {}
 
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
+  TaskExecStatus Execute(Token* pSrcToken, Token* pDstToken,
+                         ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
     details.info = TaskExecInfo::SUCCESS;
 
     auto pInput = (SurfaceRGBPlanar*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+    auto pOutput = (Surface*)pDstToken;
 
     if (!Validate(pInput, pOutput)) {
       details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     auto const params = GetParams(pCtx);
@@ -794,7 +768,7 @@ struct rgb_planar_yuv444 final : public NppConvertSurface_Impl {
 
     if (BT_601 != color_space) {
       details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     const Npp8u* pSrc[] = {(const Npp8u*)pInput->PixelPtr(0U),
@@ -824,28 +798,28 @@ struct rgb_planar_yuv444 final : public NppConvertSurface_Impl {
 
     if (NPP_NO_ERROR != err) {
       details.info = TaskExecInfo::FAIL;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
-    return pOutput;
+    return TASK_EXEC_SUCCESS;
   }
 };
 
 struct y_yuv444 final : public NppConvertSurface_Impl {
-  y_yuv444(uint32_t width, uint32_t height, CUcontext context, CUstream stream)
+  y_yuv444(CUcontext context, CUstream stream)
       : NppConvertSurface_Impl(context, stream, Y, YUV444) {}
 
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
+  TaskExecStatus Execute(Token* pSrcToken, Token* pDstToken,
+                         ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
     details.info = TaskExecInfo::SUCCESS;
 
     auto pInput = (SurfaceY*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+    auto pOutput = (Surface*)pDstToken;
 
     if (!Validate(pInput, pOutput)) {
       details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     // Make gray U and V channels;
@@ -857,7 +831,7 @@ struct y_yuv444 final : public NppConvertSurface_Impl {
       auto err = nppiSet_8u_C1R_Ctx(nValue, pDst, nDstStep, roi, nppCtx);
       if (NPP_NO_ERROR != err) {
         details.info = TaskExecInfo::FAIL;
-        return nullptr;
+        return TASK_EXEC_FAIL;
       }
     }
 
@@ -870,29 +844,28 @@ struct y_yuv444 final : public NppConvertSurface_Impl {
     auto err = nppiCopy_8u_C1R_Ctx(pSrc, nSrcStep, pDst, nDstStep, roi, nppCtx);
     if (NPP_NO_ERROR != err) {
       details.info = TaskExecInfo::FAIL;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
-    return pOutput;
+    return TASK_EXEC_SUCCESS;
   }
 };
 
 struct rgb_yuv420 final : public NppConvertSurface_Impl {
-  rgb_yuv420(uint32_t width, uint32_t height, CUcontext context,
-             CUstream stream)
+  rgb_yuv420(CUcontext context, CUstream stream)
       : NppConvertSurface_Impl(context, stream, RGB, YUV420) {}
 
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
+  TaskExecStatus Execute(Token* pSrcToken, Token* pDstToken,
+                         ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
     details.info = TaskExecInfo::SUCCESS;
 
     auto pInput = (SurfaceRGB*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+    auto pOutput = (Surface*)pDstToken;
 
     if (!Validate(pInput, pOutput)) {
       details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     auto const params = GetParams(pCtx);
@@ -901,7 +874,7 @@ struct rgb_yuv420 final : public NppConvertSurface_Impl {
 
     if (BT_601 != color_space) {
       details.info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     const Npp8u* pSrc = (const Npp8u*)pInput->PixelPtr();
@@ -933,29 +906,28 @@ struct rgb_yuv420 final : public NppConvertSurface_Impl {
 
     if (NPP_NO_ERROR != err) {
       details.info = TaskExecInfo::FAIL;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
-    return pOutput;
+    return TASK_EXEC_SUCCESS;
   }
 };
 
 struct yuv420_nv12 final : public NppConvertSurface_Impl {
-  yuv420_nv12(uint32_t width, uint32_t height, CUcontext context,
-              CUstream stream)
+  yuv420_nv12(CUcontext context, CUstream stream)
       : NppConvertSurface_Impl(context, stream, YUV420, NV12) {}
 
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
+  TaskExecStatus Execute(Token* pSrcToken, Token* pDstToken,
+                         ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
     details.info = TaskExecInfo::SUCCESS;
 
     auto pInput = (Surface*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+    auto pOutput = (Surface*)pDstToken;
 
     if (!Validate(pInput, pOutput)) {
       details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PixelPtr(0U),
@@ -975,29 +947,28 @@ struct yuv420_nv12 final : public NppConvertSurface_Impl {
                                          pDst[1], dstStep[1], roi, nppCtx);
     if (NPP_NO_ERROR != err) {
       details.info = TaskExecInfo::FAIL;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
-    return pOutput;
+    return TASK_EXEC_SUCCESS;
   }
 };
 
 struct rgb8_deinterleave final : public NppConvertSurface_Impl {
-  rgb8_deinterleave(uint32_t width, uint32_t height, CUcontext context,
-                    CUstream stream)
+  rgb8_deinterleave(CUcontext context, CUstream stream)
       : NppConvertSurface_Impl(context, stream, RGB, RGB_PLANAR) {}
 
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
+  TaskExecStatus Execute(Token* pSrcToken, Token* pDstToken,
+                         ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
     details.info = TaskExecInfo::SUCCESS;
 
     auto pInput = (SurfaceRGB*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+    auto pOutput = (Surface*)pDstToken;
 
     if (!Validate(pInput, pOutput)) {
       details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     const Npp8u* pSrc = (const Npp8u*)pInput->PixelPtr();
@@ -1016,29 +987,28 @@ struct rgb8_deinterleave final : public NppConvertSurface_Impl {
         nppiCopy_8u_C3P3R_Ctx(pSrc, nSrcStep, aDst, nDstStep, oSizeRoi, nppCtx);
     if (NPP_NO_ERROR != err) {
       details.info = TaskExecInfo::FAIL;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
-    return pOutput;
+    return TASK_EXEC_SUCCESS;
   }
 };
 
 struct rgb8_interleave final : public NppConvertSurface_Impl {
-  rgb8_interleave(uint32_t width, uint32_t height, CUcontext context,
-                  CUstream stream)
+  rgb8_interleave(CUcontext context, CUstream stream)
       : NppConvertSurface_Impl(context, stream, RGB_PLANAR, RGB) {}
 
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
+  TaskExecStatus Execute(Token* pSrcToken, Token* pDstToken,
+                         ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
     details.info = TaskExecInfo::SUCCESS;
 
     auto pInput = (SurfaceRGBPlanar*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+    auto pOutput = (Surface*)pDstToken;
 
     if (!Validate(pInput, pOutput)) {
       details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     const Npp8u* const pSrc[] = {
@@ -1057,28 +1027,28 @@ struct rgb8_interleave final : public NppConvertSurface_Impl {
         nppiCopy_8u_P3C3R_Ctx(pSrc, nSrcStep, pDst, nDstStep, oSizeRoi, nppCtx);
     if (NPP_NO_ERROR != err) {
       details.info = TaskExecInfo::FAIL;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
-    return pOutput;
+    return TASK_EXEC_SUCCESS;
   }
 };
 
 struct rgb_bgr final : public NppConvertSurface_Impl {
-  rgb_bgr(uint32_t width, uint32_t height, CUcontext context, CUstream stream)
+  rgb_bgr(CUcontext context, CUstream stream)
       : NppConvertSurface_Impl(context, stream, RGB, BGR) {}
 
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
+  TaskExecStatus Execute(Token* pSrcToken, Token* pDstToken,
+                         ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
     details.info = TaskExecInfo::SUCCESS;
 
     auto pInput = (SurfaceRGB*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+    auto pOutput = (Surface*)pDstToken;
 
     if (!Validate(pInput, pOutput)) {
       details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     const Npp8u* pSrc = (const Npp8u*)pInput->PixelPtr();
@@ -1095,28 +1065,28 @@ struct rgb_bgr final : public NppConvertSurface_Impl {
                                            oSizeRoi, aDstOrder, nppCtx);
     if (NPP_NO_ERROR != err) {
       details.info = TaskExecInfo::FAIL;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
-    return pOutput;
+    return TASK_EXEC_SUCCESS;
   }
 };
 
 struct bgr_rgb final : public NppConvertSurface_Impl {
-  bgr_rgb(uint32_t width, uint32_t height, CUcontext context, CUstream stream)
+  bgr_rgb(CUcontext context, CUstream stream)
       : NppConvertSurface_Impl(context, stream, BGR, RGB) {}
 
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
+  TaskExecStatus Execute(Token* pSrcToken, Token* pDstToken,
+                         ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
     details.info = TaskExecInfo::SUCCESS;
 
     auto pInput = (SurfaceBGR*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+    auto pOutput = (Surface*)pDstToken;
 
     if (!Validate(pInput, pOutput)) {
       details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     const Npp8u* pSrc = (const Npp8u*)pInput->PixelPtr();
@@ -1133,29 +1103,28 @@ struct bgr_rgb final : public NppConvertSurface_Impl {
                                            oSizeRoi, aDstOrder, nppCtx);
     if (NPP_NO_ERROR != err) {
       details.info = TaskExecInfo::FAIL;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
-    return pOutput;
+    return TASK_EXEC_SUCCESS;
   }
 };
 
 struct rbg8_rgb32f final : public NppConvertSurface_Impl {
-  rbg8_rgb32f(uint32_t width, uint32_t height, CUcontext context,
-              CUstream stream)
+  rbg8_rgb32f(CUcontext context, CUstream stream)
       : NppConvertSurface_Impl(context, stream, RGB, RGB_32F) {}
 
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
+  TaskExecStatus Execute(Token* pSrcToken, Token* pDstToken,
+                         ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
     details.info = TaskExecInfo::SUCCESS;
 
     auto pInput = (SurfaceRGB*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+    auto pOutput = (Surface*)pDstToken;
 
     if (!Validate(pInput, pOutput)) {
       details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     const Npp8u* pSrc = (const Npp8u*)pInput->PixelPtr();
@@ -1176,29 +1145,28 @@ struct rbg8_rgb32f final : public NppConvertSurface_Impl {
                                        nMin, nMax, nppCtx);
     if (NPP_NO_ERROR != err) {
       details.info = TaskExecInfo::FAIL;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
-    return pOutput;
+    return TASK_EXEC_SUCCESS;
   }
 };
 
 struct rgb32f_deinterleave final : public NppConvertSurface_Impl {
-  rgb32f_deinterleave(uint32_t width, uint32_t height, CUcontext context,
-                      CUstream stream)
+  rgb32f_deinterleave(CUcontext context, CUstream stream)
       : NppConvertSurface_Impl(context, stream, RGB_32F, RGB_32F_PLANAR) {}
 
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
+  TaskExecStatus Execute(Token* pSrcToken, Token* pDstToken,
+                         ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
     details.info = TaskExecInfo::SUCCESS;
 
     auto pInput = (SurfaceRGB*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+    auto pOutput = (Surface*)pDstToken;
 
     if (!Validate(pInput, pOutput)) {
       details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
     const Npp32f* pSrc = (const Npp32f*)pInput->PixelPtr();
@@ -1218,10 +1186,10 @@ struct rgb32f_deinterleave final : public NppConvertSurface_Impl {
                                       nppCtx);
     if (NPP_NO_ERROR != err) {
       details.info = TaskExecInfo::FAIL;
-      return nullptr;
+      return TASK_EXEC_FAIL;
     }
 
-    return pOutput;
+    return TASK_EXEC_SUCCESS;
   }
 };
 
@@ -1230,15 +1198,11 @@ struct p16_nv12 final : public NppConvertSurface_Impl {
    * the same implementation. The only difference is bit depth value which
    * is calculated at a runtime.
    */
-  p16_nv12(uint32_t width, uint32_t height, CUcontext context, CUstream stream,
-           Pixel_Format src_fmt)
-      : NppConvertSurface_Impl(context, stream, src_fmt, NV12) {
-    pScratch = std::make_shared<SurfacePlane>(width, height, sizeof(uint16_t),
-                                              kDLUInt, context);
-  }
+  p16_nv12(CUcontext context, CUstream stream, Pixel_Format src_fmt)
+      : NppConvertSurface_Impl(context, stream, src_fmt, NV12) {}
 
-  Token* Execute(Token* pSrcToken, Token* pDstToken,
-                 ColorspaceConversionContext* pCtx) override {
+  TaskExecStatus Execute(Token* pSrcToken, Token* pDstToken,
+                         ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
     details.info = TaskExecInfo::SUCCESS;
 
@@ -1246,13 +1210,22 @@ struct p16_nv12 final : public NppConvertSurface_Impl {
      * pixel formats.
      */
     auto pInput = (Surface*)pSrcToken;
-    auto pOutput = GetOutput(pInput, (Surface*)pDstToken);
+    auto pOutput = (Surface*)pDstToken;
     if (!pInput || !pOutput) {
       details.info = TaskExecInfo::INVALID_INPUT;
-      return nullptr;
+      return TASK_EXEC_FAIL;
+    }
+
+    auto input_plane = pInput->GetSurfacePlane();
+    if (!pScratch || pScratch->Width() != input_plane.Width() ||
+        pScratch->Height() != input_plane.Height()) {
+      pScratch = std::make_shared<SurfacePlane>(
+          input_plane.Width(), input_plane.Height(), sizeof(uint16_t), kDLUInt,
+          cu_ctx);
     }
 
     constexpr auto bit_depth = 16U;
+    CudaCtxPush ctxPush(cu_ctx);
     for (int i = 0; i < pInput->NumPlanes(); i++) {
       // Take 8 most significant bits, save result in 16-bit scratch buffer;
       auto pSrc = (Npp16u*)pInput->PixelPtr(i);
@@ -1269,7 +1242,7 @@ struct p16_nv12 final : public NppConvertSurface_Impl {
                                   nDstStep, oSizeRoi, nScaleFactor, nppCtx);
       if (NPP_NO_ERROR != err) {
         details.info = TaskExecInfo::FAIL;
-        return nullptr;
+        return TASK_EXEC_FAIL;
       }
 
       // Bit depth conversion from 16-bit scratch to output;
@@ -1283,11 +1256,11 @@ struct p16_nv12 final : public NppConvertSurface_Impl {
                                       nppCtx);
       if (NPP_NO_ERROR != err) {
         details.info = TaskExecInfo::FAIL;
-        return nullptr;
+        return TASK_EXEC_FAIL;
       }
-    }
 
-    return pOutput;
+      return TASK_EXEC_SUCCESS;
+    }
   }
 
   std::shared_ptr<SurfacePlane> pScratch = nullptr;
@@ -1299,70 +1272,62 @@ auto const cuda_stream_sync = [](void* stream) {
   cuStreamSynchronize((CUstream)stream);
 };
 
-ConvertSurface::ConvertSurface(uint32_t width, uint32_t height,
-                               Pixel_Format inFormat, Pixel_Format outFormat,
+ConvertSurface::ConvertSurface(Pixel_Format src, Pixel_Format dst,
                                CUcontext ctx, CUstream str)
     : Task("NppConvertSurface", ConvertSurface::numInputs,
            ConvertSurface::numOutputs, nullptr, nullptr) {
-  if (NV12 == inFormat && YUV420 == outFormat) {
-    pImpl = new nv12_yuv420(width, height, ctx, str);
-  } else if (YUV420 == inFormat && NV12 == outFormat) {
-    pImpl = new yuv420_nv12(width, height, ctx, str);
-  } else if (P10 == inFormat && NV12 == outFormat) {
-    pImpl = new p16_nv12(width, height, ctx, str, P10);
-  } else if (P12 == inFormat && NV12 == outFormat) {
-    pImpl = new p16_nv12(width, height, ctx, str, P12);
-  } else if (NV12 == inFormat && RGB == outFormat) {
-    pImpl = new nv12_rgb(width, height, ctx, str);
-  } else if (NV12 == inFormat && BGR == outFormat) {
-    pImpl = new nv12_bgr(width, height, ctx, str);
-  } else if (RGB == inFormat && RGB_PLANAR == outFormat) {
-    pImpl = new rgb8_deinterleave(width, height, ctx, str);
-  } else if (RGB_PLANAR == inFormat && RGB == outFormat) {
-    pImpl = new rgb8_interleave(width, height, ctx, str);
-  } else if (RGB_PLANAR == inFormat && YUV444 == outFormat) {
-    pImpl = new rgb_planar_yuv444(width, height, ctx, str);
-  } else if (Y == inFormat && YUV444 == outFormat) {
-    pImpl = new y_yuv444(width, height, ctx, str);
-  } else if (YUV420 == inFormat && RGB == outFormat) {
-    pImpl = new yuv420_rgb(width, height, ctx, str);
-  } else if (RGB == inFormat && YUV420 == outFormat) {
-    pImpl = new rgb_yuv420(width, height, ctx, str);
-  } else if (RGB == inFormat && YUV444 == outFormat) {
-    pImpl = new rgb_yuv444(width, height, ctx, str);
-  } else if (RGB == inFormat && BGR == outFormat) {
-    pImpl = new rgb_bgr(width, height, ctx, str);
-  } else if (BGR == inFormat && RGB == outFormat) {
-    pImpl = new bgr_rgb(width, height, ctx, str);
-  } else if (YUV420 == inFormat && BGR == outFormat) {
-    pImpl = new yuv420_bgr(width, height, ctx, str);
-  } else if (YUV444 == inFormat && BGR == outFormat) {
-    pImpl = new yuv444_bgr(width, height, ctx, str);
-  } else if (YUV444 == inFormat && RGB == outFormat) {
-    pImpl = new yuv444_rgb(width, height, ctx, str);
-  } else if (BGR == inFormat && YUV444 == outFormat) {
-    pImpl = new bgr_yuv444(width, height, ctx, str);
-  } else if (NV12 == inFormat && Y == outFormat) {
-    pImpl = new nv12_y(width, height, ctx, str);
-  } else if (RGB == inFormat && RGB_32F == outFormat) {
-    pImpl = new rbg8_rgb32f(width, height, ctx, str);
-  } else if (RGB == inFormat && Y == outFormat) {
-    pImpl = new rbg8_y(width, height, ctx, str);
-  } else if (RGB_32F == inFormat && RGB_32F_PLANAR == outFormat) {
-    pImpl = new rgb32f_deinterleave(width, height, ctx, str);
+  if (NV12 == src && YUV420 == dst) {
+    pImpl = new nv12_yuv420(ctx, str);
+  } else if (YUV420 == src && NV12 == dst) {
+    pImpl = new yuv420_nv12(ctx, str);
+  } else if (P10 == src && NV12 == dst) {
+    pImpl = new p16_nv12(ctx, str, P10);
+  } else if (P12 == src && NV12 == dst) {
+    pImpl = new p16_nv12(ctx, str, P12);
+  } else if (NV12 == src && RGB == dst) {
+    pImpl = new nv12_rgb(ctx, str);
+  } else if (NV12 == src && BGR == dst) {
+    pImpl = new nv12_bgr(ctx, str);
+  } else if (RGB == src && RGB_PLANAR == dst) {
+    pImpl = new rgb8_deinterleave(ctx, str);
+  } else if (RGB_PLANAR == src && RGB == dst) {
+    pImpl = new rgb8_interleave(ctx, str);
+  } else if (RGB_PLANAR == src && YUV444 == dst) {
+    pImpl = new rgb_planar_yuv444(ctx, str);
+  } else if (Y == src && YUV444 == dst) {
+    pImpl = new y_yuv444(ctx, str);
+  } else if (YUV420 == src && RGB == dst) {
+    pImpl = new yuv420_rgb(ctx, str);
+  } else if (RGB == src && YUV420 == dst) {
+    pImpl = new rgb_yuv420(ctx, str);
+  } else if (RGB == src && YUV444 == dst) {
+    pImpl = new rgb_yuv444(ctx, str);
+  } else if (RGB == src && BGR == dst) {
+    pImpl = new rgb_bgr(ctx, str);
+  } else if (BGR == src && RGB == dst) {
+    pImpl = new bgr_rgb(ctx, str);
+  } else if (YUV420 == src && BGR == dst) {
+    pImpl = new yuv420_bgr(ctx, str);
+  } else if (YUV444 == src && BGR == dst) {
+    pImpl = new yuv444_bgr(ctx, str);
+  } else if (YUV444 == src && RGB == dst) {
+    pImpl = new yuv444_rgb(ctx, str);
+  } else if (BGR == src && YUV444 == dst) {
+    pImpl = new bgr_yuv444(ctx, str);
+  } else if (NV12 == src && Y == dst) {
+    pImpl = new nv12_y(ctx, str);
+  } else if (RGB == src && RGB_32F == dst) {
+    pImpl = new rbg8_rgb32f(ctx, str);
+  } else if (RGB == src && Y == dst) {
+    pImpl = new rbg8_y(ctx, str);
+  } else if (RGB_32F == src && RGB_32F_PLANAR == dst) {
+    pImpl = new rgb32f_deinterleave(ctx, str);
   } else {
     throw std::invalid_argument("Unsupported pixel format conversion");
   }
 }
 
 ConvertSurface::~ConvertSurface() { delete pImpl; }
-
-ConvertSurface* ConvertSurface::Make(uint32_t width, uint32_t height,
-                                     Pixel_Format inFormat,
-                                     Pixel_Format outFormat, CUcontext ctx,
-                                     CUstream str) {
-  return new ConvertSurface(width, height, inFormat, outFormat, ctx, str);
-}
 
 TaskExecStatus ConvertSurface::Run() {
   ClearOutputs();
@@ -1373,12 +1338,11 @@ TaskExecStatus ConvertSurface::Run() {
     pCtx = ctx_buf->GetDataAs<ColorspaceConversionContext>();
   }
 
-  auto pOutput = pImpl->Execute(GetInput(0), GetInput(1), pCtx);
+  auto ret = pImpl->Execute(GetInput(0), GetInput(1), pCtx);
   pImpl->pDetails->CopyFrom(sizeof(pImpl->details),
                             (const void*)&pImpl->details);
 
-  SetOutput(pOutput, 0U);
-  SetOutput(pImpl->pDetails.get(), 1U);
+  SetOutput(pImpl->pDetails.get(), 0U);
 
-  return TASK_EXEC_SUCCESS;
+  return ret;
 }

@@ -65,8 +65,6 @@ class TestSurfaceConverter(unittest.TestCase):
             gpu_id=0)
 
         nvCvt = nvc.PySurfaceConverter(
-            nvDec.Width(),
-            nvDec.Height(),
             nvc.PixelFormat.NV12,
             nvc.PixelFormat.RGB,
             gpu_id=0)
@@ -83,7 +81,7 @@ class TestSurfaceConverter(unittest.TestCase):
         surf_dst = nvc.Surface.Make(
             nvc.PixelFormat.RGB, surf_src.Width(), surf_src.Height(), gpu_id=0)
 
-        surf_dst, details = nvCvt.Execute(surf_src, surf_dst, cc_ctx)
+        surf_dst, details = nvCvt.Run(surf_src, surf_dst, cc_ctx)
         self.assertEqual(details, nvc.TaskExecInfo.UNSUPPORTED_FMT_CONV_PARAMS)
 
     def test_rgb_deinterleave(self):
@@ -96,8 +94,6 @@ class TestSurfaceConverter(unittest.TestCase):
                 gpu_id=0)
 
             toPLN = nvc.PySurfaceConverter(
-                rgbInfo.width,
-                rgbInfo.height,
                 nvc.PixelFormat.RGB,
                 nvc.PixelFormat.RGB_PLANAR,
                 gpu_id=0)
@@ -130,7 +126,7 @@ class TestSurfaceConverter(unittest.TestCase):
                     plnInfo.height,
                     gpu_id=0)
                 
-                success, details = toPLN.Execute(surf_rgb, surf_pln, cc_ctx)
+                success, details = toPLN.Run(surf_rgb, surf_pln, cc_ctx)
                 if not success:
                     self.fail("Fail to convert RGB > RGB_PLANAR: " + details)
 
@@ -165,8 +161,6 @@ class TestSurfaceConverter(unittest.TestCase):
             gpu_id=0)
 
         nvCvt = nvc.PySurfaceConverter(
-            nv12Info.width,
-            nv12Info.height,
             nvc.PixelFormat.NV12,
             nvc.PixelFormat.RGB,
             gpu_id=0)
@@ -199,7 +193,7 @@ class TestSurfaceConverter(unittest.TestCase):
             surf_dst = nvc.Surface.Make(
                 nvc.PixelFormat.RGB, surf_src.Width(), surf_src.Height(), gpu_id=0)
 
-            success, details = nvCvt.Execute(
+            success, details = nvCvt.Run(
                 surf_src, surf_dst, cc_ctx)
 
             if not success:

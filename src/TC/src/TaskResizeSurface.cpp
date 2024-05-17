@@ -134,7 +134,7 @@ struct ResizeSurfaceSemiPlanar_Impl final : ResizeSurface_Impl {
     pSurface = nullptr;
     nv12_yuv420 = nullptr;
     pResizeYuv = ResizeSurface::Make(width, height, YUV420, ctx, str);
-    yuv420_nv12 = ConvertSurface::Make(width, height, YUV420, NV12, ctx, str);
+    yuv420_nv12 = new ConvertSurface(YUV420, NV12, ctx, str);
   }
 
   ~ResizeSurfaceSemiPlanar_Impl() {
@@ -156,8 +156,7 @@ struct ResizeSurfaceSemiPlanar_Impl final : ResizeSurface_Impl {
     }
 
     if (!nv12_yuv420) {
-      nv12_yuv420 = ConvertSurface::Make(source.Width(), source.Height(), NV12,
-                                         YUV420, _ctx, _str);
+      nv12_yuv420 = new ConvertSurface(NV12, YUV420, _ctx, _str);
     }
 
     // Convert from NV12 to YUV420;

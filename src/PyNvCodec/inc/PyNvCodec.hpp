@@ -116,24 +116,15 @@ public:
 class PySurfaceConverter {
   std::unique_ptr<ConvertSurface> upConverter = nullptr;
   std::unique_ptr<Buffer> upCtxBuffer = nullptr;
-  Pixel_Format outputFormat = UNDEFINED;
 
 public:
-  PySurfaceConverter(uint32_t width, uint32_t height, Pixel_Format inFormat,
-                     Pixel_Format outFormat, uint32_t gpuID);
+  PySurfaceConverter(Pixel_Format src, Pixel_Format dst, uint32_t gpuID);
+  PySurfaceConverter(Pixel_Format src, Pixel_Format dst, CUstream str);
+  PySurfaceConverter(Pixel_Format src, Pixel_Format dst, size_t str)
+      : PySurfaceConverter(src, dst, (CUstream)str) {}
 
-  PySurfaceConverter(uint32_t width, uint32_t height, Pixel_Format inFormat,
-                     Pixel_Format outFormat, CUstream str);
-
-  PySurfaceConverter(uint32_t width, uint32_t height, Pixel_Format inFormat,
-                     Pixel_Format outFormat, size_t str)
-      : PySurfaceConverter(width, height, inFormat, outFormat, (CUstream)str) {}
-
-  bool Execute(std::shared_ptr<Surface> src, std::shared_ptr<Surface> dst,
-               std::shared_ptr<ColorspaceConversionContext> context,
-               TaskExecDetails& details);
-
-  Pixel_Format GetFormat();
+  bool Run(Surface& src, Surface& dst, ColorspaceConversionContext& context,
+           TaskExecDetails& details);
 };
 
 class PyFrameConverter {

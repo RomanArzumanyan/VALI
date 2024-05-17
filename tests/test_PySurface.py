@@ -69,8 +69,6 @@ class TestSurfacePycuda(unittest.TestCase):
                 gpu_id=0)
 
             nvCvt = nvc.PySurfaceConverter(
-                nvDec.Width(),
-                nvDec.Height(),
                 nvc.PixelFormat.NV12,
                 nvc.PixelFormat.RGB,
                 gpu_id=0)
@@ -93,7 +91,7 @@ class TestSurfacePycuda(unittest.TestCase):
                     surf_src.Height(), 
                     gpu_id=0)
                 
-                success, details = nvCvt.Execute(surf_src, surf_dst, cc_ctx)
+                success, details = nvCvt.Run(surf_src, surf_dst, cc_ctx)
                 if not success:
                     self.fail("Failed to convert surface: " + details)
 
@@ -123,8 +121,6 @@ class TestSurfacePycuda(unittest.TestCase):
                 gpu_id=0)
 
             nvCvt = nvc.PySurfaceConverter(
-                nvDec.Width(),
-                nvDec.Height(),
                 nvc.PixelFormat.NV12,
                 nvc.PixelFormat.RGB,
                 gpu_id=0)
@@ -147,7 +143,7 @@ class TestSurfacePycuda(unittest.TestCase):
                     surf_src.Height(), 
                     gpu_id=0)
                 
-                success, details = nvCvt.Execute(surf_src, surf_dst, cc_ctx)
+                success, details = nvCvt.Run(surf_src, surf_dst, cc_ctx)
                 if not success:
                     self.fail("Failed to convert surface: " + details)
 
