@@ -148,23 +148,14 @@ public:
 
 class PySurfaceResizer {
   std::unique_ptr<ResizeSurface> upResizer = nullptr;
-  Pixel_Format outputFormat = UNDEFINED;
 
 public:
-  PySurfaceResizer(uint32_t width, uint32_t height, Pixel_Format format,
-                   uint32_t gpuID);
+  PySurfaceResizer(Pixel_Format format, uint32_t gpuID);
+  PySurfaceResizer(Pixel_Format format, CUstream str);
+  PySurfaceResizer(Pixel_Format format, size_t str)
+      : PySurfaceResizer(format, (CUstream)str) {}
 
-  PySurfaceResizer(uint32_t width, uint32_t height, Pixel_Format format,
-                   CUcontext ctx, CUstream str);
-
-  PySurfaceResizer(uint32_t width, uint32_t height, Pixel_Format format,
-                   size_t ctx, size_t str)
-      : PySurfaceResizer(width, height, format, (CUcontext)ctx, (CUstream)str) {
-  }
-
-  Pixel_Format GetFormat();
-
-  std::shared_ptr<Surface> Execute(std::shared_ptr<Surface> surface);
+  bool Run(Surface& src, Surface& dst);
 };
 
 class PySurfaceRemaper {

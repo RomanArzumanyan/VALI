@@ -25,76 +25,50 @@ namespace py = pybind11;
 constexpr auto TASK_EXEC_SUCCESS = TaskExecStatus::TASK_EXEC_SUCCESS;
 constexpr auto TASK_EXEC_FAIL = TaskExecStatus::TASK_EXEC_FAIL;
 
-PySurfaceResizer::PySurfaceResizer(uint32_t width, uint32_t height,
-                                   Pixel_Format format, CUcontext ctx,
-                                   CUstream str)
-    : outputFormat(format) {
-  upResizer.reset(ResizeSurface::Make(width, height, format, ctx, str));
+PySurfaceResizer::PySurfaceResizer(Pixel_Format format, CUstream str) {
+  upResizer =
+      std::make_unique<ResizeSurface>(format, GetContextByStream(str), str);
 }
 
-PySurfaceResizer::PySurfaceResizer(uint32_t width, uint32_t height,
-                                   Pixel_Format format, uint32_t gpuID)
-    : outputFormat(format) {
-  upResizer.reset(ResizeSurface::Make(width, height, format,
-                                      CudaResMgr::Instance().GetCtx(gpuID),
-                                      CudaResMgr::Instance().GetStream(gpuID)));
+PySurfaceResizer::PySurfaceResizer(Pixel_Format format, uint32_t gpuID) {
+  upResizer = std::make_unique<ResizeSurface>(
+      format, CudaResMgr::Instance().GetCtx(gpuID),
+      CudaResMgr::Instance().GetStream(gpuID));
 }
 
-Pixel_Format PySurfaceResizer::GetFormat() { return outputFormat; }
+bool PySurfaceResizer::Run(Surface& src, Surface& dst) {
+  upResizer->SetInput(&src, 0U);
+  upResizer->SetInput(&dst, 1U);
 
-shared_ptr<Surface> PySurfaceResizer::Execute(shared_ptr<Surface> surface) {
-  if (!surface) {
-    return shared_ptr<Surface>(Surface::Make(outputFormat));
-  }
-
-  upResizer->SetInput(surface.get(), 0U);
-
-  if (TASK_EXEC_SUCCESS != upResizer->Execute()) {
-    return shared_ptr<Surface>(Surface::Make(outputFormat));
-  }
-
-  auto pSurface = (Surface *)upResizer->GetOutput(0U);
-  return shared_ptr<Surface>(pSurface ? pSurface->Clone()
-                                      : Surface::Make(outputFormat));
+  return (TASK_EXEC_SUCCESS == upResizer->Execute());
 }
 
-void Init_PySurfaceResizer(py::module &m) {
+void Init_PySurfaceResizer(py::module& m) {
   py::class_<PySurfaceResizer>(m, "PySurfaceResizer",
                                "CUDA-accelerated Surface resizer.")
-      .def(py::init<uint32_t, uint32_t, Pixel_Format, uint32_t>(),
-           py::arg("width"), py::arg("height"), py::arg("format"),
+      .def(py::init<Pixel_Format, uint32_t>(), py::arg("format"),
            py::arg("gpu_id"),
            R"pbdoc(
         Constructor method.
 
-        :param width: target Surface width
-        :param height: target Surface height
         :param format: target Surface pixel format
         :param gpu_id: what GPU to run resize on
     )pbdoc")
-      .def(py::init<uint32_t, uint32_t, Pixel_Format, size_t, size_t>(),
-           py::arg("width"), py::arg("height"), py::arg("format"),
-           py::arg("context"), py::arg("stream"),
+      .def(py::init<Pixel_Format, size_t>(), py::arg("format"),
+           py::arg("stream"),
            R"pbdoc(
         Constructor method.
 
-        :param width: target Surface width
-        :param height: target Surface height
         :param format: target Surface pixel format
-        :param context: CUDA context to use for resize
         :param stream: CUDA stream to use for resize
     )pbdoc")
-      .def("Format", &PySurfaceResizer::GetFormat, R"pbdoc(
-        Get pixel format.
-    )pbdoc")
-      .def("Execute", &PySurfaceResizer::Execute, py::arg("src"),
-           py::return_value_policy::take_ownership,
+      .def("Run", &PySurfaceResizer::Run, py::arg("src"), py::arg("dst"),
            py::call_guard<py::gil_scoped_release>(),
            R"pbdoc(
         Resize input Surface.
 
         :param src: input Surface. Must be of same format class instance was created with.
-        :return: Surface of dimensions equal to given to ctor
-        :rtype: PyNvCodec.Surface
+        :param dst: output Surface. Must be of same format class instance was created with.
+        :return: true in case of success, false otherwise.
     )pbdoc");
 }

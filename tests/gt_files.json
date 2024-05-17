@@ -90,5 +90,14 @@
         "num_frames": 16,
         "color_space": "ColorSpace.BT_709",
         "color_range": "ColorRange.MPEG"
+    },
+    "small_nv12": {
+        "uri": "data/test_small.nv12",
+        "width": 424,
+        "height": 232,
+        "pix_fmt": "PixelFormat.NV12",
+        "num_frames": 16,
+        "color_space": "ColorSpace.BT_709",
+        "color_range": "ColorRange.MPEG"
     }
 }

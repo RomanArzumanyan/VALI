@@ -267,27 +267,25 @@ private:
                Pixel_Format outFormat);
 };
 
-class TC_CORE_EXPORT ResizeSurface final : public Task
-{
+class TC_CORE_EXPORT ResizeSurface final : public Task {
 public:
   ResizeSurface() = delete;
   ResizeSurface(const ResizeSurface& other) = delete;
   ResizeSurface& operator=(const ResizeSurface& other) = delete;
 
-  static ResizeSurface* Make(uint32_t width, uint32_t height,
-                             Pixel_Format format, CUcontext ctx, CUstream str);
-
   ~ResizeSurface();
+  ResizeSurface(Pixel_Format format, CUcontext ctx, CUstream str);
 
   TaskExecStatus Run() final;
 
 private:
-  static const uint32_t numInputs = 1U;
-  static const uint32_t numOutputs = 1U;
+  /* 0) Source Surface.
+   * 1) Destinaion Surface.
+   */
+  static const uint32_t numInputs = 2U;
+  static const uint32_t numOutputs = 0U;
 
   struct ResizeSurface_Impl* pImpl;
-  ResizeSurface(uint32_t width, uint32_t height, Pixel_Format format,
-                CUcontext ctx, CUstream str);
 };
 
 class TC_CORE_EXPORT RemapSurface final : public Task
