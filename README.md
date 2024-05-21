@@ -3,7 +3,7 @@
 VALI is a video analytics and processing project for python. VALI is a successor of NVIDIA's VPF.
 It’s set of C++ libraries and Python bindings which provides full HW acceleration for video processing tasks such as decoding, encoding, transcoding and GPU-accelerated color space and pixel format conversions.
 
-VALI also supports exporting GPU memory objects such as decoded video frames to PyTorch tensors without Host to Device copies.
+VALI also supports DLPack and can e. g. share decoded video frames with PyTorch tensors without any unnecessary memory copies.
 
 ## Documentation
 https://romanarzumanyan.github.io/VALI
@@ -71,10 +71,6 @@ the `NVIDIA_DRIVER_CAPABILITIES` environment variable in the container or the `-
 `docker run -it --rm --gpus 'all,"capabilities=compute,utility,video"' nvidia/cuda:12.1.0-base-ubuntu22.04`).
 
 Please note that some examples have additional dependencies that need to be installed via pip (`pip install .[samples]`). 
-Samples using PyTorch will require an optional extension which can be installed via
-```bash
-pip install src/PytorchNvCodec  # install Torch extension if needed (optional), requires "torch" to be installed before
-```
 
 After resolving those you should be able to run `make run_samples_without_docker` using your local pip installation.
 
@@ -94,11 +90,6 @@ To check whether VALI is correctly installed run the following Python script
 import PyNvCodec
 ```
 Please note that some examples have additional dependencies (`pip install .[sampels]`) that need to be installed via pip. 
-Samples using PyTorch will require an optional extension which can be installed via
-
-```bash
-pip install src/PytorchNvCodec  # install Torch extension if needed (optional), requires "torch" to be installed before
-```
 
 ## Docker
 
@@ -123,7 +114,6 @@ docker run -it --rm --gpus=all vali-gpu
 A documentation for VALI can be generated from this repository:
 ```bash
 pip install . # install VALI
-pip install src/PytorchNvCodec  # install Torch extension if needed (optional), requires "torch" to be installed before
 pip install sphinx  # install documentation tool sphinx
 cd docs
 make html
