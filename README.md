@@ -115,7 +115,6 @@ docker run -it --rm --gpus=all vali-gpu
 A documentation for VALI can be generated from this repository:
 ```bash
 pip install . # install VALI
-pip install src/PytorchNvCodec  # install Torch extension if needed (optional), requires "torch" to be installed before
 pip install sphinx  # install documentation tool sphinx
 cd docs
 make html
