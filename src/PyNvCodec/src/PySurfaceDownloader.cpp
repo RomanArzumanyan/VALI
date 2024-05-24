@@ -34,7 +34,7 @@ PySurfaceDownloader::PySurfaceDownloader(CUstream str) {
 
 bool PySurfaceDownloader::Run(Surface& src, py::array& dst) {
   auto buffer =
-      std::shared_ptr<Buffer>(Buffer::Make(dst.size(), dst.mutable_data()));
+      std::shared_ptr<Buffer>(Buffer::Make(dst.nbytes(), dst.mutable_data()));
 
   upDownloader->SetInput(&src, 0U);
   upDownloader->SetInput(buffer.get(), 1U);

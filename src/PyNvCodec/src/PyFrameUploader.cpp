@@ -34,7 +34,7 @@ PyFrameUploader::PyFrameUploader(CUstream str) {
 
 bool PyFrameUploader::Run(py::array& src, Surface& dst) {
   auto buffer =
-      std::shared_ptr<Buffer>(Buffer::Make(src.size(), src.mutable_data()));
+      std::shared_ptr<Buffer>(Buffer::Make(src.nbytes(), src.mutable_data()));
 
   return Run(*buffer.get(), dst);
 }

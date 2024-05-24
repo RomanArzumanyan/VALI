@@ -92,7 +92,6 @@ struct NppConvertSurface_Impl {
   CUstream cu_str;
   NppStreamContext nppCtx;
   const Pixel_Format srcFmt, dstFmt;
-  std::shared_ptr<Surface> pSurface = nullptr;
   std::shared_ptr<Buffer> pDetails = nullptr;
   TaskExecDetails details;
 };
@@ -1224,43 +1223,38 @@ struct p16_nv12 final : public NppConvertSurface_Impl {
           cu_ctx);
     }
 
-    constexpr auto bit_depth = 16U;
     CudaCtxPush ctxPush(cu_ctx);
-    for (int i = 0; i < pInput->NumPlanes(); i++) {
-      // Take 8 most significant bits, save result in 16-bit scratch buffer;
-      auto pSrc = (Npp16u*)pInput->PixelPtr(i);
-      int nSrcStep = pInput->Pitch(i);
-      Npp16u nConstant = 1 << (bit_depth - (int)pSurface->ElemSize() * 8);
-      auto pDstScratch = (Npp16u*)pScratch->GpuMem();
-      int nDstStep = pScratch->Pitch();
+
+    auto src_plane = pInput->GetSurfacePlane();
+    auto dst_plane = pOutput->GetSurfacePlane();
+
+    try {
+      // Take 8 most significant bits, save result in 16 bit scratch buffer;
       NppiSize oSizeRoi = {0};
-      oSizeRoi.height = pSurface->Height(i);
-      oSizeRoi.width = pSurface->Width(i);
-      auto const nScaleFactor = 0;
-      auto err =
-          nppiDivC_16u_C1RSfs_Ctx(pSrc, nSrcStep, nConstant, pDstScratch,
-                                  nDstStep, oSizeRoi, nScaleFactor, nppCtx);
-      if (NPP_NO_ERROR != err) {
-        details.info = TaskExecInfo::FAIL;
-        return TASK_EXEC_FAIL;
-      }
+      oSizeRoi.height = pScratch->Height();
+      oSizeRoi.width = pScratch->Width();
+      ThrowOnNppError(
+          nppiDivC_16u_C1RSfs_Ctx(
+              (Npp16u*)src_plane.GpuMem(), src_plane.Pitch(),
+              1 << (src_plane.ElemSize() - dst_plane.ElemSize()) * 8,
+              (Npp16u*)pScratch->GpuMem(), pScratch->Pitch(), oSizeRoi, 0,
+              nppCtx),
+          __LINE__);
 
       // Bit depth conversion from 16-bit scratch to output;
-      pSrc = (Npp16u*)pScratch->GpuMem();
-      nSrcStep = pScratch->Pitch();
-      Npp8u* pDst = (Npp8u*)pOutput->PixelPtr(i);
-      nDstStep = pSurface->Pitch(i);
-      oSizeRoi.height = pSurface->Height(i);
-      oSizeRoi.width = pSurface->Width(i);
-      err = nppiConvert_16u8u_C1R_Ctx(pSrc, nSrcStep, pDst, nDstStep, oSizeRoi,
-                                      nppCtx);
-      if (NPP_NO_ERROR != err) {
-        details.info = TaskExecInfo::FAIL;
-        return TASK_EXEC_FAIL;
-      }
-
-      return TASK_EXEC_SUCCESS;
+      oSizeRoi.height = dst_plane.Height();
+      oSizeRoi.width = dst_plane.Width();
+      ThrowOnNppError(nppiConvert_16u8u_C1R_Ctx(
+                          (Npp16u*)pScratch->GpuMem(), pScratch->Pitch(),
+                          (Npp8u*)dst_plane.GpuMem(), dst_plane.Pitch(),
+                          oSizeRoi, nppCtx),
+                      __LINE__);
+    } catch (...) {
+      details.info = TaskExecInfo::FAIL;
+      return TASK_EXEC_FAIL;
     }
+
+    return TASK_EXEC_SUCCESS;
   }
 
   std::shared_ptr<SurfacePlane> pScratch = nullptr;

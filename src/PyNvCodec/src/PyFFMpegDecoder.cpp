@@ -49,7 +49,7 @@ bool PyFfmpegDecoder::DecodeSingleFrame(DecodeContext& ctx, py::array& frame,
     auto pRawFrame = (Buffer*)upDecoder->GetOutput(0U);
     if (pRawFrame) {
       auto const frame_size = pRawFrame->GetRawMemSize();
-      if (frame_size != frame.size()) {
+      if (frame_size != frame.nbytes()) {
         frame.resize({frame_size}, false);
       }
 

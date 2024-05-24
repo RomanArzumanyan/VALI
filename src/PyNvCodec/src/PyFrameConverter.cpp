@@ -32,22 +32,22 @@ bool PyFrameConverter::Execute(
     TaskExecDetails& details) {
   auto const src_buf_size =
       getBufferSize(m_width, m_height, toFfmpegPixelFormat(m_src_fmt));
-  if (src.size() != src_buf_size) {
+  if (src.nbytes() != src_buf_size) {
     details.info = TaskExecInfo::INVALID_INPUT;
     return false;
   }
 
   auto const dst_buf_size =
       getBufferSize(m_width, m_height, toFfmpegPixelFormat(m_dst_fmt));
-  if (dst.size() != dst_buf_size) {
+  if (dst.nbytes() != dst_buf_size) {
     dst.resize({dst_buf_size}, false);
   }
 
   auto src_buf = std::shared_ptr<Buffer>(
-      Buffer::Make(src.size(), (void*)src.mutable_data()));
+      Buffer::Make(src.nbytes(), (void*)src.mutable_data()));
 
   auto dst_buf = std::shared_ptr<Buffer>(
-      Buffer::Make(dst.size(), (void*)dst.mutable_data()));
+      Buffer::Make(dst.nbytes(), (void*)dst.mutable_data()));
 
   m_up_cvt->ClearInputs();
   m_up_cvt->SetInput(src_buf.get(), 0U);
