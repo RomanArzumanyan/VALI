@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "CudaUtils.hpp"
 #include "PyNvCodec.hpp"
 #include "memory"
 

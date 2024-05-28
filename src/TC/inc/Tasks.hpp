@@ -42,8 +42,7 @@ extern "C" {
 using namespace VPF;
 
 // VPF stands for Video Processing Framework;
-namespace VPF
-{
+namespace VPF {
 class TC_CORE_EXPORT NvtxMark {
 public:
   NvtxMark() = delete;
@@ -54,8 +53,7 @@ public:
   ~NvtxMark() { NVTX_POP }
 };
 
-class TC_CORE_EXPORT NvencEncodeFrame final : public Task
-{
+class TC_CORE_EXPORT NvencEncodeFrame final : public Task {
 public:
   NvencEncodeFrame() = delete;
   NvencEncodeFrame(const NvencEncodeFrame& other) = delete;
@@ -100,8 +98,7 @@ enum NV_DEC_CAPS {
   NV_DEC_CAPS_NUM_ENTRIES
 };
 
-class TC_CORE_EXPORT NvdecDecodeFrame final : public Task
-{
+class TC_CORE_EXPORT NvdecDecodeFrame final : public Task {
 public:
   NvdecDecodeFrame() = delete;
   NvdecDecodeFrame(const NvdecDecodeFrame& other) = delete;
@@ -132,8 +129,7 @@ private:
                    Pixel_Format format);
 };
 
-class TC_CORE_EXPORT FfmpegDecodeFrame final : public Task
-{
+class TC_CORE_EXPORT FfmpegDecodeFrame final : public Task {
 public:
   FfmpegDecodeFrame() = delete;
   FfmpegDecodeFrame(const FfmpegDecodeFrame& other) = delete;
@@ -195,8 +191,7 @@ private:
   CUstream m_stream;
 };
 
-class TC_CORE_EXPORT DemuxFrame final : public Task
-{
+class TC_CORE_EXPORT DemuxFrame final : public Task {
 public:
   DemuxFrame() = delete;
   DemuxFrame(const DemuxFrame& other) = delete;
@@ -288,8 +283,7 @@ private:
   struct ResizeSurface_Impl* pImpl;
 };
 
-class TC_CORE_EXPORT RemapSurface final : public Task
-{
+class TC_CORE_EXPORT RemapSurface final : public Task {
 public:
   RemapSurface() = delete;
   RemapSurface(const RemapSurface& other) = delete;
