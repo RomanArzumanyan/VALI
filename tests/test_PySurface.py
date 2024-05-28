@@ -69,17 +69,11 @@ class TestSurfacePycuda(unittest.TestCase):
                 gpu_id=0)
 
             nvCvt = nvc.PySurfaceConverter(
-                nvDec.Width(),
-                nvDec.Height(),
                 nvc.PixelFormat.NV12,
                 nvc.PixelFormat.RGB,
                 gpu_id=0)
             
-            nvDwn = nvc.PySurfaceDownloader(
-                nvDec.Width(),
-                nvDec.Height(),
-                nvCvt.Format(),
-                gpu_id=0)
+            nvDwn = nvc.PySurfaceDownloader(gpu_id=0)
 
             # Use color space and range of original file.
             cc_ctx = nvc.ColorspaceConversionContext(
@@ -97,7 +91,7 @@ class TestSurfacePycuda(unittest.TestCase):
                     surf_src.Height(), 
                     gpu_id=0)
                 
-                success, details = nvCvt.Execute(surf_src, surf_dst, cc_ctx)
+                success, details = nvCvt.Run(surf_src, surf_dst, cc_ctx)
                 if not success:
                     self.fail("Failed to convert surface: " + details)
 
@@ -114,7 +108,7 @@ class TestSurfacePycuda(unittest.TestCase):
                 
                 # Check if memory is bit 2 bit equal
                 frame_dst = np.ndarray(shape=(surf_dst.HostSize()), dtype=np.uint8)
-                if not nvDwn.DownloadSingleSurface(surf_dst, frame_dst):
+                if not nvDwn.Run(surf_dst, frame_dst):
                     self.fail("Failed to download decoded surface")
                 self.assertTrue(np.array_equal(rgb_frame, frame_dst))
 
@@ -127,17 +121,11 @@ class TestSurfacePycuda(unittest.TestCase):
                 gpu_id=0)
 
             nvCvt = nvc.PySurfaceConverter(
-                nvDec.Width(),
-                nvDec.Height(),
                 nvc.PixelFormat.NV12,
                 nvc.PixelFormat.RGB,
                 gpu_id=0)
             
-            nvDwn = nvc.PySurfaceDownloader(
-                nvDec.Width(),
-                nvDec.Height(),
-                nvCvt.Format(),
-                gpu_id=0)
+            nvDwn = nvc.PySurfaceDownloader(gpu_id=0)
 
             # Use color space and range of original file.
             cc_ctx = nvc.ColorspaceConversionContext(
@@ -155,7 +143,7 @@ class TestSurfacePycuda(unittest.TestCase):
                     surf_src.Height(), 
                     gpu_id=0)
                 
-                success, details = nvCvt.Execute(surf_src, surf_dst, cc_ctx)
+                success, details = nvCvt.Run(surf_src, surf_dst, cc_ctx)
                 if not success:
                     self.fail("Failed to convert surface: " + details)
 
@@ -173,7 +161,7 @@ class TestSurfacePycuda(unittest.TestCase):
                 
                 # Check if memory is bit 2 bit equal
                 frame_dst = np.ndarray(shape=(surf_dst.HostSize()), dtype=np.uint8)
-                if not nvDwn.DownloadSingleSurface(surf_dst, frame_dst):
+                if not nvDwn.Run(surf_dst, frame_dst):
                     self.fail("Failed to download decoded surface")
                 self.assertTrue(np.array_equal(rgb_frame, frame_dst))                
 
@@ -194,11 +182,7 @@ class TestSurfacePycuda(unittest.TestCase):
         if not surface or surface.Empty():
             self.fail("Failed to import Surface from dlpack")
 
-        nvDwn = nvc.PySurfaceDownloader(
-            surface.Width(),
-            surface.Height(),
-            surface.Format(),
-            gpu_id=0)
+        nvDwn = nvc.PySurfaceDownloader(gpu_id=0)
         
         # Check dimensions
         self.assertEqual(len(tensor.shape), 2)
@@ -206,7 +190,7 @@ class TestSurfacePycuda(unittest.TestCase):
 
         # Check if memory is bit 2 bit equal
         frame = np.ndarray(shape=(surface.HostSize()), dtype=np.uint8)
-        if not nvDwn.DownloadSingleSurface(surface, frame):
+        if not nvDwn.Run(surface, frame):
             self.fail("Failed to download decoded surface")
 
         array = tensor.cpu().numpy().flatten()
@@ -230,14 +214,13 @@ class TestSurfacePycuda(unittest.TestCase):
 
         # Now compare saved surfaces against data from decoder
         nvDec = nvc.PyNvDecoder(input=gtInfo.uri, gpu_id=0)
-        nvDwn = nvc.PySurfaceDownloader(nvDec.Width(), nvDec.Height(),
-                                        nvDec.Format(), gpu_id=0)
+        nvDwn = nvc.PySurfaceDownloader(gpu_id=0)
 
         for surf in dec_surfaces:
             dec_frame = np.ndarray(shape=(surf.HostSize()), dtype=np.uint8)
             svd_frame = np.ndarray(shape=(surf.HostSize()), dtype=np.uint8)
 
-            nvDwn.DownloadSingleSurface(surf, svd_frame)
+            nvDwn.Run(surf, svd_frame)
             nvDec.DecodeSingleFrame(dec_frame)
 
             if not np.array_equal(dec_frame, svd_frame):

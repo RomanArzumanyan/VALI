@@ -1,63 +1,47 @@
+/*
+ * Copyright 2024 Vision Labs LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "CudaUtils.hpp"
 #include "MemoryInterfaces.hpp"
 #include "Tasks.hpp"
 
-namespace VPF {
-struct CudaUploadFrame_Impl {
-  CUstream cuStream;
-  CUcontext cuContext;
-  Surface* pSurface = nullptr;
-  Pixel_Format pixelFormat;
-
-  CudaUploadFrame_Impl() = delete;
-  CudaUploadFrame_Impl(const CudaUploadFrame_Impl& other) = delete;
-  CudaUploadFrame_Impl& operator=(const CudaUploadFrame_Impl& other) = delete;
-
-  CudaUploadFrame_Impl(CUstream stream, CUcontext context, uint32_t _width,
-                       uint32_t _height, Pixel_Format _pix_fmt)
-      : cuStream(stream), cuContext(context), pixelFormat(_pix_fmt) {
-    pSurface = Surface::Make(pixelFormat, _width, _height, context);
-  }
-
-  ~CudaUploadFrame_Impl() { delete pSurface; }
-};
-} // namespace VPF
-
-CudaUploadFrame* CudaUploadFrame::Make(CUstream cuStream, CUcontext cuContext,
-                                       uint32_t width, uint32_t height,
-                                       Pixel_Format pixelFormat) {
-  return new CudaUploadFrame(cuStream, cuContext, width, height, pixelFormat);
-}
-
-CudaUploadFrame::CudaUploadFrame(CUstream cuStream, CUcontext cuContext,
-                                 uint32_t width, uint32_t height,
-                                 Pixel_Format pix_fmt)
-    :
-
-      Task("CudaUploadFrame", CudaUploadFrame::numInputs,
-           CudaUploadFrame::numOutputs, nullptr, nullptr) {
-  pImpl = new CudaUploadFrame_Impl(cuStream, cuContext, width, height, pix_fmt);
-}
-
-CudaUploadFrame::~CudaUploadFrame() { delete pImpl; }
+CudaUploadFrame::CudaUploadFrame(CUstream stream)
+    : Task("CudaUploadFrame", CudaUploadFrame::numInputs,
+           CudaUploadFrame::numOutputs, nullptr, nullptr),
+      m_stream(stream) {}
 
 TaskExecStatus CudaUploadFrame::Run() {
   NvtxMark tick(GetName());
 
-  auto input_buf = (Buffer*)GetInput();
-  if (!input_buf) {
+  auto src_buffer = (Buffer*)GetInput(0U);
+  if (!src_buffer) {
+    return TaskExecStatus::TASK_EXEC_FAIL;
+  }
+
+  auto dst_surface = (Surface*)GetInput(1U);
+  if (!dst_surface) {
+    return TaskExecStatus::TASK_EXEC_FAIL;
+  }
+
+  if (src_buffer->GetRawMemSize() != dst_surface->HostMemSize()) {
     return TaskExecStatus::TASK_EXEC_FAIL;
   }
 
   ClearOutputs();
 
-  auto stream = pImpl->cuStream;
-  auto context = pImpl->cuContext;
-  auto pSurface = pImpl->pSurface;
-  auto pSrcHost = input_buf->GetDataAs<uint8_t>();
-
-  if (input_buf->GetRawMemSize() != pSurface->HostMemSize()) {
-    return TaskExecStatus::TASK_EXEC_FAIL;
-  }
+  auto context = GetContextByStream(m_stream);
+  auto p_src_host = src_buffer->GetDataAs<uint8_t>();
 
   CUDA_MEMCPY2D m = {0};
   m.srcMemoryType = CU_MEMORYTYPE_HOST;
@@ -65,24 +49,23 @@ TaskExecStatus CudaUploadFrame::Run() {
 
   try {
     CudaCtxPush lock(context);
-    for (auto i = 0; i < pSurface->NumPlanes(); i++) {
-      auto plane = pSurface->GetSurfacePlane(i);
+    for (auto i = 0; i < dst_surface->NumPlanes(); i++) {
+      auto plane = dst_surface->GetSurfacePlane(i);
 
-      m.srcHost = pSrcHost;
+      m.srcHost = p_src_host;
       m.srcPitch = plane.Width() * plane.ElemSize();
       m.dstDevice = plane.GpuMem();
       m.dstPitch = plane.Pitch();
       m.WidthInBytes = m.srcPitch;
       m.Height = plane.Height();
 
-      ThrowOnCudaError(cuMemcpy2DAsync(&m, stream), __LINE__);
-      pSrcHost += m.WidthInBytes * m.Height;
+      ThrowOnCudaError(cuMemcpy2DAsync(&m, m_stream), __LINE__);
+      p_src_host += m.WidthInBytes * m.Height;
     }
-    ThrowOnCudaError(cuStreamSynchronize(stream), __LINE__);
+    ThrowOnCudaError(cuStreamSynchronize(m_stream), __LINE__);
   } catch (...) {
     return TaskExecStatus::TASK_EXEC_FAIL;
   }
 
-  SetOutput(pSurface, 0);
   return TaskExecStatus::TASK_EXEC_SUCCESS;
 }

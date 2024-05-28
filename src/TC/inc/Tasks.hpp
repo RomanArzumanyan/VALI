@@ -42,8 +42,7 @@ extern "C" {
 using namespace VPF;
 
 // VPF stands for Video Processing Framework;
-namespace VPF
-{
+namespace VPF {
 class TC_CORE_EXPORT NvtxMark {
 public:
   NvtxMark() = delete;
@@ -54,8 +53,7 @@ public:
   ~NvtxMark() { NVTX_POP }
 };
 
-class TC_CORE_EXPORT NvencEncodeFrame final : public Task
-{
+class TC_CORE_EXPORT NvencEncodeFrame final : public Task {
 public:
   NvencEncodeFrame() = delete;
   NvencEncodeFrame(const NvencEncodeFrame& other) = delete;
@@ -100,8 +98,7 @@ enum NV_DEC_CAPS {
   NV_DEC_CAPS_NUM_ENTRIES
 };
 
-class TC_CORE_EXPORT NvdecDecodeFrame final : public Task
-{
+class TC_CORE_EXPORT NvdecDecodeFrame final : public Task {
 public:
   NvdecDecodeFrame() = delete;
   NvdecDecodeFrame(const NvdecDecodeFrame& other) = delete;
@@ -132,8 +129,7 @@ private:
                    Pixel_Format format);
 };
 
-class TC_CORE_EXPORT FfmpegDecodeFrame final : public Task
-{
+class TC_CORE_EXPORT FfmpegDecodeFrame final : public Task {
 public:
   FfmpegDecodeFrame() = delete;
   FfmpegDecodeFrame(const FfmpegDecodeFrame& other) = delete;
@@ -157,92 +153,45 @@ private:
   FfmpegDecodeFrame(const char* URL, NvDecoderClInterface& cli_iface);
 };
 
-class TC_CORE_EXPORT CudaUploadFrame final : public Task
-{
+class TC_CORE_EXPORT CudaUploadFrame final : public Task {
 public:
   CudaUploadFrame() = delete;
   CudaUploadFrame(const CudaUploadFrame& other) = delete;
   CudaUploadFrame& operator=(const CudaUploadFrame& other) = delete;
 
-  TaskExecStatus Run() final;
-  size_t GetUploadSize() const;
-  ~CudaUploadFrame() final;
-  static CudaUploadFrame* Make(CUstream cuStream, CUcontext cuContext,
-                               uint32_t width, uint32_t height,
-                               Pixel_Format pixelFormat);
+  TaskExecStatus Run();
+  ~CudaUploadFrame() = default;
+  CudaUploadFrame(CUstream stream);
 
 private:
-  CudaUploadFrame(CUstream cuStream, CUcontext cuContext, uint32_t width,
-                  uint32_t height, Pixel_Format pixelFormat);
-  static const uint32_t numInputs = 1U;
-  static const uint32_t numOutputs = 1U;
-  struct CudaUploadFrame_Impl* pImpl = nullptr;
+  /* First input is src Buffer.
+   * Second input is dst Surface.
+   */
+  static const uint32_t numInputs = 2U;
+  static const uint32_t numOutputs = 0U;
+  CUstream m_stream;
 };
 
-class TC_CORE_EXPORT UploadBuffer final : public Task
-{
-public:
-  UploadBuffer() = delete;
-  UploadBuffer(const UploadBuffer& other) = delete;
-  UploadBuffer& operator=(const UploadBuffer& other) = delete;
-
-  TaskExecStatus Run() final;
-  size_t GetUploadSize() const;
-  ~UploadBuffer() final;
-  static UploadBuffer* Make(CUstream cuStream, CUcontext cuContext,
-                            uint32_t elem_size, uint32_t num_elems);
-
-private:
-  UploadBuffer(CUstream cuStream, CUcontext cuContext, uint32_t elem_size,
-               uint32_t num_elems);
-  static const uint32_t numInputs = 1U;
-  static const uint32_t numOutputs = 1U;
-  struct UploadBuffer_Impl* pImpl = nullptr;
-};
-
-class TC_CORE_EXPORT CudaDownloadSurface final : public Task
-{
+class TC_CORE_EXPORT CudaDownloadSurface final : public Task {
 public:
   CudaDownloadSurface() = delete;
   CudaDownloadSurface(const CudaDownloadSurface& other) = delete;
   CudaDownloadSurface& operator=(const CudaDownloadSurface& other) = delete;
 
-  ~CudaDownloadSurface() final;
-  TaskExecStatus Run() final;
-  static CudaDownloadSurface* Make(CUstream cuStream, CUcontext cuContext,
-                                   uint32_t width, uint32_t height,
-                                   Pixel_Format pixelFormat);
+  TaskExecStatus Run();
+  ~CudaDownloadSurface() = default;
+  CudaDownloadSurface(CUstream cuStream);
 
 private:
-  CudaDownloadSurface(CUstream cuStream, CUcontext cuContext, uint32_t width,
-                      uint32_t height, Pixel_Format pixelFormat);
+  /* First input is src Surface.
+   * Second input is dst Buffer.
+   */
   static const uint32_t numInputs = 2U;
   static const uint32_t numOutputs = 0U;
-  struct CudaDownloadSurface_Impl* pImpl = nullptr;
+  CUstream m_stream;
 };
 
-class TC_CORE_EXPORT DownloadCudaBuffer final : public Task
-{
-public:
-  DownloadCudaBuffer() = delete;
-  DownloadCudaBuffer(const DownloadCudaBuffer& other) = delete;
-  DownloadCudaBuffer& operator=(const DownloadCudaBuffer& other) = delete;
-
-  ~DownloadCudaBuffer() final;
-  TaskExecStatus Run() final;
-  static DownloadCudaBuffer* Make(CUstream cuStream, CUcontext cuContext,
-                                  uint32_t elem_size, uint32_t num_elems);
-
-private:
-  DownloadCudaBuffer(CUstream cuStream, CUcontext cuContext, uint32_t elem_size,
-                     uint32_t num_elems);
-  static const uint32_t numInputs = 1U;
-  static const uint32_t numOutputs = 1U;
-  struct DownloadCudaBuffer_Impl* pImpl = nullptr;
-};
-
-class TC_CORE_EXPORT DemuxFrame final : public Task
-{
+class TC_CORE_EXPORT DemuxFrame final : public Task {
 public:
   DemuxFrame() = delete;
   DemuxFrame(const DemuxFrame& other) = delete;
@@ -266,29 +215,28 @@ private:
   struct DemuxFrame_Impl* pImpl = nullptr;
 };
 
-class TC_CORE_EXPORT ConvertSurface final : public Task
-{
+class TC_CORE_EXPORT ConvertSurface final : public Task {
 public:
   ConvertSurface() = delete;
   ConvertSurface(const ConvertSurface& other) = delete;
   ConvertSurface& operator=(const ConvertSurface& other) = delete;
 
-  static ConvertSurface* Make(uint32_t width, uint32_t height,
-                              Pixel_Format inFormat, Pixel_Format outFormat,
-                              CUcontext ctx, CUstream str);
-
   ~ConvertSurface();
+  ConvertSurface(Pixel_Format src, Pixel_Format dst, CUcontext ctx,
+                 CUstream str);
 
   TaskExecStatus Run() final;
 
 private:
+  /* 0) Source Surface.
+   * 1) Destination Surface.
+   * 2) Colorspace conversion context.
+   */
   static const uint32_t numInputs = 3U;
-  static const uint32_t numOutputs = 2U;
-
+  /* 0) Task exec details.
+   */
+  static const uint32_t numOutputs = 1U;
   struct NppConvertSurface_Impl* pImpl;
-
-  ConvertSurface(uint32_t width, uint32_t height, Pixel_Format inFormat,
-                 Pixel_Format outFormat, CUcontext ctx, CUstream str);
 };
 
 class TC_CORE_EXPORT ConvertFrame final : public Task {
@@ -314,31 +262,28 @@ private:
                Pixel_Format outFormat);
 };
 
-class TC_CORE_EXPORT ResizeSurface final : public Task
-{
+class TC_CORE_EXPORT ResizeSurface final : public Task {
 public:
   ResizeSurface() = delete;
   ResizeSurface(const ResizeSurface& other) = delete;
   ResizeSurface& operator=(const ResizeSurface& other) = delete;
 
-  static ResizeSurface* Make(uint32_t width, uint32_t height,
-                             Pixel_Format format, CUcontext ctx, CUstream str);
-
   ~ResizeSurface();
+  ResizeSurface(Pixel_Format format, CUcontext ctx, CUstream str);
 
   TaskExecStatus Run() final;
 
 private:
-  static const uint32_t numInputs = 1U;
-  static const uint32_t numOutputs = 1U;
+  /* 0) Source Surface.
+   * 1) Destinaion Surface.
+   */
+  static const uint32_t numInputs = 2U;
+  static const uint32_t numOutputs = 0U;
 
   struct ResizeSurface_Impl* pImpl;
-  ResizeSurface(uint32_t width, uint32_t height, Pixel_Format format,
-                CUcontext ctx, CUstream str);
 };
 
-class TC_CORE_EXPORT RemapSurface final : public Task
-{
+class TC_CORE_EXPORT RemapSurface final : public Task {
 public:
   RemapSurface() = delete;
   RemapSurface(const RemapSurface& other) = delete;

@@ -227,10 +227,6 @@ void DecodeContext::SetCloneSurface(Surface* p_surface) {
   pSurface = shared_ptr<Surface>(p_surface->Clone());
 }
 
-void Init_PyBufferUploader(py::module&);
-
-void Init_PyCudaBufferDownloader(py::module&);
-
 void Init_PyFrameUploader(py::module&);
 
 void Init_PySurfaceConverter(py::module&);
@@ -565,11 +561,7 @@ PYBIND11_MODULE(_PyNvCodec, m) {
 
   Init_PyFrameUploader(m);
 
-  Init_PyBufferUploader(m);
-
   Init_PySurfaceDownloader(m);
-
-  Init_PyCudaBufferDownloader(m);
 
   Init_PySurfaceConverter(m);
 

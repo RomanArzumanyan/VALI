@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     skbuild.setup(
         name="PyNvCodec",
-        version="3.0.0",
+        version="3.1.0",
         description="Video Processing Library with full NVENC/NVDEC hardware acceleration",
         author="Roman Arzumanyan",
         license="Apache 2.0",

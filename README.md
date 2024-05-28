@@ -1,9 +1,9 @@
 # VALI
 
-VALI is a video analytics and processing project for python. VALI is a successor of NVIDIA's VPF.
+VALI is a video analytics and processing project for python. VALI is a spin off from NVIDIA's VPF.
 It’s set of C++ libraries and Python bindings which provides full HW acceleration for video processing tasks such as decoding, encoding, transcoding and GPU-accelerated color space and pixel format conversions.
 
-VALI also supports exporting GPU memory objects such as decoded video frames to PyTorch tensors without Host to Device copies.
+VALI also supports DLPack and can share memory with all the modules which supports DLPack (e. g. hare decoded surfaces with torch).
 
 ## Documentation
 https://romanarzumanyan.github.io/VALI
@@ -24,6 +24,9 @@ VALI works on Linux(Ubuntu 20.04 and Ubuntu 22.04 only) and Windows
 - Install a C++ toolchain either via Visual Studio or Tools for Visual Studio.
   - Recommended version is Visual Studio 2017 and above
 (Windows only)
+
+## Samples and best practices
+VALI unit tests are written in a way to illustrate the API usage. One may follow them as samples.
 
 ### Linux
 
@@ -70,14 +73,6 @@ please make sure to enable the `video` driver capability: https://docs.nvidia.co
 the `NVIDIA_DRIVER_CAPABILITIES` environment variable in the container or the `--gpus` command line parameter (e.g.
 `docker run -it --rm --gpus 'all,"capabilities=compute,utility,video"' nvidia/cuda:12.1.0-base-ubuntu22.04`).
 
-Please note that some examples have additional dependencies that need to be installed via pip (`pip install .[samples]`). 
-Samples using PyTorch will require an optional extension which can be installed via
-```bash
-pip install src/PytorchNvCodec  # install Torch extension if needed (optional), requires "torch" to be installed before
-```
-
-After resolving those you should be able to run `make run_samples_without_docker` using your local pip installation.
-
 ### Windows
 
 - Install a C++ toolchain either via Visual Studio or Tools for Visual Studio (https://visualstudio.microsoft.com/downloads/)
@@ -96,14 +91,11 @@ import PyNvCodec
 Please note that some examples have additional dependencies (`pip install .[sampels]`) that need to be installed via pip. 
 Samples using PyTorch will require an optional extension which can be installed via
 
-```bash
-pip install src/PytorchNvCodec  # install Torch extension if needed (optional), requires "torch" to be installed before
-```
 
 ## Docker
 
-For convenience, we provide a Docker images located at `docker` that you can use to easily install all dependencies for
-the samples ([docker](https://docs.docker.com/engine/install/ubuntu/) and [nvidia-docker](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
+For convenience, we provide a Docker images located at `docker` that you can use to easily install all dependencies 
+([docker](https://docs.docker.com/engine/install/ubuntu/) and [nvidia-docker](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
 are required)
 
 
@@ -123,7 +115,6 @@ docker run -it --rm --gpus=all vali-gpu
 A documentation for VALI can be generated from this repository:
 ```bash
 pip install . # install VALI
-pip install src/PytorchNvCodec  # install Torch extension if needed (optional), requires "torch" to be installed before
 pip install sphinx  # install documentation tool sphinx
 cd docs
 make html

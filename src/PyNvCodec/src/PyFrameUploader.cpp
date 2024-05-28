@@ -15,96 +15,66 @@
  */
 
 #include "PyNvCodec.hpp"
+#include "memory"
 
-using namespace std;
 using namespace VPF;
-using namespace chrono;
-
 namespace py = pybind11;
 
 constexpr auto TASK_EXEC_SUCCESS = TaskExecStatus::TASK_EXEC_SUCCESS;
 constexpr auto TASK_EXEC_FAIL = TaskExecStatus::TASK_EXEC_FAIL;
 
-PyFrameUploader::PyFrameUploader(uint32_t width, uint32_t height,
-                                 Pixel_Format format, uint32_t gpu_ID)
-    : m_format(format) {
-  uploader.reset(CudaUploadFrame::Make(CudaResMgr::Instance().GetStream(gpu_ID),
-                                       CudaResMgr::Instance().GetCtx(gpu_ID),
-                                       width, height, format));
+PyFrameUploader::PyFrameUploader(uint32_t gpu_ID) {
+  m_uploader = std::make_unique<CudaUploadFrame>(
+      CudaResMgr::Instance().GetStream(gpu_ID));
 }
 
-PyFrameUploader::PyFrameUploader(uint32_t width, uint32_t height,
-                                 Pixel_Format format, CUstream str)
-    : m_format(format) {
-  uploader.reset(CudaUploadFrame::Make(str, GetContextByStream(str), width,
-                                       height, format));
+PyFrameUploader::PyFrameUploader(CUstream str) {
+  m_uploader = std::make_unique<CudaUploadFrame>(str);
 }
 
-Pixel_Format PyFrameUploader::GetFormat() { return m_format; }
-
-std::shared_ptr<Surface> PyFrameUploader::UploadSingleFrame(py::array& frame) {
+bool PyFrameUploader::Run(py::array& src, Surface& dst) {
   auto buffer =
-      std::shared_ptr<Buffer>(Buffer::Make(frame.size(), frame.mutable_data()));
+      std::shared_ptr<Buffer>(Buffer::Make(src.nbytes(), src.mutable_data()));
 
-  return UploadSingleFrame(buffer.get());
+  return Run(*buffer.get(), dst);
 }
 
-std::shared_ptr<Surface> PyFrameUploader::UploadSingleFrame(Buffer* buf) {
-  uploader->SetInput(buf, 0U);
-  auto res = uploader->Execute();
+bool PyFrameUploader::Run(Buffer& src, Surface& dst) {
+  m_uploader->SetInput(&src, 0U);
+  m_uploader->SetInput(&dst, 1U);
+  auto res = m_uploader->Execute();
 
   if (TASK_EXEC_FAIL == res) {
-    throw runtime_error("Error uploading frame to GPU");
+    return false;
   }
 
-  auto pSurface = (Surface*)uploader->GetOutput(0U);
-  if (!pSurface) {
-    throw runtime_error("Error uploading frame to GPU");
-  }
-
-  return shared_ptr<Surface>(pSurface->Clone());
+  return true;
 }
 
 void Init_PyFrameUploader(py::module& m) {
   py::class_<PyFrameUploader>(m, "PyFrameUploader",
                               "This class is used to upload numpy array to "
                               "Surface using CUDA HtoD memcpy.")
-      .def(py::init<uint32_t, uint32_t, Pixel_Format, uint32_t>(),
-           py::arg("width"), py::arg("height"), py::arg("format"),
-           py::arg("gpu_id"),
+      .def(py::init<uint32_t>(), py::arg("gpu_id"),
            R"pbdoc(
-        Constructor method.
-
-        :param width: target Surface width
-        :param height: target Surface height
-        :param format: target Surface pixel format
         :param gpu_id: what GPU to use for upload.
     )pbdoc")
-      .def(py::init<uint32_t, uint32_t, Pixel_Format, size_t>(),
-           py::arg("width"), py::arg("height"), py::arg("format"),
-           py::arg("stream"),
+      .def(py::init<size_t>(), py::arg("stream"),
            R"pbdoc(
-        Constructor method.
-
-        :param width: target Surface width
-        :param height: target Surface height
-        :param format: target Surface pixel format
         :param stream: CUDA stream to use for upload
     )pbdoc")
-      .def("Format", &PyFrameUploader::GetFormat,
-           R"pbdoc(
-        Get pixel format.
-    )pbdoc")
-      .def("UploadSingleFrame",
-           py::overload_cast<py::array&>(&PyFrameUploader::UploadSingleFrame),
-           py::arg("frame"), py::return_value_policy::take_ownership,
+      .def("Run",
+           py::overload_cast<py::array&, Surface&>(&PyFrameUploader::Run),
+           py::arg("src"), py::arg("dst"),
            py::call_guard<py::gil_scoped_release>(),
            R"pbdoc(
-        Perform HtoD memcpy.
+        Blocking HtoD CUDA memcpy.
 
-        :param frame: input numpy array
-        :type frame: numpy.ndarray
-        :return: Surface
-        :rtype: PyNvCodec.Surface
+        :param src: input numpy array
+        :type src: numpy.ndarray
+        :param dst: output surface
+        :type dst: Surface
+        :return: True in case of success, False otherwise
+        :rtype: bool
     )pbdoc");
 }

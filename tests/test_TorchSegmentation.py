@@ -185,13 +185,13 @@ class TestTorchSegmentation(unittest.TestCase):
 
         # Converter from NV12 which is Nvdec native pixel fomat.
         to_rgb = nvc.PySurfaceConverter(
-            target_w, target_h, nvc.PixelFormat.NV12, nvc.PixelFormat.RGB, gpu_id
+            nvc.PixelFormat.NV12, nvc.PixelFormat.RGB, gpu_id
         )
 
         # Converter from RGB to planar RGB because that's the way
         # pytorch likes to store the data in it's tensors.
         to_pln = nvc.PySurfaceConverter(
-            target_w, target_h, nvc.PixelFormat.RGB, nvc.PixelFormat.RGB_PLANAR, gpu_id
+            nvc.PixelFormat.RGB, nvc.PixelFormat.RGB_PLANAR, gpu_id
         )
 
         # Use bt709 and jpeg just for illustration purposes.
@@ -210,7 +210,7 @@ class TestTorchSegmentation(unittest.TestCase):
             # Convert NV12 > RGB.
             surg_rgb = nvc.Surface.Make(
                 nvc.PixelFormat.RGB, surf_nv12.Width(), surf_nv12.Height(), gpu_id=0)
-            success, details = to_rgb.Execute(surf_nv12, surg_rgb, cc_ctx)
+            success, details = to_rgb.Run(surf_nv12, surg_rgb, cc_ctx)
             if not success:
                 print("Can not convert nv12 -> rgb: " + details)
                 break
@@ -218,7 +218,7 @@ class TestTorchSegmentation(unittest.TestCase):
             # Convert RGB > planar RGB.
             surf_pln = nvc.Surface.Make(
                 nvc.PixelFormat.RGB_PLANAR, surg_rgb.Width(), surg_rgb.Height(), gpu_id=0)
-            success, details = to_pln.Execute(surg_rgb, surf_pln, cc_ctx)
+            success, details = to_pln.Run(surg_rgb, surf_pln, cc_ctx)
             if not success:
                 print("Can not convert rgb -> rgb planar: " + details)
                 break

@@ -58,8 +58,6 @@ add_library(
     src/TaskNvencEncodeFrame.cpp
     src/TaskCudaUploadFrame.cpp
     src/TaskCudaDownloadSurface.cpp
-    src/TaskDownloadCudaBuffer.cpp
-    src/TaskUploadBuffer.cpp
     src/TaskResizeSurface.cpp
     src/TaskFfmpegDecodeFrame.cpp
     src/TaskConvertFrame.cpp

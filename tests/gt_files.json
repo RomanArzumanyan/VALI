@@ -90,5 +90,32 @@
         "num_frames": 16,
         "color_space": "ColorSpace.BT_709",
         "color_range": "ColorRange.MPEG"
+    },
+    "small_nv12": {
+        "uri": "data/test_small.nv12",
+        "width": 424,
+        "height": 232,
+        "pix_fmt": "PixelFormat.NV12",
+        "num_frames": 16,
+        "color_space": "ColorSpace.BT_709",
+        "color_range": "ColorRange.MPEG"
+    },
+    "hevc10_p10": {
+        "uri": "data/test_hevc10.p10",
+        "width": 848,
+        "height": 464,
+        "pix_fmt": "PixelFormat.P10",
+        "num_frames": 16,
+        "color_space": "ColorSpace.BT_709",
+        "color_range": "ColorRange.MPEG"
+    },
+    "hevc10_nv12": {
+        "uri": "data/test_hevc10.nv12",
+        "width": 848,
+        "height": 464,
+        "pix_fmt": "PixelFormat.NV12",
+        "num_frames": 16,
+        "color_space": "ColorSpace.BT_709",
+        "color_range": "ColorRange.MPEG"
     }
 }
