@@ -136,6 +136,10 @@ void Init_PySurface(py::module& m) {
            R"pbdoc(
         Get amount of host memory needed to store this SurfacePlane
     )pbdoc")
+      .def("GpuMem", &SurfacePlane::GpuMem,
+           R"pbdoc(
+        Get pointer to data
+      )pbdoc")
       .def(
           "__dlpack_device__",
           [](shared_ptr<SurfacePlane> self) {
