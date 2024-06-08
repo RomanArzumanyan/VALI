@@ -138,7 +138,7 @@ void Init_PySurface(py::module& m) {
     )pbdoc")
       .def("GpuMem", &SurfacePlane::GpuMem,
            R"pbdoc(
-        Get pointer to data
+        Get pointer to SurfacePlane data
       )pbdoc")
       .def(
           "__dlpack_device__",
