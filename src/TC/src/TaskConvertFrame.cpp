@@ -13,7 +13,6 @@ struct ConvertFrame_Impl {
   size_t m_width, m_height;
 
   std::shared_ptr<SwsContext> m_ctx = nullptr;
-  std::shared_ptr<Buffer> m_buffer = nullptr;
   std::shared_ptr<Buffer> m_details = nullptr;
 
   ConvertFrame_Impl(uint32_t width, uint32_t height, Pixel_Format in_Format,
@@ -63,11 +62,8 @@ TaskExecStatus ConvertFrame::Run() {
     // Output check & lazy init;
     auto dst_buf = dynamic_cast<Buffer*>(GetInput(1));
     if (!dst_buf) {
-      if (!pImpl->m_buffer) {
-        pImpl->m_buffer =
-            makeBuffer(pImpl->m_width, pImpl->m_height, pImpl->m_dst_fmt);
-      }
-      dst_buf = pImpl->m_buffer.get();
+      pDetails->info = TaskExecInfo::INVALID_INPUT;
+      return TaskExecStatus::TASK_EXEC_FAIL;
     }
 
     auto ctx_buf = dynamic_cast<Buffer*>(GetInput(2));
