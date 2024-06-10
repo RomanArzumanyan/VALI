@@ -235,8 +235,6 @@ void Init_PySurfaceDownloader(py::module&);
 
 void Init_PySurfaceResizer(py::module&);
 
-void Init_PySurfaceRemaper(py::module&);
-
 void Init_PyFFMpegDecoder(py::module&);
 
 void Init_PyFFMpegDemuxer(py::module&);
@@ -566,8 +564,6 @@ PYBIND11_MODULE(_PyNvCodec, m) {
   Init_PySurfaceConverter(m);
 
   Init_PySurfaceResizer(m);
-
-  Init_PySurfaceRemaper(m);
 
   Init_PySurface(m);
 

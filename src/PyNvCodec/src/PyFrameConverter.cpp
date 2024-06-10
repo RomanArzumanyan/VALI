@@ -26,7 +26,7 @@ PyFrameConverter::PyFrameConverter(uint32_t width, uint32_t height,
   m_up_ctx_buf.reset(Buffer::MakeOwnMem(sizeof(ColorspaceConversionContext)));
 }
 
-bool PyFrameConverter::Execute(
+bool PyFrameConverter::Run(
     py::array& src, py::array& dst,
     std::shared_ptr<ColorspaceConversionContext> context,
     TaskExecDetails& details) {
@@ -80,12 +80,12 @@ void Init_PyFrameConverter(py::module& m) {
         Get pixel format.
     )pbdoc")
       .def(
-          "Execute",
+          "Run",
           [](std::shared_ptr<PyFrameConverter> self, py::array& src,
              py::array& dst,
              std::shared_ptr<ColorspaceConversionContext> cc_ctx) {
             TaskExecDetails details;
-            return std::make_tuple(self->Execute(src, dst, cc_ctx, details),
+            return std::make_tuple(self->Run(src, dst, cc_ctx, details),
                                    details.info);
           },
           py::arg("src"), py::arg("dst"), py::arg("cc_ctx"),
