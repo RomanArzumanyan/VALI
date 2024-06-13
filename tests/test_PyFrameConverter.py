@@ -62,7 +62,7 @@ class TestFrameConverter(unittest.TestCase):
             yuvInfo = tc.GroundTruth(**gt_values["basic"])
             rgbInfo = tc.GroundTruth(**gt_values["basic_rgb"])
 
-        ffDec = nvc.PyFfmpegDecoder(
+        ffDec = nvc.PyDecoder(
             input=yuvInfo.uri,
             opts={})
 

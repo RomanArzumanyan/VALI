@@ -50,6 +50,16 @@ int GetDeviceIdByDptr(CUdeviceptr dptr);
  */
 CUdeviceptr GetDevicePointer(CUdeviceptr dptr);
 
+/* Get CUDA device id by given context;
+ * May throw exception with reason in message; 
+ */
+int GetDeviceIdByContext(CUcontext ctx);
+
+/* Get CUDA device id by given stream;
+ * May throw exception with reason in message; 
+ */
+int GetDeviceIdByStream(CUstream str);
+
 /* Callback to sync CUDA stream;
  */
 void CudaStreamSync(void* args);

@@ -91,6 +91,18 @@ int GetDeviceIdByDptr(CUdeviceptr dptr) {
   return (int)device_id;
 }
 
+int GetDeviceIdByContext(CUcontext ctx) {
+  CudaCtxPush ctxPush(ctx);
+  CUdevice device_id = 0U;
+  ThrowOnCudaError(cuCtxGetDevice(&device_id), __LINE__);
+  return (int)device_id;
+}
+
+int GetDeviceIdByStream(CUstream str) {
+  auto ctx = GetContextByStream(str);
+  return GetDeviceIdByContext(ctx);
+}
+
 CUcontext GetContextByDptr(CUdeviceptr dptr) {
   CUcontext cuda_ctx = NULL;
   ThrowOnCudaError(cuPointerGetAttribute((void*)&cuda_ctx,

@@ -37,23 +37,17 @@ add_subdirectory(TC_CORE)
 find_package(CUDAToolkit 11.2 REQUIRED)
 include(GenerateExportHeader)
 
-if (WIN32)
-    include("${PROJECT_ROOT_DIR}/common.cmake")
-    if (NOT DEFINED FFMPEG_ROOT)
-        message (FATAL "Define FFMPEG_ROOT variable before build")
-    endif(FFMPEG_ROOT)
-    find_FFMpeg(${FFMPEG_ROOT})
-else ()
-    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../..")
-    find_package(FFmpeg REQUIRED)
-endif (WIN32)
+include("${PROJECT_ROOT_DIR}/common.cmake")
+if (NOT DEFINED FFMPEG_ROOT)
+    message (FATAL "Define FFMPEG_ROOT")
+endif()
+find_FFMpeg(${FFMPEG_ROOT})
 
 add_library(
     TC
     src/MemoryInterfaces.cpp
     src/TaskConvertSurface.cpp
     src/TaskDemuxFrame.cpp
-    src/TaskNvdecDecodeFrame.cpp
     src/TaskNvencEncodeFrame.cpp
     src/TaskCudaUploadFrame.cpp
     src/TaskCudaDownloadSurface.cpp

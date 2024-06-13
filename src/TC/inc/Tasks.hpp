@@ -24,6 +24,8 @@ extern "C" {
 #include <libavutil/frame.h>
 }
 
+#include <optional>
+
 #ifdef USE_NVTX
 #include <nvtx3/nvToolsExt.h>
 #define NVTX_PUSH(FNAME)                                                       \
@@ -98,59 +100,32 @@ enum NV_DEC_CAPS {
   NV_DEC_CAPS_NUM_ENTRIES
 };
 
-class TC_CORE_EXPORT NvdecDecodeFrame final : public Task {
+class TC_CORE_EXPORT DecodeFrame final : public Task {
 public:
-  NvdecDecodeFrame() = delete;
-  NvdecDecodeFrame(const NvdecDecodeFrame& other) = delete;
-  NvdecDecodeFrame& operator=(const NvdecDecodeFrame& other) = delete;
-
-  void GetDecodedFrameParams(uint32_t& width, uint32_t& height,
-                             uint32_t& elemSize);
-
-  int GetCapability(NV_DEC_CAPS cap) const;
-
-  TaskExecStatus Run() final;
-  uint32_t GetDeviceFramePitch();
-  ~NvdecDecodeFrame() final;
-  static NvdecDecodeFrame* Make(CUstream cuStream, CUcontext cuContext,
-                                cudaVideoCodec videoCodec,
-                                uint32_t decodedFramesPoolSize,
-                                uint32_t coded_width, uint32_t coded_height,
-                                Pixel_Format format);
-
-private:
-  static const uint32_t numInputs = 3U;
-  static const uint32_t numOutputs = 3U;
-  struct NvdecDecodeFrame_Impl* pImpl = nullptr;
-
-  NvdecDecodeFrame(CUstream cuStream, CUcontext cuContext,
-                   cudaVideoCodec videoCodec, uint32_t decodedFramesPoolSize,
-                   uint32_t coded_width, uint32_t coded_height,
-                   Pixel_Format format);
-};
-
-class TC_CORE_EXPORT FfmpegDecodeFrame final : public Task {
-public:
-  FfmpegDecodeFrame() = delete;
-  FfmpegDecodeFrame(const FfmpegDecodeFrame& other) = delete;
-  FfmpegDecodeFrame& operator=(const FfmpegDecodeFrame& other) = delete;
+  DecodeFrame() = delete;
+  DecodeFrame(const DecodeFrame& other) = delete;
+  DecodeFrame& operator=(const DecodeFrame& other) = delete;
 
   TaskExecStatus Run() final;
   TaskExecStatus GetSideData(AVFrameSideDataType);
   void GetParams(MuxingParams& params);
+  uint32_t GetHostFrameSize() const;
+  bool IsAccelerated() const;
 
-  ~FfmpegDecodeFrame() final;
-  static FfmpegDecodeFrame* Make(const char* URL,
-                                 NvDecoderClInterface& cli_iface);
+  ~DecodeFrame() final;
+  static DecodeFrame* Make(const char* URL, NvDecoderClInterface& cli_iface,
+                           std::optional<CUstream> stream);
   const PacketData& GetLastPacketData() const;
 
 private:
-  static const uint32_t num_inputs = 0U;
-  // Reconstructed pixels + side data;
-  static const uint32_t num_outputs = 2U;
+  // Reconstructed pixels
+  static const uint32_t num_inputs = 1U;
+  // Side data;
+  static const uint32_t num_outputs = 1U;
   struct FfmpegDecodeFrame_Impl* pImpl = nullptr;
 
-  FfmpegDecodeFrame(const char* URL, NvDecoderClInterface& cli_iface);
+  DecodeFrame(const char* URL, NvDecoderClInterface& cli_iface,
+              std::optional<CUstream> stream);
 };
 
 class TC_CORE_EXPORT CudaUploadFrame final : public Task {

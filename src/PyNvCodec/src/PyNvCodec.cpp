@@ -235,11 +235,9 @@ void Init_PySurfaceDownloader(py::module&);
 
 void Init_PySurfaceResizer(py::module&);
 
-void Init_PyFFMpegDecoder(py::module&);
+void Init_PyDecoder(py::module&);
 
 void Init_PyFFMpegDemuxer(py::module&);
-
-void Init_PyNvDecoder(py::module&);
 
 void Init_PyNvEncoder(py::module&);
 
@@ -549,11 +547,9 @@ PYBIND11_MODULE(_PyNvCodec, m) {
         :rtype: PyNvCodec.CudaBuffer
     )pbdoc");
 
-  Init_PyFFMpegDecoder(m);
+  Init_PyDecoder(m);
 
   Init_PyFFMpegDemuxer(m);
-
-  Init_PyNvDecoder(m);
 
   Init_PyNvEncoder(m);
 
@@ -594,7 +590,7 @@ PYBIND11_MODULE(_PyNvCodec, m) {
            PyNvDecoder
            PyFrameUploader
            PyFFmpegDemuxer
-           PyFfmpegDecoder
+           PyDecoder
            PyCudaBufferDownloader
            PyBufferUploader
            SeekContext

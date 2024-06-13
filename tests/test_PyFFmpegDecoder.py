@@ -59,23 +59,23 @@ class TestDecoderBasic(unittest.TestCase):
         self.gtInfo = GroundTruth(**data)
 
     def test_width(self):
-        ffDec = nvc.PyFfmpegDecoder(self.gtInfo.uri, {})
+        ffDec = nvc.PyDecoder(self.gtInfo.uri, {})
         self.assertEqual(self.gtInfo.width, ffDec.Width())
 
     def test_height(self):
-        ffDec = nvc.PyFfmpegDecoder(self.gtInfo.uri, {})
+        ffDec = nvc.PyDecoder(self.gtInfo.uri, {})
         self.assertEqual(self.gtInfo.height, ffDec.Height())
 
     def test_color_space(self):
-        ffDec = nvc.PyFfmpegDecoder(self.gtInfo.uri, {})
+        ffDec = nvc.PyDecoder(self.gtInfo.uri, {})
         self.assertEqual(self.gtInfo.color_space, str(ffDec.ColorSpace()))
 
     def test_color_range(self):
-        ffDec = nvc.PyFfmpegDecoder(self.gtInfo.uri, {})
+        ffDec = nvc.PyDecoder(self.gtInfo.uri, {})
         self.assertEqual(self.gtInfo.color_range, str(ffDec.ColorRange()))
 
     def test_format(self):
-        ffDec = nvc.PyFfmpegDecoder(self.gtInfo.uri, {})
+        ffDec = nvc.PyDecoder(self.gtInfo.uri, {})
         # The only difference between NV12 and YUV420 is chroma sampling
         # So we consider them the same.
         format = ffDec.Format()
@@ -84,21 +84,21 @@ class TestDecoderBasic(unittest.TestCase):
         self.assertEqual(self.gtInfo.pix_fmt, str(format))
 
     def test_framerate(self):
-        ffDec = nvc.PyFfmpegDecoder(self.gtInfo.uri, {})
+        ffDec = nvc.PyDecoder(self.gtInfo.uri, {})
         self.assertEqual(self.gtInfo.framerate, ffDec.Framerate())
 
     def test_avgframerate(self):
-        ffDec = nvc.PyFfmpegDecoder(self.gtInfo.uri, {})
+        ffDec = nvc.PyDecoder(self.gtInfo.uri, {})
         self.assertEqual(self.gtInfo.framerate, ffDec.AvgFramerate())
 
     def test_timebase(self):
-        ffDec = nvc.PyFfmpegDecoder(self.gtInfo.uri, {})
+        ffDec = nvc.PyDecoder(self.gtInfo.uri, {})
         epsilon = 1e-4
         self.assertLessEqual(
             np.abs(self.gtInfo.timebase - ffDec.Timebase()), epsilon)
 
     def test_decode_all_frames(self):
-        ffDec = nvc.PyFfmpegDecoder(self.gtInfo.uri, {})
+        ffDec = nvc.PyDecoder(input=self.gtInfo.uri, opts={}, gpu_id=-1)
         dec_frames = 0
         frame = np.ndarray(dtype=np.uint8, shape=())
         while True:
@@ -109,8 +109,22 @@ class TestDecoderBasic(unittest.TestCase):
         self.assertEqual(self.gtInfo.num_frames, dec_frames)
         self.assertEqual(details, nvc.TaskExecInfo.END_OF_STREAM)
 
+    def test_decode_all_surfaces(self):
+        gpu_id = 0
+        ffDec = nvc.PyDecoder(self.gtInfo.uri, {}, gpu_id)
+        dec_frames = 0
+        surf = nvc.Surface.Make(
+            ffDec.Format(), ffDec.Width(), ffDec.Height(), gpu_id)
+        while True:
+            success, details = ffDec.DecodeSingleSurface(surf)
+            if not success:
+                break
+            dec_frames += 1
+        self.assertEqual(self.gtInfo.num_frames, dec_frames)
+        self.assertEqual(details, nvc.TaskExecInfo.END_OF_STREAM)
+
     def test_check_decode_status(self):
-        ffDec = nvc.PyFfmpegDecoder(self.gtInfo.uri, {})
+        ffDec = nvc.PyDecoder(self.gtInfo.uri, {})
         frame = np.ndarray(dtype=np.uint8, shape=())
         while True:
             success, details = ffDec.DecodeSingleFrame(frame)
@@ -123,7 +137,7 @@ class TestDecoderBasic(unittest.TestCase):
         with open("gt_files.json") as f:
             gtInfo = GroundTruth(**json.load(f)["basic"])
 
-        ffDec = nvc.PyFfmpegDecoder(gtInfo.uri, {})
+        ffDec = nvc.PyDecoder(gtInfo.uri, {})
         frame = np.ndarray(dtype=np.uint8, shape=())
 
         dec_frame = 0
@@ -143,7 +157,7 @@ class TestDecoderBasic(unittest.TestCase):
     def test_log_warnings(self):
         with open("gt_files.json") as f:
             gtInfo = GroundTruth(**json.load(f)["log_warnings_ffdec"])
-            ffDec = nvc.PyFfmpegDecoder(gtInfo.uri, {})
+            ffDec = nvc.PyDecoder(gtInfo.uri, {})
 
             self.assertEqual(ffDec.Width(), gtInfo.width)
             self.assertEqual(ffDec.Height(), gtInfo.height)
@@ -166,7 +180,7 @@ class TestDecoderBasic(unittest.TestCase):
     def test_get_motion_vectors(self):
         with open("gt_files.json") as f:
             gtInfo = GroundTruth(**json.load(f)["basic"])
-            ffDec = nvc.PyFfmpegDecoder(gtInfo.uri, {"flags2": "+export_mvs"})
+            ffDec = nvc.PyDecoder(gtInfo.uri, {"flags2": "+export_mvs"})
 
         frame = np.ndarray(shape=(0), dtype=np.uint8)
 
@@ -199,7 +213,7 @@ class TestDecoderBasic(unittest.TestCase):
         tp = time.time()
 
         with self.assertRaises(RuntimeError):
-            ffDec = nvc.PyFfmpegDecoder(
+            ffDec = nvc.PyDecoder(
                 input="rtsp://127.0.0.1/nothing",
                 opts={"timeout": str(timeout_ms)})
 
