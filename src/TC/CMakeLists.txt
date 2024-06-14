@@ -51,7 +51,6 @@ endif (WIN32)
 add_library(
     TC
     src/MemoryInterfaces.cpp
-    src/TaskRemapSurface.cpp
     src/TaskConvertSurface.cpp
     src/TaskDemuxFrame.cpp
     src/TaskNvdecDecodeFrame.cpp

@@ -53,7 +53,6 @@ pybind11_add_module(_PyNvCodec MODULE
 	src/PySurface.cpp
 	src/PySurfaceConverter.cpp
 	src/PySurfaceDownloader.cpp
-	src/PySurfaceRemaper.cpp
 	src/PySurfaceResizer.cpp
 	src/PyFrameConverter.cpp
 )

@@ -87,7 +87,7 @@ class TestFrameConverter(unittest.TestCase):
                 if not success:
                     self.fail("Fail to decode frame: " + str(_))
 
-                success, _ = ffCvt.Execute(yuv_frame, rgb_frame, ccCtx)
+                success, _ = ffCvt.Run(yuv_frame, rgb_frame, ccCtx)
                 if not success:
                     self.fail("Fail to convert frame: " + str(_))
 

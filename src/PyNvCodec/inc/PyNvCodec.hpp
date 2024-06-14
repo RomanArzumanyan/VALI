@@ -139,7 +139,7 @@ public:
   PyFrameConverter(uint32_t width, uint32_t height, Pixel_Format inFormat,
                    Pixel_Format outFormat);
 
-  bool Execute(py::array& src, py::array& dst,
+  bool Run(py::array& src, py::array& dst,
                std::shared_ptr<ColorspaceConversionContext> context,
                TaskExecDetails& details);
 
@@ -156,22 +156,6 @@ public:
       : PySurfaceResizer(format, (CUstream)str) {}
 
   bool Run(Surface& src, Surface& dst);
-};
-
-class PySurfaceRemaper {
-  std::unique_ptr<RemapSurface> upRemaper;
-  Pixel_Format outputFormat;
-
-public:
-  PySurfaceRemaper(py::array_t<float>& x_map, py::array_t<float>& y_map,
-                   Pixel_Format format, size_t ctx, size_t str);
-
-  PySurfaceRemaper(py::array_t<float>& x_map, py::array_t<float>& y_map,
-                   Pixel_Format format, uint32_t gpuID);
-
-  Pixel_Format GetFormat();
-
-  std::shared_ptr<Surface> Execute(std::shared_ptr<Surface> surface);
 };
 
 class PyFFmpegDemuxer {

@@ -282,28 +282,4 @@ private:
 
   struct ResizeSurface_Impl* pImpl;
 };
-
-class TC_CORE_EXPORT RemapSurface final : public Task {
-public:
-  RemapSurface() = delete;
-  RemapSurface(const RemapSurface& other) = delete;
-  RemapSurface& operator=(const RemapSurface& other) = delete;
-
-  static RemapSurface* Make(const float* x_map, const float* y_map,
-                            uint32_t remap_w, uint32_t remap_h,
-                            Pixel_Format format, CUcontext ctx, CUstream str);
-
-  ~RemapSurface();
-
-  TaskExecStatus Run() final;
-
-private:
-  static const uint32_t numInputs = 1U;
-  static const uint32_t numOutputs = 1U;
-
-  struct RemapSurface_Impl* pImpl;
-  RemapSurface(const float* x_map, const float* y_map, uint32_t remap_w,
-               uint32_t remap_h, Pixel_Format format, CUcontext ctx,
-               CUstream str);
-};
 } // namespace VPF
