@@ -442,26 +442,6 @@ struct FfmpegDecodeFrame_Impl {
   }
 
   static void CopyToSurface(AVFrame& src, Surface& dst, CUstream stream) {
-#if 0    
-    AVFrame* p_clone = av_frame_clone(&src);
-    for (auto i = 0U; src.data[i]; i++) {
-      p_clone->data[i] = (uint8_t*)dst.PixelPtr(i);
-      p_clone->linesize[i] = (int)dst.Pitch(i);
-    }
-
-    auto res = av_hwframe_transfer_data(p_clone, &src, 0);
-    if (res < 0) {
-      std::stringstream ss;
-      ss << "Failed to copy AVFrame: " << AvErrorToString(res);
-      throw std::runtime_error(ss.str());
-    }
-
-    av_frame_unref(p_clone);
-#else
-    /* TODO (r.arzumanyan): cuvid decoder sometimes produces frame copies
-     * and this behavior isn't affected by the way HW frames are copied
-     * from FFMpeg to VALI.
-     */
     CUDA_MEMCPY2D m = {0};
     m.srcMemoryType = CU_MEMORYTYPE_DEVICE;
     m.dstMemoryType = CU_MEMORYTYPE_DEVICE;
@@ -478,7 +458,6 @@ struct FfmpegDecodeFrame_Impl {
       ThrowOnCudaError(cuMemcpy2DAsync(&m, stream), __LINE__);
     }
     ThrowOnCudaError(cuStreamSynchronize(stream), __LINE__);
-#endif
   }
 
   DECODE_STATUS DecodeSinglePacket(const AVPacket* pkt_Src, Token& dst) {
