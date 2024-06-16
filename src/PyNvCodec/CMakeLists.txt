@@ -47,7 +47,6 @@ fetchcontent_makeavailable(pybind11)
 
 pybind11_add_module(_PyNvCodec MODULE 
 	src/PyDecoder.cpp
-	src/PyFFMpegDemuxer.cpp
 	src/PyFrameUploader.cpp
 	src/PyNvCodec.cpp
 	src/PyNvEncoder.cpp

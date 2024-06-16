@@ -166,30 +166,6 @@ private:
   CUstream m_stream;
 };
 
-class TC_CORE_EXPORT DemuxFrame final : public Task {
-public:
-  DemuxFrame() = delete;
-  DemuxFrame(const DemuxFrame& other) = delete;
-  DemuxFrame& operator=(const DemuxFrame& other) = delete;
-
-  void GetParams(struct MuxingParams& params) const;
-  int64_t TsFromTime(double ts_sec);
-  int64_t TsFromFrameNumber(int64_t frame_num);
-  void Flush();
-  TaskExecStatus Run() final;
-  ~DemuxFrame() final;
-  static DemuxFrame* Make(const char* url, const char** ffmpeg_options,
-                          uint32_t opts_size);
-
-private:
-  DemuxFrame(std::istream& i_str, const char** ffmpeg_options,
-             uint32_t opts_size);
-  DemuxFrame(const char* url, const char** ffmpeg_options, uint32_t opts_size);
-  static const uint32_t numInputs = 2U;
-  static const uint32_t numOutputs = 5U;
-  struct DemuxFrame_Impl* pImpl = nullptr;
-};
-
 class TC_CORE_EXPORT ConvertSurface final : public Task {
 public:
   ConvertSurface() = delete;

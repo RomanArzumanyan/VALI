@@ -158,45 +158,6 @@ public:
   bool Run(Surface& src, Surface& dst);
 };
 
-class PyFFmpegDemuxer {
-  std::unique_ptr<DemuxFrame> upDemuxer;
-
-public:
-  PyFFmpegDemuxer(const std::string& pathToFile);
-
-  PyFFmpegDemuxer(const std::string& pathToFile,
-                  const std::map<std::string, std::string>& ffmpeg_options);
-
-  bool DemuxSinglePacket(py::array_t<uint8_t>& packet,
-                         py::array_t<uint8_t>* sei);
-
-  void GetLastPacketData(PacketData& pkt_data);
-
-  bool Seek(SeekContext& ctx, py::array_t<uint8_t>& packet);
-
-  uint32_t Width() const;
-
-  uint32_t Height() const;
-
-  Pixel_Format Format() const;
-
-  ColorSpace GetColorSpace() const;
-
-  ColorRange GetColorRange() const;
-
-  cudaVideoCodec Codec() const;
-
-  double Framerate() const;
-
-  double AvgFramerate() const;
-
-  bool IsVFR() const;
-
-  uint32_t Numframes() const;
-
-  double Timebase() const;
-};
-
 class DecodeContext {
 private:
   std::shared_ptr<Surface> pSurface;

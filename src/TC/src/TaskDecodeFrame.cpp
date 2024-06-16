@@ -111,6 +111,9 @@ struct FfmpegDecodeFrame_Impl {
       const char* URL, const std::map<std::string, std::string>& ffmpeg_options,
       std::optional<CUstream> stream) {
 
+    // Set log level to error to avoid noisy output
+    av_log_set_level(AV_LOG_ERROR);
+
     // Allocate format context first to set timeout before opening the input.
     AVFormatContext* fmt_ctx_ = avformat_alloc_context();
     if (!fmt_ctx_) {
@@ -119,6 +122,43 @@ struct FfmpegDecodeFrame_Impl {
 
     // Set up format context options.
     AVDictionary* options = GetAvOptions(ffmpeg_options);
+
+    /* Set neccessary AVOptions for HW decoding.
+     */
+    if (stream) {
+      m_stream = stream.value();
+      auto res =
+          av_dict_set(&options, "hwaccel_device",
+                      std::to_string(GetDeviceIdByStream(m_stream)).c_str(), 0);
+      if (res < 0) {
+        std::stringstream ss;
+        ss << "Failed to set hwaccel_device AVOption: " << AvErrorToString(res);
+        throw std::runtime_error(ss.str());
+      }
+
+      res = av_dict_set(&options, "hwaccel", "cuvid", 0);
+      if (res < 0) {
+        std::stringstream ss;
+        ss << "Failed to set hwaccel AVOption: " << AvErrorToString(res);
+        throw std::runtime_error(ss.str());
+      }
+
+      res = av_dict_set(&options, "fps_mode", "passthrough", 0);
+      if (res < 0) {
+        av_dict_free(&options);
+        std::stringstream ss;
+        ss << "Failed set fps_mode AVOption: " << AvErrorToString(res);
+        throw std::runtime_error(ss.str());
+      }
+
+      res = av_dict_set(&options, "threads", "1", 0);
+      if (res < 0) {
+        av_dict_free(&options);
+        std::stringstream ss;
+        ss << "Failed set threads AVOption: " << AvErrorToString(res);
+        throw std::runtime_error(ss.str());
+      }
+    }
 
     /* Set the timeout.
      *
@@ -238,36 +278,18 @@ struct FfmpegDecodeFrame_Impl {
  */
 #ifndef TEGRA_BUILD
     if (stream) {
-      m_stream = stream.value();
-      // Push CUDA context, otherwise FFMpeg will create its own.
-      CudaCtxPush push_ctx(GetContextByStream(m_stream));
-
       /* Attach HW context to codec. Whithout that decoded frames will be
        * copied to RAM.
        */
-      AVDictionary* opts = nullptr;
-      auto res = av_dict_set(&opts, "current_ctx", "1", 0);
-      if (res < 0) {
-        std::stringstream ss;
-        ss << "Failed to set AVDictionary option: " << AvErrorToString(res);
-        throw std::runtime_error(ss.str());
-      }
-
       AVBufferRef* hwdevice_ctx = nullptr;
-      res = av_hwdevice_ctx_create(&hwdevice_ctx, AV_HWDEVICE_TYPE_CUDA, NULL,
-                                   opts, 0);
-      av_dict_free(&opts);
+      auto res = av_hwdevice_ctx_create(&hwdevice_ctx, AV_HWDEVICE_TYPE_CUDA,
+                                        NULL, options, 0);
 
       if (res < 0) {
         std::stringstream ss;
         ss << "Failed to create HW device context: " << AvErrorToString(res);
         throw std::runtime_error(ss.str());
       }
-
-      // Make FFMpeg use given stream.
-      auto hw_dev_ctx = (AVHWDeviceContext*)hwdevice_ctx->data;
-      auto cuda_dev_ctx = (AVCUDADeviceContext*)hw_dev_ctx->hwctx;
-      cuda_dev_ctx->stream = stream.value();
 
       // Add hw device context to codec context.
       m_avc_ctx->hw_device_ctx = av_buffer_ref(hwdevice_ctx);
@@ -399,9 +421,64 @@ struct FfmpegDecodeFrame_Impl {
   }
 
   uint32_t GetHostFrameSize() const {
-    const int alignment = 1;
-    return av_image_get_buffer_size((AVPixelFormat)m_frame->format,
-                                    m_frame->width, m_frame->height, alignment);
+    /* Query codec context because this method may be called before decoder
+     * returns any decoded frames.
+     */
+    const auto format =
+        m_avc_ctx->hw_frames_ctx ? m_avc_ctx->sw_pix_fmt : m_avc_ctx->pix_fmt;
+    const auto width = m_avc_ctx->width;
+    const auto height = m_avc_ctx->height;
+    const auto alignment = 1;
+
+    const auto size = av_image_get_buffer_size((AVPixelFormat)format, width,
+                                               height, alignment);
+    if (size < 0) {
+      std::stringstream ss;
+      ss << "Failed to query host frame size: " << AvErrorToString(size);
+      throw std::runtime_error(ss.str());
+    }
+
+    return static_cast<uint32_t>(size);
+  }
+
+  static void CopyToSurface(AVFrame& src, Surface& dst, CUstream stream) {
+#if 0    
+    AVFrame* p_clone = av_frame_clone(&src);
+    for (auto i = 0U; src.data[i]; i++) {
+      p_clone->data[i] = (uint8_t*)dst.PixelPtr(i);
+      p_clone->linesize[i] = (int)dst.Pitch(i);
+    }
+
+    auto res = av_hwframe_transfer_data(p_clone, &src, 0);
+    if (res < 0) {
+      std::stringstream ss;
+      ss << "Failed to copy AVFrame: " << AvErrorToString(res);
+      throw std::runtime_error(ss.str());
+    }
+
+    av_frame_unref(p_clone);
+#else
+    /* TODO (r.arzumanyan): cuvid decoder sometimes produces frame copies
+     * and this behavior isn't affected by the way HW frames are copied
+     * from FFMpeg to VALI.
+     */
+    CUDA_MEMCPY2D m = {0};
+    m.srcMemoryType = CU_MEMORYTYPE_DEVICE;
+    m.dstMemoryType = CU_MEMORYTYPE_DEVICE;
+
+    CudaCtxPush push_ctx(GetContextByStream(stream));
+    for (auto i = 0U; src.data[i]; i++) {
+      m.srcDevice = (CUdeviceptr)src.data[i];
+      m.srcPitch = src.linesize[i];
+      m.dstDevice = dst.PixelPtr(i);
+      m.dstPitch = dst.Pitch(i);
+      m.WidthInBytes = dst.Width(i) * dst.ElemSize();
+      m.Height = dst.Height(i);
+
+      ThrowOnCudaError(cuMemcpy2DAsync(&m, stream), __LINE__);
+    }
+    ThrowOnCudaError(cuStreamSynchronize(stream), __LINE__);
+#endif
   }
 
   DECODE_STATUS DecodeSinglePacket(const AVPacket* pkt_Src, Token& dst) {
@@ -428,34 +505,27 @@ struct FfmpegDecodeFrame_Impl {
       }
 
       if (m_frame->hw_frames_ctx) {
-        auto& dst_surf = (Surface&)dst;
-
-        CUDA_MEMCPY2D m = {0};
-        m.srcMemoryType = CU_MEMORYTYPE_DEVICE;
-        m.dstMemoryType = CU_MEMORYTYPE_DEVICE;
-
-        CudaCtxPush push_ctx(GetContextByStream(m_stream));
-        for (auto i = 0U; i < dst_surf.NumPlanes(); i++) {
-          auto& plane = dst_surf.GetSurfacePlane(i);
-
-          m.srcDevice = (CUdeviceptr)m_frame->data[i];
-          m.srcPitch = m_frame->linesize[i];
-          m.dstDevice = plane.GpuMem();
-          m.dstPitch = plane.Pitch();
-          m.WidthInBytes = plane.Width() * plane.ElemSize();
-          m.Height = plane.Height();
-
-          ThrowOnCudaError(cuMemcpy2DAsync(&m, m_stream), __LINE__);
+        try {
+          CopyToSurface(*m_frame.get(), dynamic_cast<Surface&>(dst), m_stream);
+        } catch (std::exception& e) {
+          std::cerr << "Error while copying a surface from FFMpeg to VALI";
+          std::cerr << "Error description: " << AvErrorToString(res);
+          return DEC_ERROR;
         }
-        ThrowOnCudaError(cuStreamSynchronize(m_stream), __LINE__);
       } else {
         auto& dstBuf = dynamic_cast<Buffer&>(dst);
         const int alignment = 1;
 
-        av_image_copy_to_buffer(dstBuf.GetDataAs<uint8_t>(), GetHostFrameSize(),
-                                m_frame->data, m_frame->linesize,
-                                (AVPixelFormat)m_frame->format, m_frame->width,
-                                m_frame->height, alignment);
+        res = av_image_copy_to_buffer(
+            dstBuf.GetDataAs<uint8_t>(), GetHostFrameSize(), m_frame->data,
+            m_frame->linesize, (AVPixelFormat)m_frame->format, m_frame->width,
+            m_frame->height, alignment);
+
+        if (res < 0) {
+          std::cerr << "Error while copying a frame from FFMpeg to VALI";
+          std::cerr << "Error description: " << AvErrorToString(res);
+          return DEC_ERROR;
+        }
       }
 
       SaveSideData();

@@ -26,8 +26,7 @@ constexpr auto TASK_EXEC_SUCCESS = TaskExecStatus::TASK_EXEC_SUCCESS;
 constexpr auto TASK_EXEC_FAIL = TaskExecStatus::TASK_EXEC_FAIL;
 
 PyDecoder::PyDecoder(const string& pathToFile,
-                     const map<string, string>& ffmpeg_options,
-                     int gpuID) {
+                     const map<string, string>& ffmpeg_options, int gpuID) {
   gpu_id = gpuID;
   NvDecoderClInterface cli_iface(ffmpeg_options);
   auto stream =
@@ -344,4 +343,6 @@ void Init_PyDecoder(py::module& m) {
        :return: list of motion vectors
        :rtype: List[nvc.MotionVector]
     )pbdoc");
+
+  m.attr("NO_PTS") = py::int_(AV_NOPTS_VALUE);
 }

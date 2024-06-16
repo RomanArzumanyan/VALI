@@ -237,8 +237,6 @@ void Init_PySurfaceResizer(py::module&);
 
 void Init_PyDecoder(py::module&);
 
-void Init_PyFFMpegDemuxer(py::module&);
-
 void Init_PyNvEncoder(py::module&);
 
 void Init_PySurface(py::module&);
@@ -548,8 +546,6 @@ PYBIND11_MODULE(_PyNvCodec, m) {
     )pbdoc");
 
   Init_PyDecoder(m);
-
-  Init_PyFFMpegDemuxer(m);
 
   Init_PyNvEncoder(m);
 

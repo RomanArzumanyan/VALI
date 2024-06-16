@@ -60,7 +60,7 @@ class TestEncoderBasic(unittest.TestCase):
         res = str(gtInfo.width) + "x" + str(gtInfo.height)
         encFrame = np.ndarray(shape=(0), dtype=np.uint8)
 
-        nvDec = nvc.PyNvDecoder(gtInfo.uri, gpu_id)
+        pyDec = nvc.PyDecoder(gtInfo.uri, {}, gpu_id)
         nvEnc = nvc.PyNvEncoder(
             {
                 "preset": "P4",
@@ -76,13 +76,15 @@ class TestEncoderBasic(unittest.TestCase):
         frames_sent = 0
         frames_recv = 0
 
+        surf = nvc.Surface.Make(
+            pyDec.Format(), pyDec.Width(), pyDec.Height(), gpu_id=0)
         while True:
-            dec_surf, _ = nvDec.DecodeSingleSurface()
-            if not dec_surf or dec_surf.Empty():
+            success, _ = pyDec.DecodeSingleSurface(surf)
+            if not success:
                 break
             frames_sent += 1
 
-            nvEnc.EncodeSingleSurface(dec_surf, encFrame)
+            nvEnc.EncodeSingleSurface(surf, encFrame)
             if encFrame.size:
                 frames_recv += 1
 
@@ -94,66 +96,6 @@ class TestEncoderBasic(unittest.TestCase):
                 break
 
         self.assertEqual(frames_sent, frames_recv)
-
-    def test_reconfigure(self):
-        with open("gt_files.json") as f:
-            gtInfo = tc.GroundTruth(**json.load(f)["res_change"])
-        gpu_id = 0
-        res = str(gtInfo.width) + "x" + str(gtInfo.height)
-        encFrame = np.ndarray(shape=(0), dtype=np.uint8)
-
-        nvDec = nvc.PyNvDecoder(gtInfo.uri, gpu_id)
-        nvRcn = nvc.PyNvDecoder(
-            gtInfo.width, gtInfo.height, nvc.PixelFormat.NV12,
-            nvc.CudaVideoCodec.H264, gpu_id)
-        nvEnc = nvc.PyNvEncoder(
-            {
-                "preset": "P4",
-                "tuning_info": "high_quality",
-                "codec": "h264",
-                "profile": "high",
-                "s": res,
-                "bitrate": "1M",
-            },
-            gpu_id,
-        )
-
-        frames_recn = 0
-        while True:
-            dec_surf, _ = nvDec.DecodeSingleSurface()
-            if not dec_surf or dec_surf.Empty():
-                break
-
-            sw = dec_surf.Width()
-            sh = dec_surf.Height()
-            if sw != gtInfo.width or sh != gtInfo.height:
-                # Flush encoder before reconfigure.
-                # Some encoded frames will be lost but that doesn't matter.
-                # Decoder will be reconfigured upon resolution change anyway.
-                while nvEnc.FlushSinglePacket(encFrame):
-                    frames_recn += 1
-
-                # Now reconfigure.
-                res = str(sw) + "x" + str(sh)
-                self.assertTrue(
-                    nvEnc.Reconfigure(
-                        {"s": res}, force_idr=True, reset_encoder=True)
-                )
-                self.assertEqual(nvEnc.Width(), sw)
-                self.assertEqual(nvEnc.Height(), sh)
-
-            nvEnc.EncodeSingleSurface(dec_surf, encFrame)
-
-            if encFrame.size:
-                dec_surf, _ = nvRcn.DecodeSurfaceFromPacket(encFrame)
-                if dec_surf and not dec_surf.Empty():
-                    frames_recn += 1
-                    if frames_recn < gtInfo.res_change_frame:
-                        self.assertEqual(dec_surf.Width(), gtInfo.width)
-                        self.assertEqual(dec_surf.Height(), gtInfo.height)
-                    else:
-                        self.assertEqual(dec_surf.Width(), sw)
-                        self.assertEqual(dec_surf.Height(), sh)
 
 
 if __name__ == "__main__":

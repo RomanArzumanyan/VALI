@@ -177,13 +177,13 @@ class TestTorchSegmentation(unittest.TestCase):
 
     def run_inference_on_video(self, gpu_id: int, input_video: str):
         # Init HW decoder
-        nvDec = nvc.PyNvDecoder(input_video, gpu_id)
+        pyDec = nvc.PyDecoder(input=input_video, opts={}, gpu_id=gpu_id)
 
         # NN expects images to be 3 channel planar RGB.
         # No requirements for input image resolution, it will be rescaled internally.
-        target_w, target_h = nvDec.Width(), nvDec.Height()
+        target_w, target_h = pyDec.Width(), pyDec.Height()
 
-        # Converter from NV12 which is Nvdec native pixel fomat.
+        # Converter from NV12 which is pyDec native pixel fomat.
         to_rgb = nvc.PySurfaceConverter(
             nvc.PixelFormat.NV12, nvc.PixelFormat.RGB, gpu_id
         )
@@ -202,9 +202,11 @@ class TestTorchSegmentation(unittest.TestCase):
         detections = []
         frame_number = 0
         while True:
+            surf_nv12 = nvc.Surface.Make(
+                pyDec.Format(), pyDec.Width(), pyDec.Height(), gpu_id=0)
             # Decode 1 compressed video frame to CUDA memory.
-            surf_nv12, _ = nvDec.DecodeSingleSurface()
-            if surf_nv12.Empty():
+            success, _ = pyDec.DecodeSingleSurface(surf_nv12)
+            if not success:
                 break
 
             # Convert NV12 > RGB.

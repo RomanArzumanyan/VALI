@@ -47,12 +47,11 @@ add_library(
     TC
     src/MemoryInterfaces.cpp
     src/TaskConvertSurface.cpp
-    src/TaskDemuxFrame.cpp
     src/TaskNvencEncodeFrame.cpp
     src/TaskCudaUploadFrame.cpp
     src/TaskCudaDownloadSurface.cpp
     src/TaskResizeSurface.cpp
-    src/TaskFfmpegDecodeFrame.cpp
+    src/TaskDecodeFrame.cpp
     src/TaskConvertFrame.cpp
     src/NppCommon.cpp
     src/NvCodecCliOptions.cpp
