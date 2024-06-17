@@ -1,0 +1,36 @@
+﻿PyNvCodec.PyFFmpegDemuxer
+=========================
+
+.. currentmodule:: PyNvCodec
+
+.. autoclass:: PyFFmpegDemuxer
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PyFFmpegDemuxer.AvgFramerate
+      ~PyFFmpegDemuxer.Codec
+      ~PyFFmpegDemuxer.ColorRange
+      ~PyFFmpegDemuxer.ColorSpace
+      ~PyFFmpegDemuxer.DemuxSinglePacket
+      ~PyFFmpegDemuxer.Format
+      ~PyFFmpegDemuxer.Framerate
+      ~PyFFmpegDemuxer.Height
+      ~PyFFmpegDemuxer.IsVFR
+      ~PyFFmpegDemuxer.LastPacketData
+      ~PyFFmpegDemuxer.Numframes
+      ~PyFFmpegDemuxer.Seek
+      ~PyFFmpegDemuxer.Timebase
+      ~PyFFmpegDemuxer.Width
+      ~PyFFmpegDemuxer.__init__
+   
+   
+
+   
+   
+   

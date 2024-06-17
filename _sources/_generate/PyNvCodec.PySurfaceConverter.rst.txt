@@ -1,0 +1,23 @@
+﻿PyNvCodec.PySurfaceConverter
+============================
+
+.. currentmodule:: PyNvCodec
+
+.. autoclass:: PySurfaceConverter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PySurfaceConverter.Run
+      ~PySurfaceConverter.__init__
+   
+   
+
+   
+   
+   

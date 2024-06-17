@@ -1,0 +1,6 @@
+﻿PyNvCodec.GetNumGpus
+====================
+
+.. currentmodule:: PyNvCodec
+
+.. autofunction:: GetNumGpus

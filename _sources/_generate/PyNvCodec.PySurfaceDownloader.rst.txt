@@ -1,0 +1,23 @@
+﻿PyNvCodec.PySurfaceDownloader
+=============================
+
+.. currentmodule:: PyNvCodec
+
+.. autoclass:: PySurfaceDownloader
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PySurfaceDownloader.Run
+      ~PySurfaceDownloader.__init__
+   
+   
+
+   
+   
+   

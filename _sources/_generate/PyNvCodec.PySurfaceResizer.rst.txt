@@ -1,0 +1,23 @@
+﻿PyNvCodec.PySurfaceResizer
+==========================
+
+.. currentmodule:: PyNvCodec
+
+.. autoclass:: PySurfaceResizer
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PySurfaceResizer.Run
+      ~PySurfaceResizer.__init__
+   
+   
+
+   
+   
+   

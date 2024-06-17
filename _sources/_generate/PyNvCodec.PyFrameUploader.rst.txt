@@ -1,0 +1,23 @@
+﻿PyNvCodec.PyFrameUploader
+=========================
+
+.. currentmodule:: PyNvCodec
+
+.. autoclass:: PyFrameUploader
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PyFrameUploader.Run
+      ~PyFrameUploader.__init__
+   
+   
+
+   
+   
+   

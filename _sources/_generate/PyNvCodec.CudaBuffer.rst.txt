@@ -1,0 +1,29 @@
+﻿PyNvCodec.CudaBuffer
+====================
+
+.. currentmodule:: PyNvCodec
+
+.. autoclass:: CudaBuffer
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~CudaBuffer.Clone
+      ~CudaBuffer.CopyFrom
+      ~CudaBuffer.GetElemSize
+      ~CudaBuffer.GetNumElems
+      ~CudaBuffer.GetRawMemSize
+      ~CudaBuffer.GpuMem
+      ~CudaBuffer.Make
+      ~CudaBuffer.__init__
+   
+   
+
+   
+   
+   

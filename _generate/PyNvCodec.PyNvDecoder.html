@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PyNvCodec.PyNvDecoder &#8212; VALI  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/haiku.css?v=e491ac2d" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PyNvCodec.PyFrameUploader" href="PyNvCodec.PyFrameUploader.html" />
+    <link rel="prev" title="PyNvCodec.PyNvEncoder" href="PyNvCodec.PyNvEncoder.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="../index.html">
+          <span>VALI  documentation</span></a></h1>
+        <h2 class="heading"><span>PyNvCodec.PyNvDecoder</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="PyNvCodec.PyNvEncoder.html">PyNvCodec.PyNvEncoder</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="PyNvCodec.PyFrameUploader.html">PyNvCodec.PyFrameUploader</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content" role="main">
+        
+        
+  <section id="pynvcodec-pynvdecoder">
+<h1>PyNvCodec.PyNvDecoder<a class="headerlink" href="#pynvcodec-pynvdecoder" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="PyNvCodec.PyNvDecoder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">PyNvCodec.</span></span><span class="sig-name descname"><span class="pre">PyNvDecoder</span></span><a class="headerlink" href="#PyNvCodec.PyNvDecoder" title="Link to this definition">¶</a></dt>
+<dd><p>HW-accelerated video decoder which uses Nvdec.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="PyNvCodec.PyNvDecoder.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#PyNvCodec.PyNvDecoder.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic">
+<li><p>__init__(self: PyNvCodec._PyNvCodec.PyNvDecoder, width: int, height: int, format: PyNvCodec._PyNvCodec.PixelFormat, codec: PyNvCodec._PyNvCodec.CudaVideoCodec, gpu_id: int) -&gt; None</p>
+<blockquote>
+<div><p>Constructor method. Initialize HW decoding session with set of particular
+parameters such as video stream resolution, pixel format and video codec.
+Use this constructor alongside external demuxer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param width<span class="colon">:</span></dt>
+<dd class="field-odd"><p>video file width</p>
+</dd>
+<dt class="field-even">param height<span class="colon">:</span></dt>
+<dd class="field-even"><p>video file height</p>
+</dd>
+<dt class="field-odd">param format<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pixel format used by codec</p>
+</dd>
+<dt class="field-even">param codec<span class="colon">:</span></dt>
+<dd class="field-even"><p>video codec to use</p>
+</dd>
+<dt class="field-odd">param gpu_id<span class="colon">:</span></dt>
+<dd class="field-odd"><p>what GPU to run decode on</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>__init__(self: PyNvCodec._PyNvCodec.PyNvDecoder, input: str, gpu_id: int, opts: Dict[str, str]) -&gt; None</p>
+<blockquote>
+<div><p>Constructor method. Initialize HW decoding section with path to input,
+GPU ID and dictionary of AVDictionary options that will be passed to built-in
+FFMpeg-based demuxer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param input<span class="colon">:</span></dt>
+<dd class="field-odd"><p>path to input file</p>
+</dd>
+<dt class="field-even">param gpu_id<span class="colon">:</span></dt>
+<dd class="field-even"><p>what GPU to run decode on</p>
+</dd>
+<dt class="field-odd">param opts<span class="colon">:</span></dt>
+<dd class="field-odd"><p>AVDictionary options that will be passed to AVFormat context.</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>__init__(self: PyNvCodec._PyNvCodec.PyNvDecoder, input: str, gpu_id: int) -&gt; None</p>
+<blockquote>
+<div><p>Constructor method. Initialize HW decoding section with path to input,
+and GPU ID. FFMpeg-based built-in demuxer will be used.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param input<span class="colon">:</span></dt>
+<dd class="field-odd"><p>path to input file</p>
+</dd>
+<dt class="field-even">param gpu_id<span class="colon">:</span></dt>
+<dd class="field-even"><p>what GPU to run decode on</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>__init__(self: PyNvCodec._PyNvCodec.PyNvDecoder, width: int, height: int, format: PyNvCodec._PyNvCodec.PixelFormat, codec: PyNvCodec._PyNvCodec.CudaVideoCodec, context: int, stream: int) -&gt; None</p>
+<blockquote>
+<div><p>Constructor method. Initialize HW decoding session with set of particular
+parameters such as video stream resolution, pixel format, video codec,
+CUDA context and stream
+Use this constructor alongside external demuxer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param width<span class="colon">:</span></dt>
+<dd class="field-odd"><p>video file width</p>
+</dd>
+<dt class="field-even">param height<span class="colon">:</span></dt>
+<dd class="field-even"><p>video file height</p>
+</dd>
+<dt class="field-odd">param format<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pixel format used by codec</p>
+</dd>
+<dt class="field-even">param codec<span class="colon">:</span></dt>
+<dd class="field-even"><p>video codec to use</p>
+</dd>
+<dt class="field-odd">param context<span class="colon">:</span></dt>
+<dd class="field-odd"><p>CUDA context to use</p>
+</dd>
+<dt class="field-even">param stream<span class="colon">:</span></dt>
+<dd class="field-even"><p>CUDA stream to use</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>__init__(self: PyNvCodec._PyNvCodec.PyNvDecoder, input: str, context: int, stream: int, opts: Dict[str, str]) -&gt; None</p>
+<blockquote>
+<div><p>Constructor method. Initialize HW decoding section with path to input,
+CUDA context and stream and dictionary of AVDictionary options that will
+be passed to built-in FFMpeg-based demuxer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param input<span class="colon">:</span></dt>
+<dd class="field-odd"><p>path to input file</p>
+</dd>
+<dt class="field-even">param context<span class="colon">:</span></dt>
+<dd class="field-even"><p>CUDA context to use</p>
+</dd>
+<dt class="field-odd">param stream<span class="colon">:</span></dt>
+<dd class="field-odd"><p>CUDA stream to use</p>
+</dd>
+<dt class="field-even">param opts<span class="colon">:</span></dt>
+<dd class="field-even"><p>AVDictionary options that will be passed to AVFormat context.</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>__init__(self: PyNvCodec._PyNvCodec.PyNvDecoder, input: str, context: int, stream: int) -&gt; None</p>
+<blockquote>
+<div><p>Constructor method. Initialize HW decoding section with path to input,
+CUDA context and stream.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param input<span class="colon">:</span></dt>
+<dd class="field-odd"><p>path to input file</p>
+</dd>
+<dt class="field-even">param context<span class="colon">:</span></dt>
+<dd class="field-even"><p>CUDA context to use</p>
+</dd>
+<dt class="field-odd">param stream<span class="colon">:</span></dt>
+<dd class="field-odd"><p>CUDA stream to use</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+</ol>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#PyNvCodec.PyNvDecoder.AvgFramerate" title="PyNvCodec.PyNvDecoder.AvgFramerate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AvgFramerate</span></code></a>(self)</p></td>
+<td><p>Return encoded video file average framerate.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#PyNvCodec.PyNvDecoder.Capabilities" title="PyNvCodec.PyNvDecoder.Capabilities"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Capabilities</span></code></a>(self)</p></td>
+<td><p>Return dictionary with Nvdec capabilities.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#PyNvCodec.PyNvDecoder.ColorRange" title="PyNvCodec.PyNvDecoder.ColorRange"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ColorRange</span></code></a>(self)</p></td>
+<td><p>Get color range information stored in video file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#PyNvCodec.PyNvDecoder.ColorSpace" title="PyNvCodec.PyNvDecoder.ColorSpace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ColorSpace</span></code></a>(self)</p></td>
+<td><p>Get color space information stored in video file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#PyNvCodec.PyNvDecoder.DecodeSingleSurface" title="PyNvCodec.PyNvDecoder.DecodeSingleSurface"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DecodeSingleSurface</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Overloaded function.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#PyNvCodec.PyNvDecoder.DecodeSurfaceFromPacket" title="PyNvCodec.PyNvDecoder.DecodeSurfaceFromPacket"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DecodeSurfaceFromPacket</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Overloaded function.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#PyNvCodec.PyNvDecoder.FlushSingleSurface" title="PyNvCodec.PyNvDecoder.FlushSingleSurface"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlushSingleSurface</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Overloaded function.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#PyNvCodec.PyNvDecoder.Format" title="PyNvCodec.PyNvDecoder.Format"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Format</span></code></a>(self)</p></td>
+<td><p>Return encoded video file pixel format.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#PyNvCodec.PyNvDecoder.Framerate" title="PyNvCodec.PyNvDecoder.Framerate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Framerate</span></code></a>(self)</p></td>
+<td><p>Return encoded video file framerate.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#PyNvCodec.PyNvDecoder.Framesize" title="PyNvCodec.PyNvDecoder.Framesize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Framesize</span></code></a>(self)</p></td>
+<td><p>Return decoded video frame size in bytes.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#PyNvCodec.PyNvDecoder.Height" title="PyNvCodec.PyNvDecoder.Height"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Height</span></code></a>(self)</p></td>
+<td><p>Return encoded video file height in pixels.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#PyNvCodec.PyNvDecoder.IsVFR" title="PyNvCodec.PyNvDecoder.IsVFR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsVFR</span></code></a>(self)</p></td>
+<td><p>Tell if video file has variable frame rate.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#PyNvCodec.PyNvDecoder.LastPacketData" title="PyNvCodec.PyNvDecoder.LastPacketData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LastPacketData</span></code></a>(self, pkt_data)</p></td>
+<td><p>Get last packet data.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#PyNvCodec.PyNvDecoder.Numframes" title="PyNvCodec.PyNvDecoder.Numframes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Numframes</span></code></a>(self)</p></td>
+<td><p>Return number of video frames in encoded video file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#PyNvCodec.PyNvDecoder.Timebase" title="PyNvCodec.PyNvDecoder.Timebase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Timebase</span></code></a>(self)</p></td>
+<td><p>Return encoded video file time base.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#PyNvCodec.PyNvDecoder.Width" title="PyNvCodec.PyNvDecoder.Width"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Width</span></code></a>(self)</p></td>
+<td><p>Return encoded video file width in pixels.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#PyNvCodec.PyNvDecoder.__init__" title="PyNvCodec.PyNvDecoder.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Overloaded function.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="PyNvCodec.PyNvDecoder.AvgFramerate">
+<span class="sig-name descname"><span class="pre">AvgFramerate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../PyNvCodec.html#PyNvCodec._PyNvCodec.PyNvDecoder" title="PyNvCodec._PyNvCodec.PyNvDecoder"><span class="pre">PyNvCodec._PyNvCodec.PyNvDecoder</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#PyNvCodec.PyNvDecoder.AvgFramerate" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video file average framerate.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="PyNvCodec.PyNvDecoder.Capabilities">
+<span class="sig-name descname"><span class="pre">Capabilities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../PyNvCodec.html#PyNvCodec._PyNvCodec.PyNvDecoder" title="PyNvCodec._PyNvCodec.PyNvDecoder"><span class="pre">PyNvCodec._PyNvCodec.PyNvDecoder</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../PyNvCodec.html#PyNvCodec._PyNvCodec.NV_DEC_CAPS" title="PyNvCodec._PyNvCodec.NV_DEC_CAPS"><span class="pre">PyNvCodec._PyNvCodec.NV_DEC_CAPS</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#PyNvCodec.PyNvDecoder.Capabilities" title="Link to this definition">¶</a></dt>
+<dd><p>Return dictionary with Nvdec capabilities.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="PyNvCodec.PyNvDecoder.ColorRange">
+<span class="sig-name descname"><span class="pre">ColorRange</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../PyNvCodec.html#PyNvCodec._PyNvCodec.PyNvDecoder" title="PyNvCodec._PyNvCodec.PyNvDecoder"><span class="pre">PyNvCodec._PyNvCodec.PyNvDecoder</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../PyNvCodec.html#PyNvCodec._PyNvCodec.ColorRange" title="PyNvCodec._PyNvCodec.ColorRange"><span class="pre">PyNvCodec._PyNvCodec.ColorRange</span></a></span></span><a class="headerlink" href="#PyNvCodec.PyNvDecoder.ColorRange" title="Link to this definition">¶</a></dt>
+<dd><p>Get color range information stored in video file.
+Please not that some video containers may not store this information.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>color range information</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="PyNvCodec.PyNvDecoder.ColorSpace">
+<span class="sig-name descname"><span class="pre">ColorSpace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../PyNvCodec.html#PyNvCodec._PyNvCodec.PyNvDecoder" title="PyNvCodec._PyNvCodec.PyNvDecoder"><span class="pre">PyNvCodec._PyNvCodec.PyNvDecoder</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../PyNvCodec.html#PyNvCodec._PyNvCodec.ColorSpace" title="PyNvCodec._PyNvCodec.ColorSpace"><span class="pre">PyNvCodec._PyNvCodec.ColorSpace</span></a></span></span><a class="headerlink" href="#PyNvCodec.PyNvDecoder.ColorSpace" title="Link to this definition">¶</a></dt>
+<dd><p>Get color space information stored in video file.
+Please not that some video containers may not store this information.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>color space information</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="PyNvCodec.PyNvDecoder.DecodeSingleSurface">
+<span class="sig-name descname"><span class="pre">DecodeSingleSurface</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#PyNvCodec.PyNvDecoder.DecodeSingleSurface" title="Link to this definition">¶</a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic">
+<li><p>DecodeSingleSurface(self: PyNvCodec._PyNvCodec.PyNvDecoder, pkt_data: PyNvCodec._PyNvCodec.PacketData) -&gt; Tuple[VPF::Surface, PyNvCodec._PyNvCodec.TaskExecInfo]</p>
+<blockquote>
+<div><p>Decode single video frame from input stream.
+Video frame is returned as Surface stored in vRAM.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param pkt_data<span class="colon">:</span></dt>
+<dd class="field-odd"><p>PacketData structure of decoded frame with PTS, DTS etc.</p>
+</dd>
+<dt class="field-even">return<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple, first element is the surface, second is TaskExecInfo.</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>DecodeSingleSurface(self: PyNvCodec._PyNvCodec.PyNvDecoder, sei: numpy.ndarray[numpy.uint8]) -&gt; Tuple[VPF::Surface, PyNvCodec._PyNvCodec.TaskExecInfo]</p>
+<blockquote>
+<div><p>Decode single video frame from input stream.
+Video frame is returned as Surface stored in vRAM.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param sei<span class="colon">:</span></dt>
+<dd class="field-odd"><p>decoded frame SEI data</p>
+</dd>
+<dt class="field-even">return<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple, first element is the surface, second is TaskExecInfo.</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>DecodeSingleSurface(self: PyNvCodec._PyNvCodec.PyNvDecoder, sei: numpy.ndarray[numpy.uint8], pkt_data: PyNvCodec._PyNvCodec.PacketData) -&gt; Tuple[VPF::Surface, PyNvCodec._PyNvCodec.TaskExecInfo]</p>
+<blockquote>
+<div><p>Decode single video frame from input stream.
+Video frame is returned as Surface stored in vRAM.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param sei<span class="colon">:</span></dt>
+<dd class="field-odd"><p>decoded frame SEI data</p>
+</dd>
+<dt class="field-even">param pkt_data<span class="colon">:</span></dt>
+<dd class="field-even"><p>PacketData structure of decoded frame with PTS, DTS etc.</p>
+</dd>
+<dt class="field-odd">return<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple, first element is the surface, second is TaskExecInfo.</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>DecodeSingleSurface(self: PyNvCodec._PyNvCodec.PyNvDecoder, sei: numpy.ndarray[numpy.uint8], seek_context: PyNvCodec._PyNvCodec.SeekContext) -&gt; Tuple[VPF::Surface, PyNvCodec._PyNvCodec.TaskExecInfo]</p>
+<blockquote>
+<div><p>Decode single video frame from input stream.
+Video frame is returned as Surface stored in vRAM.
+Use this function for seek + decode.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param sei<span class="colon">:</span></dt>
+<dd class="field-odd"><p>decoded frame SEI data</p>
+</dd>
+<dt class="field-even">param seek_context<span class="colon">:</span></dt>
+<dd class="field-even"><p>SeekContext structure with information about seek procedure</p>
+</dd>
+<dt class="field-odd">return<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple, first element is the surface, second is TaskExecInfo.</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>DecodeSingleSurface(self: PyNvCodec._PyNvCodec.PyNvDecoder, sei: numpy.ndarray[numpy.uint8], seek_context: PyNvCodec._PyNvCodec.SeekContext, pkt_data: PyNvCodec._PyNvCodec.PacketData) -&gt; Tuple[VPF::Surface, PyNvCodec._PyNvCodec.TaskExecInfo]</p>
+<blockquote>
+<div><p>Decode single video frame from input stream.
+Video frame is returned as Surface stored in vRAM.
+Use this function for seek + decode.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param sei<span class="colon">:</span></dt>
+<dd class="field-odd"><p>decoded frame SEI data</p>
+</dd>
+<dt class="field-even">param seek_context<span class="colon">:</span></dt>
+<dd class="field-even"><p>SeekContext structure with information about seek procedure</p>
+</dd>
+<dt class="field-odd">param pkt_data<span class="colon">:</span></dt>
+<dd class="field-odd"><p>PacketData structure of decoded frame with PTS, DTS etc.</p>
+</dd>
+<dt class="field-even">return<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple, first element is the surface, second is TaskExecInfo.</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>DecodeSingleSurface(self: PyNvCodec._PyNvCodec.PyNvDecoder) -&gt; Tuple[VPF::Surface, PyNvCodec._PyNvCodec.TaskExecInfo]</p>
+<blockquote>
+<div><p>Decode single video frame from input stream.
+Video frame is returned as Surface stored in vRAM.</p>
+<dl class="field-list simple">
+<dt class="field-odd">return<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple, first element is the surface, second is TaskExecInfo.</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>DecodeSingleSurface(self: PyNvCodec._PyNvCodec.PyNvDecoder, seek_context: PyNvCodec._PyNvCodec.SeekContext) -&gt; Tuple[VPF::Surface, PyNvCodec._PyNvCodec.TaskExecInfo]</p>
+<blockquote>
+<div><p>Decode single video frame from input stream.
+Video frame is returned as Surface stored in vRAM.
+Use this function for seek + decode.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param seek_context<span class="colon">:</span></dt>
+<dd class="field-odd"><p>SeekContext structure with information about seek procedure</p>
+</dd>
+<dt class="field-even">return<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple, first element is the surface, second is TaskExecInfo.</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>DecodeSingleSurface(self: PyNvCodec._PyNvCodec.PyNvDecoder, seek_context: PyNvCodec._PyNvCodec.SeekContext, pkt_data: PyNvCodec._PyNvCodec.PacketData) -&gt; Tuple[VPF::Surface, PyNvCodec._PyNvCodec.TaskExecInfo]</p>
+<blockquote>
+<div><p>Decode single video frame from input stream.
+Video frame is returned as Surface stored in vRAM.
+Use this function for seek + decode.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param seek_context<span class="colon">:</span></dt>
+<dd class="field-odd"><p>SeekContext structure with information about seek procedure</p>
+</dd>
+<dt class="field-even">param pkt_data<span class="colon">:</span></dt>
+<dd class="field-even"><p>PacketData structure of decoded frame with PTS, DTS etc.</p>
+</dd>
+<dt class="field-odd">return<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple, first element is the surface, second is TaskExecInfo.</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="PyNvCodec.PyNvDecoder.DecodeSurfaceFromPacket">
+<span class="sig-name descname"><span class="pre">DecodeSurfaceFromPacket</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#PyNvCodec.PyNvDecoder.DecodeSurfaceFromPacket" title="Link to this definition">¶</a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic">
+<li><p>DecodeSurfaceFromPacket(self: PyNvCodec._PyNvCodec.PyNvDecoder, packet: numpy.ndarray[numpy.uint8]) -&gt; Tuple[VPF::Surface, PyNvCodec._PyNvCodec.TaskExecInfo]</p>
+<blockquote>
+<div><p>Decode single video frame from compressed video packet.
+Please note that function may not return decoded Surface.
+Use this to decode compressed packets obtained from external demuxer.</p>
+<p>Video frame is returned as Surface stored in vRAM.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param packet<span class="colon">:</span></dt>
+<dd class="field-odd"><p>encoded video packet</p>
+</dd>
+<dt class="field-even">return<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple, first element is the surface, second is TaskExecInfo.</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>DecodeSurfaceFromPacket(self: PyNvCodec._PyNvCodec.PyNvDecoder, enc_packet_data: PyNvCodec._PyNvCodec.PacketData, packet: numpy.ndarray[numpy.uint8]) -&gt; Tuple[VPF::Surface, PyNvCodec._PyNvCodec.TaskExecInfo]</p>
+<blockquote>
+<div><p>Decode single video frame from compressed video packet.
+Please note that function may not return decoded Surface.
+Use this to decode compressed packets obtained from external demuxer.</p>
+<p>Video frame is returned as Surface stored in vRAM.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param enc_packet_data<span class="colon">:</span></dt>
+<dd class="field-odd"><p>PacketData structure of encoded video packet</p>
+</dd>
+<dt class="field-even">param packet<span class="colon">:</span></dt>
+<dd class="field-even"><p>encoded video packet</p>
+</dd>
+<dt class="field-odd">return<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple, first element is the surface, second is TaskExecInfo.</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>DecodeSurfaceFromPacket(self: PyNvCodec._PyNvCodec.PyNvDecoder, packet: numpy.ndarray[numpy.uint8], pkt_data: PyNvCodec._PyNvCodec.PacketData) -&gt; Tuple[VPF::Surface, PyNvCodec._PyNvCodec.TaskExecInfo]</p>
+<blockquote>
+<div><p>Decode single video frame from compressed video packet.
+Please note that function may not return decoded Surface.
+Use this to decode compressed packets obtained from external demuxer.</p>
+<p>Video frame is returned as Surface stored in vRAM.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param packet<span class="colon">:</span></dt>
+<dd class="field-odd"><p>encoded video packet</p>
+</dd>
+<dt class="field-even">param pkt_data<span class="colon">:</span></dt>
+<dd class="field-even"><p>PacketData structure of decoded frame with PTS, DTS etc.</p>
+</dd>
+<dt class="field-odd">return<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple, first element is the surface, second is TaskExecInfo.</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>DecodeSurfaceFromPacket(self: PyNvCodec._PyNvCodec.PyNvDecoder, enc_packet_data: PyNvCodec._PyNvCodec.PacketData, packet: numpy.ndarray[numpy.uint8], pkt_data: PyNvCodec._PyNvCodec.PacketData) -&gt; Tuple[VPF::Surface, PyNvCodec._PyNvCodec.TaskExecInfo]</p>
+<blockquote>
+<div><p>Decode single video frame from compressed video packet.
+Please note that function may not return decoded Surface.
+Use this to decode compressed packets obtained from external demuxer.</p>
+<p>Video frame is returned as Surface stored in vRAM.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param enc_packet_data<span class="colon">:</span></dt>
+<dd class="field-odd"><p>PacketData structure of encoded video packet</p>
+</dd>
+<dt class="field-even">param packet<span class="colon">:</span></dt>
+<dd class="field-even"><p>encoded video packet</p>
+</dd>
+<dt class="field-odd">param pkt_data<span class="colon">:</span></dt>
+<dd class="field-odd"><p>PacketData structure of decoded frame with PTS, DTS etc.</p>
+</dd>
+<dt class="field-even">return<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple, first element is the surface, second is TaskExecInfo.</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="PyNvCodec.PyNvDecoder.FlushSingleSurface">
+<span class="sig-name descname"><span class="pre">FlushSingleSurface</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#PyNvCodec.PyNvDecoder.FlushSingleSurface" title="Link to this definition">¶</a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic">
+<li><p>FlushSingleSurface(self: PyNvCodec._PyNvCodec.PyNvDecoder) -&gt; Tuple[VPF::Surface, PyNvCodec._PyNvCodec.TaskExecInfo]</p>
+<blockquote>
+<div><p>Send null input to decoder.
+Use this function in the end of decoding session to flush decoder and
+obtain those video frames which were not returned yet.</p>
+<p>If this method returns empty Surface it means there are no decoded frames left.</p>
+<p>Video frame is returned as Surface stored in vRAM.
+:return: tuple, first element is the surface, second is TaskExecInfo.</p>
+</div></blockquote>
+</li>
+<li><p>FlushSingleSurface(self: PyNvCodec._PyNvCodec.PyNvDecoder, pkt_data: PyNvCodec._PyNvCodec.PacketData) -&gt; Tuple[VPF::Surface, PyNvCodec._PyNvCodec.TaskExecInfo]</p>
+<blockquote>
+<div><p>Send null input to decoder.
+Use this function in the end of decoding session to flush decoder and
+obtain those video frames which were not returned yet.</p>
+<p>If this method returns empty Surface it means there are no decoded frames left.</p>
+<p>Video frame is returned as Surface stored in vRAM.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param pkt_data<span class="colon">:</span></dt>
+<dd class="field-odd"><p>PacketData structure of decoded frame with PTS, DTS etc.</p>
+</dd>
+<dt class="field-even">return<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple, first element is the surface, second is TaskExecInfo.</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="PyNvCodec.PyNvDecoder.Format">
+<span class="sig-name descname"><span class="pre">Format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../PyNvCodec.html#PyNvCodec._PyNvCodec.PyNvDecoder" title="PyNvCodec._PyNvCodec.PyNvDecoder"><span class="pre">PyNvCodec._PyNvCodec.PyNvDecoder</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../PyNvCodec.html#PyNvCodec._PyNvCodec.PixelFormat" title="PyNvCodec._PyNvCodec.PixelFormat"><span class="pre">PyNvCodec._PyNvCodec.PixelFormat</span></a></span></span><a class="headerlink" href="#PyNvCodec.PyNvDecoder.Format" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video file pixel format.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="PyNvCodec.PyNvDecoder.Framerate">
+<span class="sig-name descname"><span class="pre">Framerate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../PyNvCodec.html#PyNvCodec._PyNvCodec.PyNvDecoder" title="PyNvCodec._PyNvCodec.PyNvDecoder"><span class="pre">PyNvCodec._PyNvCodec.PyNvDecoder</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#PyNvCodec.PyNvDecoder.Framerate" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video file framerate.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="PyNvCodec.PyNvDecoder.Framesize">
+<span class="sig-name descname"><span class="pre">Framesize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../PyNvCodec.html#PyNvCodec._PyNvCodec.PyNvDecoder" title="PyNvCodec._PyNvCodec.PyNvDecoder"><span class="pre">PyNvCodec._PyNvCodec.PyNvDecoder</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#PyNvCodec.PyNvDecoder.Framesize" title="Link to this definition">¶</a></dt>
+<dd><p>Return decoded video frame size in bytes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="PyNvCodec.PyNvDecoder.Height">
+<span class="sig-name descname"><span class="pre">Height</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../PyNvCodec.html#PyNvCodec._PyNvCodec.PyNvDecoder" title="PyNvCodec._PyNvCodec.PyNvDecoder"><span class="pre">PyNvCodec._PyNvCodec.PyNvDecoder</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#PyNvCodec.PyNvDecoder.Height" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video file height in pixels.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="PyNvCodec.PyNvDecoder.IsVFR">
+<span class="sig-name descname"><span class="pre">IsVFR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../PyNvCodec.html#PyNvCodec._PyNvCodec.PyNvDecoder" title="PyNvCodec._PyNvCodec.PyNvDecoder"><span class="pre">PyNvCodec._PyNvCodec.PyNvDecoder</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#PyNvCodec.PyNvDecoder.IsVFR" title="Link to this definition">¶</a></dt>
+<dd><p>Tell if video file has variable frame rate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True in case video file has variable frame rate, False otherwise</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="PyNvCodec.PyNvDecoder.LastPacketData">
+<span class="sig-name descname"><span class="pre">LastPacketData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../PyNvCodec.html#PyNvCodec._PyNvCodec.PyNvDecoder" title="PyNvCodec._PyNvCodec.PyNvDecoder"><span class="pre">PyNvCodec._PyNvCodec.PyNvDecoder</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">pkt_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../PyNvCodec.html#PyNvCodec._PyNvCodec.PacketData" title="PyNvCodec._PyNvCodec.PacketData"><span class="pre">PyNvCodec._PyNvCodec.PacketData</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#PyNvCodec.PyNvDecoder.LastPacketData" title="Link to this definition">¶</a></dt>
+<dd><p>Get last packet data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>pkt_data</strong> – PacketData structure.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="PyNvCodec.PyNvDecoder.Numframes">
+<span class="sig-name descname"><span class="pre">Numframes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../PyNvCodec.html#PyNvCodec._PyNvCodec.PyNvDecoder" title="PyNvCodec._PyNvCodec.PyNvDecoder"><span class="pre">PyNvCodec._PyNvCodec.PyNvDecoder</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#PyNvCodec.PyNvDecoder.Numframes" title="Link to this definition">¶</a></dt>
+<dd><p>Return number of video frames in encoded video file.
+Please note that some video containers doesn’t store this infomation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="PyNvCodec.PyNvDecoder.Timebase">
+<span class="sig-name descname"><span class="pre">Timebase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../PyNvCodec.html#PyNvCodec._PyNvCodec.PyNvDecoder" title="PyNvCodec._PyNvCodec.PyNvDecoder"><span class="pre">PyNvCodec._PyNvCodec.PyNvDecoder</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#PyNvCodec.PyNvDecoder.Timebase" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video file time base.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="PyNvCodec.PyNvDecoder.Width">
+<span class="sig-name descname"><span class="pre">Width</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../PyNvCodec.html#PyNvCodec._PyNvCodec.PyNvDecoder" title="PyNvCodec._PyNvCodec.PyNvDecoder"><span class="pre">PyNvCodec._PyNvCodec.PyNvDecoder</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#PyNvCodec.PyNvDecoder.Width" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video file width in pixels.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="PyNvCodec.PyNvEncoder.html">PyNvCodec.PyNvEncoder</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="PyNvCodec.PyFrameUploader.html">PyNvCodec.PyFrameUploader</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023 Roman Arzumanyan.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

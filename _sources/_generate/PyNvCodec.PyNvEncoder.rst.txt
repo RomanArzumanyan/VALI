@@ -1,0 +1,31 @@
+﻿PyNvCodec.PyNvEncoder
+=====================
+
+.. currentmodule:: PyNvCodec
+
+.. autoclass:: PyNvEncoder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PyNvEncoder.Capabilities
+      ~PyNvEncoder.EncodeSingleSurface
+      ~PyNvEncoder.Flush
+      ~PyNvEncoder.FlushSinglePacket
+      ~PyNvEncoder.Format
+      ~PyNvEncoder.GetFrameSizeInBytes
+      ~PyNvEncoder.Height
+      ~PyNvEncoder.Reconfigure
+      ~PyNvEncoder.Width
+      ~PyNvEncoder.__init__
+   
+   
+
+   
+   
+   

@@ -1,0 +1,27 @@
+﻿PyNvCodec.SurfacePlane
+======================
+
+.. currentmodule:: PyNvCodec
+
+.. autoclass:: SurfacePlane
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~SurfacePlane.ElemSize
+      ~SurfacePlane.Height
+      ~SurfacePlane.HostFrameSize
+      ~SurfacePlane.Pitch
+      ~SurfacePlane.Width
+      ~SurfacePlane.__init__
+   
+   
+
+   
+   
+   
