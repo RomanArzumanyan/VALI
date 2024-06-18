@@ -215,7 +215,7 @@ public:
   SurfaceYUV444(uint32_t width, uint32_t height, CUcontext context);
 
   virtual Surface* Create() override;
-  virtual Pixel_Format PixelFormat() const override { return YUV422; }
+  virtual Pixel_Format PixelFormat() const override { return YUV444; }
   virtual uint32_t ElemSize() const override { return sizeof(uint8_t); }
   virtual uint32_t NumComponents() const override { return 3U; }
   virtual uint32_t NumPlanes() const override { return 3U; }
