@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Optional
 import numpy as np
 from math import log10, sqrt
+import unittest
 
 
 class GroundTruth(BaseModel):
@@ -19,6 +20,17 @@ class GroundTruth(BaseModel):
     color_space: Optional[str] = None
     color_range: Optional[str] = None
     len_s: Optional[float] = None
+
+
+def repeat(times):
+    def repeatHelper(f):
+        def callHelper(*args):
+            for i in range(0, times):
+                f(*args)
+
+        return callHelper
+
+    return repeatHelper
 
 
 def dumpFrameToDisk(

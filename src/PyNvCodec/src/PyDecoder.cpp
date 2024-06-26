@@ -38,10 +38,19 @@ PyDecoder::PyDecoder(const string& pathToFile,
 }
 
 bool PyDecoder::DecodeImpl(DecodeContext& ctx, TaskExecDetails& details,
-                           Token& dst) {
+                           Token& dst, std::optional<SeekContext> seek_ctx) {
   UpdateState();
-
+  
+  upDecoder->ClearInputs();
   upDecoder->SetInput(&dst, 0U);
+
+  std::shared_ptr<Buffer> seek_ctx_buf = nullptr;
+  if (seek_ctx) {
+    seek_ctx_buf.reset(Buffer::Make(sizeof(SeekContext),
+                                    static_cast<void*>(&seek_ctx.value())));
+    upDecoder->SetInput(seek_ctx_buf.get(), 1U);
+  }
+
   auto ret = upDecoder->Execute();
   upDecoder->GetExecDetails(details);
   ctx.SetOutPacketData(upDecoder->GetLastPacketData());
@@ -50,7 +59,8 @@ bool PyDecoder::DecodeImpl(DecodeContext& ctx, TaskExecDetails& details,
 }
 
 bool PyDecoder::DecodeSingleFrame(DecodeContext& ctx, py::array& frame,
-                                  TaskExecDetails& details) {
+                                  TaskExecDetails& details,
+                                  std::optional<SeekContext> seek_ctx) {
   if (IsAccelerated()) {
     return false;
   }
@@ -62,11 +72,12 @@ bool PyDecoder::DecodeSingleFrame(DecodeContext& ctx, py::array& frame,
 
   auto dst = std::shared_ptr<Buffer>(
       Buffer::Make(frame.nbytes(), frame.mutable_data()));
-  return DecodeImpl(ctx, details, *dst.get());
+  return DecodeImpl(ctx, details, *dst.get(), seek_ctx);
 }
 
 bool PyDecoder::DecodeSingleSurface(DecodeContext& ctx, Surface& surf,
-                                    TaskExecDetails& details) {
+                                    TaskExecDetails& details,
+                                    std::optional<SeekContext> seek_ctx) {
   if (!IsAccelerated()) {
     return false;
   }
@@ -75,7 +86,7 @@ bool PyDecoder::DecodeSingleSurface(DecodeContext& ctx, Surface& surf,
       surf.PixelFormat() != PixelFormat()) {
     return false;
   }
-  return DecodeImpl(ctx, details, surf);
+  return DecodeImpl(ctx, details, surf, seek_ctx);
 }
 
 void* PyDecoder::GetSideData(AVFrameSideDataType data_type, size_t& raw_size) {
@@ -168,12 +179,6 @@ ColorRange PyDecoder::Color_Range() const {
   return params.videoContext.color_range;
 };
 
-cudaVideoCodec PyDecoder::Codec() const {
-  MuxingParams params;
-  upDecoder->GetParams(params);
-  return params.videoContext.codec;
-};
-
 double PyDecoder::AvgFramerate() const {
   MuxingParams params;
   upDecoder->GetParams(params);
@@ -214,78 +219,57 @@ void Init_PyDecoder(py::module& m) {
     )pbdoc")
       .def(
           "DecodeSingleFrame",
-          [](shared_ptr<PyDecoder> self, py::array& frame) {
-            TaskExecDetails details;
-            PacketData pktData;
-            DecodeContext ctx(nullptr, nullptr, nullptr, &pktData, nullptr,
-                              false);
-            auto res = self->DecodeSingleFrame(ctx, frame, details);
-            return std::make_tuple(res, details.info);
-          },
-          py::arg("frame"), py::call_guard<py::gil_scoped_release>(),
-          R"pbdoc(
-        Decode single video frame from input file.
-
-        :param frame: decoded video frame
-        :return: tuple, first element is True in case of success, False otherwise. Second elements is TaskExecInfo.
-    )pbdoc")
-      .def(
-          "DecodeSingleSurface",
-          [](shared_ptr<PyDecoder> self, Surface& surf) {
-            TaskExecDetails details;
-            PacketData pktData;
-            DecodeContext ctx(nullptr, nullptr, nullptr, &pktData, nullptr,
-                              false);
-            auto res = self->DecodeSingleSurface(ctx, surf, details);
-            return std::make_tuple(res, details.info);
-          },
-          py::arg("surf"), py::call_guard<py::gil_scoped_release>(),
-          R"pbdoc(
-        Decode single video surface from input file.
-
-        :param surf: decoded video surface
-        :return: tuple, first element is True in case of success, False otherwise. Second elements is TaskExecInfo.
-    )pbdoc")
-      .def(
-          "DecodeSingleFrame",
           [](shared_ptr<PyDecoder> self, py::array& frame,
-             PacketData& pktData) {
+             std::optional<PacketData>& pkt_data,
+             std::optional<SeekContext>& seek_ctx) {
             TaskExecDetails details;
-            DecodeContext ctx(nullptr, nullptr, nullptr, &pktData, nullptr,
+            PacketData data;
+
+            DecodeContext ctx(nullptr, nullptr, nullptr,
+                              pkt_data ? &pkt_data.value() : &data, nullptr,
                               false);
-            auto res = self->DecodeSingleFrame(ctx, frame, details);
-            return std::make_tuple(res, details.info);
+
+            return std::make_tuple(
+                self->DecodeSingleFrame(ctx, frame, details, seek_ctx),
+                details.info);
           },
-          py::arg("frame"), py::arg("pktData"),
+          py::arg("frame"), py::arg("pkt_data") = std::nullopt,
+          py::arg("seek_ctx") = std::nullopt,
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
         Decode single video frame from input file.
 
         :param frame: decoded video frame
-        :param pktData: decoded video frame packet data
+        :param pkt_data: decoded video frame packet data, may be None
+        :param seek_ctx: seek context, may be None
         :return: tuple, first element is True in case of success, False otherwise. Second elements is TaskExecInfo.
     )pbdoc")
       .def(
           "DecodeSingleSurface",
-          [](shared_ptr<PyDecoder> self, Surface& surf, PacketData& pktData) {
+          [](shared_ptr<PyDecoder> self, Surface& surf,
+             std::optional<PacketData>& pkt_data,
+             std::optional<SeekContext>& seek_ctx) {
             TaskExecDetails details;
-            DecodeContext ctx(nullptr, nullptr, nullptr, &pktData, nullptr,
+            PacketData data;
+
+            DecodeContext ctx(nullptr, nullptr, nullptr,
+                              pkt_data ? &pkt_data.value() : &data, nullptr,
                               false);
-            auto res = self->DecodeSingleSurface(ctx, surf, details);
-            return std::make_tuple(res, details.info);
+
+            return std::make_tuple(
+                self->DecodeSingleSurface(ctx, surf, details, seek_ctx),
+                details.info);
           },
-          py::arg("surf"), py::arg("pktData"),
+          py::arg("surf"), py::arg("pkt_data") = std::nullopt,
+          py::arg("seek_ctx") = std::nullopt,
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
         Decode single video surface from input file.
 
         :param surf: decoded video surface
-        :param pktData: decoded video surface packet data
+        :param pkt_data: decoded video surface packet data, may be None
+        :param seek_ctx: seek context, may be None
         :return: tuple, first element is True in case of success, False otherwise. Second elements is TaskExecInfo.
-    )pbdoc")
-      .def("Codec", &PyDecoder::Codec,
-           R"pbdoc(
-        Return video codec used in encoded video stream.
     )pbdoc")
       .def("Width", &PyDecoder::Width,
            R"pbdoc(

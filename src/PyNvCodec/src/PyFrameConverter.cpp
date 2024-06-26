@@ -13,6 +13,7 @@
  */
 
 #include "PyNvCodec.hpp"
+#include "Utils.hpp"
 
 using namespace VPF;
 namespace py = pybind11;

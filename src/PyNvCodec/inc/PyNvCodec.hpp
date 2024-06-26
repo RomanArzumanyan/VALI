@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include "FFmpegDemuxer.h"
 #include "MemoryInterfaces.hpp"
 #include "NvCodecCLIOptions.h"
 #include "NvDecoder.h"
@@ -215,10 +214,12 @@ public:
             int gpuID);
 
   bool DecodeSingleFrame(DecodeContext& ctx, py::array& frame,
-                         TaskExecDetails& details);
+                         TaskExecDetails& details,
+                         std::optional<SeekContext> seek_ctx);
 
   bool DecodeSingleSurface(DecodeContext& ctx, Surface& surf,
-                           TaskExecDetails& details);
+                           TaskExecDetails& details,
+                           std::optional<SeekContext> seek_ctx);
 
   std::vector<MotionVector> GetMotionVectors();
 
@@ -235,7 +236,8 @@ public:
   bool IsAccelerated() const;
 
 private:
-  bool DecodeImpl(DecodeContext& ctx, TaskExecDetails& details, Token& dst);
+  bool DecodeImpl(DecodeContext& ctx, TaskExecDetails& details, Token& dst,
+                  std::optional<SeekContext> seek_ctx);
 };
 
 class PyNvEncoder {

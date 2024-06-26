@@ -13,9 +13,9 @@
 
 #include "CodecsSupport.hpp"
 #include "NppCommon.hpp"
-#include "NvCodecUtils.h"
 #include "Surfaces.hpp"
 #include "Tasks.hpp"
+#include "Utils.hpp"
 
 #include <memory>
 #include <sstream>

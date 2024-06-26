@@ -108,9 +108,11 @@ public:
 
   TaskExecStatus Run() final;
   TaskExecStatus GetSideData(AVFrameSideDataType);
+
   void GetParams(MuxingParams& params);
   uint32_t GetHostFrameSize() const;
   bool IsAccelerated() const;
+  bool IsVFR() const;
 
   ~DecodeFrame() final;
   static DecodeFrame* Make(const char* URL, NvDecoderClInterface& cli_iface,
@@ -118,8 +120,8 @@ public:
   const PacketData& GetLastPacketData() const;
 
 private:
-  // Reconstructed pixels
-  static const uint32_t num_inputs = 1U;
+  // Reconstructed pixels and seek context
+  static const uint32_t num_inputs = 2U;
   // Side data;
   static const uint32_t num_outputs = 1U;
   struct FfmpegDecodeFrame_Impl* pImpl = nullptr;

@@ -49,6 +49,7 @@ import unittest
 import json
 import test_common as tc
 import logging
+import random
 
 
 class TestDecoderBasic(unittest.TestCase):
@@ -221,7 +222,7 @@ class TestDecoderBasic(unittest.TestCase):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
 
-        pyDec = nvc.PyDecoder(gtInfo.uri, {})
+        pyDec = nvc.PyDecoder(gtInfo.uri, {}, gpu_id=-1)
         frame = np.ndarray(dtype=np.uint8, shape=())
 
         dec_frame = 0
@@ -236,6 +237,43 @@ class TestDecoderBasic(unittest.TestCase):
                 self.assertGreaterEqual(pdata.pts, last_pts)
             dec_frame += 1
             last_pts = pdata.pts
+
+    @tc.repeat(10)
+    def test_seek_cpu_decoder(self):
+        with open("gt_files.json") as f:
+            gtInfo = tc.GroundTruth(**json.load(f)["basic"])
+
+        pyDec = nvc.PyDecoder(gtInfo.uri, {}, gpu_id=-1)
+        frame = np.ndarray(dtype=np.uint8, shape=())
+        frame_gt = np.ndarray(dtype=np.uint8, shape=())
+
+        # Seek to random frame within input video frames range
+        #start_frame = random.randint(0, gtInfo.num_frames - 1)
+        start_frame = random.randint(0, 9)
+        seek_ctx = nvc.SeekContext(seek_frame=start_frame)
+        success, _ = pyDec.DecodeSingleFrame(
+            frame=frame, pkt_data=None, seek_ctx=seek_ctx)
+        self.assertTrue(success)
+
+        # Now check if it's the same as via continuous decode
+        # For that decoder has to be recreated
+        pyDec = nvc.PyDecoder(gtInfo.uri, {}, gpu_id=-1)
+        dec_frames = 0
+        while dec_frames <= start_frame:
+            success, _ = pyDec.DecodeSingleFrame(frame=frame_gt)
+            self.assertTrue(success, "Failed to decode frame")
+            dec_frames += 1
+
+        if not np.array_equal(frame, frame_gt):
+            self.log.error("Mismatch at frame " + str(dec_frames))
+            self.log.error("PSNR: " + str(tc.measurePSNR(frame_gt, frame)))
+
+            tc.dumpFrameToDisk(frame_gt, "dec", pyDec.Width(),
+                               pyDec.Height(), "yuv_cont.yuv")
+            tc.dumpFrameToDisk(frame, "dec", pyDec.Width(),
+                               pyDec.Height(), "yuv_seek.yuv")
+            self.fail(
+                "Seek frame isnt byte 2 byte equal to continuous decode frame")
 
     def test_get_motion_vectors(self):
         with open("gt_files.json") as f:

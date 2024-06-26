@@ -1,4 +1,4 @@
-#include "NvCodecUtils.h"
+#include "Utils.hpp"
 #include <vector>
 
 extern "C" {

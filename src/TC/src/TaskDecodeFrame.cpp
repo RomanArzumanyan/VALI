@@ -11,9 +11,10 @@
  * limitations under the License.
  */
 
+#include "CodecsSupport.hpp"
 #include "CudaUtils.hpp"
-#include "FFmpegDemuxer.h"
 #include "Tasks.hpp"
+#include "Utils.hpp"
 
 #include <iostream>
 #include <memory>
@@ -99,13 +100,122 @@ struct FfmpegDecodeFrame_Impl {
   std::shared_ptr<AVFrame> m_frame;
   std::shared_ptr<AVPacket> m_pkt;
   std::map<AVFrameSideDataType, Buffer*> m_side_data;
+  std::shared_ptr<AVDictionary> m_options;
   std::shared_ptr<TimeoutHandler> m_timeout_handler;
   PacketData m_packetData;
   CUstream m_stream;
 
-  int video_stream_idx = -1;
+  int m_video_str_idx = -1;
   bool end_decode = false;
   bool eof = false;
+
+  void CloseCodec() {
+    auto ret = avcodec_close(m_avc_ctx.get());
+    if (ret < 0) {
+      std::cerr << "Failed to close codec: " << AvErrorToString(ret);
+      return;
+    }
+
+    m_avc_ctx.reset();
+  }
+
+  /* Extracted to standalone function because in some cases we need to (re)open
+   * video codec.
+   */
+  void OpenCodec(bool is_accelerated) {
+    auto video_stream = m_fmt_ctx->streams[GetVideoStrIdx()];
+    if (!video_stream) {
+      std::stringstream ss;
+      ss << "Could not find video stream in the input, aborting";
+      throw std::runtime_error(ss.str());
+    }
+
+    auto p_codec =
+        is_accelerated
+            ? avcodec_find_decoder_by_name(
+                  FindDecoderById(video_stream->codecpar->codec_id).c_str())
+            : avcodec_find_decoder(video_stream->codecpar->codec_id);
+
+    if (!p_codec && is_accelerated) {
+      throw std::runtime_error(
+          "Failed to find codec by name: " +
+          FindDecoderById(video_stream->codecpar->codec_id));
+    } else if (!p_codec) {
+      throw std::runtime_error(
+          "Failed to find codec by id: " +
+          std::string(avcodec_get_name(video_stream->codecpar->codec_id)));
+    }
+
+    auto avctx = avcodec_alloc_context3(p_codec);
+    if (!avctx) {
+      std::stringstream ss;
+      ss << "Failed to allocate codec context";
+      throw std::runtime_error(ss.str());
+    }
+    m_avc_ctx = std::shared_ptr<AVCodecContext>(
+        avctx, [](void* p) { avcodec_free_context((AVCodecContext**)&p); });
+
+    auto res =
+        avcodec_parameters_to_context(m_avc_ctx.get(), video_stream->codecpar);
+    if (res < 0) {
+      std::stringstream ss;
+      ss << "Failed to pass codec parameters to codec "
+            "context "
+         << av_get_media_type_string(AVMEDIA_TYPE_VIDEO);
+      ss << "Error description: " << AvErrorToString(res);
+      throw std::runtime_error(ss.str());
+    }
+
+    AVDictionary* options = nullptr;
+    res = av_dict_copy(&options, m_options.get(), 0);
+    if (res < 0) {
+      if (options) {
+        av_dict_free(&options);
+      }
+      std::stringstream ss;
+      ss << "Could not copy AVOptions: " << AvErrorToString(res);
+      throw std::runtime_error(ss.str());
+    }
+
+/* Have no idea if Tegra supports output to CUDA memory so keep it under
+ * conditional compilation. Tegra has unified memory anyway, so no big
+ * performance penalty shall be imposed as there's no "actual" Host <> Device IO
+ * happening.
+ */
+#ifndef TEGRA_BUILD
+    if (is_accelerated) {
+      /* Attach HW context to codec. Whithout that decoded frames will be
+       * copied to RAM.
+       */
+      AVBufferRef* hwdevice_ctx = nullptr;
+      auto res = av_hwdevice_ctx_create(&hwdevice_ctx, AV_HWDEVICE_TYPE_CUDA,
+                                        NULL, options, 0);
+
+      if (res < 0) {
+        std::stringstream ss;
+        ss << "Failed to create HW device context: " << AvErrorToString(res);
+        throw std::runtime_error(ss.str());
+      }
+
+      // Add hw device context to codec context.
+      m_avc_ctx->hw_device_ctx = av_buffer_ref(hwdevice_ctx);
+      m_avc_ctx->get_format = get_format;
+    }
+#endif
+
+    res = avcodec_open2(m_avc_ctx.get(), p_codec, &options);
+    if (options) {
+      av_dict_free(&options);
+    }
+
+    if (res < 0) {
+      std::stringstream ss;
+      ss << "Failed to open codec "
+         << av_get_media_type_string(AVMEDIA_TYPE_VIDEO);
+      ss << "Error description: " << AvErrorToString(res);
+      throw std::runtime_error(ss.str());
+    }
+  }
 
   FfmpegDecodeFrame_Impl(
       const char* URL, const std::map<std::string, std::string>& ffmpeg_options,
@@ -115,22 +225,21 @@ struct FfmpegDecodeFrame_Impl {
     av_log_set_level(AV_LOG_ERROR);
 
     // Allocate format context first to set timeout before opening the input.
-    AVFormatContext* fmt_ctx_ = avformat_alloc_context();
-    if (!fmt_ctx_) {
+    AVFormatContext* fmt_ctx = avformat_alloc_context();
+    if (!fmt_ctx) {
       throw std::runtime_error("Failed to allocate format context");
     }
 
-    // Set up format context options.
-    AVDictionary* options = GetAvOptions(ffmpeg_options);
-
     /* Set neccessary AVOptions for HW decoding.
      */
+    auto options = GetAvOptions(ffmpeg_options);
     if (stream) {
       m_stream = stream.value();
       auto res =
           av_dict_set(&options, "hwaccel_device",
                       std::to_string(GetDeviceIdByStream(m_stream)).c_str(), 0);
       if (res < 0) {
+        av_dict_free(&options);
         std::stringstream ss;
         ss << "Failed to set hwaccel_device AVOption: " << AvErrorToString(res);
         throw std::runtime_error(ss.str());
@@ -138,6 +247,7 @@ struct FfmpegDecodeFrame_Impl {
 
       res = av_dict_set(&options, "hwaccel", "cuvid", 0);
       if (res < 0) {
+        av_dict_free(&options);
         std::stringstream ss;
         ss << "Failed to set hwaccel AVOption: " << AvErrorToString(res);
         throw std::runtime_error(ss.str());
@@ -160,6 +270,12 @@ struct FfmpegDecodeFrame_Impl {
       }
     }
 
+    /* After we are done settings options, save them in case we need them
+     * later to (re)open codec;
+     */
+    m_options = std::shared_ptr<AVDictionary>(
+        options, [](void* p) { av_dict_free((AVDictionary**)&p); });
+
     /* Set the timeout.
      *
      * Unfortunately, 'timeout' and 'stimeout' AVDictionary options do work for
@@ -175,11 +291,14 @@ struct FfmpegDecodeFrame_Impl {
       m_timeout_handler.reset(new TimeoutHandler());
     }
 
-    AVDictionary* options_copy = nullptr;
-    auto res = av_dict_copy(&options_copy, options, 0);
+    /* Copy class member options because some avcodec API functions like to
+     * free input options and replace them with list of unrecognized options.
+     */
+    options = nullptr;
+    auto res = av_dict_copy(&options, m_options.get(), 0);
     if (res < 0) {
-      if (options_copy) {
-        av_dict_free(&options_copy);
+      if (options) {
+        av_dict_free(&options);
       }
       std::stringstream ss;
       ss << "Could not copy AVOptions: " << AvErrorToString(res);
@@ -187,9 +306,9 @@ struct FfmpegDecodeFrame_Impl {
     }
 
     m_timeout_handler->Reset();
-    res = avformat_open_input(&fmt_ctx_, URL, NULL, &options_copy);
-    if (options_copy) {
-      av_dict_free(&options_copy);
+    res = avformat_open_input(&fmt_ctx, URL, NULL, &options);
+    if (options) {
+      av_dict_free(&options);
     }
 
     if (res < 0) {
@@ -209,7 +328,7 @@ struct FfmpegDecodeFrame_Impl {
     }
 
     m_fmt_ctx = std::shared_ptr<AVFormatContext>(
-        fmt_ctx_, [](void* p) { avformat_close_input((AVFormatContext**)&p); });
+        fmt_ctx, [](void* p) { avformat_close_input((AVFormatContext**)&p); });
 
     m_timeout_handler->Reset();
     res = avformat_find_stream_info(m_fmt_ctx.get(), NULL);
@@ -221,124 +340,36 @@ struct FfmpegDecodeFrame_Impl {
     }
 
     m_timeout_handler->Reset();
-    video_stream_idx = av_find_best_stream(m_fmt_ctx.get(), AVMEDIA_TYPE_VIDEO,
-                                           -1, -1, NULL, 0);
-    if (video_stream_idx < 0) {
+    m_video_str_idx = av_find_best_stream(m_fmt_ctx.get(), AVMEDIA_TYPE_VIDEO,
+                                          -1, -1, NULL, 0);
+    if (GetVideoStrIdx() < 0) {
       std::stringstream ss;
       ss << "Could not find " << av_get_media_type_string(AVMEDIA_TYPE_VIDEO)
          << " stream in file " << URL;
-      ss << "Error description: " << AvErrorToString(video_stream_idx);
+      ss << "Error description: " << AvErrorToString(GetVideoStrIdx());
       throw std::runtime_error(ss.str());
     }
 
-    auto video_stream = m_fmt_ctx->streams[video_stream_idx];
-    if (!video_stream) {
-      std::cerr << "Could not find video stream in the input, aborting";
-    }
+    OpenCodec(stream.has_value());
 
-    auto p_codec =
-        stream ? avcodec_find_decoder_by_name(
-                     FindDecoderById(video_stream->codecpar->codec_id).c_str())
-               : avcodec_find_decoder(video_stream->codecpar->codec_id);
-
-    if (!p_codec && stream) {
-      throw std::runtime_error(
-          "Failed to find codec by name: " +
-          FindDecoderById(video_stream->codecpar->codec_id));
-    } else if (!p_codec) {
-      throw std::runtime_error(
-          "Failed to find codec by id: " +
-          std::string(avcodec_get_name(video_stream->codecpar->codec_id)));
-    }
-
-    auto avctx_ = avcodec_alloc_context3(p_codec);
-    if (!avctx_) {
-      std::stringstream ss;
-      ss << "Failed to allocate codec context";
-      throw std::runtime_error(ss.str());
-    }
-    m_avc_ctx = std::shared_ptr<AVCodecContext>(
-        avctx_, [](void* p) { avcodec_free_context((AVCodecContext**)&p); });
-
-    res =
-        avcodec_parameters_to_context(m_avc_ctx.get(), video_stream->codecpar);
-    if (res < 0) {
-      std::stringstream ss;
-      ss << "Failed to pass codec parameters to codec "
-            "context "
-         << av_get_media_type_string(AVMEDIA_TYPE_VIDEO);
-      ss << "Error description: " << AvErrorToString(res);
-      throw std::runtime_error(ss.str());
-    }
-
-/* Have no idea if Tegra supports output to CUDA memory so keep it under
- * conditional compilation. Tegra has unified memory anyway, so no big
- * performance penalty shall be imposed as there's no "actual" Host <> Device IO
- * happening.
- */
-#ifndef TEGRA_BUILD
-    if (stream) {
-      /* Attach HW context to codec. Whithout that decoded frames will be
-       * copied to RAM.
-       */
-      AVBufferRef* hwdevice_ctx = nullptr;
-      auto res = av_hwdevice_ctx_create(&hwdevice_ctx, AV_HWDEVICE_TYPE_CUDA,
-                                        NULL, options, 0);
-
-      if (res < 0) {
-        std::stringstream ss;
-        ss << "Failed to create HW device context: " << AvErrorToString(res);
-        throw std::runtime_error(ss.str());
-      }
-
-      // Add hw device context to codec context.
-      m_avc_ctx->hw_device_ctx = av_buffer_ref(hwdevice_ctx);
-      m_avc_ctx->get_format = get_format;
-    }
-#endif
-
-    options_copy = nullptr;
-    res = av_dict_copy(&options_copy, options, 0);
-    if (res < 0) {
-      if (options_copy) {
-        av_dict_free(&options_copy);
-      }
-      std::stringstream ss;
-      ss << "Could not copy AVOptions: " << AvErrorToString(res);
-      throw std::runtime_error(ss.str());
-    }
-
-    res = avcodec_open2(m_avc_ctx.get(), p_codec, &options_copy);
-    if (options_copy) {
-      av_dict_free(&options_copy);
-    }
-
-    if (res < 0) {
-      std::stringstream ss;
-      ss << "Failed to open codec "
-         << av_get_media_type_string(AVMEDIA_TYPE_VIDEO);
-      ss << "Error description: " << AvErrorToString(res);
-      throw std::runtime_error(ss.str());
-    }
-
-    auto frame_ = av_frame_alloc();
-    if (!frame_) {
+    auto frame = av_frame_alloc();
+    if (!frame) {
       std::stringstream ss;
       ss << "Could not allocate frame";
       throw std::runtime_error(ss.str());
     }
 
     m_frame = std::shared_ptr<AVFrame>(
-        frame_, [](void* p) { av_frame_free((AVFrame**)&p); });
+        frame, [](void* p) { av_frame_free((AVFrame**)&p); });
 
-    auto avpkt_ = av_packet_alloc();
-    if (!avpkt_) {
+    auto avpkt = av_packet_alloc();
+    if (!avpkt) {
       std::stringstream ss;
       ss << "Could not allocate packet";
       throw std::runtime_error(ss.str());
     }
     m_pkt = std::shared_ptr<AVPacket>(
-        avpkt_, [](void* p) { av_packet_free((AVPacket**)&p); });
+        avpkt, [](void* p) { av_packet_free((AVPacket**)&p); });
   }
 
   void SavePacketData() {
@@ -373,7 +404,7 @@ struct FfmpegDecodeFrame_Impl {
           parent->SetExecDetails(TaskExecDetails(TaskExecInfo::FAIL));
           return false;
         }
-      } while (m_pkt->stream_index != video_stream_idx);
+      } while (m_pkt->stream_index != GetVideoStrIdx());
 
       auto status = DecodeSinglePacket(eof ? nullptr : m_pkt.get(), dst);
 
@@ -484,6 +515,7 @@ struct FfmpegDecodeFrame_Impl {
       }
 
       if (m_frame->hw_frames_ctx) {
+        // Codec has HW acceleration and outputs to CUDA memory
         try {
           CopyToSurface(*m_frame.get(), dynamic_cast<Surface&>(dst), m_stream);
         } catch (std::exception& e) {
@@ -492,6 +524,7 @@ struct FfmpegDecodeFrame_Impl {
           return DEC_ERROR;
         }
       } else {
+        // No HW acceleration, outputs to RAM
         auto& dstBuf = dynamic_cast<Buffer&>(dst);
         const int alignment = 1;
 
@@ -523,6 +556,159 @@ struct FfmpegDecodeFrame_Impl {
       }
     }
   }
+
+  int GetVideoStrIdx() const { return m_video_str_idx; }
+
+  double GetFrameRate() const {
+    return (double)m_fmt_ctx->streams[GetVideoStrIdx()]->r_frame_rate.num /
+           (double)m_fmt_ctx->streams[GetVideoStrIdx()]->r_frame_rate.den;
+  }
+
+  double GetAvgFrameRate() const {
+    return (double)m_fmt_ctx->streams[GetVideoStrIdx()]->avg_frame_rate.num /
+           (double)m_fmt_ctx->streams[GetVideoStrIdx()]->avg_frame_rate.den;
+  }
+
+  double GetTimeBase() const {
+    return (double)m_fmt_ctx->streams[GetVideoStrIdx()]->time_base.num /
+           (double)m_fmt_ctx->streams[GetVideoStrIdx()]->time_base.den;
+  }
+
+  int GetWidth() const {
+    return m_fmt_ctx->streams[GetVideoStrIdx()]->codecpar->width;
+  }
+
+  int GetHeight() const {
+    return m_fmt_ctx->streams[GetVideoStrIdx()]->codecpar->height;
+  }
+
+  AVCodecID GetCodecId() const {
+    return m_fmt_ctx->streams[GetVideoStrIdx()]->codecpar->codec_id;
+  }
+
+  int64_t GetNumFrames() const {
+    return m_fmt_ctx->streams[GetVideoStrIdx()]->nb_frames;
+  }
+
+  int64_t GetStartTime() const { return m_fmt_ctx->start_time; }
+
+  int64_t GetStreamStartTime() const {
+    return m_fmt_ctx->streams[GetVideoStrIdx()]->start_time;
+  }
+
+  Pixel_Format GetPixelFormat() const {
+    auto const format =
+        IsAccelerated() ? m_avc_ctx->sw_pix_fmt : m_avc_ctx->pix_fmt;
+
+    switch (format) {
+    case AV_PIX_FMT_NV12:
+      return NV12;
+    case AV_PIX_FMT_YUVJ420P:
+    case AV_PIX_FMT_YUV420P:
+      return YUV420;
+    case AV_PIX_FMT_YUV444P:
+      return YUV444;
+    case AV_PIX_FMT_YUV422P:
+      return YUV422;
+    case AV_PIX_FMT_YUV420P10:
+      return P10;
+    case AV_PIX_FMT_YUV420P12:
+      return P12;
+    case AV_PIX_FMT_GRAY12LE:
+      return GRAY12;
+    default:
+      return UNDEFINED;
+    }
+  }
+
+  AVColorSpace GetColorSpace() const {
+    return m_fmt_ctx->streams[GetVideoStrIdx()]->codecpar->color_space;
+  }
+
+  AVColorRange GetColorRange() const {
+    return m_fmt_ctx->streams[GetVideoStrIdx()]->codecpar->color_range;
+  }
+
+  bool IsVFR() const { return GetFrameRate() != GetAvgFrameRate(); }
+
+  bool IsAccelerated() const { return m_avc_ctx->hw_frames_ctx != nullptr; }
+
+  int64_t TsFromTime(double ts_sec) {
+    /* Timestasmp in stream time base units.
+     * Internal timestamp representation is integer, so multiply to AV_TIME_BASE
+     * and switch to fixed point precision arithmetics.
+     */
+    auto const ts_tbu = llround(ts_sec * AV_TIME_BASE);
+
+    // Rescale the timestamp to value represented in stream time base units;
+    AVRational factor = {1, AV_TIME_BASE};
+    return av_rescale_q(ts_tbu, factor,
+                        m_fmt_ctx->streams[GetVideoStrIdx()]->time_base);
+  }
+
+  int64_t TsFromFrameNumber(int64_t frame_num) {
+    auto const ts_sec = (double)frame_num / GetFrameRate();
+    return TsFromTime(ts_sec);
+  }
+
+  TaskExecStatus SeekDecode(DecodeFrame* parent, Token& dst,
+                            const SeekContext& ctx) {
+    /* Across this function packet presentation timestamp (PTS) values are used
+     * to compare given timestamp against. That's done so because ffmpeg seek
+     * relies on PTS.
+     */
+    if (!parent) {
+      std::cerr << "Empty parent task given.";
+      return TaskExecStatus::TASK_EXEC_FAIL;
+    }
+
+    if (IsVFR() && ctx.IsByNumber()) {
+      parent->SetExecDetails(TaskExecDetails(TaskExecInfo::NOT_SUPPORTED));
+      std::cerr
+          << "Can't seek by frame number in VFR sequences. Seek by timestamp "
+             "instead.";
+      return TaskExecStatus::TASK_EXEC_FAIL;
+    }
+
+    /* Some formats dont have a clear idea of what frame number is, so always
+     * convert to timestamp. BTW that's the reason seek by frame number is not
+     * supported for VFR videos.
+     *
+     * Also we always seek backwards to nearest previous key frame and then
+     * decode in the loop starting from it until we reach a frame with
+     * desired timestamp. Sic !
+     */
+    auto timestamp = ctx.IsByNumber() ? TsFromFrameNumber(ctx.seek_frame)
+                                      : TsFromTime(ctx.seek_tssec);
+    if (AV_NOPTS_VALUE != GetStreamStartTime()) {
+      timestamp += GetStreamStartTime();
+    }
+    m_timeout_handler->Reset();
+    auto ret = av_seek_frame(m_fmt_ctx.get(), GetVideoStrIdx(), timestamp,
+                             AVSEEK_FLAG_BACKWARD);
+
+    if (ret < 0) {
+      parent->SetExecDetails(TaskExecDetails(TaskExecInfo::FAIL));
+      std::cerr << "Error seeking for frame: " + AvErrorToString(ret);
+      return TaskExecStatus::TASK_EXEC_FAIL;
+    }
+
+    /* Decode in loop until we reach desired frame.
+     */
+    auto const was_accelerated = IsAccelerated();
+    CloseCodec();
+    OpenCodec(was_accelerated);
+
+    while (m_frame->pts < timestamp) {
+      if (!DecodeSingleFrame(parent, dst)) {
+        parent->SetExecDetails(TaskExecDetails(TaskExecInfo::FAIL));
+        std::cerr << "Failed to decode frame during seek.";
+        return TaskExecStatus::TASK_EXEC_FAIL;
+      }
+    }
+
+    return TaskExecStatus::TASK_EXEC_SUCCESS;
+  }
 };
 } // namespace VPF
 
@@ -538,6 +724,12 @@ TaskExecStatus DecodeFrame::Run() {
     return TaskExecStatus::TASK_EXEC_FAIL;
   }
 
+  auto seek_ctx_buf = static_cast<Buffer*>(GetInput(1U));
+  if (seek_ctx_buf) {
+    auto seek_ctx = seek_ctx_buf->GetDataAs<SeekContext>();
+    return pImpl->SeekDecode(this, *dst, *seek_ctx);
+  }
+
   if (pImpl->DecodeSingleFrame(this, *dst)) {
     return TaskExecStatus::TASK_EXEC_SUCCESS;
   }
@@ -551,65 +743,18 @@ uint32_t DecodeFrame::GetHostFrameSize() const {
 
 void DecodeFrame::GetParams(MuxingParams& params) {
   memset((void*)&params, 0, sizeof(params));
-  auto fmtc = pImpl->m_fmt_ctx.get();
-  pImpl->m_timeout_handler->Reset();
-  auto videoStream =
-      av_find_best_stream(fmtc, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
-  if (videoStream < 0) {
-    std::stringstream ss;
-    ss << __FUNCTION__ << ": can't find video stream in input file.";
-    throw std::runtime_error(ss.str());
-  }
 
-  params.videoContext.width = fmtc->streams[videoStream]->codecpar->width;
-  params.videoContext.height = fmtc->streams[videoStream]->codecpar->height;
-  params.videoContext.frameRate =
-      (double)fmtc->streams[videoStream]->r_frame_rate.num /
-      (double)fmtc->streams[videoStream]->r_frame_rate.den;
-  params.videoContext.avgFrameRate =
-      (double)fmtc->streams[videoStream]->avg_frame_rate.num /
-      (double)fmtc->streams[videoStream]->avg_frame_rate.den;
-  params.videoContext.timeBase =
-      (double)fmtc->streams[videoStream]->time_base.num /
-      (double)fmtc->streams[videoStream]->time_base.den;
-  params.videoContext.codec = FFmpeg2NvCodecId(pImpl->m_avc_ctx->codec_id);
-  params.videoContext.num_frames = fmtc->streams[videoStream]->nb_frames;
+  params.videoContext.width = pImpl->GetWidth();
+  params.videoContext.height = pImpl->GetHeight();
+  params.videoContext.frameRate = pImpl->GetFrameRate();
+  params.videoContext.avgFrameRate = pImpl->GetAvgFrameRate();
+  params.videoContext.timeBase = pImpl->GetTimeBase();
+  params.videoContext.num_frames = pImpl->GetNumFrames();
+  params.videoContext.format = pImpl->GetPixelFormat();
+  params.videoContext.color_range =
+      fromFfmpegColorRange(pImpl->GetColorRange());
 
-  const auto format = IsAccelerated() ? pImpl->m_avc_ctx->sw_pix_fmt
-                                      : pImpl->m_avc_ctx->pix_fmt;
-  switch (format) {
-  case AV_PIX_FMT_NV12:
-    params.videoContext.format = NV12;
-    break;
-  case AV_PIX_FMT_YUVJ420P:
-  case AV_PIX_FMT_YUV420P:
-    params.videoContext.format = YUV420;
-    break;
-  case AV_PIX_FMT_YUV444P:
-    params.videoContext.format = YUV444;
-    break;
-  case AV_PIX_FMT_YUV422P:
-    params.videoContext.format = YUV422;
-    break;
-  case AV_PIX_FMT_YUV420P10:
-    params.videoContext.format = P10;
-    break;
-  case AV_PIX_FMT_YUV420P12:
-    params.videoContext.format = P12;
-    break;
-  case AV_PIX_FMT_GRAY12LE:
-    params.videoContext.format = GRAY12;
-    break;
-  default:
-    std::stringstream ss;
-    ss << "Unsupported FFmpeg pixel format: "
-       << av_get_pix_fmt_name(pImpl->m_avc_ctx->pix_fmt);
-    throw std::invalid_argument(ss.str());
-    params.videoContext.format = UNDEFINED;
-    break;
-  }
-
-  switch (fmtc->streams[videoStream]->codecpar->color_space) {
+  switch (pImpl->GetColorSpace()) {
   case AVCOL_SPC_BT709:
     params.videoContext.color_space = BT_709;
     break;
@@ -619,18 +764,6 @@ void DecodeFrame::GetParams(MuxingParams& params) {
     break;
   default:
     params.videoContext.color_space = UNSPEC;
-    break;
-  }
-
-  switch (fmtc->streams[videoStream]->codecpar->color_range) {
-  case AVCOL_RANGE_MPEG:
-    params.videoContext.color_range = MPEG;
-    break;
-  case AVCOL_RANGE_JPEG:
-    params.videoContext.color_range = JPEG;
-    break;
-  default:
-    params.videoContext.color_range = UDEF;
     break;
   }
 }
@@ -669,6 +802,6 @@ DecodeFrame::DecodeFrame(const char* URL, NvDecoderClInterface& cli_iface,
 
 DecodeFrame::~DecodeFrame() { delete pImpl; }
 
-bool DecodeFrame::IsAccelerated() const {
-  return pImpl->m_avc_ctx->hw_frames_ctx != nullptr;
-}
+bool DecodeFrame::IsAccelerated() const { pImpl->IsAccelerated(); }
+
+bool DecodeFrame::IsVFR() const { return pImpl->IsVFR(); }
