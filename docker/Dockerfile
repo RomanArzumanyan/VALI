@@ -7,17 +7,9 @@ RUN apt-get -y install \
     software-properties-common
 
 RUN type apt-add-repository
-RUN add-apt-repository ppa:ubuntuhandbook1/ffmpeg6
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive \
     apt-get -y install \
-    ffmpeg \
-    libavfilter-dev \
-    libavformat-dev \
-    libavcodec-dev \
-    libswresample-dev \
-    libavutil-dev \
-    libswscale-dev \
     wget \
     build-essential \
     ninja-build \
