@@ -348,6 +348,7 @@ class TestDecoderBasic(unittest.TestCase):
         self.assertNotEqual(first_mv.source, 0)
         self.assertNotEqual(first_mv.motion_scale, 0)
 
+    @unittest.skip("Cuvid ffmpeg decoder generates EOF upon resolution change")
     def test_decode_resolution_change_gpu(self):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["res_change"])
@@ -365,8 +366,6 @@ class TestDecoderBasic(unittest.TestCase):
             if not success:
                 break
 
-            dec_frame += 1
-
             if info == nvc.TaskExecInfo.RES_CHANGE:
                 width = int(width * gtInfo.res_change_factor)
                 height = int(height * gtInfo.res_change_factor)
@@ -376,9 +375,13 @@ class TestDecoderBasic(unittest.TestCase):
                 # to that of decoder.
                 self.assertNotEqual(surf.Width(), width)
                 self.assertNotEqual(surf.Height(), height)
+            else:
+                dec_frame += 1
 
             self.assertEqual(pyDec.Width(), width, str(dec_frame))
             self.assertEqual(pyDec.Height(), height, str(dec_frame))
+
+        self.assertEqual(dec_frame, gtInfo.num_frames)
 
     def test_decode_resolution_change_cpu(self):
         with open("gt_files.json") as f:
@@ -397,19 +400,21 @@ class TestDecoderBasic(unittest.TestCase):
             if not success:
                 break
 
-            dec_frame += 1
-
             if info == nvc.TaskExecInfo.RES_CHANGE:
                 width = int(width * gtInfo.res_change_factor)
                 height = int(height * gtInfo.res_change_factor)
-                
+
                 # Upon resolution change decoder will not return decoded
                 # pixels to user. Hence frame size will not be same
                 # to that of decoder.
                 self.assertNotEqual(pyDec.HostFrameSize(), frame.size)
+            else:
+                dec_frame += 1
 
             self.assertEqual(pyDec.Width(), width, str(dec_frame))
             self.assertEqual(pyDec.Height(), height, str(dec_frame))
+
+        self.assertEqual(dec_frame, gtInfo.num_frames)
 
 
 if __name__ == "__main__":

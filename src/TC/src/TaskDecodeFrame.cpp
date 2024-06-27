@@ -806,6 +806,7 @@ TaskExecStatus DecodeFrame::Run() {
       SetExecDetails(TaskExecDetails(TaskExecInfo::SUCCESS));
       return TaskExecStatus::TASK_EXEC_SUCCESS;
     }
+    SetExecDetails(TaskExecDetails(TaskExecInfo::FAIL));
     return TaskExecStatus::TASK_EXEC_FAIL;
   }
 
