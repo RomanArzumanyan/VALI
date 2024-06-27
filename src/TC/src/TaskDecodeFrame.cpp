@@ -41,8 +41,8 @@ namespace VPF {
 enum DECODE_STATUS {
   DEC_SUCCESS,
   DEC_ERROR,
-  DEC_MORE,
   DEC_EOS,
+  DEC_MORE,
   DEC_RES_CHANGE
 };
 
@@ -114,6 +114,7 @@ struct FfmpegDecodeFrame_Impl {
   int m_video_str_idx = -1;
   int m_last_w = -1, m_last_h = -1;
   bool m_end_decode = false;
+  bool m_flush = false;
   bool m_eof = false;
   bool m_res_change = false;
 
@@ -402,7 +403,7 @@ struct FfmpegDecodeFrame_Impl {
     do {
       // Read packets from stream until we find a video packet;
       do {
-        if (m_eof) {
+        if (m_eof || m_flush) {
           break;
         }
 
@@ -423,6 +424,7 @@ struct FfmpegDecodeFrame_Impl {
 
       switch (status) {
       case DEC_SUCCESS:
+        parent->SetExecDetails(TaskExecDetails(TaskExecInfo::SUCCESS));
         return true;
       case DEC_ERROR:
         parent->SetExecDetails(TaskExecDetails(TaskExecInfo::FAIL));
@@ -436,7 +438,11 @@ struct FfmpegDecodeFrame_Impl {
         parent->SetExecDetails(TaskExecDetails(TaskExecInfo::RES_CHANGE));
         return true;
       case DEC_MORE:
-        continue;
+        // Just continue the loop to get more data;
+        break;
+      default:
+        std::cerr << "Invalid decoding status: " << status;
+        return false;
       }
     } while (true);
 
@@ -520,8 +526,8 @@ struct FfmpegDecodeFrame_Impl {
       try {
         CopyToSurface(*m_frame.get(), dynamic_cast<Surface&>(dst), m_stream);
       } catch (std::exception& e) {
-        std::cerr << "Error while copying a surface from FFMpeg to VALI";
-        std::cerr << "Error description: " << e.what();
+        std::cerr << "Error while copying a surface from FFMpeg to VALI: "
+                  << e.what();
         return DEC_ERROR;
       }
     } else {
@@ -535,8 +541,8 @@ struct FfmpegDecodeFrame_Impl {
           m_frame->height, alignment);
 
       if (res < 0) {
-        std::cerr << "Error while copying a frame from FFMpeg to VALI";
-        std::cerr << "Error description: " << AvErrorToString(res);
+        std::cerr << "Error while copying a frame from FFMpeg to VALI: "
+                  << AvErrorToString(res);
         return DEC_ERROR;
       }
     }
@@ -554,48 +560,50 @@ struct FfmpegDecodeFrame_Impl {
    *
    * Upon EOF returns DEC_EOS.
    *
-   * Upon insuffcient data (e. g. frame is spread across multiple packets)
-   * returns DEC_MORE.
+   * If packet cant be sent it will return DEC_NEED_FLUSH.
    *
    * Upont error returns DEC_ERROR.
    */
   DECODE_STATUS DecodeSinglePacket(const AVPacket* pkt_Src, Token& dst) {
     SaveCurrentRes();
+    int res = 0;
 
-    auto res = avcodec_send_packet(m_avc_ctx.get(), pkt_Src);
-    if (AVERROR_EOF == res) {
-      // Flush decoder;
-      res = 0;
+    if (!m_flush) {
+      res = avcodec_send_packet(m_avc_ctx.get(), pkt_Src);
+      if (AVERROR_EOF == res) {
+        // Flush decoder;
+        res = 0;
+      } else if (res == AVERROR(EAGAIN)) {
+        // Need to call for avcodec_receive frame and then resend packet;
+        m_flush = true;
+      } else if (res < 0) {
+        std::cerr << "Error while sending a packet to the decoder. ";
+        std::cerr << "Error description: " << AvErrorToString(res);
+        return DEC_ERROR;
+      }
+    }
+
+    res = avcodec_receive_frame(m_avc_ctx.get(), m_frame.get());
+    if (res == AVERROR_EOF) {
+      return DEC_EOS;
     } else if (res == AVERROR(EAGAIN)) {
+      if (m_flush) {
+        m_flush = false;
+      }
       return DEC_MORE;
     } else if (res < 0) {
-      std::cerr << "Error while sending a packet to the decoder. ";
+      std::cerr << "Error while receiving a frame from the decoder. ";
       std::cerr << "Error description: " << AvErrorToString(res);
       return DEC_ERROR;
     }
 
-    while (res >= 0) {
-      res = avcodec_receive_frame(m_avc_ctx.get(), m_frame.get());
-      if (res == AVERROR_EOF) {
-        return DEC_EOS;
-      } else if (res == AVERROR(EAGAIN)) {
-        return DEC_MORE;
-      } else if (res < 0) {
-        std::cerr << "Error while receiving a frame from the decoder. ";
-        std::cerr << "Error description: " << AvErrorToString(res);
-        return DEC_ERROR;
-      }
-
-      if (UpdGetResChange()) {
-        return DEC_RES_CHANGE;
-      }
-
-      SaveSideData();
-      SavePacketData();
-      return GetLastFrame(dst);
+    if (UpdGetResChange()) {
+      return DEC_RES_CHANGE;
     }
 
-    return DEC_SUCCESS;
+    SaveSideData();
+    SavePacketData();
+    return GetLastFrame(dst);
   }
 
   ~FfmpegDecodeFrame_Impl() {
@@ -625,29 +633,23 @@ struct FfmpegDecodeFrame_Impl {
   }
 
   int GetWidth() const {
-    /* If called before single frame is decoded, the only way to get dimensions
-     * is via format context. After that, thake it from decoded frame. It's
-     * necessary to do so because resolution may change dynamically.
-     */
     if (m_frame && m_frame->width > 0) {
       return m_frame->width;
     }
 
-    return m_fmt_ctx->streams[GetVideoStrIdx()]->codecpar->width;
+    return m_avc_ctx->width;
   }
 
   int GetHeight() const {
-    /* Same as in GetWidth.
-     */
     if (m_frame && m_frame->height > 0) {
       return m_frame->height;
     }
 
-    return m_fmt_ctx->streams[GetVideoStrIdx()]->codecpar->height;
+    return m_avc_ctx->height;
   }
 
   AVCodecID GetCodecId() const {
-    return m_fmt_ctx->streams[GetVideoStrIdx()]->codecpar->codec_id;
+    return m_avc_ctx->codec_id;
   }
 
   int64_t GetNumFrames() const {
