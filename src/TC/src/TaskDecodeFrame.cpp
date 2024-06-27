@@ -108,21 +108,176 @@ struct FfmpegDecodeFrame_Impl {
   std::map<AVFrameSideDataType, Buffer*> m_side_data;
   std::shared_ptr<AVDictionary> m_options;
   std::shared_ptr<TimeoutHandler> m_timeout_handler;
-  PacketData m_packetData;
+  PacketData m_packet_data;
   CUstream m_stream;
 
-  int m_video_str_idx = -1;
-  int m_last_w = -1, m_last_h = -1;
+  // Video stream index
+  int m_stream_idx = -1;
+
+  // Last known width
+  int m_last_w = -1;
+
+  // Last known height
+  int m_last_h = -1;
+
+  // Flag which signals that decode is done
   bool m_end_decode = false;
+
+  // Flag which signals that decoder needs to be flushed
   bool m_flush = false;
+
+  // Flag which signals end of file
   bool m_eof = false;
+
+  // Flag which signals resolution change
   bool m_res_change = false;
 
+  // Helper functions
+  void ThrowOnAvError(int res, const std::string& msg) const {
+    ThrowOnAvError(res, msg, nullptr);
+  }
+
+  void ThrowOnAvError(int res, const std::string& msg,
+                      AVDictionary** options) const {
+    if (res < 0) {
+      if (options) {
+        av_dict_free(options);
+      }
+      throw std::runtime_error(msg + AvErrorToString(res));
+    }
+  }
+
+  FfmpegDecodeFrame_Impl(
+      const char* URL, const std::map<std::string, std::string>& ffmpeg_options,
+      std::optional<CUstream> stream) {
+
+    // Set log level to error to avoid noisy output
+    av_log_set_level(AV_LOG_ERROR);
+
+    // Allocate format context first to set timeout before opening the input.
+    AVFormatContext* fmt_ctx = avformat_alloc_context();
+    if (!fmt_ctx) {
+      throw std::runtime_error("Failed to allocate format context");
+    }
+
+    /* Set neccessary AVOptions for HW decoding.
+     */
+    auto options = GetAvOptions(ffmpeg_options);
+    if (stream) {
+      m_stream = stream.value();
+      auto res =
+          av_dict_set(&options, "hwaccel_device",
+                      std::to_string(GetDeviceIdByStream(m_stream)).c_str(), 0);
+      ThrowOnAvError(res, "Failed to set hwaccel_device AVOption", &options);
+
+      res = av_dict_set(&options, "hwaccel", "cuvid", 0);
+      ThrowOnAvError(res, "Failed to set hwaccel AVOption", &options);
+
+      res = av_dict_set(&options, "fps_mode", "passthrough", 0);
+      ThrowOnAvError(res, "Failed set fps_mode AVOption", &options);
+
+      res = av_dict_set(&options, "threads", "1", 0);
+      ThrowOnAvError(res, "Failed set threads AVOption", &options);
+    }
+
+    /* After we are done settings options, save them in case we need them
+     * later to (re)open codec;
+     */
+    m_options = std::shared_ptr<AVDictionary>(
+        options, [](void* p) { av_dict_free((AVDictionary**)&p); });
+
+    /* Set the timeout.
+     *
+     * Unfortunately, 'timeout' and 'stimeout' AVDictionary options do work for
+     * some formats and don't for others.
+     *
+     * So explicit timeout handler is used instead. In worst case scenario, 2
+     * handlers with same value will be registered within format context which
+     * is of no harm. */
+    auto it = ffmpeg_options.find("timeout");
+    if (it != ffmpeg_options.end()) {
+      m_timeout_handler.reset(new TimeoutHandler(std::stoi(it->second)));
+    } else {
+      m_timeout_handler.reset(new TimeoutHandler());
+    }
+
+    /* Copy class member options because some avcodec API functions like to
+     * free input options and replace them with list of unrecognized options.
+     */
+    options = nullptr;
+    auto res = av_dict_copy(&options, m_options.get(), 0);
+    ThrowOnAvError(res, "Can't copy AVOptions", options ? &options : nullptr);
+
+    m_timeout_handler->Reset();
+    res = avformat_open_input(&fmt_ctx, URL, NULL, &options);
+    if (options) {
+      av_dict_free(&options);
+    }
+
+    if (res < 0) {
+      {
+        // Don't remove, it's here to make linker clear of libswresample
+        // dependency. Otherwise it's required by libavcodec but never put into
+        // rpath by CMake.
+        SwrContext* swr_ctx_ = swr_alloc();
+        m_swr_ctx = std::shared_ptr<SwrContext>(
+            swr_ctx_, [](void* p) { swr_free((SwrContext**)&p); });
+      }
+
+      ThrowOnAvError(res, "Can't open souce file" + std::string(URL), nullptr);
+    }
+
+    m_fmt_ctx = std::shared_ptr<AVFormatContext>(
+        fmt_ctx, [](void* p) { avformat_close_input((AVFormatContext**)&p); });
+
+    m_timeout_handler->Reset();
+    res = avformat_find_stream_info(m_fmt_ctx.get(), NULL);
+    ThrowOnAvError(res, "Can't find stream information", nullptr);
+
+    m_timeout_handler->Reset();
+    m_stream_idx = av_find_best_stream(m_fmt_ctx.get(), AVMEDIA_TYPE_VIDEO, -1,
+                                       -1, NULL, 0);
+    if (GetVideoStrIdx() < 0) {
+      std::stringstream ss;
+      ss << "Could not find " << av_get_media_type_string(AVMEDIA_TYPE_VIDEO)
+         << " stream in file " << URL;
+      ss << "Error description: " << AvErrorToString(GetVideoStrIdx());
+      throw std::runtime_error(ss.str());
+    }
+
+    OpenCodec(stream.has_value());
+
+    auto frame = av_frame_alloc();
+    if (!frame) {
+      std::stringstream ss;
+      ss << "Could not allocate frame";
+      throw std::runtime_error(ss.str());
+    }
+
+    m_frame = std::shared_ptr<AVFrame>(
+        frame, [](void* p) { av_frame_free((AVFrame**)&p); });
+
+    auto avpkt = av_packet_alloc();
+    if (!avpkt) {
+      std::stringstream ss;
+      ss << "Could not allocate packet";
+      throw std::runtime_error(ss.str());
+    }
+    m_pkt = std::shared_ptr<AVPacket>(
+        avpkt, [](void* p) { av_packet_free((AVPacket**)&p); });
+  }
+
+  // Saves current resolution
   void SaveCurrentRes() {
     m_last_h = GetHeight();
     m_last_w = GetWidth();
   }
 
+  /* Closes codec context and resets the smart pointer.
+   *
+   * Extracted to standalone function because in some cases we need to (re)open
+   * video codec.
+   */
   void CloseCodec() {
     auto ret = avcodec_close(m_avc_ctx.get());
     if (ret < 0) {
@@ -133,7 +288,9 @@ struct FfmpegDecodeFrame_Impl {
     m_avc_ctx.reset();
   }
 
-  /* Extracted to standalone function because in some cases we need to (re)open
+  /* Allocates video codec contet and opens it.
+   *
+   * Extracted to standalone function because in some cases we need to (re)open
    * video codec.
    */
   void OpenCodec(bool is_accelerated) {
@@ -222,176 +379,17 @@ struct FfmpegDecodeFrame_Impl {
       av_dict_free(&options);
     }
 
-    if (res < 0) {
-      std::stringstream ss;
-      ss << "Failed to open codec "
-         << av_get_media_type_string(AVMEDIA_TYPE_VIDEO);
-      ss << "Error description: " << AvErrorToString(res);
-      throw std::runtime_error(ss.str());
-    }
-  }
-
-  FfmpegDecodeFrame_Impl(
-      const char* URL, const std::map<std::string, std::string>& ffmpeg_options,
-      std::optional<CUstream> stream) {
-
-    // Set log level to error to avoid noisy output
-    av_log_set_level(AV_LOG_ERROR);
-
-    // Allocate format context first to set timeout before opening the input.
-    AVFormatContext* fmt_ctx = avformat_alloc_context();
-    if (!fmt_ctx) {
-      throw std::runtime_error("Failed to allocate format context");
-    }
-
-    /* Set neccessary AVOptions for HW decoding.
-     */
-    auto options = GetAvOptions(ffmpeg_options);
-    if (stream) {
-      m_stream = stream.value();
-      auto res =
-          av_dict_set(&options, "hwaccel_device",
-                      std::to_string(GetDeviceIdByStream(m_stream)).c_str(), 0);
-      if (res < 0) {
-        av_dict_free(&options);
-        std::stringstream ss;
-        ss << "Failed to set hwaccel_device AVOption: " << AvErrorToString(res);
-        throw std::runtime_error(ss.str());
-      }
-
-      res = av_dict_set(&options, "hwaccel", "cuvid", 0);
-      if (res < 0) {
-        av_dict_free(&options);
-        std::stringstream ss;
-        ss << "Failed to set hwaccel AVOption: " << AvErrorToString(res);
-        throw std::runtime_error(ss.str());
-      }
-
-      res = av_dict_set(&options, "fps_mode", "passthrough", 0);
-      if (res < 0) {
-        av_dict_free(&options);
-        std::stringstream ss;
-        ss << "Failed set fps_mode AVOption: " << AvErrorToString(res);
-        throw std::runtime_error(ss.str());
-      }
-
-      res = av_dict_set(&options, "threads", "1", 0);
-      if (res < 0) {
-        av_dict_free(&options);
-        std::stringstream ss;
-        ss << "Failed set threads AVOption: " << AvErrorToString(res);
-        throw std::runtime_error(ss.str());
-      }
-    }
-
-    /* After we are done settings options, save them in case we need them
-     * later to (re)open codec;
-     */
-    m_options = std::shared_ptr<AVDictionary>(
-        options, [](void* p) { av_dict_free((AVDictionary**)&p); });
-
-    /* Set the timeout.
-     *
-     * Unfortunately, 'timeout' and 'stimeout' AVDictionary options do work for
-     * some formats and don't for others.
-     *
-     * So explicit timeout handler is used instead. In worst case scenario, 2
-     * handlers with same value will be registered within format context which
-     * is of no harm. */
-    auto it = ffmpeg_options.find("timeout");
-    if (it != ffmpeg_options.end()) {
-      m_timeout_handler.reset(new TimeoutHandler(std::stoi(it->second)));
-    } else {
-      m_timeout_handler.reset(new TimeoutHandler());
-    }
-
-    /* Copy class member options because some avcodec API functions like to
-     * free input options and replace them with list of unrecognized options.
-     */
-    options = nullptr;
-    auto res = av_dict_copy(&options, m_options.get(), 0);
-    if (res < 0) {
-      if (options) {
-        av_dict_free(&options);
-      }
-      std::stringstream ss;
-      ss << "Could not copy AVOptions: " << AvErrorToString(res);
-      throw std::runtime_error(ss.str());
-    }
-
-    m_timeout_handler->Reset();
-    res = avformat_open_input(&fmt_ctx, URL, NULL, &options);
-    if (options) {
-      av_dict_free(&options);
-    }
-
-    if (res < 0) {
-      {
-        // Don't remove, it's here to make linker clear of libswresample
-        // dependency. Otherwise it's required by libavcodec but never put into
-        // rpath by CMake.
-        SwrContext* swr_ctx_ = swr_alloc();
-        m_swr_ctx = std::shared_ptr<SwrContext>(
-            swr_ctx_, [](void* p) { swr_free((SwrContext**)&p); });
-      }
-
-      std::stringstream ss;
-      ss << "Could not open source file" << URL;
-      ss << "Error description: " << AvErrorToString(res);
-      throw std::runtime_error(ss.str());
-    }
-
-    m_fmt_ctx = std::shared_ptr<AVFormatContext>(
-        fmt_ctx, [](void* p) { avformat_close_input((AVFormatContext**)&p); });
-
-    m_timeout_handler->Reset();
-    res = avformat_find_stream_info(m_fmt_ctx.get(), NULL);
-    if (res < 0) {
-      std::stringstream ss;
-      ss << "Could not find stream information";
-      ss << "Error description: " << AvErrorToString(res);
-      throw std::runtime_error(ss.str());
-    }
-
-    m_timeout_handler->Reset();
-    m_video_str_idx = av_find_best_stream(m_fmt_ctx.get(), AVMEDIA_TYPE_VIDEO,
-                                          -1, -1, NULL, 0);
-    if (GetVideoStrIdx() < 0) {
-      std::stringstream ss;
-      ss << "Could not find " << av_get_media_type_string(AVMEDIA_TYPE_VIDEO)
-         << " stream in file " << URL;
-      ss << "Error description: " << AvErrorToString(GetVideoStrIdx());
-      throw std::runtime_error(ss.str());
-    }
-
-    OpenCodec(stream.has_value());
-
-    auto frame = av_frame_alloc();
-    if (!frame) {
-      std::stringstream ss;
-      ss << "Could not allocate frame";
-      throw std::runtime_error(ss.str());
-    }
-
-    m_frame = std::shared_ptr<AVFrame>(
-        frame, [](void* p) { av_frame_free((AVFrame**)&p); });
-
-    auto avpkt = av_packet_alloc();
-    if (!avpkt) {
-      std::stringstream ss;
-      ss << "Could not allocate packet";
-      throw std::runtime_error(ss.str());
-    }
-    m_pkt = std::shared_ptr<AVPacket>(
-        avpkt, [](void* p) { av_packet_free((AVPacket**)&p); });
+    ThrowOnAvError(
+        res, "Failed to open codec " +
+                 std::string(av_get_media_type_string(AVMEDIA_TYPE_VIDEO)));
   }
 
   void SavePacketData() {
-    m_packetData.dts = m_frame->pkt_dts;
-    m_packetData.pts = m_frame->pts;
-    m_packetData.duration = m_frame->duration;
-    m_packetData.key = m_frame->flags & AV_FRAME_FLAG_KEY;
-    m_packetData.pos = m_frame->pkt_pos;
+    m_packet_data.dts = m_frame->pkt_dts;
+    m_packet_data.pts = m_frame->pts;
+    m_packet_data.duration = m_frame->duration;
+    m_packet_data.key = m_frame->flags & AV_FRAME_FLAG_KEY;
+    m_packet_data.pos = m_frame->pkt_pos;
   }
 
   bool DecodeSingleFrame(DecodeFrame* parent, Token& dst) {
@@ -479,12 +477,7 @@ struct FfmpegDecodeFrame_Impl {
     const auto size =
         av_image_get_buffer_size(format, GetWidth(), GetHeight(), alignment);
 
-    if (size < 0) {
-      std::stringstream ss;
-      ss << "Failed to query host frame size: " << AvErrorToString(size);
-      throw std::runtime_error(ss.str());
-    }
-
+    ThrowOnAvError(size, "Failed to query host frame size");
     return static_cast<uint32_t>(size);
   }
 
@@ -615,7 +608,7 @@ struct FfmpegDecodeFrame_Impl {
     }
   }
 
-  int GetVideoStrIdx() const { return m_video_str_idx; }
+  int GetVideoStrIdx() const { return m_stream_idx; }
 
   double GetFrameRate() const {
     return (double)m_fmt_ctx->streams[GetVideoStrIdx()]->r_frame_rate.num /
@@ -648,9 +641,7 @@ struct FfmpegDecodeFrame_Impl {
     return m_avc_ctx->height;
   }
 
-  AVCodecID GetCodecId() const {
-    return m_avc_ctx->codec_id;
-  }
+  AVCodecID GetCodecId() const { return m_avc_ctx->codec_id; }
 
   int64_t GetNumFrames() const {
     return m_fmt_ctx->streams[GetVideoStrIdx()]->nb_frames;
@@ -778,10 +769,6 @@ struct FfmpegDecodeFrame_Impl {
 };
 } // namespace VPF
 
-const PacketData& DecodeFrame::GetLastPacketData() const {
-  return pImpl->m_packetData;
-}
-
 TaskExecStatus DecodeFrame::Run() {
   ClearOutputs();
 
@@ -888,3 +875,7 @@ DecodeFrame::~DecodeFrame() { delete pImpl; }
 bool DecodeFrame::IsAccelerated() const { pImpl->IsAccelerated(); }
 
 bool DecodeFrame::IsVFR() const { return pImpl->IsVFR(); }
+
+const PacketData& DecodeFrame::GetLastPacketData() const {
+  return pImpl->m_packet_data;
+}
