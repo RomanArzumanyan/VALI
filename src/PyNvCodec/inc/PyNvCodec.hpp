@@ -206,7 +206,6 @@ class PyDecoder {
   int gpu_id;
 
   void UpdateState();
-  bool IsResolutionChanged();
 
 public:
   PyDecoder(const std::string& pathToFile,
@@ -229,6 +228,7 @@ public:
   double AvgFramerate() const;
   double Timebase() const;
   uint32_t Numframes() const;
+  uint32_t HostFrameSize() const;
   ColorSpace Color_Space() const;
   ColorRange Color_Range() const;
   cudaVideoCodec Codec() const;

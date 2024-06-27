@@ -38,7 +38,13 @@ using namespace VPF;
 
 namespace VPF {
 
-enum DECODE_STATUS { DEC_SUCCESS, DEC_ERROR, DEC_MORE, DEC_EOS };
+enum DECODE_STATUS {
+  DEC_SUCCESS,
+  DEC_ERROR,
+  DEC_MORE,
+  DEC_EOS,
+  DEC_RES_CHANGE
+};
 
 #ifndef TEGRA_BUILD
 static AVPixelFormat get_format(AVCodecContext* avctx,
@@ -106,8 +112,15 @@ struct FfmpegDecodeFrame_Impl {
   CUstream m_stream;
 
   int m_video_str_idx = -1;
-  bool end_decode = false;
-  bool eof = false;
+  int m_last_w = -1, m_last_h = -1;
+  bool m_end_decode = false;
+  bool m_eof = false;
+  bool m_res_change = false;
+
+  void SaveCurrentRes() {
+    m_last_h = GetHeight();
+    m_last_w = GetWidth();
+  }
 
   void CloseCodec() {
     auto ret = avcodec_close(m_avc_ctx.get());
@@ -381,7 +394,7 @@ struct FfmpegDecodeFrame_Impl {
   }
 
   bool DecodeSingleFrame(DecodeFrame* parent, Token& dst) {
-    if (end_decode) {
+    if (m_end_decode) {
       return false;
     }
 
@@ -389,7 +402,7 @@ struct FfmpegDecodeFrame_Impl {
     do {
       // Read packets from stream until we find a video packet;
       do {
-        if (eof) {
+        if (m_eof) {
           break;
         }
 
@@ -397,28 +410,31 @@ struct FfmpegDecodeFrame_Impl {
         auto ret = av_read_frame(m_fmt_ctx.get(), m_pkt.get());
 
         if (AVERROR_EOF == ret) {
-          eof = true;
+          m_eof = true;
           break;
         } else if (ret < 0) {
-          end_decode = true;
+          m_end_decode = true;
           parent->SetExecDetails(TaskExecDetails(TaskExecInfo::FAIL));
           return false;
         }
       } while (m_pkt->stream_index != GetVideoStrIdx());
 
-      auto status = DecodeSinglePacket(eof ? nullptr : m_pkt.get(), dst);
+      auto status = DecodeSinglePacket(m_eof ? nullptr : m_pkt.get(), dst);
 
       switch (status) {
       case DEC_SUCCESS:
         return true;
       case DEC_ERROR:
         parent->SetExecDetails(TaskExecDetails(TaskExecInfo::FAIL));
-        end_decode = true;
+        m_end_decode = true;
         return false;
       case DEC_EOS:
         parent->SetExecDetails(TaskExecDetails(TaskExecInfo::END_OF_STREAM));
-        end_decode = true;
+        m_end_decode = true;
         return false;
+      case DEC_RES_CHANGE:
+        parent->SetExecDetails(TaskExecDetails(TaskExecInfo::RES_CHANGE));
+        return true;
       case DEC_MORE:
         continue;
       }
@@ -452,17 +468,11 @@ struct FfmpegDecodeFrame_Impl {
   }
 
   uint32_t GetHostFrameSize() const {
-    /* Query codec context because this method may be called before decoder
-     * returns any decoded frames.
-     */
-    const auto format =
-        m_avc_ctx->hw_frames_ctx ? m_avc_ctx->sw_pix_fmt : m_avc_ctx->pix_fmt;
-    const auto width = m_avc_ctx->width;
-    const auto height = m_avc_ctx->height;
+    const auto format = toFfmpegPixelFormat(GetPixelFormat());
     const auto alignment = 1;
+    const auto size =
+        av_image_get_buffer_size(format, GetWidth(), GetHeight(), alignment);
 
-    const auto size = av_image_get_buffer_size((AVPixelFormat)format, width,
-                                               height, alignment);
     if (size < 0) {
       std::stringstream ss;
       ss << "Failed to query host frame size: " << AvErrorToString(size);
@@ -491,13 +501,75 @@ struct FfmpegDecodeFrame_Impl {
     ThrowOnCudaError(cuStreamSynchronize(stream), __LINE__);
   }
 
+  bool UpdGetResChange() {
+    m_res_change = (m_last_h != GetHeight()) || (m_last_w != GetWidth());
+    return m_res_change;
+  }
+
+  bool FlipGetResChange() {
+    m_res_change = !m_res_change;
+    return !m_res_change;
+  }
+
+  /* Copy last decoded frame to output token.
+   * It doesn't check if memory amount is sufficient.
+   */
+  DECODE_STATUS GetLastFrame(Token& dst) {
+    if (m_frame->hw_frames_ctx) {
+      // Codec has HW acceleration and outputs to CUDA memory
+      try {
+        CopyToSurface(*m_frame.get(), dynamic_cast<Surface&>(dst), m_stream);
+      } catch (std::exception& e) {
+        std::cerr << "Error while copying a surface from FFMpeg to VALI";
+        std::cerr << "Error description: " << e.what();
+        return DEC_ERROR;
+      }
+    } else {
+      // No HW acceleration, outputs to RAM
+      auto& dstBuf = dynamic_cast<Buffer&>(dst);
+      const int alignment = 1;
+
+      auto res = av_image_copy_to_buffer(
+          dstBuf.GetDataAs<uint8_t>(), GetHostFrameSize(), m_frame->data,
+          m_frame->linesize, (AVPixelFormat)m_frame->format, m_frame->width,
+          m_frame->height, alignment);
+
+      if (res < 0) {
+        std::cerr << "Error while copying a frame from FFMpeg to VALI";
+        std::cerr << "Error description: " << AvErrorToString(res);
+        return DEC_ERROR;
+      }
+    }
+
+    return DEC_SUCCESS;
+  }
+
+  /* Decodes single video frame.
+   *
+   * Upon successful decoder copies decoded frame to dst token and returns
+   * DEC_SUCCESS.
+   *
+   * Upon resolution change doesn't copy decoded frame to dst token and returns
+   * DEC_RES_CHANGE.
+   *
+   * Upon EOF returns DEC_EOS.
+   *
+   * Upon insuffcient data (e. g. frame is spread across multiple packets)
+   * returns DEC_MORE.
+   *
+   * Upont error returns DEC_ERROR.
+   */
   DECODE_STATUS DecodeSinglePacket(const AVPacket* pkt_Src, Token& dst) {
+    SaveCurrentRes();
+
     auto res = avcodec_send_packet(m_avc_ctx.get(), pkt_Src);
     if (AVERROR_EOF == res) {
       // Flush decoder;
       res = 0;
+    } else if (res == AVERROR(EAGAIN)) {
+      return DEC_MORE;
     } else if (res < 0) {
-      std::cerr << "Error while sending a packet to the decoder";
+      std::cerr << "Error while sending a packet to the decoder. ";
       std::cerr << "Error description: " << AvErrorToString(res);
       return DEC_ERROR;
     }
@@ -509,40 +581,18 @@ struct FfmpegDecodeFrame_Impl {
       } else if (res == AVERROR(EAGAIN)) {
         return DEC_MORE;
       } else if (res < 0) {
-        std::cerr << "Error while receiving a frame from the decoder";
+        std::cerr << "Error while receiving a frame from the decoder. ";
         std::cerr << "Error description: " << AvErrorToString(res);
         return DEC_ERROR;
       }
 
-      if (m_frame->hw_frames_ctx) {
-        // Codec has HW acceleration and outputs to CUDA memory
-        try {
-          CopyToSurface(*m_frame.get(), dynamic_cast<Surface&>(dst), m_stream);
-        } catch (std::exception& e) {
-          std::cerr << "Error while copying a surface from FFMpeg to VALI";
-          std::cerr << "Error description: " << AvErrorToString(res);
-          return DEC_ERROR;
-        }
-      } else {
-        // No HW acceleration, outputs to RAM
-        auto& dstBuf = dynamic_cast<Buffer&>(dst);
-        const int alignment = 1;
-
-        res = av_image_copy_to_buffer(
-            dstBuf.GetDataAs<uint8_t>(), GetHostFrameSize(), m_frame->data,
-            m_frame->linesize, (AVPixelFormat)m_frame->format, m_frame->width,
-            m_frame->height, alignment);
-
-        if (res < 0) {
-          std::cerr << "Error while copying a frame from FFMpeg to VALI";
-          std::cerr << "Error description: " << AvErrorToString(res);
-          return DEC_ERROR;
-        }
+      if (UpdGetResChange()) {
+        return DEC_RES_CHANGE;
       }
 
       SaveSideData();
       SavePacketData();
-      return DEC_SUCCESS;
+      return GetLastFrame(dst);
     }
 
     return DEC_SUCCESS;
@@ -575,10 +625,24 @@ struct FfmpegDecodeFrame_Impl {
   }
 
   int GetWidth() const {
+    /* If called before single frame is decoded, the only way to get dimensions
+     * is via format context. After that, thake it from decoded frame. It's
+     * necessary to do so because resolution may change dynamically.
+     */
+    if (m_frame && m_frame->width > 0) {
+      return m_frame->width;
+    }
+
     return m_fmt_ctx->streams[GetVideoStrIdx()]->codecpar->width;
   }
 
   int GetHeight() const {
+    /* Same as in GetWidth.
+     */
+    if (m_frame && m_frame->height > 0) {
+      return m_frame->height;
+    }
+
     return m_fmt_ctx->streams[GetVideoStrIdx()]->codecpar->height;
   }
 
@@ -730,6 +794,21 @@ TaskExecStatus DecodeFrame::Run() {
     return pImpl->SeekDecode(this, *dst, *seek_ctx);
   }
 
+  /* In case of resolution change decoder will reconstruct a frame but will not
+   * return it to user because of inplace API. Amount of given memory
+   * may be insufficient.
+   *
+   * So decoder will signal resolution change and stash decoded frame.
+   * Next decode call will return stashed frame.
+   */
+  if (pImpl->FlipGetResChange()) {
+    if (DEC_SUCCESS == pImpl->GetLastFrame(*dst)) {
+      SetExecDetails(TaskExecDetails(TaskExecInfo::SUCCESS));
+      return TaskExecStatus::TASK_EXEC_SUCCESS;
+    }
+    return TaskExecStatus::TASK_EXEC_FAIL;
+  }
+
   if (pImpl->DecodeSingleFrame(this, *dst)) {
     return TaskExecStatus::TASK_EXEC_SUCCESS;
   }
@@ -751,6 +830,7 @@ void DecodeFrame::GetParams(MuxingParams& params) {
   params.videoContext.timeBase = pImpl->GetTimeBase();
   params.videoContext.num_frames = pImpl->GetNumFrames();
   params.videoContext.format = pImpl->GetPixelFormat();
+  params.videoContext.host_frame_size = pImpl->GetHostFrameSize();
   params.videoContext.color_range =
       fromFfmpegColorRange(pImpl->GetColorRange());
 

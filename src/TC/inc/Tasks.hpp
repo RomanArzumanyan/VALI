@@ -120,10 +120,15 @@ public:
   const PacketData& GetLastPacketData() const;
 
 private:
-  // Reconstructed pixels and seek context
+  /* 0) Reconstructed pixels
+   * 1) Seek context
+   */ 
   static const uint32_t num_inputs = 2U;
-  // Side data;
-  static const uint32_t num_outputs = 1U;
+
+  /* 0) Side data
+   * 1) Reconstructed pixels in case of resolution change
+   */   
+  static const uint32_t num_outputs = 2U;
   struct FfmpegDecodeFrame_Impl* pImpl = nullptr;
 
   DecodeFrame(const char* URL, NvDecoderClInterface& cli_iface,

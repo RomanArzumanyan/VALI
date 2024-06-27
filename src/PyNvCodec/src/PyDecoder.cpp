@@ -39,9 +39,8 @@ PyDecoder::PyDecoder(const string& pathToFile,
 
 bool PyDecoder::DecodeImpl(DecodeContext& ctx, TaskExecDetails& details,
                            Token& dst, std::optional<SeekContext> seek_ctx) {
-  UpdateState();
-  
   upDecoder->ClearInputs();
+  upDecoder->ClearOutputs();
   upDecoder->SetInput(&dst, 0U);
 
   std::shared_ptr<Buffer> seek_ctx_buf = nullptr;
@@ -55,6 +54,7 @@ bool PyDecoder::DecodeImpl(DecodeContext& ctx, TaskExecDetails& details,
   upDecoder->GetExecDetails(details);
   ctx.SetOutPacketData(upDecoder->GetLastPacketData());
 
+  UpdateState();
   return (TASK_EXEC_SUCCESS == ret);
 }
 
@@ -84,6 +84,7 @@ bool PyDecoder::DecodeSingleSurface(DecodeContext& ctx, Surface& surf,
 
   if (surf.Empty() || surf.Width() != Width() || surf.Height() != Height() ||
       surf.PixelFormat() != PixelFormat()) {
+    std::cerr << "Given surface doesn't have required dimensions or format";
     return false;
   }
   return DecodeImpl(ctx, details, surf, seek_ctx);
@@ -103,18 +104,6 @@ void* PyDecoder::GetSideData(AVFrameSideDataType data_type, size_t& raw_size) {
 void PyDecoder::UpdateState() {
   last_h = Height();
   last_w = Width();
-}
-
-bool PyDecoder::IsResolutionChanged() {
-  if (last_h != Height()) {
-    return true;
-  }
-
-  if (last_w != Width()) {
-    return true;
-  }
-
-  return false;
 }
 
 std::vector<MotionVector> PyDecoder::GetMotionVectors() {
@@ -195,6 +184,12 @@ uint32_t PyDecoder::Numframes() const {
   MuxingParams params;
   upDecoder->GetParams(params);
   return params.videoContext.num_frames;
+};
+
+uint32_t PyDecoder::HostFrameSize() const {
+  MuxingParams params;
+  upDecoder->GetParams(params);
+  return params.videoContext.host_frame_size;
 };
 
 Pixel_Format PyDecoder::PixelFormat() const {
@@ -313,6 +308,10 @@ void Init_PyDecoder(py::module& m) {
       .def("Format", &PyDecoder::PixelFormat,
            R"pbdoc(
         Return encoded video file pixel format.
+    )pbdoc")
+      .def("HostFrameSize", &PyDecoder::HostFrameSize,
+           R"pbdoc(
+        Return amount of bytes needed to store decoded frame.
     )pbdoc")
       .def("Accelerated", &PyDecoder::IsAccelerated,
            R"pbdoc(

@@ -34,6 +34,7 @@ struct VideoContext {
   double avgFrameRate;
   double timeBase;
   uint32_t streamIndex;
+  uint32_t host_frame_size;
   Pixel_Format format;
   ColorSpace color_space;
   ColorRange color_range;

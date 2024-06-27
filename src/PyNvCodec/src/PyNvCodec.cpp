@@ -330,6 +330,7 @@ PYBIND11_MODULE(_PyNvCodec, m) {
       .value("BIT_DEPTH_NOT_SUPPORTED", TaskExecInfo::BIT_DEPTH_NOT_SUPPORTED)
       .value("UNSUPPORTED_FMT_CONV_PARAMS",
              TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS)
+      .value("RES_CHANGE", TaskExecInfo::RES_CHANGE)
       .export_values();
 
   py::enum_<ColorSpace>(m, "ColorSpace")

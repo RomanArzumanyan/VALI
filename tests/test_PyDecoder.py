@@ -289,7 +289,6 @@ class TestDecoderBasic(unittest.TestCase):
         frame_gt = np.ndarray(dtype=np.uint8, shape=(surf.HostSize()))
 
         # Seek to random frame within input video frames range
-        # start_frame = random.randint(0, gtInfo.num_frames - 1)
         start_frame = random.randint(0, gtInfo.num_frames - 1)
         seek_ctx = nvc.SeekContext(seek_frame=start_frame)
         success, _ = pyDec.DecodeSingleSurface(
@@ -348,6 +347,69 @@ class TestDecoderBasic(unittest.TestCase):
         first_mv = mv[0]
         self.assertNotEqual(first_mv.source, 0)
         self.assertNotEqual(first_mv.motion_scale, 0)
+
+    def test_decode_resolution_change_gpu(self):
+        with open("gt_files.json") as f:
+            gtInfo = tc.GroundTruth(**json.load(f)["res_change"])
+
+        pyDec = nvc.PyDecoder(gtInfo.uri, {}, gpu_id=0)
+
+        width = gtInfo.width
+        height = gtInfo.height
+
+        dec_frame = 0
+        while True:
+            surf = nvc.Surface.Make(pyDec.Format(), width, height, gpu_id=0)
+            success, info = pyDec.DecodeSingleSurface(surf)
+
+            if not success:
+                break
+
+            dec_frame += 1
+
+            if info == nvc.TaskExecInfo.RES_CHANGE:
+                width = int(width * gtInfo.res_change_factor)
+                height = int(height * gtInfo.res_change_factor)
+
+                # Upon resolution change decoder will not return decoded
+                # pixels to user. Hence surface dimensions will not be same
+                # to that of decoder.
+                self.assertNotEqual(surf.Width(), width)
+                self.assertNotEqual(surf.Height(), height)
+
+            self.assertEqual(pyDec.Width(), width, str(dec_frame))
+            self.assertEqual(pyDec.Height(), height, str(dec_frame))
+
+    def test_decode_resolution_change_cpu(self):
+        with open("gt_files.json") as f:
+            gtInfo = tc.GroundTruth(**json.load(f)["res_change"])
+
+        pyDec = nvc.PyDecoder(gtInfo.uri, {}, gpu_id=-1)
+
+        width = gtInfo.width
+        height = gtInfo.height
+
+        dec_frame = 0
+        while True:
+            frame = np.ndarray(shape=(0), dtype=np.uint8)
+            success, info = pyDec.DecodeSingleFrame(frame)
+
+            if not success:
+                break
+
+            dec_frame += 1
+
+            if info == nvc.TaskExecInfo.RES_CHANGE:
+                width = int(width * gtInfo.res_change_factor)
+                height = int(height * gtInfo.res_change_factor)
+                
+                # Upon resolution change decoder will not return decoded
+                # pixels to user. Hence frame size will not be same
+                # to that of decoder.
+                self.assertNotEqual(pyDec.HostFrameSize(), frame.size)
+
+            self.assertEqual(pyDec.Width(), width, str(dec_frame))
+            self.assertEqual(pyDec.Height(), height, str(dec_frame))
 
 
 if __name__ == "__main__":

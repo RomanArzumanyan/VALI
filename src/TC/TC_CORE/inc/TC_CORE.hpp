@@ -45,6 +45,7 @@ enum class TaskExecInfo {
   INVALID_INPUT,
   UNSUPPORTED_FMT_CONV_PARAMS,
   NOT_SUPPORTED,
+  RES_CHANGE
 };
 
 struct TaskExecDetails {
