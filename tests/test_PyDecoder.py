@@ -357,10 +357,7 @@ class TestDecoderBasic(unittest.TestCase):
         width = gtInfo.width
         height = gtInfo.height
 
-        # FFMpeg cuvid decoder looses 1 frame upon resolution change.
-        # I didnt debug ffmpeg itself buf ffmpeg decode produces couple
-        # green empty frames on this test video.
-        dec_frame = 1
+        dec_frame = 0
         while True:
             surf = nvc.Surface.Make(pyDec.Format(), width, height, gpu_id=0)
             success, info = pyDec.DecodeSingleSurface(surf)

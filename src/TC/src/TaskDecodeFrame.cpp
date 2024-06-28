@@ -126,11 +126,30 @@ struct FfmpegDecodeFrame_Impl {
   // Flag which signals that decoder needs to be flushed
   bool m_flush = false;
 
+  // Flag which signals that current packet needs to be resent
+  bool m_resend = false;
+
   // Flag which signals end of file
   bool m_eof = false;
 
   // Flag which signals resolution change
   bool m_res_change = false;
+
+  /* These are handy counters for debug:
+   *
+   * Packets read.
+   * Packets sent.
+   * Frames received.
+   * 
+   * Since incrementing them is negligible overhead, only output is put under
+   * conditional compilation. Change #if in class destructor to output values.
+   * 
+   * Please note that seek heavy influences the difference between these
+   * counters values, that's ok.
+   */
+  uint32_t m_num_pkt_read = 0U;
+  uint32_t m_num_pkt_sent = 0U;
+  uint32_t m_num_frm_recv = 0U;
 
   // Helper functions
   void ThrowOnAvError(int res, const std::string& msg) const {
@@ -405,6 +424,11 @@ struct FfmpegDecodeFrame_Impl {
           break;
         }
 
+        if (m_resend) {
+          m_resend = false;
+          break;
+        }
+
         m_timeout_handler->Reset();
         auto ret = av_read_frame(m_fmt_ctx.get(), m_pkt.get());
 
@@ -415,6 +439,8 @@ struct FfmpegDecodeFrame_Impl {
           m_end_decode = true;
           parent->SetExecDetails(TaskExecDetails(TaskExecInfo::FAIL));
           return false;
+        } else {
+          m_num_pkt_read++;
         }
       } while (m_pkt->stream_index != GetVideoStrIdx());
 
@@ -573,6 +599,8 @@ struct FfmpegDecodeFrame_Impl {
         std::cerr << "Error while sending a packet to the decoder. ";
         std::cerr << "Error description: " << AvErrorToString(res);
         return DEC_ERROR;
+      } else {
+        m_num_pkt_sent++;
       }
     }
 
@@ -582,12 +610,15 @@ struct FfmpegDecodeFrame_Impl {
     } else if (res == AVERROR(EAGAIN)) {
       if (m_flush) {
         m_flush = false;
+        m_resend = true;
       }
       return DEC_MORE;
     } else if (res < 0) {
       std::cerr << "Error while receiving a frame from the decoder. ";
       std::cerr << "Error description: " << AvErrorToString(res);
       return DEC_ERROR;
+    } else {
+      m_num_frm_recv++;
     }
 
     if (UpdGetResChange()) {
@@ -600,6 +631,13 @@ struct FfmpegDecodeFrame_Impl {
   }
 
   ~FfmpegDecodeFrame_Impl() {
+// For debug purposes
+#if 0
+    std::cout << "m_num_pkt_read: " << m_num_pkt_read << std::endl;
+    std::cout << "m_num_pkt_sent: " << m_num_pkt_sent << std::endl;
+    std::cout << "m_num_frm_recv: " << m_num_frm_recv << std::endl;
+#endif
+
     for (auto& output : m_side_data) {
       if (output.second) {
         delete output.second;
