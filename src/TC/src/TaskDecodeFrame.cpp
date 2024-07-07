@@ -910,7 +910,7 @@ DecodeFrame::DecodeFrame(const char* URL, NvDecoderClInterface& cli_iface,
 
 DecodeFrame::~DecodeFrame() { delete pImpl; }
 
-bool DecodeFrame::IsAccelerated() const { pImpl->IsAccelerated(); }
+bool DecodeFrame::IsAccelerated() const { return pImpl->IsAccelerated(); }
 
 bool DecodeFrame::IsVFR() const { return pImpl->IsVFR(); }
 
