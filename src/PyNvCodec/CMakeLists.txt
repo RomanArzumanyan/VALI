@@ -65,6 +65,7 @@ endif()
 
 include("${PROJECT_ROOT_DIR}/common.cmake")
 find_FFMpeg(${FFMPEG_ROOT})
+# message(FATAL_ERROR "FFMPEG_LIBS_ALL: ${FFMPEG_LIBS_ALL}")
 
 target_link_libraries(
 	_PyNvCodec PUBLIC 
@@ -90,20 +91,8 @@ set_target_properties(_PyNvCodec PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 set_target_properties(_PyNvCodec PROPERTIES INSTALL_RPATH "$ORIGIN")
 
 if (WIN32)
-	install(TARGETS _PyNvCodec 
-		RUNTIME_DEPENDENCIES DIRECTORIES "${FFMPEG_ROOT}/bin/"
-		PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-" "python" "nvcuda"
-		POST_EXCLUDE_REGEXES ".*system32/.*\\.dll"
-		RUNTIME DESTINATION PyNvCodec 
-		LIBRARY DESTINATION PyNvCodec)
-else ()
-	install(TARGETS _PyNvCodec 
-		RUNTIME_DEPENDENCIES 
-		DIRECTORIES "${FFMPEG_ROOT}/lib/"
-		PRE_INCLUDE_REGEXES "${FFMPEG_LIBRARIES}"
-		POST_INCLUDE_REGEXES "${FFMPEG_LIBRARIES}"
-		RUNTIME DESTINATION PyNvCodec 
-		LIBRARY DESTINATION PyNvCodec)
+	install(FILES ${FFMPEG_DLLS} DESTINATION PyNvCodec)
+else ()	
+	install(FILES ${FFMPEG_LIBS_ALL} DESTINATION PyNvCodec)
 endif (WIN32)
-
-
+install(TARGETS _PyNvCodec RUNTIME DESTINATION PyNvCodec LIBRARY DESTINATION PyNvCodec)

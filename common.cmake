@@ -75,10 +75,16 @@ function(find_FFMpeg FFMPEG_ROOT)
         # Find FFMpeg DLLs
         set (FFMPEG_DLLS "")
         file(GLOB FFMPEG_DLLS "${FFMPEG_ROOT}/bin/*.dll")
+    else()
+        # Collect list of all shared libs + symbolic links
+        # Without that, CMake will only collect symbolic links to FFMPEG shared libs
+        # and they won't be put into module installation directory.
+        file(GLOB FFMPEG_LIBS_ALL "${FFMPEG_ROOT}/lib/*.so*")
     endif (WIN32)
 
     # Promote to parent scope
     set (FFMPEG_INCLUDE_DIRS    ${FFMPEG_INCLUDE_DIRS}  PARENT_SCOPE)
     set (FFMPEG_LIBRARIES       ${FFMPEG_LIBRARIES}     PARENT_SCOPE)
-    set (FFMPEG_DLLS            ${FFMPEG_DLLS}          PARENT_SCOPE)
+    set (FFMPEG_LIBS_ALL        ${FFMPEG_LIBS_ALL}      PARENT_SCOPE)
+    set (FFMPEG_DLLS            ${FFMPEG_DLLS}          PARENT_SCOPE)    
 endfunction()
