@@ -15,6 +15,7 @@
 #include "CudaUtils.hpp"
 #include "MemoryInterfaces.hpp"
 #include "Tasks.hpp"
+#include <iostream>
 
 CudaUploadFrame::CudaUploadFrame(CUstream stream)
     : Task("CudaUploadFrame", CudaUploadFrame::numInputs,
@@ -26,15 +27,18 @@ TaskExecStatus CudaUploadFrame::Run() {
 
   auto src_buffer = (Buffer*)GetInput(0U);
   if (!src_buffer) {
+    std::cerr << "Failed to upload frame: empty src" << std::endl;
     return TaskExecStatus::TASK_EXEC_FAIL;
   }
 
   auto dst_surface = (Surface*)GetInput(1U);
   if (!dst_surface) {
+    std::cerr << "Failed to upload frame: empty dst" << std::endl;
     return TaskExecStatus::TASK_EXEC_FAIL;
   }
 
   if (src_buffer->GetRawMemSize() != dst_surface->HostMemSize()) {
+    std::cerr << "Failed to upload frame: src / dst size mismatch" << std::endl;
     return TaskExecStatus::TASK_EXEC_FAIL;
   }
 
@@ -63,7 +67,11 @@ TaskExecStatus CudaUploadFrame::Run() {
       p_src_host += m.WidthInBytes * m.Height;
     }
     ThrowOnCudaError(cuStreamSynchronize(m_stream), __LINE__);
+  } catch (std::exception& e) {
+    std::cerr << "Failed to upload frame: " << e.what() << std::endl;
+    return TaskExecStatus::TASK_EXEC_FAIL;
   } catch (...) {
+    std::cerr << "Failed to upload frame: unknown exception" << std::endl;
     return TaskExecStatus::TASK_EXEC_FAIL;
   }
 
