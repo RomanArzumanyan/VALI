@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: false    
 
 jobs:
-  test_docker:
+  build_docker:
     runs-on: [self-hosted, Linux]
 
     steps:
@@ -30,14 +30,8 @@ jobs:
           -f docker/Dockerfile \
           --build-arg USER_NAME=$UID \
           --build-arg PIP_INSTALL_EXTRAS=torch .
-        docker run \
-          --rm \
-          --gpus all \
-          --user $UID \
-          --workdir /src/tests \
-          --entrypoint "python3" vali-gpu -m unittest discover .
 
-  build_linux:
+  test_linux:
     runs-on: [self-hosted, Linux]
 
     steps:
@@ -56,6 +50,11 @@ jobs:
         python3 -mpip install pycuda
         python3 -mpip install torch torchvision
         python3 -mpip install . --verbose
+
+    - name: 'Run tests'
+      run: |
+        cd tests
+        python3 -munittest discover .
 
     - name: 'Build docs'
       run: |
@@ -108,12 +107,7 @@ jobs:
       run: |
         ./tmp/venv_vali/Scripts/activate
         cd tests
-        python ./test_PyFFmpegDecoder.py
-        python ./test_PyFfmpegDemuxer.py
-        python ./test_PyFrameConverter.py
-        python ./test_PyNvDecoder.py
-        python ./test_PyNvEncoder.py
-        python ./test_PySurfaceConverter.py
+        python -munittest discover .
 
     - name: 'Upload Artifacts'
       uses: actions/upload-artifact@v3

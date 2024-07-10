@@ -114,7 +114,7 @@ class TestSurface(unittest.TestCase):
 
                 success, details = nvDwn.Run(surf_dst, frame_dst)
                 if not success:
-                    self.fail("Failed to download decoded surface: ", details)
+                    self.fail("Failed to download decoded surface: " + details)
                 self.assertTrue(np.array_equal(rgb_frame, frame_dst))
 
     def test_tensor_from_surface(self):
@@ -122,8 +122,8 @@ class TestSurface(unittest.TestCase):
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
 
             pyDec = nvc.PyDecoder(
-                input=gtInfo.uri, 
-                opts={}, 
+                input=gtInfo.uri,
+                opts={},
                 gpu_id=0)
 
             nvCvt = nvc.PySurfaceConverter(
@@ -178,10 +178,9 @@ class TestSurface(unittest.TestCase):
 
                 success, details = nvDwn.Run(surf_cvt, frame_surf)
                 if not success:
-                    self.fail("Failed to download decoded surface: ", details)
+                    self.fail("Failed to download decoded surface: " + details)
 
                 if not np.array_equal(frame_ten, frame_surf):
-                    self.log.error("Mismatch at frame " + str(i))
                     self.log.error(
                         "PSNR: " + str(tc.measurePSNR(frame_ten, frame_surf)))
 
@@ -189,7 +188,7 @@ class TestSurface(unittest.TestCase):
                                        surf_cvt.Height(), ".rgb")
                     tc.dumpFrameToDisk(frame_surf, "from_surface", surf_cvt.Width(),
                                        surf_cvt.Height(), ".rgb")
-                    self.fail()
+                    self.fail("Mismatch at frame " + str(i))
 
     def test_surface_from_tensor(self):
         with open("gt_files.json") as f:
