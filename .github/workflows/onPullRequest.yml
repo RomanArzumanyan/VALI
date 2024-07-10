@@ -107,7 +107,12 @@ jobs:
       run: |
         ./tmp/venv_vali/Scripts/activate
         cd tests
-        python -munittest discover .
+        python ./test_PyDecoder.py
+        python ./test_PyFrameConverter.py
+        python ./test_PyFrameConverter.py
+        python ./test_PyNvEncoder.py
+        python ./test_PySurfaceConverter.py
+        python ./test_PySurfaceResizer.py
 
     - name: 'Upload Artifacts'
       uses: actions/upload-artifact@v3
