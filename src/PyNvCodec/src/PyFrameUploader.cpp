@@ -32,23 +32,15 @@ PyFrameUploader::PyFrameUploader(CUstream str) {
   m_uploader = std::make_unique<CudaUploadFrame>(str);
 }
 
-bool PyFrameUploader::Run(py::array& src, Surface& dst) {
+bool PyFrameUploader::Run(py::array& src, Surface& dst,
+                          TaskExecDetails details) {
   auto buffer =
       std::shared_ptr<Buffer>(Buffer::Make(src.nbytes(), src.mutable_data()));
 
-  return Run(*buffer.get(), dst);
-}
-
-bool PyFrameUploader::Run(Buffer& src, Surface& dst) {
-  m_uploader->SetInput(&src, 0U);
+  m_uploader->SetInput(buffer.get(), 0U);
   m_uploader->SetInput(&dst, 1U);
-  auto res = m_uploader->Execute();
-
-  if (TASK_EXEC_FAIL == res) {
-    return false;
-  }
-
-  return true;
+  details = m_uploader->Execute();
+  return (TASK_EXEC_SUCCESS == details.m_status);
 }
 
 void Init_PyFrameUploader(py::module& m) {
@@ -63,18 +55,24 @@ void Init_PyFrameUploader(py::module& m) {
            R"pbdoc(
         :param stream: CUDA stream to use for upload
     )pbdoc")
-      .def("Run",
-           py::overload_cast<py::array&, Surface&>(&PyFrameUploader::Run),
-           py::arg("src"), py::arg("dst"),
-           py::call_guard<py::gil_scoped_release>(),
-           R"pbdoc(
+      .def(
+          "Run",
+          [](PyFrameUploader& self, py::array& src, Surface& dst) {
+            TaskExecDetails details;
+            return std::make_tuple(self.Run(src, dst, details), details.m_info);
+          },
+          py::arg("src"), py::arg("dst"),
+          py::call_guard<py::gil_scoped_release>(),
+          R"pbdoc(
         Blocking HtoD CUDA memcpy.
 
         :param src: input numpy array
         :type src: numpy.ndarray
         :param dst: output surface
         :type dst: Surface
-        :return: True in case of success, False otherwise
-        :rtype: bool
+        :return: tuple containing:
+          success (Bool) True in case of success, False otherwise.
+          info (TaskExecInfo) task execution information.
+        :rtype: tuple
     )pbdoc");
 }

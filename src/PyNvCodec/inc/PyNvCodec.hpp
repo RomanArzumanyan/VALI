@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include "FFmpegDemuxer.h"
 #include "MemoryInterfaces.hpp"
 #include "NvCodecCLIOptions.h"
 #include "NvDecoder.h"
@@ -98,8 +97,7 @@ public:
   PyFrameUploader(CUstream str);
   PyFrameUploader(size_t str) : PyFrameUploader((CUstream)str) {}
 
-  bool Run(py::array& src, Surface& dst);
-  bool Run(Buffer& src, Surface& dst);
+  bool Run(py::array& src, Surface& dst, TaskExecDetails details);
 };
 
 class PySurfaceDownloader {
@@ -110,7 +108,7 @@ public:
   PySurfaceDownloader(CUstream str);
   PySurfaceDownloader(size_t str) : PySurfaceDownloader((CUstream)str) {}
 
-  bool Run(Surface& src, py::array& dst);
+  bool Run(Surface& src, py::array& dst, TaskExecDetails& details);
 };
 
 class PySurfaceConverter {
@@ -140,8 +138,8 @@ public:
                    Pixel_Format outFormat);
 
   bool Run(py::array& src, py::array& dst,
-               std::shared_ptr<ColorspaceConversionContext> context,
-               TaskExecDetails& details);
+           std::shared_ptr<ColorspaceConversionContext> context,
+           TaskExecDetails& details);
 
   Pixel_Format GetFormat() const { return m_dst_fmt; }
 };
@@ -155,46 +153,7 @@ public:
   PySurfaceResizer(Pixel_Format format, size_t str)
       : PySurfaceResizer(format, (CUstream)str) {}
 
-  bool Run(Surface& src, Surface& dst);
-};
-
-class PyFFmpegDemuxer {
-  std::unique_ptr<DemuxFrame> upDemuxer;
-
-public:
-  PyFFmpegDemuxer(const std::string& pathToFile);
-
-  PyFFmpegDemuxer(const std::string& pathToFile,
-                  const std::map<std::string, std::string>& ffmpeg_options);
-
-  bool DemuxSinglePacket(py::array_t<uint8_t>& packet,
-                         py::array_t<uint8_t>* sei);
-
-  void GetLastPacketData(PacketData& pkt_data);
-
-  bool Seek(SeekContext& ctx, py::array_t<uint8_t>& packet);
-
-  uint32_t Width() const;
-
-  uint32_t Height() const;
-
-  Pixel_Format Format() const;
-
-  ColorSpace GetColorSpace() const;
-
-  ColorRange GetColorRange() const;
-
-  cudaVideoCodec Codec() const;
-
-  double Framerate() const;
-
-  double AvgFramerate() const;
-
-  bool IsVFR() const;
-
-  uint32_t Numframes() const;
-
-  double Timebase() const;
+  bool Run(Surface& src, Surface& dst, TaskExecDetails& details);
 };
 
 class DecodeContext {
@@ -236,25 +195,29 @@ public:
   void SetCloneSurface(Surface* p_surface);
 };
 
-class PyFfmpegDecoder {
-  std::unique_ptr<FfmpegDecodeFrame> upDecoder = nullptr;
+class PyDecoder {
+  std::unique_ptr<DecodeFrame> upDecoder = nullptr;
 
   void* GetSideData(AVFrameSideDataType data_type, size_t& raw_size);
 
   uint32_t last_w;
   uint32_t last_h;
-  uint32_t gpu_id;
+  int gpu_id;
 
   void UpdateState();
-  bool IsResolutionChanged();
 
 public:
-  PyFfmpegDecoder(const std::string& pathToFile,
-                  const std::map<std::string, std::string>& ffmpeg_options,
-                  uint32_t gpuID);
+  PyDecoder(const std::string& pathToFile,
+            const std::map<std::string, std::string>& ffmpeg_options,
+            int gpuID);
 
   bool DecodeSingleFrame(DecodeContext& ctx, py::array& frame,
-                         TaskExecDetails& details);
+                         TaskExecDetails& details,
+                         std::optional<SeekContext> seek_ctx);
+
+  bool DecodeSingleSurface(DecodeContext& ctx, Surface& surf,
+                           TaskExecDetails& details,
+                           std::optional<SeekContext> seek_ctx);
 
   std::vector<MotionVector> GetMotionVectors();
 
@@ -264,95 +227,16 @@ public:
   double AvgFramerate() const;
   double Timebase() const;
   uint32_t Numframes() const;
+  uint32_t HostFrameSize() const;
   ColorSpace Color_Space() const;
   ColorRange Color_Range() const;
   cudaVideoCodec Codec() const;
   Pixel_Format PixelFormat() const;
+  bool IsAccelerated() const;
 
 private:
-  bool DecodeImpl(DecodeContext& ctx, TaskExecDetails& details);
-};
-
-class PyNvDecoder {
-  std::unique_ptr<DemuxFrame> upDemuxer;
-  std::unique_ptr<NvdecDecodeFrame> upDecoder;
-  uint32_t gpuID;
-  static uint32_t const poolFrameSize = 4U;
-  Pixel_Format format;
-
-  uint32_t last_w;
-  uint32_t last_h;
-
-  void UpdateState();
-  bool IsResolutionChanged();
-
-public:
-  PyNvDecoder(uint32_t width, uint32_t height, Pixel_Format format,
-              cudaVideoCodec codec, uint32_t gpu_id);
-
-  PyNvDecoder(const std::string& pathToFile, int gpu_id);
-
-  PyNvDecoder(const std::string& pathToFile, int gpu_id,
-              const std::map<std::string, std::string>& ffmpeg_options);
-
-  PyNvDecoder(uint32_t width, uint32_t height, Pixel_Format format,
-              cudaVideoCodec codec, CUcontext ctx, CUstream str);
-
-  PyNvDecoder(uint32_t width, uint32_t height, Pixel_Format format,
-              cudaVideoCodec codec, size_t ctx, size_t str)
-      : PyNvDecoder(width, height, format, codec, (CUcontext)ctx,
-                    (CUstream)str) {}
-
-  PyNvDecoder(const std::string& pathToFile, CUcontext ctx, CUstream str);
-
-  PyNvDecoder(const std::string& pathToFile, size_t ctx, size_t str)
-      : PyNvDecoder(pathToFile, (CUcontext)ctx, (CUstream)str) {}
-
-  PyNvDecoder(const std::string& pathToFile, CUcontext ctx, CUstream str,
-              const std::map<std::string, std::string>& ffmpeg_options);
-
-  PyNvDecoder(const std::string& pathToFile, size_t ctx, size_t str,
-              const std::map<std::string, std::string>& ffmpeg_options)
-      : PyNvDecoder(pathToFile, (CUcontext)ctx, (CUstream)str, ffmpeg_options) {
-  }
-
-  Buffer* getElementaryVideo(SeekContext* seek_ctx, TaskExecDetails& details,
-                             bool needSEI);
-
-  Surface* getDecodedSurface(SeekContext* seek_ctx, TaskExecDetails& details,
-                             bool needSEI);
-
-  uint32_t Width() const;
-
-  ColorSpace GetColorSpace() const;
-
-  ColorRange GetColorRange() const;
-
-  void LastPacketData(PacketData& packetData) const;
-
-  uint32_t Height() const;
-
-  double Framerate() const;
-
-  double AvgFramerate() const;
-
-  bool IsVFR() const;
-
-  uint32_t Numframes() const;
-
-  double Timebase() const;
-
-  uint32_t Framesize() const;
-
-  Pixel_Format GetPixelFormat() const;
-
-  bool DecodeSurface(DecodeContext& ctx, TaskExecDetails& details);
-
-  Surface* getDecodedSurfaceFromPacket(
-      const py::array_t<uint8_t>* pPacket, TaskExecDetails& details,
-      const PacketData* p_packet_data = nullptr, bool no_eos = false);
-
-  std::map<NV_DEC_CAPS, int> Capabilities() const;
+  bool DecodeImpl(DecodeContext& ctx, TaskExecDetails& details, Token& dst,
+                  std::optional<SeekContext> seek_ctx);
 };
 
 class PyNvEncoder {

@@ -24,33 +24,33 @@ using namespace VPF;
 namespace VPF {
 struct TaskImpl {
   string name;
-  vector<Token *> m_inputs;
-  vector<Token *> m_outputs;
+  vector<Token*> m_inputs;
+  vector<Token*> m_outputs;
 
   p_sync_call m_call;
-  void *m_args;
+  void* m_args;
 
   TaskExecDetails m_exec_details;
 
   TaskImpl() = delete;
-  TaskImpl(const TaskImpl &other) = delete;
-  TaskImpl &operator=(const TaskImpl &other) = delete;
+  TaskImpl(const TaskImpl& other) = delete;
+  TaskImpl& operator=(const TaskImpl& other) = delete;
 
-  TaskImpl(const char *str_name, uint32_t num_inputs, uint32_t num_outputs,
-           p_sync_call sync_call, void *p_args)
+  TaskImpl(const char* str_name, uint32_t num_inputs, uint32_t num_outputs,
+           p_sync_call sync_call, void* p_args)
       : name(str_name), m_inputs(num_inputs), m_outputs(num_outputs),
         m_call(sync_call), m_args(p_args) {}
 };
 } // namespace VPF
 
-Task::Task(const char *str_name, uint32_t num_inputs, uint32_t num_outputs,
-           p_sync_call sync_call, void *p_args)
+Task::Task(const char* str_name, uint32_t num_inputs, uint32_t num_outputs,
+           p_sync_call sync_call, void* p_args)
     : p_impl(
           new TaskImpl(str_name, num_inputs, num_outputs, sync_call, p_args)) {}
 
-TaskExecStatus Task::Run() { return TaskExecStatus::TASK_EXEC_SUCCESS; }
+TaskExecDetails Task::Run() { return TaskExecDetails(); }
 
-TaskExecStatus Task::Execute() {
+TaskExecDetails Task::Execute() {
   auto const ret = Run();
   if (p_impl->m_call && p_impl->m_args) {
     p_impl->m_call(p_impl->m_args);
@@ -59,7 +59,7 @@ TaskExecStatus Task::Execute() {
   return ret;
 }
 
-bool Task::SetInput(Token *p_input, uint32_t num_input) {
+bool Task::SetInput(Token* p_input, uint32_t num_input) {
   if (num_input < p_impl->m_inputs.size()) {
     p_impl->m_inputs[num_input] = p_input;
     return true;
@@ -74,7 +74,7 @@ void Task::ClearInputs() {
   }
 }
 
-Token *Task::GetInput(uint32_t num_input) {
+Token* Task::GetInput(uint32_t num_input) {
   if (num_input < p_impl->m_inputs.size()) {
     return p_impl->m_inputs[num_input];
   }
@@ -82,7 +82,7 @@ Token *Task::GetInput(uint32_t num_input) {
   return nullptr;
 }
 
-bool Task::SetOutput(Token *p_output, uint32_t num_output) {
+bool Task::SetOutput(Token* p_output, uint32_t num_output) {
   if (num_output < p_impl->m_outputs.size()) {
     p_impl->m_outputs[num_output] = p_output;
     return true;
@@ -96,7 +96,7 @@ void Task::ClearOutputs() {
   }
 }
 
-Token *Task::GetOutput(uint32_t num_output) {
+Token* Task::GetOutput(uint32_t num_output) {
   if (num_output < p_impl->m_outputs.size()) {
     return p_impl->m_outputs[num_output];
   }
@@ -104,7 +104,7 @@ Token *Task::GetOutput(uint32_t num_output) {
   return nullptr;
 }
 
-const char *Task::GetName() const { return p_impl->name.c_str(); }
+const char* Task::GetName() const { return p_impl->name.c_str(); }
 
 Task::~Task() { delete p_impl; }
 
@@ -112,10 +112,10 @@ size_t Task::GetNumOutputs() const { return p_impl->m_outputs.size(); }
 
 size_t Task::GetNumInputs() const { return p_impl->m_inputs.size(); }
 
-void Task::SetExecDetails(const TaskExecDetails &exec_details) {
+void Task::SetExecDetails(const TaskExecDetails& exec_details) {
   p_impl->m_exec_details = exec_details;
 }
 
-void Task::GetExecDetails(TaskExecDetails &exec_details) {
+void Task::GetExecDetails(TaskExecDetails& exec_details) {
   exec_details = p_impl->m_exec_details;
 }

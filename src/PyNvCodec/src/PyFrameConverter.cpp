@@ -13,6 +13,7 @@
  */
 
 #include "PyNvCodec.hpp"
+#include "Utils.hpp"
 
 using namespace VPF;
 namespace py = pybind11;
@@ -26,14 +27,13 @@ PyFrameConverter::PyFrameConverter(uint32_t width, uint32_t height,
   m_up_ctx_buf.reset(Buffer::MakeOwnMem(sizeof(ColorspaceConversionContext)));
 }
 
-bool PyFrameConverter::Run(
-    py::array& src, py::array& dst,
-    std::shared_ptr<ColorspaceConversionContext> context,
-    TaskExecDetails& details) {
+bool PyFrameConverter::Run(py::array& src, py::array& dst,
+                           std::shared_ptr<ColorspaceConversionContext> context,
+                           TaskExecDetails& details) {
   auto const src_buf_size =
       getBufferSize(m_width, m_height, toFfmpegPixelFormat(m_src_fmt));
   if (src.nbytes() != src_buf_size) {
-    details.info = TaskExecInfo::INVALID_INPUT;
+    details.m_info = TaskExecInfo::INVALID_INPUT;
     return false;
   }
 
@@ -58,11 +58,12 @@ bool PyFrameConverter::Run(
     m_up_cvt->SetInput((Token*)m_up_ctx_buf.get(), 2U);
   }
 
-  return (TaskExecStatus::TASK_EXEC_SUCCESS == m_up_cvt->Run());
+  details = m_up_cvt->Run();
+  return (details.m_status == TaskExecStatus::TASK_EXEC_SUCCESS);
 }
 
 void Init_PyFrameConverter(py::module& m) {
-  py::class_<PyFrameConverter, std::shared_ptr<PyFrameConverter>>(
+  py::class_<PyFrameConverter>(
       m, "PyFrameConverter",
       "libswscale converter between different pixel formats.")
       .def(py::init<uint32_t, uint32_t, Pixel_Format, Pixel_Format>(),
@@ -81,12 +82,11 @@ void Init_PyFrameConverter(py::module& m) {
     )pbdoc")
       .def(
           "Run",
-          [](std::shared_ptr<PyFrameConverter> self, py::array& src,
-             py::array& dst,
+          [](PyFrameConverter& self, py::array& src, py::array& dst,
              std::shared_ptr<ColorspaceConversionContext> cc_ctx) {
             TaskExecDetails details;
-            return std::make_tuple(self->Run(src, dst, cc_ctx, details),
-                                   details.info);
+            return std::make_tuple(self.Run(src, dst, cc_ctx, details),
+                                   details.m_info);
           },
           py::arg("src"), py::arg("dst"), py::arg("cc_ctx"),
           py::call_guard<py::gil_scoped_release>(),

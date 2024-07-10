@@ -60,9 +60,8 @@ class TestSurfaceConverter(unittest.TestCase):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
 
-        nvDec = nvc.PyNvDecoder(
-            input=gtInfo.uri,
-            gpu_id=0)
+        pyDec = nvc.PyDecoder(
+            input=gtInfo.uri, opts={}, gpu_id=0)
 
         nvCvt = nvc.PySurfaceConverter(
             nvc.PixelFormat.NV12,
@@ -74,8 +73,10 @@ class TestSurfaceConverter(unittest.TestCase):
             nvc.ColorSpace.BT_601,
             nvc.ColorRange.MPEG)
 
-        surf_src, _ = nvDec.DecodeSingleSurface()
-        if surf_src.Empty():
+        surf_src = nvc.Surface.Make(
+            pyDec.Format(), pyDec.Width(), pyDec.Height(), gpu_id=0)
+        success, _ = pyDec.DecodeSingleSurface(surf_src)
+        if not success:
             self.fail("Fail to decode surface")
 
         surf_dst = nvc.Surface.Make(
@@ -110,10 +111,11 @@ class TestSurfaceConverter(unittest.TestCase):
             for i in range(0, dst_info.num_frames):
                 frame_size = dst_info.width * dst_info.height * 3
                 # Read from ethalon RGB file
-                dist_frame = np.fromfile(file=f_in, dtype=np.uint8, count=frame_size)
+                dist_frame = np.fromfile(
+                    file=f_in, dtype=np.uint8, count=frame_size)
 
                 # Upload to GPU
-                surf_rgb = nvc.Surface.Make(nvc.PixelFormat.RGB, dst_info.width, 
+                surf_rgb = nvc.Surface.Make(nvc.PixelFormat.RGB, dst_info.width,
                                             dst_info.height, gpu_id=0)
                 success = nvUpl.Run(dist_frame, surf_rgb)
                 if not success:
@@ -125,7 +127,7 @@ class TestSurfaceConverter(unittest.TestCase):
                     pln_info.width,
                     pln_info.height,
                     gpu_id=0)
-                
+
                 success, details = toPLN.Run(surf_rgb, surf_pln, cc_ctx)
                 if not success:
                     self.fail("Fail to convert RGB > RGB_PLANAR: " + details)
@@ -180,8 +182,8 @@ class TestSurfaceConverter(unittest.TestCase):
                 src_fin, np.uint8, int(src_info.width * src_info.height * 3 / 2))
 
             # Upload to GPU
-            surf_src = nvc.Surface.Make(nvc.PixelFormat.NV12, src_info.width, 
-                                            src_info.height, gpu_id=0)
+            surf_src = nvc.Surface.Make(nvc.PixelFormat.NV12, src_info.width,
+                                        src_info.height, gpu_id=0)
             success = nvUpl.Run(frame_src, surf_src)
             if not success:
                 self.fail("Failed to upload frame")
@@ -198,7 +200,8 @@ class TestSurfaceConverter(unittest.TestCase):
                           str(i) + ": " + str(details))
 
             # Download to numpy array
-            dist_frame = np.ndarray(shape=(surf_dst.HostSize()), dtype=np.uint8)
+            dist_frame = np.ndarray(
+                shape=(surf_dst.HostSize()), dtype=np.uint8)
             if not nvDwn.Run(surf_dst, dist_frame):
                 self.fail("Fail to download surface")
 
@@ -249,8 +252,8 @@ class TestSurfaceConverter(unittest.TestCase):
                 src_fin, np.uint16, int(src_info.width * src_info.height * 3 / 2))
 
             # Upload to GPU
-            surf_src = nvc.Surface.Make(nvc.PixelFormat.P10, src_info.width, 
-                                            src_info.height, gpu_id=0)
+            surf_src = nvc.Surface.Make(nvc.PixelFormat.P10, src_info.width,
+                                        src_info.height, gpu_id=0)
             success = nvUpl.Run(frame_src, surf_src)
             if not success:
                 self.fail("Failed to upload frame")
@@ -265,7 +268,8 @@ class TestSurfaceConverter(unittest.TestCase):
                           str(i) + ": " + str(details))
 
             # Download to numpy array
-            dist_frame = np.ndarray(shape=(surf_dst.HostSize()), dtype=np.uint8)
+            dist_frame = np.ndarray(
+                shape=(surf_dst.HostSize()), dtype=np.uint8)
             success = nvDwn.Run(surf_dst, dist_frame)
             if not success:
                 self.fail("Fail to download surface")
@@ -278,15 +282,15 @@ class TestSurfaceConverter(unittest.TestCase):
             if score < psnr_threshold:
                 tc.dumpFrameToDisk(dist_frame, "cc", dst_info.width,
                                    dst_info.height, "dist")
-                
+
                 tc.dumpFrameToDisk(gt_frame, "cc", dst_info.width,
                                    dst_info.height, "gt")
-                
+
                 self.fail(
                     "PSNR score is below threshold: " + str(score))
 
         src_fin.close()
-        dst_fin.close()         
+        dst_fin.close()
 
 
 if __name__ == "__main__":

@@ -238,7 +238,7 @@ bool PyNvEncoder::EncodeSingleSurface(EncodeContext& ctx) {
     upEncoder->SetInput(spSEI.get(), 2U);
   }
 
-  if (TASK_EXEC_FAIL == upEncoder->Execute()) {
+  if (TASK_EXEC_FAIL == upEncoder->Execute().m_status) {
     throw runtime_error("Error while encoding frame");
   }
 
@@ -467,7 +467,8 @@ void Init_PyNvEncoder(py::module& m) {
                              const py::array_t<uint8_t>&, bool>(
                &PyNvEncoder::EncodeSurface),
            py::arg("surface"), py::arg("packet"), py::arg("sei"),
-           py::arg("sync"), py::call_guard<py::gil_scoped_release>(),
+           py::arg("sync"), 
+           py::call_guard<py::gil_scoped_release>(),
            R"pbdoc(
         Encode single Surface. Please not that this function may not return
         compressed video packet.
@@ -531,7 +532,8 @@ void Init_PyNvEncoder(py::module& m) {
         :return: True in case of success, False otherwise.
     )pbdoc")
       .def("FlushSinglePacket", &PyNvEncoder::FlushSinglePacket,
-           py::arg("packets"), py::call_guard<py::gil_scoped_release>(),
+           py::arg("packets"), 
+           py::call_guard<py::gil_scoped_release>(),
            R"pbdoc(
         Flush encoder.
         Use this method in the end of encoding session to obtain single remaining

@@ -235,11 +235,7 @@ void Init_PySurfaceDownloader(py::module&);
 
 void Init_PySurfaceResizer(py::module&);
 
-void Init_PyFFMpegDecoder(py::module&);
-
-void Init_PyFFMpegDemuxer(py::module&);
-
-void Init_PyNvDecoder(py::module&);
+void Init_PyDecoder(py::module&);
 
 void Init_PyNvEncoder(py::module&);
 
@@ -326,14 +322,23 @@ PYBIND11_MODULE(_PyNvCodec, m) {
       .export_values();
 
   py::enum_<TaskExecInfo>(m, "TaskExecInfo")
-      .value("FAIL", TaskExecInfo::FAIL)
-      .value("SUCCESS", TaskExecInfo::SUCCESS)
-      .value("END_OF_STREAM", TaskExecInfo::END_OF_STREAM)
-      .value("INVALID_INPUT", TaskExecInfo::INVALID_INPUT)
-      .value("MORE_DATA_NEEDED", TaskExecInfo::MORE_DATA_NEEDED)
-      .value("BIT_DEPTH_NOT_SUPPORTED", TaskExecInfo::BIT_DEPTH_NOT_SUPPORTED)
+      .value("SUCCESS", TaskExecInfo::SUCCESS, "Success")
+      .value("FAIL", TaskExecInfo::FAIL, "Fail")
+      .value("END_OF_STREAM", TaskExecInfo::END_OF_STREAM, "End of file")
+      .value("MORE_DATA_NEEDED", TaskExecInfo::MORE_DATA_NEEDED,
+             "More data needed to complete")
+      .value("BIT_DEPTH_NOT_SUPPORTED", TaskExecInfo::BIT_DEPTH_NOT_SUPPORTED,
+             "Bit depth isn't supported")
+      .value("INVALID_INPUT", TaskExecInfo::INVALID_INPUT, "Invalid input")
       .value("UNSUPPORTED_FMT_CONV_PARAMS",
-             TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS)
+             TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS,
+             "Unsupported color conversion parameters")
+      .value("NOT_SUPPORTED", TaskExecInfo::NOT_SUPPORTED,
+             "Unsupported feature")
+      .value("RES_CHANGE", TaskExecInfo::RES_CHANGE,
+             "Video resolution change happened")
+      .value("SRC_DST_SIZE_MISMATCH", TaskExecInfo::SRC_DST_SIZE_MISMATCH,
+             "Input and output size mismatch")
       .export_values();
 
   py::enum_<ColorSpace>(m, "ColorSpace")
@@ -460,7 +465,9 @@ PYBIND11_MODULE(_PyNvCodec, m) {
 
   py::class_<TaskExecDetails, shared_ptr<TaskExecDetails>>(m, "TaskExecDetails")
       .def(py::init<>())
-      .def_readwrite("info", &TaskExecDetails::info);
+      .def_readwrite("info", &TaskExecDetails::m_info)
+      .def_readwrite("status", &TaskExecDetails::m_status)
+      .def_readwrite("message", &TaskExecDetails::m_msg);
 
   py::class_<ColorspaceConversionContext,
              shared_ptr<ColorspaceConversionContext>>(
@@ -549,11 +556,7 @@ PYBIND11_MODULE(_PyNvCodec, m) {
         :rtype: PyNvCodec.CudaBuffer
     )pbdoc");
 
-  Init_PyFFMpegDecoder(m);
-
-  Init_PyFFMpegDemuxer(m);
-
-  Init_PyNvDecoder(m);
+  Init_PyDecoder(m);
 
   Init_PyNvEncoder(m);
 
@@ -587,18 +590,13 @@ PYBIND11_MODULE(_PyNvCodec, m) {
            GetNumGpus
            GetNvencParams
            PySurfaceResizer
-           PySurfaceRemaper
            PySurfaceDownloader
            PySurfaceConverter
            PyNvEncoder
-           PyNvDecoder
+           PyDecoder
            PyFrameUploader
-           PyFFmpegDemuxer
-           PyFfmpegDecoder
-           PyCudaBufferDownloader
            PyBufferUploader
            SeekContext
-           CudaBuffer
            SurfacePlane
            Surface
 

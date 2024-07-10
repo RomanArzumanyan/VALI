@@ -62,14 +62,15 @@ class TestFrameConverter(unittest.TestCase):
             yuvInfo = tc.GroundTruth(**gt_values["basic"])
             rgbInfo = tc.GroundTruth(**gt_values["basic_rgb"])
 
-        ffDec = nvc.PyFfmpegDecoder(
+        pyDec = nvc.PyDecoder(
             input=yuvInfo.uri,
-            opts={})
+            opts={},
+            gpu_id=-1)
 
         ffCvt = nvc.PyFrameConverter(
-            ffDec.Width(),
-            ffDec.Height(),
-            ffDec.Format(),
+            pyDec.Width(),
+            pyDec.Height(),
+            pyDec.Format(),
             nvc.PixelFormat.RGB)
 
         # Use color space and range of original file.
@@ -83,7 +84,7 @@ class TestFrameConverter(unittest.TestCase):
 
         with open(rgbInfo.uri, "rb") as f_in:
             for i in range(0, rgbInfo.num_frames):
-                success, _ = ffDec.DecodeSingleFrame(yuv_frame)
+                success, _ = pyDec.DecodeSingleFrame(yuv_frame)
                 if not success:
                     self.fail("Fail to decode frame: " + str(_))
 
@@ -99,6 +100,7 @@ class TestFrameConverter(unittest.TestCase):
                                        rgbInfo.height, "rgb")
                     self.fail(
                         "PSNR score is below threshold: " + str(score))
+
 
 if __name__ == "__main__":
     unittest.main()

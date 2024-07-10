@@ -35,6 +35,8 @@ find_package(Python3 3.6 REQUIRED COMPONENTS Interpreter Development)
 
 option(FETCHCONTENT_QUIET OFF)
 include(FetchContent)
+
+# Fetch pybind11
 fetchcontent_declare(
     pybind11
     URL https://github.com/pybind/pybind11/archive/v2.10.0.tar.gz
@@ -44,11 +46,9 @@ fetchcontent_declare(
 fetchcontent_makeavailable(pybind11)
 
 pybind11_add_module(_PyNvCodec MODULE 
-	src/PyFFMpegDecoder.cpp
-	src/PyFFMpegDemuxer.cpp
+	src/PyDecoder.cpp
 	src/PyFrameUploader.cpp
 	src/PyNvCodec.cpp
-	src/PyNvDecoder.cpp
 	src/PyNvEncoder.cpp
 	src/PySurface.cpp
 	src/PySurfaceConverter.cpp
@@ -59,18 +59,13 @@ pybind11_add_module(_PyNvCodec MODULE
 set_property(TARGET _PyNvCodec PROPERTY CXX_STANDARD 17)
 target_include_directories(_PyNvCodec PRIVATE inc)
 
-set(PROJECT_ROOT_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/../..")
-if (WIN32)
-	include("../../common.cmake")
-	if (NOT DEFINED FFMPEG_ROOT)
-		message (FATAL "Define FFMPEG_ROOT variable before build")
-	endif(FFMPEG_ROOT)
-	find_FFMpeg(${FFMPEG_ROOT})
-else ()
-	message(STATUS "PROJECT_ROOT_DIRECTORY: ${PROJECT_ROOT_DIRECTORY}")
-	list(APPEND CMAKE_MODULE_PATH "${PROJECT_ROOT_DIRECTORY}")
-	find_package(FFmpeg REQUIRED)
-endif (WIN32)
+if (NOT DEFINED FFMPEG_ROOT)
+    message (FATAL "Define FFMPEG_ROOT")
+endif()
+
+include("${PROJECT_ROOT_DIR}/common.cmake")
+find_FFMpeg(${FFMPEG_ROOT})
+# message(FATAL_ERROR "FFMPEG_LIBS_ALL: ${FFMPEG_LIBS_ALL}")
 
 target_link_libraries(
 	_PyNvCodec PUBLIC 
@@ -95,19 +90,9 @@ include(GNUInstallDirs)
 set_target_properties(_PyNvCodec PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 set_target_properties(_PyNvCodec PROPERTIES INSTALL_RPATH "$ORIGIN")
 
-option(RUN_CLANG_TIDY OFF)
-if (${RUN_CLANG_TIDY})
-	set_target_properties(
-		_PyNvCodec 
-		PROPERTIES 
-		CXX_CLANG_TIDY 
-		"clang-tidy;--config-file=${PROJECT_ROOT_DIRECTORY}/.clang-tidy")
-endif (${RUN_CLANG_TIDY})
-
 if (WIN32)
-	message (STATUS "FFMPEG_DLLS: ${FFMPEG_DLLS}")
 	install(FILES ${FFMPEG_DLLS} DESTINATION PyNvCodec)
-else ()
-	install(FILES ${FFMPEG_LIBRARIES} DESTINATION PyNvCodec)
+else ()	
+	install(FILES ${FFMPEG_LIBS_ALL} DESTINATION PyNvCodec)
 endif (WIN32)
 install(TARGETS _PyNvCodec RUNTIME DESTINATION PyNvCodec LIBRARY DESTINATION PyNvCodec)
