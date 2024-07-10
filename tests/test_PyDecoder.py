@@ -238,7 +238,6 @@ class TestDecoderBasic(unittest.TestCase):
             dec_frame += 1
             last_pts = pdata.pts
 
-    @tc.repeat(10)
     def test_seek_cpu_decoder(self):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
@@ -268,8 +267,8 @@ class TestDecoderBasic(unittest.TestCase):
             # Sometimes there are small differences between two frames.
             # They may be caused by different decoding results due to jumps
             # between frames.
-            # 
-            # If PSNR is higher then 40 dB we still consider frames to be the 
+            #
+            # If PSNR is higher then 40 dB we still consider frames to be the
             # same.
             psnr_score = tc.measurePSNR(frame_gt, frame)
             self.log.warning("Mismatch at frame " + str(dec_frames))
@@ -277,13 +276,12 @@ class TestDecoderBasic(unittest.TestCase):
 
             if psnr_score < 40:
                 tc.dumpFrameToDisk(frame_gt, "dec", pyDec.Width(),
-                                pyDec.Height(), "yuv_cont.yuv")
+                                   pyDec.Height(), "yuv_cont.yuv")
                 tc.dumpFrameToDisk(frame, "dec", pyDec.Width(),
-                                pyDec.Height(), "yuv_seek.yuv")
+                                   pyDec.Height(), "yuv_seek.yuv")
                 self.fail(
                     "Seek frame isnt same as continuous decode frame")
 
-    @tc.repeat(10)
     def test_seek_gpu_decoder(self):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
@@ -310,19 +308,19 @@ class TestDecoderBasic(unittest.TestCase):
         dec_frames = 0
         while dec_frames <= start_frame:
             success, details = pyDec.DecodeSingleSurface(surf=surf)
-            self.assertTrue(success, "Failed to decode frame: " + details)
+            self.assertTrue(success, "Failed to decode frame: " + str(details))
             dec_frames += 1
-        
+
         success, details = pyDwn.Run(src=surf, dst=frame_gt)
         if not success:
-            self.fail("Failed to download surface: " + details)
+            self.fail("Failed to download surface: " + str(details))
 
         if not np.array_equal(frame, frame_gt):
             # Sometimes there are small differences between two frames.
             # They may be caused by different decoding results due to jumps
             # between frames.
-            # 
-            # If PSNR is higher then 40 dB we still consider frames to be the 
+            #
+            # If PSNR is higher then 40 dB we still consider frames to be the
             # same.
             psnr_score = tc.measurePSNR(frame_gt, frame)
             self.log.warning("Mismatch at frame " + str(dec_frames))
@@ -330,9 +328,9 @@ class TestDecoderBasic(unittest.TestCase):
 
             if psnr_score < 40:
                 tc.dumpFrameToDisk(frame_gt, "dec", pyDec.Width(),
-                                pyDec.Height(), "yuv_cont.yuv")
+                                   pyDec.Height(), "yuv_cont.yuv")
                 tc.dumpFrameToDisk(frame, "dec", pyDec.Width(),
-                                pyDec.Height(), "yuv_seek.yuv")
+                                   pyDec.Height(), "yuv_seek.yuv")
                 self.fail(
                     "Seek frame isnt same as continuous decode frame")
 

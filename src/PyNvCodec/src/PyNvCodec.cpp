@@ -322,15 +322,23 @@ PYBIND11_MODULE(_PyNvCodec, m) {
       .export_values();
 
   py::enum_<TaskExecInfo>(m, "TaskExecInfo")
-      .value("FAIL", TaskExecInfo::FAIL)
-      .value("SUCCESS", TaskExecInfo::SUCCESS)
-      .value("END_OF_STREAM", TaskExecInfo::END_OF_STREAM)
-      .value("INVALID_INPUT", TaskExecInfo::INVALID_INPUT)
-      .value("MORE_DATA_NEEDED", TaskExecInfo::MORE_DATA_NEEDED)
-      .value("BIT_DEPTH_NOT_SUPPORTED", TaskExecInfo::BIT_DEPTH_NOT_SUPPORTED)
+      .value("SUCCESS", TaskExecInfo::SUCCESS, "Success")
+      .value("FAIL", TaskExecInfo::FAIL, "Fail")
+      .value("END_OF_STREAM", TaskExecInfo::END_OF_STREAM, "End of file")
+      .value("MORE_DATA_NEEDED", TaskExecInfo::MORE_DATA_NEEDED,
+             "More data needed to complete")
+      .value("BIT_DEPTH_NOT_SUPPORTED", TaskExecInfo::BIT_DEPTH_NOT_SUPPORTED,
+             "Bit depth isn't supported")
+      .value("INVALID_INPUT", TaskExecInfo::INVALID_INPUT, "Invalid input")
       .value("UNSUPPORTED_FMT_CONV_PARAMS",
-             TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS)
-      .value("RES_CHANGE", TaskExecInfo::RES_CHANGE)
+             TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS,
+             "Unsupported color conversion parameters")
+      .value("NOT_SUPPORTED", TaskExecInfo::NOT_SUPPORTED,
+             "Unsupported feature")
+      .value("RES_CHANGE", TaskExecInfo::RES_CHANGE,
+             "Video resolution change happened")
+      .value("SRC_DST_SIZE_MISMATCH", TaskExecInfo::SRC_DST_SIZE_MISMATCH,
+             "Input and output size mismatch")
       .export_values();
 
   py::enum_<ColorSpace>(m, "ColorSpace")
@@ -582,18 +590,13 @@ PYBIND11_MODULE(_PyNvCodec, m) {
            GetNumGpus
            GetNvencParams
            PySurfaceResizer
-           PySurfaceRemaper
            PySurfaceDownloader
            PySurfaceConverter
            PyNvEncoder
-           PyNvDecoder
-           PyFrameUploader
-           PyFFmpegDemuxer
            PyDecoder
-           PyCudaBufferDownloader
+           PyFrameUploader
            PyBufferUploader
            SeekContext
-           CudaBuffer
            SurfacePlane
            Surface
 
