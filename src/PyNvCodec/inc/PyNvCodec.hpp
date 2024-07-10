@@ -97,8 +97,7 @@ public:
   PyFrameUploader(CUstream str);
   PyFrameUploader(size_t str) : PyFrameUploader((CUstream)str) {}
 
-  bool Run(py::array& src, Surface& dst);
-  bool Run(Buffer& src, Surface& dst);
+  bool Run(py::array& src, Surface& dst, TaskExecDetails details);
 };
 
 class PySurfaceDownloader {
@@ -109,7 +108,7 @@ public:
   PySurfaceDownloader(CUstream str);
   PySurfaceDownloader(size_t str) : PySurfaceDownloader((CUstream)str) {}
 
-  bool Run(Surface& src, py::array& dst);
+  bool Run(Surface& src, py::array& dst, TaskExecDetails& details);
 };
 
 class PySurfaceConverter {
@@ -154,7 +153,7 @@ public:
   PySurfaceResizer(Pixel_Format format, size_t str)
       : PySurfaceResizer(format, (CUstream)str) {}
 
-  bool Run(Surface& src, Surface& dst);
+  bool Run(Surface& src, Surface& dst, TaskExecDetails& details);
 };
 
 class DecodeContext {

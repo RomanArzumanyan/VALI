@@ -33,18 +33,16 @@ PySurfaceDownloader::PySurfaceDownloader(CUstream str) {
   upDownloader = std::make_unique<CudaDownloadSurface>(str);
 }
 
-bool PySurfaceDownloader::Run(Surface& src, py::array& dst) {
+bool PySurfaceDownloader::Run(Surface& src, py::array& dst,
+                              TaskExecDetails& details) {
   auto buffer =
       std::shared_ptr<Buffer>(Buffer::Make(dst.nbytes(), dst.mutable_data()));
 
   upDownloader->SetInput(&src, 0U);
   upDownloader->SetInput(buffer.get(), 1U);
 
-  if (TASK_EXEC_FAIL == upDownloader->Execute()) {
-    return false;
-  }
-
-  return true;
+  details = upDownloader->Execute();
+  return (TASK_EXEC_SUCCESS == details.m_status);
 }
 
 void Init_PySurfaceDownloader(py::module& m) {
@@ -63,16 +61,25 @@ void Init_PySurfaceDownloader(py::module& m) {
 
         :param stream: CUDA stream to use for HtoD memcopy
     )pbdoc")
-      .def("Run", &PySurfaceDownloader::Run, py::arg("src"), py::arg("dst"),
-           py::call_guard<py::gil_scoped_release>(),
-           R"pbdoc(
+      .def(
+          "Run",
+          [](PySurfaceDownloader& self, Surface& src, py::array& dst) {
+            TaskExecDetails details;
+            return std::make_tuple(self.Run(src, dst, details),
+                                   details.m_info);
+          },
+          py::arg("src"), py::arg("dst"),
+          py::call_guard<py::gil_scoped_release>(),
+          R"pbdoc(
         Perform DtoH memcpy.
 
         :param src: input Surface
         :type src: Surface
         :param dst: output numpy array
         :type dst: numpy.ndarray
-        :return: True in case of success False otherwise
-        :rtype: Bool
+        :return: tuple containing:
+          success (Bool) True in case of success, False otherwise.
+          info (TaskExecInfo) task execution information.
+        :rtype: tuple
     )pbdoc");
 }

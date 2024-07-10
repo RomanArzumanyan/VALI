@@ -48,18 +48,12 @@ bool PySurfaceConverter::Run(Surface& src, Surface& dst,
   upConverter->SetInput((Token*)&dst, 1U);
   upConverter->SetInput((Token*)upCtxBuffer.get(), 2U);
 
-  auto ret = upConverter->Execute();
-
-  auto pDetails = (Buffer*)upConverter->GetOutput(0U);
-  if (pDetails) {
-    details = *(pDetails->GetDataAs<TaskExecDetails>());
-  }
-
-  return (TASK_EXEC_SUCCESS == ret);
+  details = upConverter->Execute();
+  return (TASK_EXEC_SUCCESS == details.m_status);
 }
 
 void Init_PySurfaceConverter(py::module& m) {
-  py::class_<PySurfaceConverter, std::shared_ptr<PySurfaceConverter>>(
+  py::class_<PySurfaceConverter>(
       m, "PySurfaceConverter",
       "CUDA-accelerated converter between different pixel formats.")
       .def(py::init<Pixel_Format, Pixel_Format, uint32_t>(),
@@ -82,11 +76,11 @@ void Init_PySurfaceConverter(py::module& m) {
     )pbdoc")
       .def(
           "Run",
-          [](std::shared_ptr<PySurfaceConverter> self, Surface& src,
-             Surface& dst, ColorspaceConversionContext& cc_ctx) {
+          [](PySurfaceConverter& self, Surface& src, Surface& dst,
+             ColorspaceConversionContext& cc_ctx) {
             TaskExecDetails details;
-            return std::make_tuple(self->Run(src, dst, cc_ctx, details),
-                                   details.info);
+            return std::make_tuple(self.Run(src, dst, cc_ctx, details),
+                                   details.m_info);
           },
           py::arg("src"), py::arg("dst"), py::arg("cc_ctx"),
           py::call_guard<py::gil_scoped_release>(),

@@ -50,12 +50,11 @@ bool PyDecoder::DecodeImpl(DecodeContext& ctx, TaskExecDetails& details,
     upDecoder->SetInput(seek_ctx_buf.get(), 1U);
   }
 
-  auto ret = upDecoder->Execute();
-  upDecoder->GetExecDetails(details);
+  details = upDecoder->Execute();
   ctx.SetOutPacketData(upDecoder->GetLastPacketData());
 
   UpdateState();
-  return (TASK_EXEC_SUCCESS == ret);
+  return (TASK_EXEC_SUCCESS == details.m_status);
 }
 
 bool PyDecoder::DecodeSingleFrame(DecodeContext& ctx, py::array& frame,
@@ -91,7 +90,7 @@ bool PyDecoder::DecodeSingleSurface(DecodeContext& ctx, Surface& surf,
 }
 
 void* PyDecoder::GetSideData(AVFrameSideDataType data_type, size_t& raw_size) {
-  if (TASK_EXEC_SUCCESS == upDecoder->GetSideData(data_type)) {
+  if (TASK_EXEC_SUCCESS == upDecoder->GetSideData(data_type).m_status) {
     auto pSideData = (Buffer*)upDecoder->GetOutput(0U);
     if (pSideData) {
       raw_size = pSideData->GetRawMemSize();
@@ -226,7 +225,7 @@ void Init_PyDecoder(py::module& m) {
 
             return std::make_tuple(
                 self->DecodeSingleFrame(ctx, frame, details, seek_ctx),
-                details.info);
+                details.m_info);
           },
           py::arg("frame"), py::arg("pkt_data") = std::nullopt,
           py::arg("seek_ctx") = std::nullopt,
@@ -253,7 +252,7 @@ void Init_PyDecoder(py::module& m) {
 
             return std::make_tuple(
                 self->DecodeSingleSurface(ctx, surf, details, seek_ctx),
-                details.info);
+                details.m_info);
           },
           py::arg("surf"), py::arg("pkt_data") = std::nullopt,
           py::arg("seek_ctx") = std::nullopt,

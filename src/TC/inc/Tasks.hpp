@@ -64,7 +64,7 @@ public:
   uint32_t GetHeight() const;
   int GetCapability(NV_ENC_CAPS cap) const;
 
-  TaskExecStatus Run() final;
+  TaskExecDetails Run() final;
   ~NvencEncodeFrame() final;
   static NvencEncodeFrame* Make(CUstream cuStream, CUcontext cuContext,
                                 NvEncoderClInterface& cli_iface,
@@ -106,8 +106,8 @@ public:
   DecodeFrame(const DecodeFrame& other) = delete;
   DecodeFrame& operator=(const DecodeFrame& other) = delete;
 
-  TaskExecStatus Run() final;
-  TaskExecStatus GetSideData(AVFrameSideDataType);
+  TaskExecDetails Run() final;
+  TaskExecDetails GetSideData(AVFrameSideDataType);
 
   void GetParams(MuxingParams& params);
   uint32_t GetHostFrameSize() const;
@@ -122,12 +122,12 @@ public:
 private:
   /* 0) Reconstructed pixels
    * 1) Seek context
-   */ 
+   */
   static const uint32_t num_inputs = 2U;
 
   /* 0) Side data
    * 1) Reconstructed pixels in case of resolution change
-   */   
+   */
   static const uint32_t num_outputs = 2U;
   struct FfmpegDecodeFrame_Impl* pImpl = nullptr;
 
@@ -141,7 +141,7 @@ public:
   CudaUploadFrame(const CudaUploadFrame& other) = delete;
   CudaUploadFrame& operator=(const CudaUploadFrame& other) = delete;
 
-  TaskExecStatus Run();
+  TaskExecDetails Run();
   ~CudaUploadFrame() = default;
   CudaUploadFrame(CUstream stream);
 
@@ -151,6 +151,7 @@ private:
    */
   static const uint32_t numInputs = 2U;
   static const uint32_t numOutputs = 0U;
+
   CUstream m_stream;
 };
 
@@ -160,7 +161,7 @@ public:
   CudaDownloadSurface(const CudaDownloadSurface& other) = delete;
   CudaDownloadSurface& operator=(const CudaDownloadSurface& other) = delete;
 
-  TaskExecStatus Run();
+  TaskExecDetails Run();
   ~CudaDownloadSurface() = default;
   CudaDownloadSurface(CUstream cuStream);
 
@@ -183,7 +184,7 @@ public:
   ConvertSurface(Pixel_Format src, Pixel_Format dst, CUcontext ctx,
                  CUstream str);
 
-  TaskExecStatus Run() final;
+  TaskExecDetails Run() final;
 
 private:
   /* 0) Source Surface.
@@ -208,11 +209,11 @@ public:
 
   ~ConvertFrame();
 
-  TaskExecStatus Run() final;
+  TaskExecDetails Run() final;
 
 private:
   static const uint32_t numInputs = 3U;
-  static const uint32_t numOutputs = 2U;
+  static const uint32_t numOutputs = 1U;
 
   struct ConvertFrame_Impl* pImpl;
 
@@ -229,7 +230,7 @@ public:
   ~ResizeSurface();
   ResizeSurface(Pixel_Format format, CUcontext ctx, CUstream str);
 
-  TaskExecStatus Run() final;
+  TaskExecDetails Run() final;
 
 private:
   /* 0) Source Surface.

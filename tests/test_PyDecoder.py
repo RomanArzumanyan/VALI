@@ -154,7 +154,7 @@ class TestDecoderBasic(unittest.TestCase):
                 if not np.array_equal(frame_gt, frame):
                     self.log.error("Frames mismatch: ", dec_frames)
                     self.log.error("PSNR: ", tc.measurePSNR(frame_gt, frame))
-                    self.assertTrue(False)
+                    self.fail()
 
                 dec_frames += 1
 

@@ -13,14 +13,12 @@ struct ConvertFrame_Impl {
   size_t m_width, m_height;
 
   std::shared_ptr<SwsContext> m_ctx = nullptr;
-  std::shared_ptr<Buffer> m_details = nullptr;
 
   ConvertFrame_Impl(uint32_t width, uint32_t height, Pixel_Format in_Format,
                     Pixel_Format out_Format)
       : m_src_fmt(toFfmpegPixelFormat(in_Format)),
         m_dst_fmt(toFfmpegPixelFormat(out_Format)), m_width(width),
         m_height(height) {
-    m_details.reset(Buffer::MakeOwnMem(sizeof(TaskExecDetails)));
     m_ctx.reset(sws_getContext(m_width, m_height, m_src_fmt, width, height,
                                m_dst_fmt, SWS_BILINEAR, nullptr, nullptr,
                                nullptr),
@@ -38,7 +36,7 @@ ConvertFrame::~ConvertFrame() { delete pImpl; }
 ConvertFrame::ConvertFrame(uint32_t width, uint32_t height,
                            Pixel_Format src_fmt, Pixel_Format dst_fmt)
     : Task("FfmpegConvertFrame", ConvertFrame::numInputs,
-           ConvertFrame::numOutputs, nullptr, nullptr) {
+           ConvertFrame::numOutputs) {
 
   pImpl = new ConvertFrame_Impl(width, height, src_fmt, dst_fmt);
 }
@@ -49,27 +47,25 @@ ConvertFrame* ConvertFrame::Make(uint32_t width, uint32_t height,
   return new ConvertFrame(width, height, m_src_fmt, m_dst_fmt);
 }
 
-TaskExecStatus ConvertFrame::Run() {
+TaskExecDetails ConvertFrame::Run() {
   ClearOutputs();
-  auto pDetails = pImpl->m_details->GetDataAs<TaskExecDetails>();
   try {
     auto src_buf = dynamic_cast<Buffer*>(GetInput(0));
     if (!src_buf) {
-      pDetails->info = TaskExecInfo::INVALID_INPUT;
-      return TaskExecStatus::TASK_EXEC_FAIL;
+      return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL,
+                             TaskExecInfo::INVALID_INPUT, "empty src");
     }
 
-    // Output check & lazy init;
     auto dst_buf = dynamic_cast<Buffer*>(GetInput(1));
     if (!dst_buf) {
-      pDetails->info = TaskExecInfo::INVALID_INPUT;
-      return TaskExecStatus::TASK_EXEC_FAIL;
+      return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL,
+                             TaskExecInfo::INVALID_INPUT, "empty dst");
     }
 
     auto ctx_buf = dynamic_cast<Buffer*>(GetInput(2));
     if (!ctx_buf) {
-      pDetails->info = TaskExecInfo::INVALID_INPUT;
-      return TaskExecStatus::TASK_EXEC_FAIL;
+      return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL,
+                             TaskExecInfo::INVALID_INPUT, "empty cc_ctx");
     }
 
     auto src_frame =
@@ -89,23 +85,28 @@ TaskExecStatus ConvertFrame::Run() {
         sws_getCoefficients(colorSpace), isJpegRange, brightness, contrast,
         saturation);
     if (err < 0) {
-      pDetails->info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return TaskExecStatus::TASK_EXEC_FAIL;
+      return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL,
+                             TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS,
+                             "unsupported cconv params");
     }
 
     err = sws_scale(pImpl->m_ctx.get(), src_frame->data, src_frame->linesize, 0,
                     pImpl->m_height, dst_frame->data, dst_frame->linesize);
     if (err < 0) {
-      pDetails->info = TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS;
-      return TaskExecStatus::TASK_EXEC_FAIL;
+      return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL,
+                             TaskExecInfo::UNSUPPORTED_FMT_CONV_PARAMS,
+                             AvErrorToString(err));
     }
 
     SetOutput(dst_buf, 0U);
-    SetOutput(pImpl->m_details.get(), 1U);
 
-    return TaskExecStatus::TASK_EXEC_SUCCESS;
+    return TaskExecDetails(TaskExecStatus::TASK_EXEC_SUCCESS,
+                           TaskExecInfo::SUCCESS);
+  } catch (std::exception& e) {
+    return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL, TaskExecInfo::FAIL,
+                           e.what());
   } catch (...) {
-    pDetails->info = TaskExecInfo::FAIL;
-    return TaskExecStatus::TASK_EXEC_FAIL;
+    return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL, TaskExecInfo::FAIL,
+                           "unknown exception");
   }
 }

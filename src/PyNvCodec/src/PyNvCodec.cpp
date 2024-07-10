@@ -457,7 +457,9 @@ PYBIND11_MODULE(_PyNvCodec, m) {
 
   py::class_<TaskExecDetails, shared_ptr<TaskExecDetails>>(m, "TaskExecDetails")
       .def(py::init<>())
-      .def_readwrite("info", &TaskExecDetails::info);
+      .def_readwrite("info", &TaskExecDetails::m_info)
+      .def_readwrite("status", &TaskExecDetails::m_status)
+      .def_readwrite("message", &TaskExecDetails::m_msg);
 
   py::class_<ColorspaceConversionContext,
              shared_ptr<ColorspaceConversionContext>>(

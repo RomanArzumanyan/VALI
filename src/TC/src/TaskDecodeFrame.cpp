@@ -140,10 +140,10 @@ struct FfmpegDecodeFrame_Impl {
    * Packets read.
    * Packets sent.
    * Frames received.
-   * 
+   *
    * Since incrementing them is negligible overhead, only output is put under
    * conditional compilation. Change #if in class destructor to output values.
-   * 
+   *
    * Please note that seek heavy influences the difference between these
    * counters values, that's ok.
    */
@@ -411,9 +411,10 @@ struct FfmpegDecodeFrame_Impl {
     m_packet_data.pos = m_frame->pkt_pos;
   }
 
-  bool DecodeSingleFrame(DecodeFrame* parent, Token& dst) {
+  TaskExecDetails DecodeSingleFrame(Token& dst) {
     if (m_end_decode) {
-      return false;
+      return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL, TaskExecInfo::FAIL,
+                             "decode finished");
     }
 
     // Send packets to decoder until it outputs frame;
@@ -437,8 +438,8 @@ struct FfmpegDecodeFrame_Impl {
           break;
         } else if (ret < 0) {
           m_end_decode = true;
-          parent->SetExecDetails(TaskExecDetails(TaskExecInfo::FAIL));
-          return false;
+          return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL,
+                                 TaskExecInfo::FAIL, AvErrorToString(ret));
         } else {
           m_num_pkt_read++;
         }
@@ -448,29 +449,30 @@ struct FfmpegDecodeFrame_Impl {
 
       switch (status) {
       case DEC_SUCCESS:
-        parent->SetExecDetails(TaskExecDetails(TaskExecInfo::SUCCESS));
-        return true;
+        return TaskExecDetails(TaskExecStatus::TASK_EXEC_SUCCESS,
+                               TaskExecInfo::SUCCESS);
       case DEC_ERROR:
-        parent->SetExecDetails(TaskExecDetails(TaskExecInfo::FAIL));
         m_end_decode = true;
-        return false;
+        return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL,
+                               TaskExecInfo::FAIL, "decode error, end decode");
       case DEC_EOS:
-        parent->SetExecDetails(TaskExecDetails(TaskExecInfo::END_OF_STREAM));
         m_end_decode = true;
-        return false;
+        return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL,
+                               TaskExecInfo::END_OF_STREAM, "end of stream");
       case DEC_RES_CHANGE:
-        parent->SetExecDetails(TaskExecDetails(TaskExecInfo::RES_CHANGE));
-        return true;
+        return TaskExecDetails(TaskExecStatus::TASK_EXEC_SUCCESS,
+                               TaskExecInfo::RES_CHANGE, "resolution change");
       case DEC_MORE:
         // Just continue the loop to get more data;
         break;
       default:
-        std::cerr << "Invalid decoding status: " << status;
-        return false;
+        return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL,
+                               TaskExecInfo::FAIL, "unknown decode error");
       }
     } while (true);
 
-    return true;
+    return TaskExecDetails(TaskExecStatus::TASK_EXEC_SUCCESS,
+                           TaskExecInfo::SUCCESS);
   }
 
   void SaveMotionVectors() {
@@ -746,23 +748,17 @@ struct FfmpegDecodeFrame_Impl {
     return TsFromTime(ts_sec);
   }
 
-  TaskExecStatus SeekDecode(DecodeFrame* parent, Token& dst,
-                            const SeekContext& ctx) {
+  TaskExecDetails SeekDecode(Token& dst, const SeekContext& ctx) {
     /* Across this function packet presentation timestamp (PTS) values are used
      * to compare given timestamp against. That's done so because ffmpeg seek
      * relies on PTS.
      */
-    if (!parent) {
-      std::cerr << "Empty parent task given.";
-      return TaskExecStatus::TASK_EXEC_FAIL;
-    }
 
     if (IsVFR() && ctx.IsByNumber()) {
-      parent->SetExecDetails(TaskExecDetails(TaskExecInfo::NOT_SUPPORTED));
-      std::cerr
-          << "Can't seek by frame number in VFR sequences. Seek by timestamp "
-             "instead.";
-      return TaskExecStatus::TASK_EXEC_FAIL;
+      return TaskExecDetails(
+          TaskExecStatus::TASK_EXEC_FAIL, TaskExecInfo::NOT_SUPPORTED,
+          "Seek by frame number isn't supported for VFR sequences. "
+          "Seek by timestamp instead");
     }
 
     /* Some formats dont have a clear idea of what frame number is, so always
@@ -783,9 +779,8 @@ struct FfmpegDecodeFrame_Impl {
                              AVSEEK_FLAG_BACKWARD);
 
     if (ret < 0) {
-      parent->SetExecDetails(TaskExecDetails(TaskExecInfo::FAIL));
-      std::cerr << "Error seeking for frame: " + AvErrorToString(ret);
-      return TaskExecStatus::TASK_EXEC_FAIL;
+      return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL, TaskExecInfo::FAIL,
+                             AvErrorToString(ret));
     }
 
     /* Decode in loop until we reach desired frame.
@@ -795,30 +790,31 @@ struct FfmpegDecodeFrame_Impl {
     OpenCodec(was_accelerated);
 
     while (m_frame->pts < timestamp) {
-      if (!DecodeSingleFrame(parent, dst)) {
-        parent->SetExecDetails(TaskExecDetails(TaskExecInfo::FAIL));
-        std::cerr << "Failed to decode frame during seek.";
-        return TaskExecStatus::TASK_EXEC_FAIL;
+      auto details = DecodeSingleFrame(dst);
+      if (details.m_status != TaskExecStatus::TASK_EXEC_SUCCESS) {
+        return details;
       }
     }
 
-    return TaskExecStatus::TASK_EXEC_SUCCESS;
+    return TaskExecDetails(TaskExecStatus::TASK_EXEC_SUCCESS,
+                           TaskExecInfo::SUCCESS);
   }
 };
 } // namespace VPF
 
-TaskExecStatus DecodeFrame::Run() {
+TaskExecDetails DecodeFrame::Run() {
   ClearOutputs();
 
   auto dst = GetInput(0U);
   if (!dst) {
-    return TaskExecStatus::TASK_EXEC_FAIL;
+    return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL,
+                           TaskExecInfo::INVALID_INPUT, "empty dst");
   }
 
   auto seek_ctx_buf = static_cast<Buffer*>(GetInput(1U));
   if (seek_ctx_buf) {
     auto seek_ctx = seek_ctx_buf->GetDataAs<SeekContext>();
-    return pImpl->SeekDecode(this, *dst, *seek_ctx);
+    return pImpl->SeekDecode(*dst, *seek_ctx);
   }
 
   /* In case of resolution change decoder will reconstruct a frame but will not
@@ -830,18 +826,14 @@ TaskExecStatus DecodeFrame::Run() {
    */
   if (pImpl->FlipGetResChange()) {
     if (DEC_SUCCESS == pImpl->GetLastFrame(*dst)) {
-      SetExecDetails(TaskExecDetails(TaskExecInfo::SUCCESS));
-      return TaskExecStatus::TASK_EXEC_SUCCESS;
+      return TaskExecDetails(TaskExecStatus::TASK_EXEC_SUCCESS,
+                             TaskExecInfo::SUCCESS);
     }
-    SetExecDetails(TaskExecDetails(TaskExecInfo::FAIL));
-    return TaskExecStatus::TASK_EXEC_FAIL;
+    return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL, TaskExecInfo::FAIL,
+                           "decoder error upon resolution change");
   }
 
-  if (pImpl->DecodeSingleFrame(this, *dst)) {
-    return TaskExecStatus::TASK_EXEC_SUCCESS;
-  }
-
-  return TaskExecStatus::TASK_EXEC_FAIL;
+  return pImpl->DecodeSingleFrame(*dst);
 }
 
 uint32_t DecodeFrame::GetHostFrameSize() const {
@@ -876,15 +868,17 @@ void DecodeFrame::GetParams(MuxingParams& params) {
   }
 }
 
-TaskExecStatus DecodeFrame::GetSideData(AVFrameSideDataType data_type) {
+TaskExecDetails DecodeFrame::GetSideData(AVFrameSideDataType data_type) {
   SetOutput(nullptr, 0U);
   auto it = pImpl->m_side_data.find(data_type);
   if (it != pImpl->m_side_data.end()) {
     SetOutput((Token*)it->second, 0U);
-    return TaskExecStatus::TASK_EXEC_SUCCESS;
+    return TaskExecDetails(TaskExecStatus::TASK_EXEC_SUCCESS,
+                           TaskExecInfo::SUCCESS);
   }
 
-  return TaskExecStatus::TASK_EXEC_FAIL;
+  return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL, TaskExecInfo::FAIL,
+                        "decoder failed to get side data");
 }
 
 DecodeFrame* DecodeFrame::Make(const char* URL, NvDecoderClInterface& cli_iface,
@@ -892,6 +886,9 @@ DecodeFrame* DecodeFrame::Make(const char* URL, NvDecoderClInterface& cli_iface,
   return new DecodeFrame(URL, cli_iface, stream);
 }
 
+/* Don't mention any sync call in parent class constructor because GPU
+ * acceleration is optional. Sync in decode method(s) instead.
+ */
 DecodeFrame::DecodeFrame(const char* URL, NvDecoderClInterface& cli_iface,
                          std::optional<CUstream> stream)
     : Task("DecodeFrame", DecodeFrame::num_inputs, DecodeFrame::num_outputs) {

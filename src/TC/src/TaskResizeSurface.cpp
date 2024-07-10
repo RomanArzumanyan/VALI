@@ -5,6 +5,17 @@
 #include <stdexcept>
 
 namespace VPF {
+
+static const TaskExecDetails s_invalid_src_dst(TaskExecStatus::TASK_EXEC_FAIL,
+                                               TaskExecInfo::INVALID_INPUT,
+                                               "invalid src / dst");
+
+static const TaskExecDetails s_success(TaskExecStatus::TASK_EXEC_SUCCESS,
+                                       TaskExecInfo::SUCCESS);
+
+static const TaskExecDetails s_fail(TaskExecStatus::TASK_EXEC_FAIL,
+                                    TaskExecInfo::FAIL);
+
 struct ResizeSurface_Impl {
   CUcontext cu_ctx;
   CUstream cu_str;
@@ -17,7 +28,7 @@ struct ResizeSurface_Impl {
 
   virtual ~ResizeSurface_Impl() = default;
 
-  virtual TaskExecStatus Run(Surface& src, Surface& dst) = 0;
+  virtual TaskExecDetails Run(Surface& src, Surface& dst) = 0;
 };
 
 struct NppResizeSurfacePacked3C_Impl final : ResizeSurface_Impl {
@@ -27,11 +38,11 @@ struct NppResizeSurfacePacked3C_Impl final : ResizeSurface_Impl {
 
   ~NppResizeSurfacePacked3C_Impl() = default;
 
-  TaskExecStatus Run(Surface& src, Surface& dst) {
+  TaskExecDetails Run(Surface& src, Surface& dst) {
     NvtxMark tick("NppResizeSurfacePacked3C");
 
     if (dst.PixelFormat() != src.PixelFormat()) {
-      return TaskExecStatus::TASK_EXEC_FAIL;
+      return s_invalid_src_dst;
     }
 
     auto srcPlane = src.GetSurfacePlane();
@@ -61,10 +72,10 @@ struct NppResizeSurfacePacked3C_Impl final : ResizeSurface_Impl {
                                      pDst, nDstStep, oDstSize, oDstRectROI,
                                      eInterpolation, nppCtx);
     if (NPP_NO_ERROR != ret) {
-      return TaskExecStatus::TASK_EXEC_FAIL;
+      return s_fail;
     }
 
-    return TaskExecStatus::TASK_EXEC_SUCCESS;
+    return s_success;
   }
 };
 
@@ -75,11 +86,11 @@ struct NppResizeSurfacePlanar_Impl final : ResizeSurface_Impl {
 
   ~NppResizeSurfacePlanar_Impl() = default;
 
-  TaskExecStatus Run(Surface& src, Surface& dst) {
+  TaskExecDetails Run(Surface& src, Surface& dst) {
     NvtxMark tick("NppResizeSurfacePlanar");
 
     if (dst.PixelFormat() != src.PixelFormat()) {
-      return TaskExecStatus::TASK_EXEC_FAIL;
+      return s_invalid_src_dst;
     }
 
     for (auto plane = 0; plane < dst.NumPlanes(); plane++) {
@@ -110,11 +121,11 @@ struct NppResizeSurfacePlanar_Impl final : ResizeSurface_Impl {
                                        pDst, nDstStep, oDstSize, oDstRectROI,
                                        eInterpolation, nppCtx);
       if (NPP_NO_ERROR != ret) {
-        return TaskExecStatus::TASK_EXEC_FAIL;
+        return s_fail;
       }
     }
 
-    return TaskExecStatus::TASK_EXEC_SUCCESS;
+    return s_success;
   }
 };
 
@@ -131,7 +142,7 @@ struct ResizeSurfaceSemiPlanar_Impl final : ResizeSurface_Impl {
 
   ~ResizeSurfaceSemiPlanar_Impl() = default;
 
-  TaskExecStatus Run(Surface& src, Surface& dst) {
+  TaskExecDetails Run(Surface& src, Surface& dst) {
     NvtxMark tick("NppResizeSurfaceSemiPlanar");
 
     // Deal with temporary surfaces;
@@ -150,25 +161,27 @@ struct ResizeSurfaceSemiPlanar_Impl final : ResizeSurface_Impl {
     // Convert from NV12 to YUV420;
     m_cvt_nv12_yuv420->SetInput((Token*)&src, 0U);
     m_cvt_nv12_yuv420->SetInput((Token*)m_src_yuv420.get(), 1U);
-    if (TaskExecStatus::TASK_EXEC_SUCCESS != m_cvt_nv12_yuv420->Execute()) {
-      return TaskExecStatus::TASK_EXEC_FAIL;
+    if (TaskExecStatus::TASK_EXEC_SUCCESS !=
+        m_cvt_nv12_yuv420->Execute().m_status) {
+      return s_fail;
     }
 
     // Resize YUV420;
     m_resizer->SetInput((Token*)m_src_yuv420.get(), 0U);
     m_resizer->SetInput((Token*)m_dst_yuv420.get(), 1U);
-    if (TaskExecStatus::TASK_EXEC_SUCCESS != m_resizer->Execute()) {
-      return TaskExecStatus::TASK_EXEC_FAIL;
+    if (TaskExecStatus::TASK_EXEC_SUCCESS != m_resizer->Execute().m_status) {
+      return s_fail;
     }
 
     // Convert back to NV12;
     m_cvt_yuv420_nv12->SetInput((Token*)m_dst_yuv420.get(), 0U);
     m_cvt_yuv420_nv12->SetInput((Token*)&dst, 1U);
-    if (TaskExecStatus::TASK_EXEC_SUCCESS != m_cvt_yuv420_nv12->Execute()) {
-      return TaskExecStatus::TASK_EXEC_FAIL;
+    if (TaskExecStatus::TASK_EXEC_SUCCESS !=
+        m_cvt_yuv420_nv12->Execute().m_status) {
+      return s_fail;
     }
 
-    return TaskExecStatus::TASK_EXEC_SUCCESS;
+    return s_success;
   }
 
   /* NPP cant convert semi-planar surfaces, hence need to bash around with pixel
@@ -190,11 +203,11 @@ struct NppResizeSurfacePacked32F3C_Impl final : ResizeSurface_Impl {
 
   ~NppResizeSurfacePacked32F3C_Impl() = default;
 
-  TaskExecStatus Run(Surface& src, Surface& dst) {
+  TaskExecDetails Run(Surface& src, Surface& dst) {
     NvtxMark tick("NppResizeSurfacePacked32F3C");
 
     if (dst.PixelFormat() != src.PixelFormat()) {
-      return TaskExecStatus::TASK_EXEC_FAIL;
+      return s_invalid_src_dst;
     }
 
     auto srcPlane = src.GetSurfacePlane();
@@ -224,10 +237,10 @@ struct NppResizeSurfacePacked32F3C_Impl final : ResizeSurface_Impl {
                                       pDst, nDstStep, oDstSize, oDstRectROI,
                                       eInterpolation, nppCtx);
     if (NPP_NO_ERROR != ret) {
-      return TaskExecStatus::TASK_EXEC_FAIL;
+      return s_fail;
     }
 
-    return TaskExecStatus::TASK_EXEC_SUCCESS;
+    return s_success;
   }
 };
 
@@ -239,11 +252,11 @@ struct NppResizeSurface32FPlanar_Impl final : ResizeSurface_Impl {
 
   ~NppResizeSurface32FPlanar_Impl() = default;
 
-  TaskExecStatus Run(Surface& src, Surface& dst) {
+  TaskExecDetails Run(Surface& src, Surface& dst) {
     NvtxMark tick("NppResizeSurface32FPlanar");
 
     if (dst.PixelFormat() != src.PixelFormat()) {
-      return TaskExecStatus::TASK_EXEC_FAIL;
+      return s_invalid_src_dst;
     }
 
     for (auto plane = 0; plane < dst.NumPlanes(); plane++) {
@@ -274,11 +287,11 @@ struct NppResizeSurface32FPlanar_Impl final : ResizeSurface_Impl {
                                         pDst, nDstStep, oDstSize, oDstRectROI,
                                         eInterpolation, nppCtx);
       if (NPP_NO_ERROR != ret) {
-        return TaskExecStatus::TASK_EXEC_FAIL;
+        return s_fail;
       }
     }
 
-    return TaskExecStatus::TASK_EXEC_SUCCESS;
+    return s_success;
   }
 };
 } // namespace VPF
@@ -307,24 +320,19 @@ ResizeSurface::ResizeSurface(Pixel_Format format, CUcontext ctx, CUstream str)
 
 ResizeSurface::~ResizeSurface() { delete pImpl; }
 
-TaskExecStatus ResizeSurface::Run() {
+TaskExecDetails ResizeSurface::Run() {
   NvtxMark tick(GetName());
   ClearOutputs();
 
   auto pInputSurface = (Surface*)GetInput(0U);
   if (!pInputSurface) {
-    return TaskExecStatus::TASK_EXEC_FAIL;
+    return s_invalid_src_dst;
   }
 
   auto pOutputSurface = (Surface*)GetInput(1U);
   if (!pOutputSurface) {
-    return TaskExecStatus::TASK_EXEC_FAIL;
+    return s_invalid_src_dst;
   }
 
-  if (TaskExecStatus::TASK_EXEC_SUCCESS !=
-      pImpl->Run(*pInputSurface, *pOutputSurface)) {
-    return TaskExecStatus::TASK_EXEC_FAIL;
-  }
-
-  return TaskExecStatus::TASK_EXEC_SUCCESS;
+  return pImpl->Run(*pInputSurface, *pOutputSurface);
 }

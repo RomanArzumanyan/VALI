@@ -36,11 +36,13 @@ PySurfaceResizer::PySurfaceResizer(Pixel_Format format, uint32_t gpuID) {
       CudaResMgr::Instance().GetStream(gpuID));
 }
 
-bool PySurfaceResizer::Run(Surface& src, Surface& dst) {
+bool PySurfaceResizer::Run(Surface& src, Surface& dst,
+                           TaskExecDetails& details) {
   upResizer->SetInput(&src, 0U);
   upResizer->SetInput(&dst, 1U);
 
-  return (TASK_EXEC_SUCCESS == upResizer->Execute());
+  details = upResizer->Execute();
+  return (TASK_EXEC_SUCCESS == details.m_status);
 }
 
 void Init_PySurfaceResizer(py::module& m) {
@@ -62,13 +64,23 @@ void Init_PySurfaceResizer(py::module& m) {
         :param format: target Surface pixel format
         :param stream: CUDA stream to use for resize
     )pbdoc")
-      .def("Run", &PySurfaceResizer::Run, py::arg("src"), py::arg("dst"),
-           py::call_guard<py::gil_scoped_release>(),
-           R"pbdoc(
+      .def(
+          "Run",
+          [](PySurfaceResizer& self, Surface& src, Surface& dst) {
+            TaskExecDetails details;
+            return std::make_tuple(self.Run(src, dst, details),
+                                   details.m_info);
+          },
+          py::arg("src"), py::arg("dst"),
+          py::call_guard<py::gil_scoped_release>(),
+          R"pbdoc(
         Resize input Surface.
 
         :param src: input Surface. Must be of same format class instance was created with.
         :param dst: output Surface. Must be of same format class instance was created with.
-        :return: true in case of success, false otherwise.
+        :return: tuple containing:
+          success (Bool) True in case of success, False otherwise.
+          info (TaskExecInfo) task execution information.
+        :rtype: tuple
     )pbdoc");
 }
