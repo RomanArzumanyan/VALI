@@ -26,14 +26,12 @@ constexpr auto TASK_EXEC_SUCCESS = TaskExecStatus::TASK_EXEC_SUCCESS;
 constexpr auto TASK_EXEC_FAIL = TaskExecStatus::TASK_EXEC_FAIL;
 
 PySurfaceResizer::PySurfaceResizer(Pixel_Format format, CUstream str) {
-  upResizer =
-      std::make_unique<ResizeSurface>(format, GetContextByStream(str), str);
+  upResizer = std::make_unique<ResizeSurface>(format, str);
 }
 
 PySurfaceResizer::PySurfaceResizer(Pixel_Format format, uint32_t gpuID) {
   upResizer = std::make_unique<ResizeSurface>(
-      format, CudaResMgr::Instance().GetCtx(gpuID),
-      CudaResMgr::Instance().GetStream(gpuID));
+      format, CudaResMgr::Instance().GetStream(gpuID));
 }
 
 bool PySurfaceResizer::Run(Surface& src, Surface& dst,
@@ -68,8 +66,7 @@ void Init_PySurfaceResizer(py::module& m) {
           "Run",
           [](PySurfaceResizer& self, Surface& src, Surface& dst) {
             TaskExecDetails details;
-            return std::make_tuple(self.Run(src, dst, details),
-                                   details.m_info);
+            return std::make_tuple(self.Run(src, dst, details), details.m_info);
           },
           py::arg("src"), py::arg("dst"),
           py::call_guard<py::gil_scoped_release>(),

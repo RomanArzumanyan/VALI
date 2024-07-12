@@ -129,24 +129,22 @@ mutex CudaResMgr::gCtxMutex;
 mutex CudaResMgr::gStrMutex;
 
 auto CopyBuffer_Ctx_Str = [](shared_ptr<CudaBuffer> dst,
-                             shared_ptr<CudaBuffer> src, CUcontext cudaCtx,
-                             CUstream cudaStream) {
+                             shared_ptr<CudaBuffer> src, CUstream str) {
   if (dst->GetRawMemSize() != src->GetRawMemSize()) {
     throw runtime_error("Can't copy: buffers have different size.");
   }
 
-  CudaCtxPush ctxPush(cudaCtx);
+  CudaCtxPush ctxPush(str);
   ThrowOnCudaError(cuMemcpyDtoDAsync(dst->GpuMem(), src->GpuMem(),
-                                     src->GetRawMemSize(), cudaStream),
+                                     src->GetRawMemSize(), str),
                    __LINE__);
-  ThrowOnCudaError(cuStreamSynchronize(cudaStream), __LINE__);
+  ThrowOnCudaError(cuStreamSynchronize(str), __LINE__);
 };
 
 auto CopyBuffer = [](shared_ptr<CudaBuffer> dst, shared_ptr<CudaBuffer> src,
                      int gpuID) {
-  auto ctx = CudaResMgr::Instance().GetCtx(gpuID);
   auto str = CudaResMgr::Instance().GetStream(gpuID);
-  return CopyBuffer_Ctx_Str(dst, src, ctx, str);
+  return CopyBuffer_Ctx_Str(dst, src, str);
 };
 
 DecodeContext::DecodeContext(py::array_t<uint8_t>* sei,
@@ -364,18 +362,6 @@ PYBIND11_MODULE(_PyNvCodec, m) {
              "CUDA managed/unified memory allocated by cudaMallocManaged.")
       .export_values();
 
-  py::enum_<cudaVideoCodec>(m, "CudaVideoCodec")
-      .value("H264", cudaVideoCodec::cudaVideoCodec_H264)
-      .value("HEVC", cudaVideoCodec::cudaVideoCodec_HEVC)
-      .value("VP9", cudaVideoCodec::cudaVideoCodec_VP9)
-      .value("MJPEG", cudaVideoCodec::cudaVideoCodec_JPEG)
-      .value("MPEG1", cudaVideoCodec::cudaVideoCodec_MPEG1)
-      .value("MPEG2", cudaVideoCodec::cudaVideoCodec_MPEG2)
-      .value("MPEG4", cudaVideoCodec::cudaVideoCodec_MPEG4)
-      .value("VC1", cudaVideoCodec::cudaVideoCodec_VC1)
-      .value("AV1", cudaVideoCodec::cudaVideoCodec_AV1)
-      .export_values();
-
   py::enum_<SeekMode>(m, "SeekMode")
       .value("EXACT_FRAME", SeekMode::EXACT_FRAME,
              "Use this to seek for exac frame. Notice that if it's P or B "
@@ -514,15 +500,12 @@ PYBIND11_MODULE(_PyNvCodec, m) {
       .def(
           "CopyFrom",
           [](shared_ptr<CudaBuffer> self, shared_ptr<CudaBuffer> other,
-             size_t ctx, size_t str) {
-            CopyBuffer_Ctx_Str(self, other, (CUcontext)ctx, (CUstream)str);
-          },
-          py::arg("other"), py::arg("context"), py::arg("stream"),
+             size_t str) { CopyBuffer_Ctx_Str(self, other, (CUstream)str); },
+          py::arg("other"), py::arg("stream"),
           R"pbdoc(
         Copy content of another CudaBuffer into this CudaBuffer
 
         :param other: other CudaBuffer
-        :param context: CUDA context to use
         :param stream: CUDA stream to use
         :rtype: None
     )pbdoc")

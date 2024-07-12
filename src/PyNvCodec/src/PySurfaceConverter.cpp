@@ -26,15 +26,13 @@ constexpr auto TASK_EXEC_FAIL = TaskExecStatus::TASK_EXEC_FAIL;
 PySurfaceConverter::PySurfaceConverter(Pixel_Format src, Pixel_Format dst,
                                        uint32_t gpuID) {
   upConverter = std::make_unique<ConvertSurface>(
-      src, dst, CudaResMgr::Instance().GetCtx(gpuID),
-      CudaResMgr::Instance().GetStream(gpuID));
+      src, dst, CudaResMgr::Instance().GetStream(gpuID));
   upCtxBuffer.reset(Buffer::MakeOwnMem(sizeof(ColorspaceConversionContext)));
 }
 
 PySurfaceConverter::PySurfaceConverter(Pixel_Format src, Pixel_Format dst,
                                        CUstream str) {
-  upConverter =
-      std::make_unique<ConvertSurface>(src, dst, GetContextByStream(str), str);
+  upConverter = std::make_unique<ConvertSurface>(src, dst, str);
   upCtxBuffer.reset(Buffer::MakeOwnMem(sizeof(ColorspaceConversionContext)));
 }
 

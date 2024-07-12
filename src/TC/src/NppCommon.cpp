@@ -1,18 +1,19 @@
 #include "NppCommon.hpp"
+#include "CudaUtils.hpp"
 #include <cstring>
 #include <iostream>
 #include <mutex>
 
 using namespace std;
+using namespace VPF;
 
 static mutex gNppMutex;
 
-void SetupNppContext(CUcontext context, CUstream stream,
-                     NppStreamContext &nppCtx) {
+void SetupNppContext(CUstream stream, NppStreamContext& nppCtx) {
   memset(&nppCtx, 0, sizeof(nppCtx));
 
   lock_guard<mutex> lock(gNppMutex);
-  cuCtxPushCurrent(context);
+  CudaCtxPush push(stream);
 
   CUdevice device;
   auto res = cuCtxGetDevice(&device);
@@ -21,34 +22,39 @@ void SetupNppContext(CUcontext context, CUstream stream,
   }
 
   int multiProcessorCount = 0;
-  res = cuDeviceGetAttribute(&multiProcessorCount, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, device);
+  res = cuDeviceGetAttribute(&multiProcessorCount,
+                             CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, device);
   if (CUDA_SUCCESS != res) {
     cerr << "Failed to get CUDA device. Error code: " << res << endl;
   }
 
   int maxThreadsPerBlock = 0;
-  res = cuDeviceGetAttribute(&maxThreadsPerBlock, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK, device);
+  res = cuDeviceGetAttribute(&maxThreadsPerBlock,
+                             CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK, device);
   if (CUDA_SUCCESS != res) {
     cerr << "Failed to get CUDA device. Error code: " << res << endl;
   }
 
   int sharedMemPerBlock = 0;
-  res = cuDeviceGetAttribute(&sharedMemPerBlock, CU_DEVICE_ATTRIBUTE_SHARED_MEMORY_PER_BLOCK, device);
+  res = cuDeviceGetAttribute(
+      &sharedMemPerBlock, CU_DEVICE_ATTRIBUTE_SHARED_MEMORY_PER_BLOCK, device);
   if (CUDA_SUCCESS != res) {
     cerr << "Failed to get CUDA device. Error code: " << res << endl;
   }
 
   int major = 0;
-  res = cuDeviceGetAttribute(&major, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR, device);
+  res = cuDeviceGetAttribute(
+      &major, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR, device);
   if (CUDA_SUCCESS != res) {
     cerr << "Failed to get CUDA device. Error code: " << res << endl;
-  }  
+  }
 
   int minor = 0;
-  res = cuDeviceGetAttribute(&minor, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR, device);
+  res = cuDeviceGetAttribute(
+      &minor, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR, device);
   if (CUDA_SUCCESS != res) {
     cerr << "Failed to get CUDA device. Error code: " << res << endl;
-  }  
+  }
 
   nppCtx.hStream = stream;
   nppCtx.nCudaDeviceId = (int)device;
