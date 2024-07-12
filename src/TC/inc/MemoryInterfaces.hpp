@@ -97,23 +97,19 @@ public:
   static Buffer* Make(size_t bufferSize);
   static Buffer* Make(size_t bufferSize, void* pCopyFrom);
 
-  static Buffer* MakeOwnMem(size_t bufferSize, CUcontext ctx = nullptr);
-  static Buffer* MakeOwnMem(size_t bufferSize, const void* pCopyFrom,
-                            CUcontext ctx = nullptr);
+  static Buffer* MakeOwnMem(size_t bufferSize);
+  static Buffer* MakeOwnMem(size_t bufferSize, const void* pCopyFrom);
 
 private:
-  explicit Buffer(size_t bufferSize, bool ownMemory = true,
-                  CUcontext ctx = nullptr);
-  Buffer(size_t bufferSize, void* pCopyFrom, bool ownMemory,
-         CUcontext ctx = nullptr);
-  Buffer(size_t bufferSize, const void* pCopyFrom, CUcontext ctx = nullptr);
+  explicit Buffer(size_t bufferSize, bool ownMemory = true);
+  Buffer(size_t bufferSize, void* pCopyFrom, bool ownMemory);
+  Buffer(size_t bufferSize, const void* pCopyFrom);
   bool Allocate();
   void Deallocate();
 
   bool own_memory = true;
   size_t mem_size = 0UL;
   void* pRawData = nullptr;
-  CUcontext context = nullptr;
 #ifdef TRACK_TOKEN_ALLOCATIONS
   uint32_t id;
 #endif

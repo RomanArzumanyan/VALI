@@ -23,7 +23,7 @@
   do {                                                                         \
     CUresult err__ = call;                                                     \
     if (err__ != CUDA_SUCCESS) {                                               \
-      const char *szErrName = NULL;                                            \
+      const char* szErrName = NULL;                                            \
       cuGetErrorName(err__, &szErrName);                                       \
       std::ostringstream errorLog;                                             \
       errorLog << "CUDA driver API error " << szErrName;                       \
@@ -38,7 +38,7 @@
  */
 class NvEncoderCuda final : public NvEncoder {
 public:
-  NvEncoderCuda(CUcontext cuContext, uint32_t nWidth, uint32_t nHeight,
+  NvEncoderCuda(CUstream stream, uint32_t nWidth, uint32_t nHeight,
                 NV_ENC_BUFFER_FORMAT eBufferFormat,
                 uint32_t nExtraOutputDelay = 3,
                 bool bMotionEstimationOnly = false,
@@ -46,11 +46,13 @@ public:
 
   ~NvEncoderCuda() override;
 
-  static void CopyToDeviceFrame(
-      CUcontext device, CUstream stream, void *pSrcFrame, uint32_t nSrcPitch,
-      CUdeviceptr pDstFrame, uint32_t dstPitch, int width, int height,
-      CUmemorytype srcMemoryType, NV_ENC_BUFFER_FORMAT pixelFormat,
-      const uint32_t dstChromaOffsets[], uint32_t numChromaPlanes);
+  static void CopyToDeviceFrame(CUstream stream, void* pSrcFrame,
+                                uint32_t nSrcPitch, CUdeviceptr pDstFrame,
+                                uint32_t dstPitch, int width, int height,
+                                CUmemorytype srcMemoryType,
+                                NV_ENC_BUFFER_FORMAT pixelFormat,
+                                const uint32_t dstChromaOffsets[],
+                                uint32_t numChromaPlanes);
 
   NV_ENCODE_API_FUNCTION_LIST GetApi() const;
 
@@ -77,7 +79,7 @@ private:
    */
   void ReleaseCudaResources();
 
-  CUcontext m_cuContext;
+  CUstream m_cuda_stream;
 
   size_t m_cudaPitch = 0;
 };

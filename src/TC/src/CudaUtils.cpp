@@ -24,6 +24,10 @@ CudaCtxPush::CudaCtxPush(CUcontext ctx) {
   ThrowOnCudaError(cuCtxPushCurrent(ctx), __LINE__);
 }
 
+CudaCtxPush::CudaCtxPush(CUstream str) {
+  ThrowOnCudaError(cuCtxPushCurrent(GetContextByStream(str)), __LINE__);
+}
+
 CudaCtxPush::~CudaCtxPush() { cuCtxPopCurrent(nullptr); }
 
 CudaStreamEvent::CudaStreamEvent(CUstream stream) {

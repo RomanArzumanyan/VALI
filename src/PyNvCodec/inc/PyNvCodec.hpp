@@ -18,7 +18,6 @@
 
 #include "MemoryInterfaces.hpp"
 #include "NvCodecCLIOptions.h"
-#include "NvDecoder.h"
 #include "TC_CORE.hpp"
 #include "Tasks.hpp"
 
@@ -230,7 +229,6 @@ public:
   uint32_t HostFrameSize() const;
   ColorSpace Color_Space() const;
   ColorRange Color_Range() const;
-  cudaVideoCodec Codec() const;
   Pixel_Format PixelFormat() const;
   bool IsAccelerated() const;
 
@@ -245,7 +243,6 @@ class PyNvEncoder {
   Pixel_Format eFormat;
   std::map<std::string, std::string> options;
   bool verbose_ctor;
-  CUcontext cuda_ctx;
   CUstream cuda_str;
 
 public:
@@ -262,14 +259,11 @@ public:
               int gpu_id, Pixel_Format format = NV12, bool verbose = false);
 
   PyNvEncoder(const std::map<std::string, std::string>& encodeOptions,
-              CUcontext ctx, CUstream str, Pixel_Format format = NV12,
-              bool verbose = false);
+              CUstream str, Pixel_Format format = NV12, bool verbose = false);
 
   PyNvEncoder(const std::map<std::string, std::string>& encodeOptions,
-              size_t ctx, size_t str, Pixel_Format format = NV12,
-              bool verbose = false)
-      : PyNvEncoder(encodeOptions, (CUcontext)ctx, (CUstream)str, format,
-                    verbose) {}
+              size_t str, Pixel_Format format = NV12, bool verbose = false)
+      : PyNvEncoder(encodeOptions, (CUstream)str, format, verbose) {}
 
   bool EncodeSurface(std::shared_ptr<Surface> rawSurface,
                      py::array_t<uint8_t>& packet,

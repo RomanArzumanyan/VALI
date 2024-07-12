@@ -53,7 +53,7 @@ std::map<NV_ENC_CAPS, int> PyNvEncoder::Capabilities() {
     NvEncoderClInterface cli_interface(options);
 
     upEncoder.reset(NvencEncodeFrame::Make(
-        cuda_str, cuda_ctx, cli_interface,
+        cuda_str, cli_interface,
         NV12 == eFormat     ? NV_ENC_BUFFER_FORMAT_NV12
         : YUV444 == eFormat ? NV_ENC_BUFFER_FORMAT_YUV444
                             : NV_ENC_BUFFER_FORMAT_UNDEFINED,
@@ -106,12 +106,11 @@ bool PyNvEncoder::Reconfigure(const map<string, string>& encodeOptions,
 
 PyNvEncoder::PyNvEncoder(const map<string, string>& encodeOptions, int gpuID,
                          Pixel_Format format, bool verbose)
-    : PyNvEncoder(encodeOptions, CudaResMgr::Instance().GetCtx(gpuID),
-                  CudaResMgr::Instance().GetStream(gpuID), format, verbose) {}
+    : PyNvEncoder(encodeOptions, CudaResMgr::Instance().GetStream(gpuID),
+                  format, verbose) {}
 
-PyNvEncoder::PyNvEncoder(const map<string, string>& encodeOptions,
-                         CUcontext ctx, CUstream str, Pixel_Format format,
-                         bool verbose)
+PyNvEncoder::PyNvEncoder(const map<string, string>& encodeOptions, CUstream str,
+                         Pixel_Format format, bool verbose)
     : upEncoder(nullptr), options(encodeOptions), verbose_ctor(verbose),
       eFormat(format) {
 
@@ -169,7 +168,6 @@ PyNvEncoder::PyNvEncoder(const map<string, string>& encodeOptions,
     options["fmt"] = fmt_string;
   }
 
-  cuda_ctx = ctx;
   cuda_str = str;
 
   /* Don't initialize encoder here, just prepare config params;
@@ -210,7 +208,7 @@ bool PyNvEncoder::EncodeSingleSurface(EncodeContext& ctx) {
       break;
     }
 
-    upEncoder.reset(NvencEncodeFrame::Make(cuda_str, cuda_ctx, cli_interface,
+    upEncoder.reset(NvencEncodeFrame::Make(cuda_str, cli_interface,
                                            encoderFormat, encWidth, encHeight,
                                            verbose_ctor));
   }
@@ -398,15 +396,13 @@ void Init_PyNvEncoder(py::module& m) {
         :param format: pixel format to use by codec
         :param verbose: output verbose information to log
     )pbdoc")
-      .def(py::init<const map<string, string>&, size_t, size_t, Pixel_Format,
-                    bool>(),
-           py::arg("settings"), py::arg("context"), py::arg("stream"),
-           py::arg("format") = NV12, py::arg("verbose") = false,
+      .def(py::init<const map<string, string>&, size_t, Pixel_Format, bool>(),
+           py::arg("settings"), py::arg("stream"), py::arg("format") = NV12,
+           py::arg("verbose") = false,
            R"pbdoc(
         Constructor method.
 
         :param settings: Dictionary with nvenc settings
-        :param context: CUDA context to use
         :param stream: CUDA stream to use
         :param format: pixel format to use by codec
         :param verbose: output verbose information to log
@@ -467,8 +463,7 @@ void Init_PyNvEncoder(py::module& m) {
                              const py::array_t<uint8_t>&, bool>(
                &PyNvEncoder::EncodeSurface),
            py::arg("surface"), py::arg("packet"), py::arg("sei"),
-           py::arg("sync"), 
-           py::call_guard<py::gil_scoped_release>(),
+           py::arg("sync"), py::call_guard<py::gil_scoped_release>(),
            R"pbdoc(
         Encode single Surface. Please not that this function may not return
         compressed video packet.
@@ -532,8 +527,7 @@ void Init_PyNvEncoder(py::module& m) {
         :return: True in case of success, False otherwise.
     )pbdoc")
       .def("FlushSinglePacket", &PyNvEncoder::FlushSinglePacket,
-           py::arg("packets"), 
-           py::call_guard<py::gil_scoped_release>(),
+           py::arg("packets"), py::call_guard<py::gil_scoped_release>(),
            R"pbdoc(
         Flush encoder.
         Use this method in the end of encoding session to obtain single remaining

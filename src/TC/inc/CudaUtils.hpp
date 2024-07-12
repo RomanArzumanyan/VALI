@@ -79,6 +79,7 @@ public:
 class TC_EXPORT CudaCtxPush final {
 public:
   explicit CudaCtxPush(CUcontext ctx);
+  explicit CudaCtxPush(CUstream str);
   ~CudaCtxPush();
 };
 

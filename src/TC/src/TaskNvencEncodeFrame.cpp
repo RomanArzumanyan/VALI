@@ -37,26 +37,19 @@ static inline bool operator!=(const GUID& guid1, const GUID& guid2) {
 #include <map>
 #include <queue>
 
-NvEncoderCuda::NvEncoderCuda(CUcontext cuContext, uint32_t nWidth,
-                             uint32_t nHeight,
+NvEncoderCuda::NvEncoderCuda(CUstream stream, uint32_t nWidth, uint32_t nHeight,
                              NV_ENC_BUFFER_FORMAT eBufferFormat,
                              uint32_t nExtraOutputDelay,
                              bool bMotionEstimationOnly,
                              bool bOutputInVideoMemory)
-    :
+    : NvEncoder(NV_ENC_DEVICE_TYPE_CUDA, stream, nWidth, nHeight, eBufferFormat,
+                nExtraOutputDelay, bMotionEstimationOnly, bOutputInVideoMemory),
+      m_cuda_stream(stream)
 
-      NvEncoder(NV_ENC_DEVICE_TYPE_CUDA, cuContext, nWidth, nHeight,
-                eBufferFormat, nExtraOutputDelay, bMotionEstimationOnly,
-                bOutputInVideoMemory),
-
-      m_cuContext(cuContext) {
+{
   if (!m_hEncoder) {
     NVENC_THROW_ERROR("Encoder Initialization failed",
                       NV_ENC_ERR_INVALID_DEVICE);
-  }
-
-  if (!m_cuContext) {
-    NVENC_THROW_ERROR("Invalid Cuda Context", NV_ENC_ERR_INVALID_DEVICE);
   }
 }
 
@@ -73,7 +66,7 @@ void NvEncoderCuda::AllocateInputBuffers(int32_t numInputBuffers) {
   int numCount = m_bMotionEstimationOnly ? 2 : 1;
 
   for (int count = 0; count < numCount; count++) {
-    CudaCtxPush lock(m_cuContext);
+    CudaCtxPush lock(m_cuda_stream);
     vector<void*> inputFrames;
 
     for (int i = 0; i < numInputBuffers; i++) {
@@ -107,13 +100,9 @@ void NvEncoderCuda::ReleaseCudaResources() {
     return;
   }
 
-  if (!m_cuContext) {
-    return;
-  }
-
   UnregisterInputResources();
 
-  CudaCtxPush lock(m_cuContext);
+  CudaCtxPush lock(m_cuda_stream);
 
   for (auto inputFrame : m_vInputFrames) {
     if (inputFrame.inputPtr) {
@@ -128,22 +117,22 @@ void NvEncoderCuda::ReleaseCudaResources() {
     }
   }
   m_vReferenceFrames.clear();
-
-  m_cuContext = nullptr;
 }
 
-void NvEncoderCuda::CopyToDeviceFrame(
-    CUcontext ctx, CUstream stream, void* pSrcFrame, uint32_t nSrcPitch,
-    CUdeviceptr pDstFrame, uint32_t dstPitch, int width, int height,
-    CUmemorytype srcMemoryType, NV_ENC_BUFFER_FORMAT pixelFormat,
-    const uint32_t dstChromaOffsets[], uint32_t numChromaPlanes) {
+void NvEncoderCuda::CopyToDeviceFrame(CUstream stream, void* pSrcFrame,
+                                      uint32_t nSrcPitch, CUdeviceptr pDstFrame,
+                                      uint32_t dstPitch, int width, int height,
+                                      CUmemorytype srcMemoryType,
+                                      NV_ENC_BUFFER_FORMAT pixelFormat,
+                                      const uint32_t dstChromaOffsets[],
+                                      uint32_t numChromaPlanes) {
   if (srcMemoryType != CU_MEMORYTYPE_HOST &&
       srcMemoryType != CU_MEMORYTYPE_DEVICE) {
     NVENC_THROW_ERROR("Invalid source memory type for copy",
                       NV_ENC_ERR_INVALID_PARAM);
   }
 
-  CudaCtxPush lock(ctx);
+  CudaCtxPush lock(stream);
 
   uint32_t srcPitch =
       nSrcPitch ? nSrcPitch : NvEncoder::GetWidthInBytes(pixelFormat, width);
@@ -194,8 +183,6 @@ NV_ENCODE_API_FUNCTION_LIST NvEncoderCuda::GetApi() const { return m_nvenc; }
 
 void* NvEncoderCuda::GetEncoder() const { return m_hEncoder; }
 
-void* NvEncoder::GetDevice() const { return m_pDevice; }
-
 int NvEncoder::GetEncodeWidth() const { return m_nWidth; }
 
 int NvEncoder::GetEncodeHeight() const { return m_nHeight; }
@@ -217,16 +204,16 @@ void* NvEncoder::GetCompletionEvent(uint32_t eventIdx) {
 NV_ENC_BUFFER_FORMAT
 NvEncoder::GetPixelFormat() const { return m_eBufferFormat; }
 
-NvEncoder::NvEncoder(NV_ENC_DEVICE_TYPE eDeviceType, void* pDevice,
+NvEncoder::NvEncoder(NV_ENC_DEVICE_TYPE eDeviceType, CUstream cuda_stream,
                      uint32_t nWidth, uint32_t nHeight,
                      NV_ENC_BUFFER_FORMAT eBufferFormat,
                      uint32_t nExtraOutputDelay, bool bMotionEstimationOnly,
                      bool bOutputInVideoMemory)
     :
 
-      m_pDevice(pDevice), m_eDeviceType(eDeviceType), m_nWidth(nWidth),
-      m_nHeight(nHeight), m_nMaxEncodeWidth(nWidth),
-      m_nMaxEncodeHeight(nHeight), m_eBufferFormat(eBufferFormat),
+      m_eDeviceType(eDeviceType), m_nWidth(nWidth), m_nHeight(nHeight),
+      m_nMaxEncodeWidth(nWidth), m_nMaxEncodeHeight(nHeight),
+      m_eBufferFormat(eBufferFormat),
       m_bMotionEstimationOnly(bMotionEstimationOnly),
       m_bOutputInVideoMemory(bOutputInVideoMemory),
       m_nExtraOutputDelay(nExtraOutputDelay), m_hEncoder(nullptr),
@@ -240,7 +227,7 @@ NvEncoder::NvEncoder(NV_ENC_DEVICE_TYPE eDeviceType, void* pDevice,
 
   NV_ENC_OPEN_ENCODE_SESSION_EX_PARAMS encodeSessionExParams = {
       NV_ENC_OPEN_ENCODE_SESSION_EX_PARAMS_VER};
-  encodeSessionExParams.device = m_pDevice;
+  encodeSessionExParams.device = (void*)GetContextByStream(cuda_stream);
   encodeSessionExParams.deviceType = m_eDeviceType;
   encodeSessionExParams.apiVersion = NVENCAPI_VERSION;
   void* hEncoder = nullptr;
@@ -1038,7 +1025,6 @@ struct NvencEncodeFrame_Impl {
   vector<uint8_t> lastPacket;
   Buffer* pElementaryVideo;
   NvEncoderCuda* pEncoderCuda = nullptr;
-  CUcontext context = nullptr;
   CUstream stream = 0;
   bool didEncode = false;
   bool didFlush = false;
@@ -1063,15 +1049,13 @@ struct NvencEncodeFrame_Impl {
   }
 
   NvencEncodeFrame_Impl(NV_ENC_BUFFER_FORMAT format,
-                        NvEncoderClInterface& cli_iface, CUcontext ctx,
-                        CUstream str, int32_t width, int32_t height,
-                        bool verbose)
+                        NvEncoderClInterface& cli_iface, CUstream str,
+                        int32_t width, int32_t height, bool verbose)
       : init_params(recfg_params.reInitEncodeParams) {
     pElementaryVideo = Buffer::Make(0U);
 
-    context = ctx;
     stream = str;
-    pEncoderCuda = new NvEncoderCuda(context, width, height, format);
+    pEncoderCuda = new NvEncoderCuda(str, width, height, format);
     enc_buffer_format = format;
 
     init_params = {NV_ENC_INITIALIZE_PARAMS_VER};
@@ -1109,13 +1093,13 @@ struct NvencEncodeFrame_Impl {
 };
 } // namespace VPF
 
-NvencEncodeFrame* NvencEncodeFrame::Make(CUstream cuStream, CUcontext cuContext,
+NvencEncodeFrame* NvencEncodeFrame::Make(CUstream cuStream,
                                          NvEncoderClInterface& cli_iface,
                                          NV_ENC_BUFFER_FORMAT format,
                                          uint32_t width, uint32_t height,
                                          bool verbose) {
-  return new NvencEncodeFrame(cuStream, cuContext, cli_iface, format, width,
-                              height, verbose);
+  return new NvencEncodeFrame(cuStream, cli_iface, format, width, height,
+                              verbose);
 }
 
 bool VPF::NvencEncodeFrame::Reconfigure(NvEncoderClInterface& cli_iface,
@@ -1128,7 +1112,7 @@ auto const cuda_stream_sync = [](void* stream) {
   cuStreamSynchronize((CUstream)stream);
 };
 
-NvencEncodeFrame::NvencEncodeFrame(CUstream cuStream, CUcontext cuContext,
+NvencEncodeFrame::NvencEncodeFrame(CUstream cuStream,
                                    NvEncoderClInterface& cli_iface,
                                    NV_ENC_BUFFER_FORMAT format, uint32_t width,
                                    uint32_t height, bool verbose)
@@ -1136,8 +1120,8 @@ NvencEncodeFrame::NvencEncodeFrame(CUstream cuStream, CUcontext cuContext,
 
       Task("NvencEncodeFrame", NvencEncodeFrame::numInputs,
            NvencEncodeFrame::numOutputs, cuda_stream_sync, (void*)cuStream) {
-  pImpl = new NvencEncodeFrame_Impl(format, cli_iface, cuContext, cuStream,
-                                    width, height, verbose);
+  pImpl = new NvencEncodeFrame_Impl(format, cli_iface, cuStream, width, height,
+                                    verbose);
 }
 
 NvencEncodeFrame::~NvencEncodeFrame() { delete pImpl; };
@@ -1150,7 +1134,6 @@ TaskExecDetails NvencEncodeFrame::Run() {
     auto& pEncoderCuda = pImpl->pEncoderCuda;
     auto& didFlush = pImpl->didFlush;
     auto& didEncode = pImpl->didEncode;
-    auto& context = pImpl->context;
     auto input = (Surface*)GetInput(0U);
     vector<vector<uint8_t>> encPackets;
 
@@ -1170,7 +1153,7 @@ TaskExecDetails NvencEncodeFrame::Run() {
             "Input Surface is of different size. Encoder resize required");
       } else {
         NvEncoderCuda::CopyToDeviceFrame(
-            context, stream, (void*)input->PixelPtr(), pitch,
+            stream, (void*)input->PixelPtr(), pitch,
             (CUdeviceptr)encoderInputFrame->inputPtr,
             (int32_t)encoderInputFrame->pitch, pEncoderCuda->GetEncodeWidth(),
             pEncoderCuda->GetEncodeHeight(), CU_MEMORYTYPE_DEVICE,

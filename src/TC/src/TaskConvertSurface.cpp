@@ -53,10 +53,10 @@ struct NppConvertSurface_Impl {
   NppConvertSurface_Impl&
   operator=(const NppConvertSurface_Impl&& other) = delete;
 
-  NppConvertSurface_Impl(CUcontext ctx, CUstream str, Pixel_Format SRC_FMT,
+  NppConvertSurface_Impl(CUstream str, Pixel_Format SRC_FMT,
                          Pixel_Format DST_FMT)
-      : cu_ctx(ctx), cu_str(str), srcFmt(SRC_FMT), dstFmt(DST_FMT) {
-    SetupNppContext(cu_ctx, cu_str, nppCtx);
+      : cu_str(str), srcFmt(SRC_FMT), dstFmt(DST_FMT) {
+    SetupNppContext(cu_str, nppCtx);
   }
 
   virtual ~NppConvertSurface_Impl() = default;
@@ -102,15 +102,13 @@ struct NppConvertSurface_Impl {
     return ret;
   }
 
-  CUcontext cu_ctx;
   CUstream cu_str;
   NppStreamContext nppCtx;
   const Pixel_Format srcFmt, dstFmt;
 };
 
 struct nv12_bgr final : public NppConvertSurface_Impl {
-  nv12_bgr(CUcontext context, CUstream stream)
-      : NppConvertSurface_Impl(context, stream, NV12, BGR) {}
+  nv12_bgr(CUstream stream) : NppConvertSurface_Impl(stream, NV12, BGR) {}
 
   TaskExecDetails Execute(Token* pSrcToken, Token* pDstToken,
                           ColorspaceConversionContext* pCtx) override {
@@ -133,7 +131,7 @@ struct nv12_bgr final : public NppConvertSurface_Impl {
     auto pDst = (Npp8u*)pOutput->PixelPtr(0U);
     NppiSize oSizeRoi = {(int)pInput->Width(), (int)pInput->Height()};
 
-    CudaCtxPush ctxPush(cu_ctx);
+    CudaCtxPush ctxPush(cu_str);
     auto err = NPP_NO_ERROR;
 
     switch (color_space) {
@@ -167,8 +165,7 @@ struct nv12_bgr final : public NppConvertSurface_Impl {
 };
 
 struct nv12_rgb final : public NppConvertSurface_Impl {
-  nv12_rgb(CUcontext context, CUstream stream)
-      : NppConvertSurface_Impl(context, stream, NV12, RGB) {}
+  nv12_rgb(CUstream stream) : NppConvertSurface_Impl(stream, NV12, RGB) {}
 
   TaskExecDetails Execute(Token* pSrcToken, Token* pDstToken,
                           ColorspaceConversionContext* pCtx) override {
@@ -191,7 +188,7 @@ struct nv12_rgb final : public NppConvertSurface_Impl {
     auto pDst = (Npp8u*)pOutput->PixelPtr();
     NppiSize oSizeRoi = {(int)pInput->Width(), (int)pInput->Height()};
 
-    CudaCtxPush ctxPush(cu_ctx);
+    CudaCtxPush ctxPush(cu_str);
     auto err = NPP_NO_ERROR;
 
     switch (color_space) {
@@ -225,8 +222,7 @@ struct nv12_rgb final : public NppConvertSurface_Impl {
 };
 
 struct nv12_yuv420 final : public NppConvertSurface_Impl {
-  nv12_yuv420(CUcontext context, CUstream stream)
-      : NppConvertSurface_Impl(context, stream, NV12, YUV420) {}
+  nv12_yuv420(CUstream stream) : NppConvertSurface_Impl(stream, NV12, YUV420) {}
 
   TaskExecDetails Execute(Token* pSrcToken, Token* pDstToken,
                           ColorspaceConversionContext* pCtx) override {
@@ -250,7 +246,7 @@ struct nv12_yuv420 final : public NppConvertSurface_Impl {
                      (int)pOutput->Pitch(2U)};
     NppiSize roi = {(int)pInput->Width(), (int)pInput->Height()};
 
-    CudaCtxPush ctxPush(cu_ctx);
+    CudaCtxPush ctxPush(cu_str);
     auto err = NPP_NO_ERROR;
 
     auto const color_range = pCtx ? pCtx->color_range : MPEG;
@@ -277,8 +273,7 @@ struct nv12_yuv420 final : public NppConvertSurface_Impl {
 };
 
 struct nv12_y final : public NppConvertSurface_Impl {
-  nv12_y(CUcontext context, CUstream stream)
-      : NppConvertSurface_Impl(context, stream, NV12, Y) {}
+  nv12_y(CUstream stream) : NppConvertSurface_Impl(stream, NV12, Y) {}
 
   TaskExecDetails Execute(Token* pSrcToken, Token* pDstToken,
                           ColorspaceConversionContext* pCtx) override {
@@ -302,7 +297,7 @@ struct nv12_y final : public NppConvertSurface_Impl {
       m.Height = pInput->Height();
       m.WidthInBytes = pInput->WidthInBytes();
 
-      CudaCtxPush ctxPush(cu_ctx);
+      CudaCtxPush ctxPush(cu_str);
       ThrowOnCudaError(cuMemcpy2DAsync(&m, cu_str), __LINE__);
       ThrowOnCudaError(cuStreamSynchronize(cu_str), __LINE__);
     } catch (...) {
@@ -314,8 +309,7 @@ struct nv12_y final : public NppConvertSurface_Impl {
 };
 
 struct rbg8_y final : public NppConvertSurface_Impl {
-  rbg8_y(CUcontext context, CUstream stream)
-      : NppConvertSurface_Impl(context, stream, RGB, Y) {}
+  rbg8_y(CUstream stream) : NppConvertSurface_Impl(stream, RGB, Y) {}
 
   TaskExecDetails Execute(Token* pSrcToken, Token* pDstToken,
                           ColorspaceConversionContext* pCtx) override {
@@ -343,8 +337,7 @@ struct rbg8_y final : public NppConvertSurface_Impl {
 };
 
 struct yuv420_rgb final : public NppConvertSurface_Impl {
-  yuv420_rgb(CUcontext context, CUstream stream)
-      : NppConvertSurface_Impl(context, stream, YUV420, RGB) {}
+  yuv420_rgb(CUstream stream) : NppConvertSurface_Impl(stream, YUV420, RGB) {}
 
   TaskExecDetails Execute(Token* pSrcToken, Token* pDstToken,
                           ColorspaceConversionContext* pCtx) override {
@@ -369,7 +362,7 @@ struct yuv420_rgb final : public NppConvertSurface_Impl {
                      (int)pInput->Pitch(2U)};
     int dstStep = (int)pOutput->Pitch();
     NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
-    CudaCtxPush ctxPush(cu_ctx);
+    CudaCtxPush ctxPush(cu_str);
     auto err = NPP_NO_ERROR;
 
     switch (color_space) {
@@ -397,8 +390,7 @@ struct yuv420_rgb final : public NppConvertSurface_Impl {
 };
 
 struct yuv420_bgr final : public NppConvertSurface_Impl {
-  yuv420_bgr(CUcontext context, CUstream stream)
-      : NppConvertSurface_Impl(context, stream, YUV420, BGR) {}
+  yuv420_bgr(CUstream stream) : NppConvertSurface_Impl(stream, YUV420, BGR) {}
 
   TaskExecDetails Execute(Token* pSrcToken, Token* pDstToken,
                           ColorspaceConversionContext* pCtx) override {
@@ -423,7 +415,7 @@ struct yuv420_bgr final : public NppConvertSurface_Impl {
                      (int)pInput->Pitch(2U)};
     int dstStep = (int)pOutput->Pitch();
     NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
-    CudaCtxPush ctxPush(cu_ctx);
+    CudaCtxPush ctxPush(cu_str);
     auto err = NPP_NO_ERROR;
 
     switch (color_space) {
@@ -451,8 +443,7 @@ struct yuv420_bgr final : public NppConvertSurface_Impl {
 };
 
 struct yuv444_bgr final : public NppConvertSurface_Impl {
-  yuv444_bgr(CUcontext context, CUstream stream)
-      : NppConvertSurface_Impl(context, stream, YUV444, BGR) {}
+  yuv444_bgr(CUstream stream) : NppConvertSurface_Impl(stream, YUV444, BGR) {}
 
   TaskExecDetails Execute(Token* pSrcToken, Token* pDstToken,
                           ColorspaceConversionContext* pCtx) override {
@@ -480,7 +471,7 @@ struct yuv444_bgr final : public NppConvertSurface_Impl {
     int srcStep = (int)pInput->Pitch();
     int dstStep = (int)pOutput->Pitch();
     NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
-    CudaCtxPush ctxPush(cu_ctx);
+    CudaCtxPush ctxPush(cu_str);
     auto err = NPP_NO_ERROR;
 
     switch (color_range) {
@@ -506,8 +497,7 @@ struct yuv444_bgr final : public NppConvertSurface_Impl {
 };
 
 struct yuv444_rgb final : public NppConvertSurface_Impl {
-  yuv444_rgb(CUcontext context, CUstream stream)
-      : NppConvertSurface_Impl(context, stream, YUV444, RGB) {}
+  yuv444_rgb(CUstream stream) : NppConvertSurface_Impl(stream, YUV444, RGB) {}
 
   TaskExecDetails Execute(Token* pSrcToken, Token* pDstToken,
                           ColorspaceConversionContext* pCtx) override {
@@ -535,7 +525,7 @@ struct yuv444_rgb final : public NppConvertSurface_Impl {
     int srcStep = (int)pInput->Pitch();
     int dstStep = (int)pOutput->Pitch();
     NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
-    CudaCtxPush ctxPush(cu_ctx);
+    CudaCtxPush ctxPush(cu_str);
     auto err = NPP_NO_ERROR;
 
     switch (color_range) {
@@ -557,8 +547,8 @@ struct yuv444_rgb final : public NppConvertSurface_Impl {
 };
 
 struct yuv444_rgb_planar final : public NppConvertSurface_Impl {
-  yuv444_rgb_planar(CUcontext context, CUstream stream)
-      : NppConvertSurface_Impl(context, stream, YUV444, RGB_PLANAR) {}
+  yuv444_rgb_planar(CUstream stream)
+      : NppConvertSurface_Impl(stream, YUV444, RGB_PLANAR) {}
 
   TaskExecDetails Execute(Token* pSrcToken, Token* pDstToken,
                           ColorspaceConversionContext* pCtx) override {
@@ -587,7 +577,7 @@ struct yuv444_rgb_planar final : public NppConvertSurface_Impl {
     int srcStep = (int)pInput->Pitch();
     int dstStep = (int)pOutput->Pitch();
     NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
-    CudaCtxPush ctxPush(cu_ctx);
+    CudaCtxPush ctxPush(cu_str);
     auto err = NPP_NO_ERROR;
 
     switch (color_range) {
@@ -608,8 +598,7 @@ struct yuv444_rgb_planar final : public NppConvertSurface_Impl {
 };
 
 struct bgr_yuv444 final : public NppConvertSurface_Impl {
-  bgr_yuv444(CUcontext context, CUstream stream)
-      : NppConvertSurface_Impl(context, stream, BGR, YUV444) {}
+  bgr_yuv444(CUstream stream) : NppConvertSurface_Impl(stream, BGR, YUV444) {}
 
   TaskExecDetails Execute(Token* pSrcToken, Token* pDstToken,
                           ColorspaceConversionContext* pCtx) override {
@@ -637,7 +626,7 @@ struct bgr_yuv444 final : public NppConvertSurface_Impl {
     int srcStep = (int)pInput->Pitch();
     int dstStep = (int)pOutput->Pitch();
     NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
-    CudaCtxPush ctxPush(cu_ctx);
+    CudaCtxPush ctxPush(cu_str);
     auto err = NPP_NO_ERROR;
 
     switch (color_range) {
@@ -663,8 +652,7 @@ struct bgr_yuv444 final : public NppConvertSurface_Impl {
 };
 
 struct rgb_yuv444 final : public NppConvertSurface_Impl {
-  rgb_yuv444(CUcontext context, CUstream stream)
-      : NppConvertSurface_Impl(context, stream, RGB, YUV444) {}
+  rgb_yuv444(CUstream stream) : NppConvertSurface_Impl(stream, RGB, YUV444) {}
 
   TaskExecDetails Execute(Token* pSrcToken, Token* pDstToken,
                           ColorspaceConversionContext* pCtx) override {
@@ -693,7 +681,7 @@ struct rgb_yuv444 final : public NppConvertSurface_Impl {
     int dstStep = pOutput->Pitch();
     NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
 
-    CudaCtxPush ctxPush(cu_ctx);
+    CudaCtxPush ctxPush(cu_str);
     auto err = NPP_NO_ERROR;
     switch (color_range) {
     case JPEG:
@@ -717,8 +705,8 @@ struct rgb_yuv444 final : public NppConvertSurface_Impl {
 };
 
 struct rgb_planar_yuv444 final : public NppConvertSurface_Impl {
-  rgb_planar_yuv444(CUcontext context, CUstream stream)
-      : NppConvertSurface_Impl(context, stream, RGB_PLANAR, YUV444) {}
+  rgb_planar_yuv444(CUstream stream)
+      : NppConvertSurface_Impl(stream, RGB_PLANAR, YUV444) {}
 
   TaskExecDetails Execute(Token* pSrcToken, Token* pDstToken,
                           ColorspaceConversionContext* pCtx) override {
@@ -749,7 +737,7 @@ struct rgb_planar_yuv444 final : public NppConvertSurface_Impl {
     int dstStep = pOutput->Pitch();
     NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
 
-    CudaCtxPush ctxPush(cu_ctx);
+    CudaCtxPush ctxPush(cu_str);
     auto err = NPP_NO_ERROR;
     switch (color_range) {
     case JPEG:
@@ -773,8 +761,7 @@ struct rgb_planar_yuv444 final : public NppConvertSurface_Impl {
 };
 
 struct y_yuv444 final : public NppConvertSurface_Impl {
-  y_yuv444(CUcontext context, CUstream stream)
-      : NppConvertSurface_Impl(context, stream, Y, YUV444) {}
+  y_yuv444(CUstream stream) : NppConvertSurface_Impl(stream, Y, YUV444) {}
 
   TaskExecDetails Execute(Token* pSrcToken, Token* pDstToken,
                           ColorspaceConversionContext* pCtx) override {
@@ -815,8 +802,7 @@ struct y_yuv444 final : public NppConvertSurface_Impl {
 };
 
 struct rgb_yuv420 final : public NppConvertSurface_Impl {
-  rgb_yuv420(CUcontext context, CUstream stream)
-      : NppConvertSurface_Impl(context, stream, RGB, YUV420) {}
+  rgb_yuv420(CUstream stream) : NppConvertSurface_Impl(stream, RGB, YUV420) {}
 
   TaskExecDetails Execute(Token* pSrcToken, Token* pDstToken,
                           ColorspaceConversionContext* pCtx) override {
@@ -846,7 +832,7 @@ struct rgb_yuv420 final : public NppConvertSurface_Impl {
                      (int)pOutput->Pitch(2U)};
     NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
 
-    CudaCtxPush ctxPush(cu_ctx);
+    CudaCtxPush ctxPush(cu_str);
     auto err = NPP_NO_ERROR;
     switch (color_range) {
     case JPEG:
@@ -873,8 +859,7 @@ struct rgb_yuv420 final : public NppConvertSurface_Impl {
 };
 
 struct yuv420_nv12 final : public NppConvertSurface_Impl {
-  yuv420_nv12(CUcontext context, CUstream stream)
-      : NppConvertSurface_Impl(context, stream, YUV420, NV12) {}
+  yuv420_nv12(CUstream stream) : NppConvertSurface_Impl(stream, YUV420, NV12) {}
 
   TaskExecDetails Execute(Token* pSrcToken, Token* pDstToken,
                           ColorspaceConversionContext* pCtx) override {
@@ -899,7 +884,7 @@ struct yuv420_nv12 final : public NppConvertSurface_Impl {
     int dstStep[] = {(int)pOutput->Pitch(0U), (int)pOutput->Pitch(1U)};
     NppiSize roi = {(int)pInput->Width(), (int)pInput->Height()};
 
-    CudaCtxPush ctxPush(cu_ctx);
+    CudaCtxPush ctxPush(cu_str);
     auto err = nppiYCbCr420_8u_P3P2R_Ctx(pSrc, srcStep, pDst[0], dstStep[0],
                                          pDst[1], dstStep[1], roi, nppCtx);
     if (NPP_NO_ERROR != err) {
@@ -911,8 +896,8 @@ struct yuv420_nv12 final : public NppConvertSurface_Impl {
 };
 
 struct rgb8_deinterleave final : public NppConvertSurface_Impl {
-  rgb8_deinterleave(CUcontext context, CUstream stream)
-      : NppConvertSurface_Impl(context, stream, RGB, RGB_PLANAR) {}
+  rgb8_deinterleave(CUstream stream)
+      : NppConvertSurface_Impl(stream, RGB, RGB_PLANAR) {}
 
   TaskExecDetails Execute(Token* pSrcToken, Token* pDstToken,
                           ColorspaceConversionContext* pCtx) override {
@@ -936,7 +921,7 @@ struct rgb8_deinterleave final : public NppConvertSurface_Impl {
     oSizeRoi.height = pOutput->Height();
     oSizeRoi.width = pOutput->Width();
 
-    CudaCtxPush ctxPush(cu_ctx);
+    CudaCtxPush ctxPush(cu_str);
     auto err =
         nppiCopy_8u_C3P3R_Ctx(pSrc, nSrcStep, aDst, nDstStep, oSizeRoi, nppCtx);
     if (NPP_NO_ERROR != err) {
@@ -948,8 +933,8 @@ struct rgb8_deinterleave final : public NppConvertSurface_Impl {
 };
 
 struct rgb8_interleave final : public NppConvertSurface_Impl {
-  rgb8_interleave(CUcontext context, CUstream stream)
-      : NppConvertSurface_Impl(context, stream, RGB_PLANAR, RGB) {}
+  rgb8_interleave(CUstream stream)
+      : NppConvertSurface_Impl(stream, RGB_PLANAR, RGB) {}
 
   TaskExecDetails Execute(Token* pSrcToken, Token* pDstToken,
                           ColorspaceConversionContext* pCtx) override {
@@ -973,7 +958,7 @@ struct rgb8_interleave final : public NppConvertSurface_Impl {
     oSizeRoi.height = pOutput->Height();
     oSizeRoi.width = pOutput->Width();
 
-    CudaCtxPush ctxPush(cu_ctx);
+    CudaCtxPush ctxPush(cu_str);
     auto err =
         nppiCopy_8u_P3C3R_Ctx(pSrc, nSrcStep, pDst, nDstStep, oSizeRoi, nppCtx);
     if (NPP_NO_ERROR != err) {
@@ -985,8 +970,7 @@ struct rgb8_interleave final : public NppConvertSurface_Impl {
 };
 
 struct rgb_bgr final : public NppConvertSurface_Impl {
-  rgb_bgr(CUcontext context, CUstream stream)
-      : NppConvertSurface_Impl(context, stream, RGB, BGR) {}
+  rgb_bgr(CUstream stream) : NppConvertSurface_Impl(stream, RGB, BGR) {}
 
   TaskExecDetails Execute(Token* pSrcToken, Token* pDstToken,
                           ColorspaceConversionContext* pCtx) override {
@@ -1008,7 +992,7 @@ struct rgb_bgr final : public NppConvertSurface_Impl {
     oSizeRoi.width = pOutput->Width();
     // rgb to brg
     const int aDstOrder[3] = {2, 1, 0};
-    CudaCtxPush ctxPush(cu_ctx);
+    CudaCtxPush ctxPush(cu_str);
     auto err = nppiSwapChannels_8u_C3R_Ctx(pSrc, nSrcStep, pDst, nDstStep,
                                            oSizeRoi, aDstOrder, nppCtx);
     if (NPP_NO_ERROR != err) {
@@ -1020,8 +1004,7 @@ struct rgb_bgr final : public NppConvertSurface_Impl {
 };
 
 struct bgr_rgb final : public NppConvertSurface_Impl {
-  bgr_rgb(CUcontext context, CUstream stream)
-      : NppConvertSurface_Impl(context, stream, BGR, RGB) {}
+  bgr_rgb(CUstream stream) : NppConvertSurface_Impl(stream, BGR, RGB) {}
 
   TaskExecDetails Execute(Token* pSrcToken, Token* pDstToken,
                           ColorspaceConversionContext* pCtx) override {
@@ -1043,7 +1026,7 @@ struct bgr_rgb final : public NppConvertSurface_Impl {
     oSizeRoi.width = pOutput->Width();
     // brg to rgb
     const int aDstOrder[3] = {2, 1, 0};
-    CudaCtxPush ctxPush(cu_ctx);
+    CudaCtxPush ctxPush(cu_str);
     auto err = nppiSwapChannels_8u_C3R_Ctx(pSrc, nSrcStep, pDst, nDstStep,
                                            oSizeRoi, aDstOrder, nppCtx);
     if (NPP_NO_ERROR != err) {
@@ -1055,8 +1038,7 @@ struct bgr_rgb final : public NppConvertSurface_Impl {
 };
 
 struct rbg8_rgb32f final : public NppConvertSurface_Impl {
-  rbg8_rgb32f(CUcontext context, CUstream stream)
-      : NppConvertSurface_Impl(context, stream, RGB, RGB_32F) {}
+  rbg8_rgb32f(CUstream stream) : NppConvertSurface_Impl(stream, RGB, RGB_32F) {}
 
   TaskExecDetails Execute(Token* pSrcToken, Token* pDstToken,
                           ColorspaceConversionContext* pCtx) override {
@@ -1081,7 +1063,7 @@ struct rbg8_rgb32f final : public NppConvertSurface_Impl {
     Npp32f nMax = 1.0;
     const int aDstOrder[3] = {2, 1, 0};
 
-    CudaCtxPush ctxPush(cu_ctx);
+    CudaCtxPush ctxPush(cu_str);
 
     auto err = nppiScale_8u32f_C3R_Ctx(pSrc, nSrcStep, pDst, nDstStep, oSizeRoi,
                                        nMin, nMax, nppCtx);
@@ -1094,8 +1076,8 @@ struct rbg8_rgb32f final : public NppConvertSurface_Impl {
 };
 
 struct rgb32f_deinterleave final : public NppConvertSurface_Impl {
-  rgb32f_deinterleave(CUcontext context, CUstream stream)
-      : NppConvertSurface_Impl(context, stream, RGB_32F, RGB_32F_PLANAR) {}
+  rgb32f_deinterleave(CUstream stream)
+      : NppConvertSurface_Impl(stream, RGB_32F, RGB_32F_PLANAR) {}
 
   TaskExecDetails Execute(Token* pSrcToken, Token* pDstToken,
                           ColorspaceConversionContext* pCtx) override {
@@ -1120,7 +1102,7 @@ struct rgb32f_deinterleave final : public NppConvertSurface_Impl {
     oSizeRoi.height = pOutput->Height();
     oSizeRoi.width = pOutput->Width();
 
-    CudaCtxPush ctxPush(cu_ctx);
+    CudaCtxPush ctxPush(cu_str);
     auto err = nppiCopy_32f_C3P3R_Ctx(pSrc, nSrcStep, aDst, nDstStep, oSizeRoi,
                                       nppCtx);
     if (NPP_NO_ERROR != err) {
@@ -1136,8 +1118,8 @@ struct p16_nv12 final : public NppConvertSurface_Impl {
    * the same implementation. The only difference is bit depth value which
    * is calculated at a runtime.
    */
-  p16_nv12(CUcontext context, CUstream stream, Pixel_Format src_fmt)
-      : NppConvertSurface_Impl(context, stream, src_fmt, NV12) {}
+  p16_nv12(CUstream stream, Pixel_Format src_fmt)
+      : NppConvertSurface_Impl(stream, src_fmt, NV12) {}
 
   TaskExecDetails Execute(Token* pSrcToken, Token* pDstToken,
                           ColorspaceConversionContext* pCtx) override {
@@ -1157,10 +1139,10 @@ struct p16_nv12 final : public NppConvertSurface_Impl {
         pScratch->Height() != input_plane.Height()) {
       pScratch = std::make_shared<SurfacePlane>(
           input_plane.Width(), input_plane.Height(), sizeof(uint16_t), kDLUInt,
-          cu_ctx);
+          GetContextByStream(cu_str));
     }
 
-    CudaCtxPush ctxPush(cu_ctx);
+    CudaCtxPush ctxPush(cu_str);
 
     auto src_plane = pInput->GetSurfacePlane();
     auto dst_plane = pOutput->GetSurfacePlane();
@@ -1202,56 +1184,55 @@ auto const cuda_stream_sync = [](void* stream) {
   cuStreamSynchronize((CUstream)stream);
 };
 
-ConvertSurface::ConvertSurface(Pixel_Format src, Pixel_Format dst,
-                               CUcontext ctx, CUstream str)
+ConvertSurface::ConvertSurface(Pixel_Format src, Pixel_Format dst, CUstream str)
     : Task("NppConvertSurface", ConvertSurface::numInputs,
            ConvertSurface::numOutputs, cuda_stream_sync, (void*)str) {
   if (NV12 == src && YUV420 == dst) {
-    pImpl = new nv12_yuv420(ctx, str);
+    pImpl = new nv12_yuv420(str);
   } else if (YUV420 == src && NV12 == dst) {
-    pImpl = new yuv420_nv12(ctx, str);
+    pImpl = new yuv420_nv12(str);
   } else if (P10 == src && NV12 == dst) {
-    pImpl = new p16_nv12(ctx, str, P10);
+    pImpl = new p16_nv12(str, P10);
   } else if (P12 == src && NV12 == dst) {
-    pImpl = new p16_nv12(ctx, str, P12);
+    pImpl = new p16_nv12(str, P12);
   } else if (NV12 == src && RGB == dst) {
-    pImpl = new nv12_rgb(ctx, str);
+    pImpl = new nv12_rgb(str);
   } else if (NV12 == src && BGR == dst) {
-    pImpl = new nv12_bgr(ctx, str);
+    pImpl = new nv12_bgr(str);
   } else if (RGB == src && RGB_PLANAR == dst) {
-    pImpl = new rgb8_deinterleave(ctx, str);
+    pImpl = new rgb8_deinterleave(str);
   } else if (RGB_PLANAR == src && RGB == dst) {
-    pImpl = new rgb8_interleave(ctx, str);
+    pImpl = new rgb8_interleave(str);
   } else if (RGB_PLANAR == src && YUV444 == dst) {
-    pImpl = new rgb_planar_yuv444(ctx, str);
+    pImpl = new rgb_planar_yuv444(str);
   } else if (Y == src && YUV444 == dst) {
-    pImpl = new y_yuv444(ctx, str);
+    pImpl = new y_yuv444(str);
   } else if (YUV420 == src && RGB == dst) {
-    pImpl = new yuv420_rgb(ctx, str);
+    pImpl = new yuv420_rgb(str);
   } else if (RGB == src && YUV420 == dst) {
-    pImpl = new rgb_yuv420(ctx, str);
+    pImpl = new rgb_yuv420(str);
   } else if (RGB == src && YUV444 == dst) {
-    pImpl = new rgb_yuv444(ctx, str);
+    pImpl = new rgb_yuv444(str);
   } else if (RGB == src && BGR == dst) {
-    pImpl = new rgb_bgr(ctx, str);
+    pImpl = new rgb_bgr(str);
   } else if (BGR == src && RGB == dst) {
-    pImpl = new bgr_rgb(ctx, str);
+    pImpl = new bgr_rgb(str);
   } else if (YUV420 == src && BGR == dst) {
-    pImpl = new yuv420_bgr(ctx, str);
+    pImpl = new yuv420_bgr(str);
   } else if (YUV444 == src && BGR == dst) {
-    pImpl = new yuv444_bgr(ctx, str);
+    pImpl = new yuv444_bgr(str);
   } else if (YUV444 == src && RGB == dst) {
-    pImpl = new yuv444_rgb(ctx, str);
+    pImpl = new yuv444_rgb(str);
   } else if (BGR == src && YUV444 == dst) {
-    pImpl = new bgr_yuv444(ctx, str);
+    pImpl = new bgr_yuv444(str);
   } else if (NV12 == src && Y == dst) {
-    pImpl = new nv12_y(ctx, str);
+    pImpl = new nv12_y(str);
   } else if (RGB == src && RGB_32F == dst) {
-    pImpl = new rbg8_rgb32f(ctx, str);
+    pImpl = new rbg8_rgb32f(str);
   } else if (RGB == src && Y == dst) {
-    pImpl = new rbg8_y(ctx, str);
+    pImpl = new rbg8_y(str);
   } else if (RGB_32F == src && RGB_32F_PLANAR == dst) {
-    pImpl = new rgb32f_deinterleave(ctx, str);
+    pImpl = new rgb32f_deinterleave(str);
   } else {
     throw std::invalid_argument("Unsupported pixel format conversion");
   }
