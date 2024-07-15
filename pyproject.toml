@@ -3,7 +3,6 @@ requires = [
   "setuptools>=42",
   "scikit-build",
   "numpy",
-  ## out-comment not install cmake/ninja via pip
   "cmake>=3.21",
   "ninja; platform_system!='Windows'"
 ]
