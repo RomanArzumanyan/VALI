@@ -107,3 +107,5 @@ You can then open `_build/html/index.html` with your browser.
 
 ## Community Support
 Please use project's Discussions page for that.
+
+[![OnPullRequest](https://github.com/RomanArzumanyan/VALI/actions/workflows/onPullRequest.yml/badge.svg)](https://github.com/RomanArzumanyan/VALI/actions/workflows/onPullRequest.yml)
