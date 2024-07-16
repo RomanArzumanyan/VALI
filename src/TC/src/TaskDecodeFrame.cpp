@@ -505,7 +505,7 @@ struct FfmpegDecodeFrame_Impl {
     const auto size =
         av_image_get_buffer_size(format, GetWidth(), GetHeight(), alignment);
 
-    ThrowOnAvError(size, "Failed to query host frame size");
+    ThrowOnAvError(size, "Failed to query host frame size: ");
     return static_cast<uint32_t>(size);
   }
 
@@ -713,7 +713,13 @@ struct FfmpegDecodeFrame_Impl {
       return P12;
     case AV_PIX_FMT_GRAY12LE:
       return GRAY12;
+    case AV_PIX_FMT_P010:
+      return P10;
+    case AV_PIX_FMT_P012:
+      return P12;
     default:
+      std::cerr << "Unknown pixel format: " << av_get_pix_fmt_name(format)
+                << std::endl;
       return UNDEFINED;
     }
   }

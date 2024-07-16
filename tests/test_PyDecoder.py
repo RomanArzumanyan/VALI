@@ -50,6 +50,7 @@ import json
 import test_common as tc
 import logging
 import random
+from parameterized import parameterized
 
 
 class TestDecoderBasic(unittest.TestCase):
@@ -61,6 +62,7 @@ class TestDecoderBasic(unittest.TestCase):
         self.gtInfo = tc.GroundTruth(**self.data["basic"])
         self.yuvInfo = tc.GroundTruth(**self.data["basic_yuv420"])
         self.nv12Info = tc.GroundTruth(**self.data["basic_nv12"])
+        self.hbdInfo = tc.GroundTruth(**self.data["hevc10"])
 
         self.log = logging.getLogger(__name__)
 
@@ -127,6 +129,34 @@ class TestDecoderBasic(unittest.TestCase):
                 break
             dec_frames += 1
         self.assertEqual(self.gtInfo.num_frames, dec_frames)
+        self.assertEqual(details, nvc.TaskExecInfo.END_OF_STREAM)
+
+    @unittest.skip("HBD is known to be broken on GPU: #58")
+    def test_decode_high_bit_depth_gpu(self):
+        gpu_id = 0
+        pyDec = nvc.PyDecoder(self.hbdInfo.uri, {}, gpu_id)
+        dec_frames = 0
+        surf = nvc.Surface.Make(
+            pyDec.Format(), pyDec.Width(), pyDec.Height(), gpu_id)
+        while True:
+            success, details = pyDec.DecodeSingleSurface(surf)
+            if not success:
+                break
+            dec_frames += 1
+        self.assertEqual(self.hbdInfo.num_frames, dec_frames)
+        self.assertEqual(details, nvc.TaskExecInfo.END_OF_STREAM)
+
+    def test_decode_high_bit_depth_cpu(self):
+        gpu_id = -1
+        pyDec = nvc.PyDecoder(self.hbdInfo.uri, {}, gpu_id)
+        dec_frames = 0
+        frame = np.ndarray(dtype=np.uint8, shape=())
+        while True:
+            success, details = pyDec.DecodeSingleFrame(frame)
+            if not success:
+                break
+            dec_frames += 1
+        self.assertEqual(self.hbdInfo.num_frames, dec_frames)
         self.assertEqual(details, nvc.TaskExecInfo.END_OF_STREAM)
 
     def test_check_all_frames(self):
