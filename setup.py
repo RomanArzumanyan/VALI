@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     skbuild.setup(
         name="PyNvCodec",
-        version="3.2.3",
+        version="3.2.4",
         description="Video Processing Library with full NVENC/NVDEC hardware acceleration",
         author="Roman Arzumanyan",
         license="Apache 2.0",
@@ -35,7 +35,8 @@ if __name__ == "__main__":
                 "torch", 
                 "torchvision", 
                 "onnx", 
-                "tensorrt"],
+                "tensorrt",
+                "pynvml"],
             "tests": [
                 "torch", 
                 "torchvision", 
@@ -62,5 +63,6 @@ if __name__ == "__main__":
         package_data={"PyNvCodec": ["__init__.pyi"]},
         package_dir={"": "src"},
         cmake_install_dir="src",
+        # cmake_args=["-DTRACK_TOKEN_ALLOCATIONS=ON"],
         # cmake_args=["-DCMAKE_BUILD_TYPE=Debug"]
     )
