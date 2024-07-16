@@ -245,5 +245,10 @@ public:
 protected:
   Surface();
   std::vector<SurfacePlane> m_planes;
+
+private:
+#ifdef TRACK_TOKEN_ALLOCATIONS
+  uint64_t id = 0;
+#endif
 };
 } // namespace VPF

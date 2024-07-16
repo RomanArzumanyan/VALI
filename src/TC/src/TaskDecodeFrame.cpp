@@ -105,6 +105,7 @@ struct FfmpegDecodeFrame_Impl {
   std::shared_ptr<AVCodecContext> m_avc_ctx;
   std::shared_ptr<AVFrame> m_frame;
   std::shared_ptr<AVPacket> m_pkt;
+  std::shared_ptr<AVBufferRef> m_hw_ctx;
   std::map<AVFrameSideDataType, Buffer*> m_side_data;
   std::shared_ptr<AVDictionary> m_options;
   std::shared_ptr<TimeoutHandler> m_timeout_handler;
@@ -273,8 +274,10 @@ struct FfmpegDecodeFrame_Impl {
       throw std::runtime_error(ss.str());
     }
 
-    m_frame = std::shared_ptr<AVFrame>(
-        frame, [](void* p) { av_frame_free((AVFrame**)&p); });
+    m_frame = std::shared_ptr<AVFrame>(frame, [](void* p) {
+      av_frame_unref((AVFrame*)p);
+      av_frame_free((AVFrame**)&p);
+    });
 
     auto avpkt = av_packet_alloc();
     if (!avpkt) {
@@ -282,8 +285,10 @@ struct FfmpegDecodeFrame_Impl {
       ss << "Could not allocate packet";
       throw std::runtime_error(ss.str());
     }
-    m_pkt = std::shared_ptr<AVPacket>(
-        avpkt, [](void* p) { av_packet_free((AVPacket**)&p); });
+    m_pkt = std::shared_ptr<AVPacket>(avpkt, [](void* p) {
+      av_packet_unref((AVPacket*)p);
+      av_packet_free((AVPacket**)&p);
+    });
   }
 
   // Saves current resolution
@@ -342,8 +347,9 @@ struct FfmpegDecodeFrame_Impl {
       ss << "Failed to allocate codec context";
       throw std::runtime_error(ss.str());
     }
-    m_avc_ctx = std::shared_ptr<AVCodecContext>(
-        avctx, [](void* p) { avcodec_free_context((AVCodecContext**)&p); });
+    m_avc_ctx = std::shared_ptr<AVCodecContext>(avctx, [](void* p) {
+      avcodec_free_context((AVCodecContext**)&p);
+    });
 
     auto res =
         avcodec_parameters_to_context(m_avc_ctx.get(), video_stream->codecpar);
@@ -390,6 +396,10 @@ struct FfmpegDecodeFrame_Impl {
       // Add hw device context to codec context.
       m_avc_ctx->hw_device_ctx = av_buffer_ref(hwdevice_ctx);
       m_avc_ctx->get_format = get_format;
+
+      m_hw_ctx.reset();
+      m_hw_ctx = std::shared_ptr<AVBufferRef>(
+          hwdevice_ctx, [](void* p) { av_buffer_unref((AVBufferRef**)&p); });
     }
 #endif
 
@@ -884,7 +894,7 @@ TaskExecDetails DecodeFrame::GetSideData(AVFrameSideDataType data_type) {
   }
 
   return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL, TaskExecInfo::FAIL,
-                        "decoder failed to get side data");
+                         "decoder failed to get side data");
 }
 
 DecodeFrame* DecodeFrame::Make(const char* URL, NvDecoderClInterface& cli_iface,
