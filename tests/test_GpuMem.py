@@ -242,8 +242,7 @@ class TestSurfaceConverter(unittest.TestCase):
             surf_raw=nvc.Surface.Make(nvDec.Format(),nvDec.Width(), nvDec.Height(),gpu_id=0)
             success,info=nvDec.DecodeSingleSurface(surf_raw)
             if ( w!=nvDec.Width() or h!=nvDec.Height()):
-                #skip tests on resolution chnage
-                #print("Resolution changed...Adjusting resolutions...")
+                print("Resolution changed...Adjusting resolutions...")
                 w=nvDec.Width()
                 h=nvDec.Height()
                 continue
