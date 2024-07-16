@@ -81,11 +81,23 @@ bool PyDecoder::DecodeSingleSurface(DecodeContext& ctx, Surface& surf,
     return false;
   }
 
-  if (surf.Empty() || surf.Width() != Width() || surf.Height() != Height() ||
-      surf.PixelFormat() != PixelFormat()) {
-    std::cerr << "Given surface doesn't have required dimensions or format";
+  if (surf.Empty()) {
+    std::cerr << "Empty Surface";
     return false;
   }
+
+  if (surf.Width() != Width() || surf.Height() != Height()) {
+    std::cerr << "Surface dimensions mismatch: " << surf.Width() << "x"
+              << surf.Height() << " vs " << Width() << "x" << Height();
+    return false;
+  }
+
+  if (surf.PixelFormat() != PixelFormat()) {
+    std::cerr << "Surface format mismatch: " << surf.PixelFormat() << " vs "
+              << PixelFormat();
+    return false;
+  }
+
   return DecodeImpl(ctx, details, surf, seek_ctx);
 }
 
