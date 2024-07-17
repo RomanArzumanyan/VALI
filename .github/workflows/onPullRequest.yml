@@ -49,7 +49,6 @@ jobs:
         export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
         source /tmp/venv_vali/bin/activate
         python3 -mpip install pydantic
-        python3 -mpip install pycuda
         python3 -mpip install torch torchvision
         python3 -mpip install . --verbose
 

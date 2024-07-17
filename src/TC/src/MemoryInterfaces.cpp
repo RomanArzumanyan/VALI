@@ -53,10 +53,16 @@ struct AllocRegister {
   vector<AllocInfo> instances;
   mutex guard;
   uint64_t ID = 1U;
+  atomic<int> num_allocs = 0;
+  atomic<int> num_deallocs = 0;
+  string name;
+
+  AllocRegister(const string& my_name) : name(my_name) {}
 
   decltype(AllocInfo::id) AddNote(decltype(AllocInfo::size) const& size) {
     unique_lock<decltype(guard)> lock;
     auto id = ID++;
+    num_allocs++;
     AllocInfo info(id, size);
     instances.push_back(info);
     return id;
@@ -64,6 +70,7 @@ struct AllocRegister {
 
   void DeleteNote(AllocInfo const& allocInfo) {
     unique_lock<decltype(guard)> lock;
+    num_deallocs++;
     instances.erase(remove(instances.begin(), instances.end(), allocInfo),
                     instances.end());
   }
@@ -79,11 +86,12 @@ struct AllocRegister {
   }
 };
 
-AllocRegister BuffersRegister, HWSurfaceRegister, CudaBuffersRegister;
+AllocRegister BuffersRegister("Buffers"), SurfaceRegister("Surfaces"),
+    CudaBuffersRegister("CudaBuffers");
 
 bool CheckAllocationCounters() {
   auto numLeakedBuffers = BuffersRegister.GetSize();
-  auto numLeakedSurfaces = HWSurfaceRegister.GetSize();
+  auto numLeakedSurfaces = SurfaceRegister.GetSize();
   auto numLeakedCudaBuffers = CudaBuffersRegister.GetSize();
 
   if (numLeakedBuffers) {
@@ -97,7 +105,7 @@ bool CheckAllocationCounters() {
   if (numLeakedSurfaces) {
     cerr << "Leaked surfaces (id : size): " << endl;
     for (auto i = 0; i < numLeakedSurfaces; i++) {
-      auto pNote = HWSurfaceRegister.GetNoteByIndex(i);
+      auto pNote = SurfaceRegister.GetNoteByIndex(i);
       cerr << "\t" << pNote->id << "\t: " << pNote->size << endl;
     }
   }
@@ -108,6 +116,13 @@ bool CheckAllocationCounters() {
       auto pNote = CudaBuffersRegister.GetNoteByIndex(i);
       cerr << "\t" << pNote->id << "\t: " << pNote->size << endl;
     }
+  }
+
+  for (auto registry :
+       {&BuffersRegister, &SurfaceRegister, &CudaBuffersRegister}) {
+    cout << endl << registry->name << endl;
+    cout << "  allocations   : " << registry->num_allocs << endl;
+    cout << "  deallocations : " << registry->num_deallocs << endl;
   }
 
   return (0U == numLeakedBuffers) && (0U == numLeakedSurfaces) &&
@@ -308,9 +323,18 @@ void CudaBuffer::Deallocate() {
 #endif
 }
 
-Surface::Surface() = default;
+Surface::Surface() {
+#ifdef TRACK_TOKEN_ALLOCATIONS
+  id = SurfaceRegister.AddNote(HostMemSize());
+#endif
+}
 
-Surface::~Surface() = default;
+Surface::~Surface() {
+#ifdef TRACK_TOKEN_ALLOCATIONS
+  AllocInfo info(id, HostMemSize());
+  SurfaceRegister.DeleteNote(info);
+#endif
+}
 
 Surface* Surface::Make(Pixel_Format format) {
   switch (format) {
