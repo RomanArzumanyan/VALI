@@ -210,12 +210,12 @@ public:
             const std::map<std::string, std::string>& ffmpeg_options,
             int gpuID);
 
-  bool DecodeSingleFrame(DecodeContext& ctx, py::array& frame,
-                         TaskExecDetails& details,
+  bool DecodeSingleFrame(py::array& frame, TaskExecDetails& details,
+                         PacketData& pkt_data,
                          std::optional<SeekContext> seek_ctx);
 
-  bool DecodeSingleSurface(DecodeContext& ctx, Surface& surf,
-                           TaskExecDetails& details,
+  bool DecodeSingleSurface(Surface& surf, TaskExecDetails& details,
+                           PacketData& pkt_data,
                            std::optional<SeekContext> seek_ctx);
 
   std::vector<MotionVector> GetMotionVectors();
@@ -233,7 +233,7 @@ public:
   bool IsAccelerated() const;
 
 private:
-  bool DecodeImpl(DecodeContext& ctx, TaskExecDetails& details, Token& dst,
+  bool DecodeImpl(TaskExecDetails& details, PacketData& pkt_data, Token& dst,
                   std::optional<SeekContext> seek_ctx);
 };
 

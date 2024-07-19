@@ -519,12 +519,11 @@ struct FfmpegDecodeFrame_Impl {
     return static_cast<uint32_t>(size);
   }
 
-  static void CopyToSurface(AVFrame& src, Surface& dst, CUstream stream) {
+  static void CopyToSurface(AVFrame& src, Surface& dst) {
     CUDA_MEMCPY2D m = {0};
     m.srcMemoryType = CU_MEMORYTYPE_DEVICE;
     m.dstMemoryType = CU_MEMORYTYPE_DEVICE;
 
-    CudaCtxPush push_ctx(GetContextByStream(stream));
     for (auto i = 0U; src.data[i]; i++) {
       m.srcDevice = (CUdeviceptr)src.data[i];
       m.srcPitch = src.linesize[i];
@@ -533,9 +532,9 @@ struct FfmpegDecodeFrame_Impl {
       m.WidthInBytes = dst.Width(i) * dst.ElemSize();
       m.Height = dst.Height(i);
 
-      ThrowOnCudaError(cuMemcpy2DAsync(&m, stream), __LINE__);
+      CudaCtxPush push_ctx(GetContextByDptr(m.dstDevice));
+      ThrowOnCudaError(cuMemcpy2D(&m), __LINE__);
     }
-    ThrowOnCudaError(cuStreamSynchronize(stream), __LINE__);
   }
 
   bool UpdGetResChange() {
@@ -555,7 +554,7 @@ struct FfmpegDecodeFrame_Impl {
     if (m_frame->hw_frames_ctx) {
       // Codec has HW acceleration and outputs to CUDA memory
       try {
-        CopyToSurface(*m_frame.get(), dynamic_cast<Surface&>(dst), m_stream);
+        CopyToSurface(*m_frame.get(), dynamic_cast<Surface&>(dst));
       } catch (std::exception& e) {
         std::cerr << "Error while copying a surface from FFMpeg to VALI: "
                   << e.what();

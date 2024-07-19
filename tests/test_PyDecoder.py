@@ -281,7 +281,7 @@ class TestDecoderBasic(unittest.TestCase):
         start_frame = random.randint(0, gtInfo.num_frames - 1)
         seek_ctx = nvc.SeekContext(seek_frame=start_frame)
         success, _ = pyDec.DecodeSingleFrame(
-            frame=frame, pkt_data=None, seek_ctx=seek_ctx)
+            frame=frame, seek_ctx=seek_ctx)
         self.assertTrue(success)
 
         # Now check if it's the same as via continuous decode
@@ -328,7 +328,7 @@ class TestDecoderBasic(unittest.TestCase):
         start_frame = random.randint(0, gtInfo.num_frames - 1)
         seek_ctx = nvc.SeekContext(seek_frame=start_frame)
         success, _ = pyDec.DecodeSingleSurface(
-            surf=surf, pkt_data=None, seek_ctx=seek_ctx)
+            surf=surf, seek_ctx=seek_ctx)
         self.assertTrue(success)
         self.assertTrue(pyDwn.Run(src=surf, dst=frame))
 

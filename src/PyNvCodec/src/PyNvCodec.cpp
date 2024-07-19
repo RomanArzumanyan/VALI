@@ -424,8 +424,8 @@ PYBIND11_MODULE(_PyNvCodec, m) {
         Number of frames, decoded if seek was done to closest previous key frame.
     )pbdoc");
 
-  py::class_<PacketData, shared_ptr<PacketData>>(
-      m, "PacketData", "Incapsulates information about compressed video frame")
+  py::class_<PacketData, shared_ptr<PacketData>>(m, "PacketData",
+                                                 "Video frame attributes")
       .def(py::init<>())
       .def_readwrite("key", &PacketData::key,
                      "1 if frame is I frame, 0 otherwise.")
