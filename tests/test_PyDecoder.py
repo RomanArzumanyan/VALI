@@ -53,7 +53,7 @@ import random
 from parameterized import parameterized
 
 
-class TestDecoderBasic(unittest.TestCase):
+class TestDecoder(unittest.TestCase):
     def __init__(self, methodName):
         super().__init__(methodName=methodName)
 
@@ -73,6 +73,42 @@ class TestDecoderBasic(unittest.TestCase):
     def test_height(self):
         pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
         self.assertEqual(self.gtInfo.height, pyDec.Height())
+
+    def test_level(self):
+        pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
+        self.assertEqual(self.gtInfo.level, pyDec.Level())
+
+    def test_profile(self):
+        pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
+        self.assertEqual(self.gtInfo.profile, pyDec.Profile())
+
+    def test_delay(self):
+        pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
+        self.assertEqual(self.gtInfo.delay, pyDec.Delay())
+
+    def test_gop_size(self):
+        pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
+        self.assertEqual(self.gtInfo.gop_size, pyDec.GopSize())
+
+    def test_bitrate(self):
+        pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
+        self.assertEqual(self.gtInfo.bitrate, pyDec.Bitrate())
+
+    def test_num_streams(self):
+        pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
+        self.assertEqual(self.gtInfo.num_streams, pyDec.NumStreams())
+
+    def test_video_stream_idx(self):
+        pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
+        self.assertEqual(self.gtInfo.video_stream_idx, pyDec.StreamIndex())
+
+    def test_start_time(self):
+        pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
+        self.assertEqual(self.gtInfo.start_time, pyDec.StartTime())
+
+    def test_metadata(self):
+        pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
+        self.assertGreater(len(pyDec.Metadata()), 0)
 
     def test_color_space(self):
         pyDec = nvc.PyDecoder(self.gtInfo.uri, {})

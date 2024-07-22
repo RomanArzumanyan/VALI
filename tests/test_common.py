@@ -20,6 +20,14 @@ class GroundTruth(BaseModel):
     color_space: Optional[str] = None
     color_range: Optional[str] = None
     len_s: Optional[float] = None
+    level: Optional[int] = None,
+    profile: Optional[int] = None,
+    delay: Optional[float] = None,
+    gop_size: Optional[int] = None,
+    bitrate: Optional[int] = None,
+    num_streams: Optional[int] = None,
+    video_stream_idx: Optional[int] = None,
+    start_time: Optional[float] = None
 
 
 def repeat(times):
