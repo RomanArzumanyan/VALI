@@ -52,18 +52,6 @@ struct MotionVector {
   int motion_scale;
 };
 
-class HwResetException : public std::runtime_error {
-public:
-  HwResetException(std::string& str) : std::runtime_error(str) {}
-  HwResetException() : std::runtime_error("HW reset"){};
-};
-
-class CuvidParserException : public std::runtime_error {
-public:
-  CuvidParserException(std::string& str) : std::runtime_error(str) {}
-  CuvidParserException() : std::runtime_error("HW reset"){};
-};
-
 class CudaResMgr {
 private:
   CudaResMgr();
@@ -222,15 +210,31 @@ public:
 
   uint32_t Width() const;
   uint32_t Height() const;
+  uint32_t Level() const;
+  uint32_t Profile() const;
+  uint32_t Delay() const;
+  uint32_t GopSize() const;
+  uint32_t Bitrate() const;
+  uint32_t NumFrames() const;
+  uint32_t NumStreams() const;
+  uint32_t StreamIndex() const;
+  uint32_t HostFrameSize() const;
+
   double Framerate() const;
   double AvgFramerate() const;
   double Timebase() const;
-  uint32_t Numframes() const;
-  uint32_t HostFrameSize() const;
+  double StartTime() const;
+  double Duration() const;
+
   ColorSpace Color_Space() const;
   ColorRange Color_Range() const;
+
   Pixel_Format PixelFormat() const;
+
   bool IsAccelerated() const;
+  bool IsVFR() const;
+
+  std::map<std::string, std::string> Metadata();
 
 private:
   bool DecodeImpl(TaskExecDetails& details, PacketData& pkt_data, Token& dst,

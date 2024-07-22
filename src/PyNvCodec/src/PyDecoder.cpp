@@ -161,10 +161,64 @@ uint32_t PyDecoder::Height() const {
   return params.videoContext.height;
 };
 
+uint32_t PyDecoder::Level() const {
+  MuxingParams params;
+  upDecoder->GetParams(params);
+  return params.videoContext.level;
+};
+
+uint32_t PyDecoder::Profile() const {
+  MuxingParams params;
+  upDecoder->GetParams(params);
+  return params.videoContext.profile;
+};
+
+uint32_t PyDecoder::Delay() const {
+  MuxingParams params;
+  upDecoder->GetParams(params);
+  return params.videoContext.delay;
+};
+
+uint32_t PyDecoder::GopSize() const {
+  MuxingParams params;
+  upDecoder->GetParams(params);
+  return params.videoContext.gop_size;
+};
+
+uint32_t PyDecoder::Bitrate() const {
+  MuxingParams params;
+  upDecoder->GetParams(params);
+  return params.videoContext.bit_rate;
+};
+
+uint32_t PyDecoder::NumFrames() const {
+  MuxingParams params;
+  upDecoder->GetParams(params);
+  return params.videoContext.num_frames;
+};
+
+uint32_t PyDecoder::NumStreams() const {
+  MuxingParams params;
+  upDecoder->GetParams(params);
+  return params.videoContext.num_streams;
+};
+
+uint32_t PyDecoder::StreamIndex() const {
+  MuxingParams params;
+  upDecoder->GetParams(params);
+  return params.videoContext.stream_index;
+};
+
+uint32_t PyDecoder::HostFrameSize() const {
+  MuxingParams params;
+  upDecoder->GetParams(params);
+  return params.videoContext.host_frame_size;
+};
+
 double PyDecoder::Framerate() const {
   MuxingParams params;
   upDecoder->GetParams(params);
-  return params.videoContext.frameRate;
+  return params.videoContext.frame_rate;
 };
 
 ColorSpace PyDecoder::Color_Space() const {
@@ -182,25 +236,25 @@ ColorRange PyDecoder::Color_Range() const {
 double PyDecoder::AvgFramerate() const {
   MuxingParams params;
   upDecoder->GetParams(params);
-  return params.videoContext.avgFrameRate;
+  return params.videoContext.avg_frame_rate;
 };
 
 double PyDecoder::Timebase() const {
   MuxingParams params;
   upDecoder->GetParams(params);
-  return params.videoContext.timeBase;
+  return params.videoContext.time_base;
 };
 
-uint32_t PyDecoder::Numframes() const {
+double PyDecoder::StartTime() const {
   MuxingParams params;
   upDecoder->GetParams(params);
-  return params.videoContext.num_frames;
+  return params.videoContext.start_time;
 };
 
-uint32_t PyDecoder::HostFrameSize() const {
+double PyDecoder::Duration() const {
   MuxingParams params;
   upDecoder->GetParams(params);
-  return params.videoContext.host_frame_size;
+  return params.videoContext.duration;
 };
 
 Pixel_Format PyDecoder::PixelFormat() const {
@@ -210,6 +264,18 @@ Pixel_Format PyDecoder::PixelFormat() const {
 };
 
 bool PyDecoder::IsAccelerated() const { return upDecoder->IsAccelerated(); }
+
+bool PyDecoder::IsVFR() const {
+  MuxingParams params;
+  upDecoder->GetParams(params);
+  return params.videoContext.is_vfr;
+}
+
+std::map<std::string, std::string> PyDecoder::Metadata() {
+  MuxingParams params;
+  upDecoder->GetParams(params);
+  return params.videoContext.metadata;
+}
 
 void Init_PyDecoder(py::module& m) {
   py::class_<PyDecoder, shared_ptr<PyDecoder>>(m, "PyDecoder",
@@ -315,6 +381,35 @@ void Init_PyDecoder(py::module& m) {
            R"pbdoc(
         Return encoded video file height in pixels.
     )pbdoc")
+      .def("Level", &PyDecoder::Level,
+           R"pbdoc(
+        Return encoded video level coding parameter.
+    )pbdoc")
+      .def("Profile", &PyDecoder::Profile,
+           R"pbdoc(
+        Return encoded video profile coding parameter.
+    )pbdoc")
+      .def("Delay", &PyDecoder::Delay,
+           R"pbdoc(
+        Return encoded video delay.
+    )pbdoc")
+      .def("GopSize", &PyDecoder::GopSize,
+           R"pbdoc(
+        Return encoded video GOP size.
+    )pbdoc")
+      .def("Bitrate", &PyDecoder::Bitrate,
+           R"pbdoc(
+        Return encoded video bitrate in bits per second.
+    )pbdoc")
+      .def("NumStreams", &PyDecoder::NumStreams,
+           R"pbdoc(
+        Return number of streams in video file. E. g. 2 streams: audio and video.
+    )pbdoc")
+      .def("StreamIndex", &PyDecoder::StreamIndex,
+           R"pbdoc(
+        Return number of current video stream in file. E. g. video stream has
+        index 0, and audio stream has index 1. This method will return 0 then.
+    )pbdoc")
       .def("Framerate", &PyDecoder::Framerate,
            R"pbdoc(
         Return encoded video file framerate.
@@ -327,7 +422,7 @@ void Init_PyDecoder(py::module& m) {
            R"pbdoc(
         Return encoded video file time base.
     )pbdoc")
-      .def("Numframes", &PyDecoder::Numframes,
+      .def("NumFrames", &PyDecoder::NumFrames,
            R"pbdoc(
         Return number of video frames in encoded video file.
         Please note that some video containers doesn't store this infomation.
@@ -354,6 +449,18 @@ void Init_PyDecoder(py::module& m) {
            R"pbdoc(
         Return amount of bytes needed to store decoded frame.
     )pbdoc")
+      .def("StartTime", &PyDecoder::StartTime,
+           R"pbdoc(
+        Return video start time in seconds.
+    )pbdoc")
+      .def("Duration", &PyDecoder::Duration,
+           R"pbdoc(
+        Return video duration time in seconds. May not be present.
+    )pbdoc")
+      .def("VFR", &PyDecoder::IsVFR,
+           R"pbdoc(
+        Return true if video has variable framerate, false otherwise.
+    )pbdoc")
       .def("Accelerated", &PyDecoder::IsAccelerated,
            R"pbdoc(
         Return true if decoder has HW acceleration support, false otherwise.
@@ -366,6 +473,10 @@ void Init_PyDecoder(py::module& m) {
 
        :return: list of motion vectors
        :rtype: List[nvc.MotionVector]
+    )pbdoc")
+      .def("Metadata", &PyDecoder::Metadata,
+           R"pbdoc(
+        Return dictionary with video file metadata.
     )pbdoc");
 
   m.attr("NO_PTS") = py::int_(AV_NOPTS_VALUE);
