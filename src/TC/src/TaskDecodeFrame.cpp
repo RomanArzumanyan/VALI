@@ -347,9 +347,8 @@ struct FfmpegDecodeFrame_Impl {
       ss << "Failed to allocate codec context";
       throw std::runtime_error(ss.str());
     }
-    m_avc_ctx = std::shared_ptr<AVCodecContext>(avctx, [](void* p) {
-      avcodec_free_context((AVCodecContext**)&p);
-    });
+    m_avc_ctx = std::shared_ptr<AVCodecContext>(
+        avctx, [](void* p) { avcodec_free_context((AVCodecContext**)&p); });
 
     auto res =
         avcodec_parameters_to_context(m_avc_ctx.get(), video_stream->codecpar);
@@ -417,7 +416,7 @@ struct FfmpegDecodeFrame_Impl {
     m_packet_data.dts = m_frame->pkt_dts;
     m_packet_data.pts = m_frame->pts;
     m_packet_data.duration = m_frame->duration;
-    m_packet_data.key = m_frame->flags & AV_FRAME_FLAG_KEY;
+    m_packet_data.key = (m_frame->flags & AV_FRAME_FLAG_KEY) != 0;
     m_packet_data.pos = m_frame->pkt_pos;
   }
 
@@ -702,6 +701,35 @@ struct FfmpegDecodeFrame_Impl {
     return m_fmt_ctx->streams[GetVideoStrIdx()]->start_time;
   }
 
+  double GetStartTimeS() const {
+    return double(GetStreamStartTime()) / double(AV_TIME_BASE);
+  }
+
+  double GetDuration() const {
+    return double(m_fmt_ctx->streams[GetVideoStrIdx()]->duration) /
+           double(AV_TIME_BASE);
+  }
+
+  int64_t GetBitRate() const {
+    return m_fmt_ctx->streams[GetVideoStrIdx()]->codecpar->bit_rate;
+  }
+
+  int64_t GetProfile() const {
+    return m_fmt_ctx->streams[GetVideoStrIdx()]->codecpar->profile;
+  }
+
+  int64_t GetLevel() const {
+    return m_fmt_ctx->streams[GetVideoStrIdx()]->codecpar->level;
+  }
+
+  int64_t GetDelay() const { return m_avc_ctx->delay; }
+
+  int64_t GetNumStreams() const { return m_fmt_ctx->nb_streams; }
+
+  int64_t GetGopSize() const { return m_avc_ctx->gop_size; }
+
+  int64_t GetStreamIndex() const { return m_stream_idx; }
+
   Pixel_Format GetPixelFormat() const {
     auto const format =
         IsAccelerated() ? m_avc_ctx->sw_pix_fmt : m_avc_ctx->pix_fmt;
@@ -739,6 +767,20 @@ struct FfmpegDecodeFrame_Impl {
 
   AVColorRange GetColorRange() const {
     return m_fmt_ctx->streams[GetVideoStrIdx()]->codecpar->color_range;
+  }
+
+  std::map<std::string, std::string> GetMetaData() const {
+    std::map<std::string, std::string> tags;
+
+    const auto dict = m_fmt_ctx->metadata;
+    auto tag = av_dict_iterate(dict, nullptr);
+    while (tag) {
+      tags[tag->key] = tag->value;
+      const auto prev_tag = tag;
+      tag = av_dict_iterate(dict, prev_tag);
+    }
+
+    return tags;
   }
 
   bool IsVFR() const { return GetFrameRate() != GetAvgFrameRate(); }
@@ -860,12 +902,25 @@ void DecodeFrame::GetParams(MuxingParams& params) {
 
   params.videoContext.width = pImpl->GetWidth();
   params.videoContext.height = pImpl->GetHeight();
-  params.videoContext.frameRate = pImpl->GetFrameRate();
-  params.videoContext.avgFrameRate = pImpl->GetAvgFrameRate();
-  params.videoContext.timeBase = pImpl->GetTimeBase();
+  params.videoContext.profile = pImpl->GetProfile();
+  params.videoContext.level = pImpl->GetLevel();
+  params.videoContext.delay = pImpl->GetDelay();
+  params.videoContext.gop_size = pImpl->GetGopSize();
   params.videoContext.num_frames = pImpl->GetNumFrames();
-  params.videoContext.format = pImpl->GetPixelFormat();
+  params.videoContext.is_vfr = pImpl->IsVFR();
+  params.videoContext.num_streams = pImpl->GetNumStreams();  
+  params.videoContext.duration = pImpl->GetDuration();
+  params.videoContext.stream_index = pImpl->GetStreamIndex();
   params.videoContext.host_frame_size = pImpl->GetHostFrameSize();
+  params.videoContext.bit_rate = pImpl->GetBitRate();
+
+  params.videoContext.frame_rate = pImpl->GetFrameRate();
+  params.videoContext.avg_frame_rate = pImpl->GetAvgFrameRate();
+  params.videoContext.time_base = pImpl->GetTimeBase();
+  params.videoContext.start_time = pImpl->GetStartTimeS();
+
+  params.videoContext.format = pImpl->GetPixelFormat();
+
   params.videoContext.color_range =
       fromFfmpegColorRange(pImpl->GetColorRange());
 
@@ -881,6 +936,8 @@ void DecodeFrame::GetParams(MuxingParams& params) {
     params.videoContext.color_space = UNSPEC;
     break;
   }
+
+  params.videoContext.metadata = pImpl->GetMetaData();
 }
 
 TaskExecDetails DecodeFrame::GetSideData(AVFrameSideDataType data_type) {
