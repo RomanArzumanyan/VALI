@@ -128,6 +128,15 @@ mutex CudaResMgr::gInsMutex;
 mutex CudaResMgr::gCtxMutex;
 mutex CudaResMgr::gStrMutex;
 
+class UponModuleLoad {
+public:
+  UponModuleLoad() { av_log_set_level(AV_LOG_ERROR); }
+
+  ~UponModuleLoad() = default;
+};
+
+static const UponModuleLoad upon_load;
+
 auto CopyBuffer_Ctx_Str = [](shared_ptr<CudaBuffer> dst,
                              shared_ptr<CudaBuffer> src, CUstream str) {
   if (dst->GetRawMemSize() != src->GetRawMemSize()) {
