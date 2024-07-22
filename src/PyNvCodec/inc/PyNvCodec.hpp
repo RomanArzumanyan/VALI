@@ -108,7 +108,8 @@ public:
   PySurfaceConverter(Pixel_Format src, Pixel_Format dst, size_t str)
       : PySurfaceConverter(src, dst, (CUstream)str) {}
 
-  bool Run(Surface& src, Surface& dst, ColorspaceConversionContext& context,
+  bool Run(Surface& src, Surface& dst,
+           std::optional<ColorspaceConversionContext> context,
            TaskExecDetails& details);
 };
 
