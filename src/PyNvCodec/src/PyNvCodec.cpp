@@ -226,14 +226,13 @@ void DecodeContext::SetCloneSurface(Surface* p_surface) {
 }
 
 enum FFMpegLogLevel {
-  QUIET = AV_LOG_QUIET,
-  PANIC = AV_LOG_PANIC,
-  FATAL = AV_LOG_FATAL,
-  ERROR = AV_LOG_ERROR,
-  WARNING = AV_LOG_WARNING,
-  INFO = AV_LOG_INFO,
-  VERBOSE = AV_LOG_VERBOSE,
-  DEBUG = AV_LOG_DEBUG
+  LOG_PANIC = AV_LOG_PANIC,
+  LOG_FATAL = AV_LOG_FATAL,
+  LOG_ERROR = AV_LOG_ERROR,
+  LOG_WARNING = AV_LOG_WARNING,
+  LOG_INFO = AV_LOG_INFO,
+  LOG_VERBOSE = AV_LOG_VERBOSE,
+  LOG_DEBUG = AV_LOG_DEBUG
 };
 
 void Init_PyFrameUploader(py::module&);
@@ -379,14 +378,13 @@ PYBIND11_MODULE(_PyNvCodec, m) {
       .export_values();
 
   py::enum_<FFMpegLogLevel>(m, "FfmpegLogLevel")
-      .value("QUIET", FFMpegLogLevel::QUIET, "AV_LOG_QUIET")
-      .value("PANIC", FFMpegLogLevel::PANIC, "AV_LOG_PANIC")
-      .value("FATAL", FFMpegLogLevel::FATAL, "AV_LOG_FATAL")
-      .value("ERROR", FFMpegLogLevel::ERROR, "AV_LOG_ERROR")
-      .value("WARNING", FFMpegLogLevel::WARNING, "AV_LOG_WARNING")
-      .value("INFO", FFMpegLogLevel::INFO, "AV_LOG_INFO")
-      .value("VERBOSE", FFMpegLogLevel::VERBOSE, "AV_LOG_VERBOSE")
-      .value("DEBUG", FFMpegLogLevel::DEBUG, "AV_LOG_DEBUG")
+      .value("PANIC", FFMpegLogLevel::LOG_PANIC, "AV_LOG_PANIC")
+      .value("FATAL", FFMpegLogLevel::LOG_FATAL, "AV_LOG_FATAL")
+      .value("ERROR", FFMpegLogLevel::LOG_ERROR, "AV_LOG_ERROR")
+      .value("WARNING", FFMpegLogLevel::LOG_WARNING, "AV_LOG_WARNING")
+      .value("INFO", FFMpegLogLevel::LOG_INFO, "AV_LOG_INFO")
+      .value("VERBOSE", FFMpegLogLevel::LOG_VERBOSE, "AV_LOG_VERBOSE")
+      .value("DEBUG", FFMpegLogLevel::LOG_DEBUG, "AV_LOG_DEBUG")
       .export_values();
 
   py::class_<SeekContext, shared_ptr<SeekContext>>(
