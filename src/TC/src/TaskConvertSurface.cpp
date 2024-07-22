@@ -90,18 +90,6 @@ struct NppConvertSurface_Impl {
     return ss.str();
   }
 
-  static std::tuple<ColorSpace, ColorRange>
-  GetParams(ColorspaceConversionContext* pCtx) {
-    auto ret = std::make_tuple(BT_601, MPEG);
-
-    if (pCtx) {
-      std::get<0>(ret) = pCtx->color_space;
-      std::get<1>(ret) = pCtx->color_range;
-    }
-
-    return ret;
-  }
-
   CUstream cu_str;
   NppStreamContext nppCtx;
   const Pixel_Format srcFmt, dstFmt;
@@ -121,9 +109,8 @@ struct nv12_bgr final : public NppConvertSurface_Impl {
       return s_invalid_src_dst;
     }
 
-    auto const params = GetParams(pCtx);
-    auto const color_space = std::get<0>(params);
-    auto const color_range = std::get<1>(params);
+    auto const color_space = pCtx ? pCtx->color_space : BT_709;
+    auto const color_range = pCtx ? pCtx->color_range : JPEG;
 
     const Npp8u* const pSrc[] = {(const Npp8u*)pInput->PixelPtr(0U),
                                  (const Npp8u*)pInput->PixelPtr(1U)};
@@ -178,9 +165,8 @@ struct nv12_rgb final : public NppConvertSurface_Impl {
       return s_invalid_src_dst;
     }
 
-    auto const params = GetParams(pCtx);
-    auto const color_space = std::get<0>(params);
-    auto const color_range = std::get<1>(params);
+    auto const color_space = pCtx ? pCtx->color_space : BT_709;
+    auto const color_range = pCtx ? pCtx->color_range : JPEG;
 
     const Npp8u* const pSrc[] = {(const Npp8u* const)pInput->PixelPtr(0U),
                                  (const Npp8u* const)pInput->PixelPtr(1U)};
@@ -249,7 +235,7 @@ struct nv12_yuv420 final : public NppConvertSurface_Impl {
     CudaCtxPush ctxPush(cu_str);
     auto err = NPP_NO_ERROR;
 
-    auto const color_range = pCtx ? pCtx->color_range : MPEG;
+    auto const color_range = pCtx ? pCtx->color_range : JPEG;
     switch (color_range) {
     case JPEG:
       err = nppiNV12ToYUV420_8u_P2P3R_Ctx(pSrc, pInput->Pitch(0U), pDst,
@@ -343,9 +329,8 @@ struct yuv420_rgb final : public NppConvertSurface_Impl {
                           ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
 
-    auto const params = GetParams(pCtx);
-    auto const color_space = std::get<0>(params);
-    auto const color_range = std::get<1>(params);
+    auto const color_space = pCtx ? pCtx->color_space : BT_601;
+    auto const color_range = pCtx ? pCtx->color_range : JPEG;
 
     auto pInput = (SurfaceYUV420*)pSrcToken;
     auto pOutput = (Surface*)pDstToken;
@@ -396,9 +381,8 @@ struct yuv420_bgr final : public NppConvertSurface_Impl {
                           ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
 
-    auto const params = GetParams(pCtx);
-    auto const color_space = std::get<0>(params);
-    auto const color_range = std::get<1>(params);
+    auto const color_space = pCtx ? pCtx->color_space : BT_601;
+    auto const color_range = pCtx ? pCtx->color_range : JPEG;
 
     auto pInput = (SurfaceYUV420*)pSrcToken;
     auto pOutput = (Surface*)pDstToken;
@@ -449,9 +433,8 @@ struct yuv444_bgr final : public NppConvertSurface_Impl {
                           ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
 
-    auto const params = GetParams(pCtx);
-    auto const color_space = std::get<0>(params);
-    auto const color_range = std::get<1>(params);
+    auto const color_space = pCtx ? pCtx->color_space : BT_601;
+    auto const color_range = pCtx ? pCtx->color_range : JPEG;
 
     if (BT_601 != color_space) {
       return s_unsupp_cc_ctx;
@@ -503,9 +486,8 @@ struct yuv444_rgb final : public NppConvertSurface_Impl {
                           ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
 
-    auto const params = GetParams(pCtx);
-    auto const color_space = std::get<0>(params);
-    auto const color_range = std::get<1>(params);
+    auto const color_space = pCtx ? pCtx->color_space : BT_601;
+    auto const color_range = pCtx ? pCtx->color_range : JPEG;
 
     if (BT_601 != color_space) {
       return s_unsupp_cc_ctx;
@@ -554,9 +536,8 @@ struct yuv444_rgb_planar final : public NppConvertSurface_Impl {
                           ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
 
-    auto const params = GetParams(pCtx);
-    auto const color_space = std::get<0>(params);
-    auto const color_range = std::get<1>(params);
+    auto const color_space = pCtx ? pCtx->color_space : BT_601;
+    auto const color_range = pCtx ? pCtx->color_range : JPEG;
 
     if (BT_601 != color_space) {
       return s_unsupp_cc_ctx;
@@ -604,9 +585,8 @@ struct bgr_yuv444 final : public NppConvertSurface_Impl {
                           ColorspaceConversionContext* pCtx) override {
     NvtxMark tick(GetNvtxTickName().c_str());
 
-    auto const params = GetParams(pCtx);
-    auto const color_space = std::get<0>(params);
-    auto const color_range = std::get<1>(params);
+    auto const color_space = pCtx ? pCtx->color_space : BT_601;
+    auto const color_range = pCtx ? pCtx->color_range : JPEG;
 
     if (BT_601 != color_space) {
       return s_unsupp_cc_ctx;
@@ -665,9 +645,8 @@ struct rgb_yuv444 final : public NppConvertSurface_Impl {
       return s_invalid_src_dst;
     }
 
-    auto const params = GetParams(pCtx);
-    auto const color_space = std::get<0>(params);
-    auto const color_range = std::get<1>(params);
+    auto const color_space = pCtx ? pCtx->color_space : BT_601;
+    auto const color_range = pCtx ? pCtx->color_range : JPEG;
 
     if (BT_601 != color_space) {
       return s_unsupp_cc_ctx;
@@ -719,9 +698,8 @@ struct rgb_planar_yuv444 final : public NppConvertSurface_Impl {
       return s_invalid_src_dst;
     }
 
-    auto const params = GetParams(pCtx);
-    auto const color_space = std::get<0>(params);
-    auto const color_range = std::get<1>(params);
+    auto const color_space = pCtx ? pCtx->color_space : BT_601;
+    auto const color_range = pCtx ? pCtx->color_range : JPEG;
 
     if (BT_601 != color_space) {
       return s_unsupp_cc_ctx;
@@ -815,9 +793,8 @@ struct rgb_yuv420 final : public NppConvertSurface_Impl {
       return s_invalid_src_dst;
     }
 
-    auto const params = GetParams(pCtx);
-    auto const color_space = std::get<0>(params);
-    auto const color_range = std::get<1>(params);
+    auto const color_space = pCtx ? pCtx->color_space : BT_601;
+    auto const color_range = pCtx ? pCtx->color_range : JPEG;
 
     if (BT_601 != color_space) {
       return s_unsupp_cc_ctx;

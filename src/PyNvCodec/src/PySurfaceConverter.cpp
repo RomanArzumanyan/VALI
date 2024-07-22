@@ -37,14 +37,17 @@ PySurfaceConverter::PySurfaceConverter(Pixel_Format src, Pixel_Format dst,
 }
 
 bool PySurfaceConverter::Run(Surface& src, Surface& dst,
-                             ColorspaceConversionContext& context,
+                             std::optional<ColorspaceConversionContext> context,
                              TaskExecDetails& details) {
-  upCtxBuffer->CopyFrom(sizeof(ColorspaceConversionContext), &context);
-
   upConverter->ClearInputs();
   upConverter->SetInput((Token*)&src, 0U);
   upConverter->SetInput((Token*)&dst, 1U);
-  upConverter->SetInput((Token*)upCtxBuffer.get(), 2U);
+
+  if (context) {
+    upCtxBuffer->CopyFrom(sizeof(ColorspaceConversionContext),
+                          &context.value());
+    upConverter->SetInput((Token*)upCtxBuffer.get(), 2U);
+  }
 
   details = upConverter->Execute();
   return (TASK_EXEC_SUCCESS == details.m_status);
@@ -75,19 +78,21 @@ void Init_PySurfaceConverter(py::module& m) {
       .def(
           "Run",
           [](PySurfaceConverter& self, Surface& src, Surface& dst,
-             ColorspaceConversionContext& cc_ctx) {
+             std::optional<ColorspaceConversionContext> cc_ctx) {
             TaskExecDetails details;
             return std::make_tuple(self.Run(src, dst, cc_ctx, details),
                                    details.m_info);
           },
-          py::arg("src"), py::arg("dst"), py::arg("cc_ctx"),
+          py::arg("src"), py::arg("dst"), py::arg("cc_ctx") = std::nullopt,
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
         Perform pixel format conversion.
 
         :param src: input Surface. Must be of same format class instance was created with.
         :param dst: output Surface. Must be of suitable format.
-        :param cc_ctx: colorspace conversion context. Describes color space and color range used for conversion.
+        :param cc_ctx: colorspace conversion context. Describes color space and 
+        color range used for conversion. Optional parameter. If not given, 
+        VALI will automatically pick supported color conversion parameters.
         :return: tuple containing:
           success (Bool) True in case of success, False otherwise.
           info (TaskExecInfo) task execution information.
