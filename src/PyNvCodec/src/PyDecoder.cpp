@@ -304,6 +304,7 @@ void Init_PyDecoder(py::module& m) {
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
         Decode single video frame from input file.
+        Only call this method for decoder without HW acceleration.
 
         :param frame: decoded video frame
         :param pkt_data: decoded video frame packet data, may be None
@@ -325,6 +326,7 @@ void Init_PyDecoder(py::module& m) {
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
         Decode single video frame from input file.
+        Only call this method for decoder without HW acceleration.
 
         :param frame: decoded video frame
         :param pkt_data: decoded video frame packet data, may be None
@@ -346,6 +348,7 @@ void Init_PyDecoder(py::module& m) {
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
         Decode single video surface from input file.
+        Only call this method for HW-accelerated decoder.
 
         :param surf: decoded video surface
         :param pkt_data: decoded video surface packet data, may be None
@@ -367,6 +370,7 @@ void Init_PyDecoder(py::module& m) {
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
         Decode single video surface from input file.
+        Only call this method for HW-accelerated decoder.
 
         :param surf: decoded video surface
         :param pkt_data: decoded video surface packet data, may be None

@@ -90,9 +90,7 @@ void Init_PySurfaceConverter(py::module& m) {
 
         :param src: input Surface. Must be of same format class instance was created with.
         :param dst: output Surface. Must be of suitable format.
-        :param cc_ctx: colorspace conversion context. Describes color space and 
-        color range used for conversion. Optional parameter. If not given, 
-        VALI will automatically pick supported color conversion parameters.
+        :param cc_ctx: colorspace conversion context. Describes color space and color range used for conversion. Optional parameter. If not given, VALI will automatically pick supported color conversion parameters.
         :return: tuple containing:
           success (Bool) True in case of success, False otherwise.
           info (TaskExecInfo) task execution information.
