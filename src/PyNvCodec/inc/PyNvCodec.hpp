@@ -52,18 +52,6 @@ struct MotionVector {
   int motion_scale;
 };
 
-class HwResetException : public std::runtime_error {
-public:
-  HwResetException(std::string& str) : std::runtime_error(str) {}
-  HwResetException() : std::runtime_error("HW reset"){};
-};
-
-class CuvidParserException : public std::runtime_error {
-public:
-  CuvidParserException(std::string& str) : std::runtime_error(str) {}
-  CuvidParserException() : std::runtime_error("HW reset"){};
-};
-
 class CudaResMgr {
 private:
   CudaResMgr();

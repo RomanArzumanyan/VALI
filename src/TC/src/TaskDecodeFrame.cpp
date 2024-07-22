@@ -171,9 +171,6 @@ struct FfmpegDecodeFrame_Impl {
       const char* URL, const std::map<std::string, std::string>& ffmpeg_options,
       std::optional<CUstream> stream) {
 
-    // Set log level to error to avoid noisy output
-    av_log_set_level(AV_LOG_ERROR);
-
     // Allocate format context first to set timeout before opening the input.
     AVFormatContext* fmt_ctx = avformat_alloc_context();
     if (!fmt_ctx) {

@@ -225,6 +225,17 @@ void DecodeContext::SetCloneSurface(Surface* p_surface) {
   pSurface = shared_ptr<Surface>(p_surface->Clone());
 }
 
+enum class FFMpegLogLevel {
+  QUIET = AV_LOG_QUIET,
+  PANIC = AV_LOG_PANIC,
+  FATAL = AV_LOG_FATAL,
+  ERROR = AV_LOG_ERROR,
+  WARNING = AV_LOG_WARNING,
+  INFO = AV_LOG_INFO,
+  VERBOSE = AV_LOG_VERBOSE,
+  DEBUG = AV_LOG_DEBUG
+};
+
 void Init_PyFrameUploader(py::module&);
 
 void Init_PySurfaceConverter(py::module&);
@@ -288,10 +299,6 @@ PYBIND11_MODULE(_PyNvCodec, m) {
                           "src_x", src_y, "src_y", dst_x, "dst_x", dst_y,
                           "dst_y", motion_x, "motion_x", motion_y, "motion_y",
                           motion_scale, "motion_scale");
-
-  py::register_exception<HwResetException>(m, "HwResetException");
-
-  py::register_exception<CuvidParserException>(m, "CuvidParserException");
 
   py::enum_<Pixel_Format>(m, "PixelFormat")
       .value("Y", Pixel_Format::Y, "Grayscale.")
@@ -369,6 +376,17 @@ PYBIND11_MODULE(_PyNvCodec, m) {
              "all the frames that desired frame use for reference.")
       .value("PREV_KEY_FRAME", SeekMode::PREV_KEY_FRAME,
              "Seek for closes key frame in past.")
+      .export_values();
+
+  py::enum_<FFMpegLogLevel>(m, "FfmpegLogLevel")
+      .value("QUIET", FFMpegLogLevel::QUIET, "")
+      .value("PANIC", FFMpegLogLevel::PANIC, "")
+      .value("FATAL", FFMpegLogLevel::FATAL, "")
+      .value("ERROR", FFMpegLogLevel::ERROR, "")
+      .value("WARNING", FFMpegLogLevel::WARNING, "")
+      .value("INFO", FFMpegLogLevel::INFO, "")
+      .value("VERBOSE", FFMpegLogLevel::VERBOSE, "")
+      .value("DEBUG", FFMpegLogLevel::DEBUG, "")
       .export_values();
 
   py::class_<SeekContext, shared_ptr<SeekContext>>(
@@ -563,6 +581,13 @@ PYBIND11_MODULE(_PyNvCodec, m) {
         Get list of params PyNvEncoder can be initialized with.
     )pbdoc");
 
+  m.def(
+      "SetFFMpegLogLevel",
+      [](FFMpegLogLevel level) { av_log_set_level(int(level)); },
+      R"pbdoc(
+        Set FFMpeg log level.
+    )pbdoc");
+
   m.doc() = R"pbdoc(
         PyNvCodec
         ----------
@@ -572,6 +597,7 @@ PYBIND11_MODULE(_PyNvCodec, m) {
 
            GetNumGpus
            GetNvencParams
+           SetFFMpegLogLevel
            PySurfaceResizer
            PySurfaceDownloader
            PySurfaceConverter
