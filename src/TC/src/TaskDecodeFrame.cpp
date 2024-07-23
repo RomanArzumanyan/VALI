@@ -59,8 +59,8 @@ static AVPixelFormat get_format(AVCodecContext* avctx,
       auto frames_ctx = (AVHWFramesContext*)avctx->hw_frames_ctx->data;
       frames_ctx->format = AV_PIX_FMT_CUDA;
       frames_ctx->sw_format = avctx->sw_pix_fmt;
-      frames_ctx->width = FFALIGN(avctx->coded_width, 32);
-      frames_ctx->height = FFALIGN(avctx->coded_height, 32);
+      frames_ctx->width = avctx->width;
+      frames_ctx->height = avctx->height;
 
       if (av_hwframe_ctx_init(avctx->hw_frames_ctx) < 0) {
         return AV_PIX_FMT_NONE;
@@ -187,14 +187,8 @@ struct FfmpegDecodeFrame_Impl {
                       std::to_string(GetDeviceIdByStream(m_stream)).c_str(), 0);
       ThrowOnAvError(res, "Failed to set hwaccel_device AVOption", &options);
 
-      res = av_dict_set(&options, "hwaccel", "cuvid", 0);
-      ThrowOnAvError(res, "Failed to set hwaccel AVOption", &options);
-
-      res = av_dict_set(&options, "fps_mode", "passthrough", 0);
-      ThrowOnAvError(res, "Failed set fps_mode AVOption", &options);
-
-      res = av_dict_set(&options, "threads", "1", 0);
-      ThrowOnAvError(res, "Failed set threads AVOption", &options);
+      res = av_dict_set(&options, "current_ctx", "1", 0);
+      ThrowOnAvError(res, "Failed to set current_ctx AVOption", &options);
     }
 
     /* After we are done settings options, save them in case we need them
@@ -264,25 +258,12 @@ struct FfmpegDecodeFrame_Impl {
 
     OpenCodec(stream.has_value());
 
-    auto frame = av_frame_alloc();
-    if (!frame) {
-      std::stringstream ss;
-      ss << "Could not allocate frame";
-      throw std::runtime_error(ss.str());
-    }
-
-    m_frame = std::shared_ptr<AVFrame>(frame, [](void* p) {
+    m_frame = std::shared_ptr<AVFrame>(av_frame_alloc(), [](void* p) {
       av_frame_unref((AVFrame*)p);
       av_frame_free((AVFrame**)&p);
     });
 
-    auto avpkt = av_packet_alloc();
-    if (!avpkt) {
-      std::stringstream ss;
-      ss << "Could not allocate packet";
-      throw std::runtime_error(ss.str());
-    }
-    m_pkt = std::shared_ptr<AVPacket>(avpkt, [](void* p) {
+    m_pkt = std::shared_ptr<AVPacket>(av_packet_alloc(), [](void* p) {
       av_packet_unref((AVPacket*)p);
       av_packet_free((AVPacket**)&p);
     });
@@ -376,12 +357,15 @@ struct FfmpegDecodeFrame_Impl {
  */
 #ifndef TEGRA_BUILD
     if (is_accelerated) {
+      // Push CUDA context for FFMpeg to use it
+      CudaCtxPush push_ctx(GetContextByStream(m_stream));
+
       /* Attach HW context to codec. Whithout that decoded frames will be
        * copied to RAM.
        */
       AVBufferRef* hwdevice_ctx = nullptr;
       auto res = av_hwdevice_ctx_create(&hwdevice_ctx, AV_HWDEVICE_TYPE_CUDA,
-                                        NULL, options, 0);
+                                        NULL, options, 0);  
 
       if (res < 0) {
         std::stringstream ss;
@@ -515,10 +499,18 @@ struct FfmpegDecodeFrame_Impl {
     return static_cast<uint32_t>(size);
   }
 
-  static void CopyToSurface(AVFrame& src, Surface& dst) {
+  void CopyToSurface(AVFrame& src, Surface& dst) {
     CUDA_MEMCPY2D m = {0};
     m.srcMemoryType = CU_MEMORYTYPE_DEVICE;
     m.dstMemoryType = CU_MEMORYTYPE_DEVICE;
+
+    auto av_hw_ctx = (AVHWDeviceContext*)m_avc_ctx->hw_device_ctx->data;
+    auto av_cuda_ctx = (AVCUDADeviceContext*)av_hw_ctx->hwctx;
+
+    if (av_cuda_ctx->cuda_ctx != dst.Context()) {
+      throw std::runtime_error("CUDA context mismatch between FFMpeg and VALI");
+    }
+    CudaCtxPush push_ctx(av_cuda_ctx->cuda_ctx);
 
     for (auto i = 0U; src.data[i]; i++) {
       m.srcDevice = (CUdeviceptr)src.data[i];
@@ -528,9 +520,9 @@ struct FfmpegDecodeFrame_Impl {
       m.WidthInBytes = dst.Width(i) * dst.ElemSize();
       m.Height = dst.Height(i);
 
-      CudaCtxPush push_ctx(GetContextByDptr(m.dstDevice));
-      ThrowOnCudaError(cuMemcpy2D(&m), __LINE__);
+      ThrowOnCudaError(cuMemcpy2DAsync(&m, av_cuda_ctx->stream), __LINE__);
     }
+    CudaStrSync sync(av_cuda_ctx->stream);
   }
 
   bool UpdGetResChange() {
@@ -905,7 +897,7 @@ void DecodeFrame::GetParams(MuxingParams& params) {
   params.videoContext.gop_size = pImpl->GetGopSize();
   params.videoContext.num_frames = pImpl->GetNumFrames();
   params.videoContext.is_vfr = pImpl->IsVFR();
-  params.videoContext.num_streams = pImpl->GetNumStreams();  
+  params.videoContext.num_streams = pImpl->GetNumStreams();
   params.videoContext.duration = pImpl->GetDuration();
   params.videoContext.stream_index = pImpl->GetStreamIndex();
   params.videoContext.host_frame_size = pImpl->GetHostFrameSize();

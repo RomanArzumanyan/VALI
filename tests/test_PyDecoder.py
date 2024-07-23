@@ -50,7 +50,6 @@ import json
 import test_common as tc
 import logging
 import random
-from parameterized import parameterized
 
 
 class TestDecoder(unittest.TestCase):
@@ -226,7 +225,7 @@ class TestDecoder(unittest.TestCase):
 
         self.assertEqual(self.yuvInfo.num_frames, dec_frames)
 
-    @unittest.skip("cuvid fail this test on runner.")
+    @tc.repeat(3)
     def test_check_all_surfaces(self):
         pyDec = nvc.PyDecoder(input=self.gtInfo.uri, opts={}, gpu_id=0)
         pyDwn = nvc.PySurfaceDownloader(gpu_id=0)
@@ -348,6 +347,7 @@ class TestDecoder(unittest.TestCase):
                 self.fail(
                     "Seek frame isnt same as continuous decode frame")
 
+    @tc.repeat(3)
     def test_seek_gpu_decoder(self):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
