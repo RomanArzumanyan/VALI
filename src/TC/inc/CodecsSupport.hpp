@@ -13,7 +13,9 @@
 
 #pragma once
 #include "MemoryInterfaces.hpp"
+#include <map>
 #include <stdint.h>
+#include <string>
 
 struct PacketData {
   int32_t key;
@@ -25,19 +27,31 @@ struct PacketData {
 };
 
 struct VideoContext {
-  uint32_t width;
-  uint32_t height;
-  uint32_t gop_size;
-  uint32_t num_frames;
-  uint32_t is_vfr;
-  double frameRate;
-  double avgFrameRate;
-  double timeBase;
-  uint32_t streamIndex;
-  uint32_t host_frame_size;
+  int64_t width;
+  int64_t height;
+  int64_t profile;
+  int64_t level;
+  int64_t delay;
+  int64_t gop_size;
+  int64_t num_frames;
+  int64_t is_vfr;
+  int64_t num_streams;  
+  int64_t stream_index;
+  int64_t host_frame_size;
+  int64_t bit_rate;
+
+  double frame_rate;
+  double avg_frame_rate;
+  double time_base;
+  double start_time;
+  double duration;
+
   Pixel_Format format;
+
   ColorSpace color_space;
   ColorRange color_range;
+
+  std::map<std::string, std::string> metadata;
 };
 
 struct AudioContext {

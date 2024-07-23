@@ -10,7 +10,14 @@
         "timebase": 8.1380e-5,
         "color_space": "ColorSpace.BT_709",
         "color_range": "ColorRange.MPEG",
-        "len_s": 3.23
+        "level": 31,
+        "profile": 77,
+        "delay": 0,
+        "gop_size": 12,
+        "bitrate": 505862,
+        "num_streams": 2,
+        "video_stream_idx": 0,
+        "start_time": 0.0
     },
     "hevc10": {
         "uri": "data/test_hevc10.mkv",

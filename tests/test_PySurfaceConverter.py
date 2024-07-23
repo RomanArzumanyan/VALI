@@ -85,6 +85,30 @@ class TestSurfaceConverter(unittest.TestCase):
         surf_dst, details = nvCvt.Run(surf_src, surf_dst, cc_ctx)
         self.assertEqual(details, nvc.TaskExecInfo.UNSUPPORTED_FMT_CONV_PARAMS)
 
+    def test_no_cc_ctx(self):
+        with open("gt_files.json") as f:
+            gtInfo = tc.GroundTruth(**json.load(f)["basic"])
+
+        pyDec = nvc.PyDecoder(
+            input=gtInfo.uri, opts={}, gpu_id=0)
+
+        nvCvt = nvc.PySurfaceConverter(
+            nvc.PixelFormat.NV12,
+            nvc.PixelFormat.RGB,
+            gpu_id=0)
+
+        surf_src = nvc.Surface.Make(
+            pyDec.Format(), pyDec.Width(), pyDec.Height(), gpu_id=0)
+        success, _ = pyDec.DecodeSingleSurface(surf_src)
+        if not success:
+            self.fail("Fail to decode surface")
+
+        surf_dst = nvc.Surface.Make(
+            nvc.PixelFormat.RGB, surf_src.Width(), surf_src.Height(), gpu_id=0)
+
+        surf_dst, details = nvCvt.Run(surf_src, surf_dst)
+        self.assertEqual(details, nvc.TaskExecInfo.SUCCESS)        
+
     def test_rgb_deinterleave(self):
         with open("gt_files.json") as f:
             gt_values = json.load(f)
