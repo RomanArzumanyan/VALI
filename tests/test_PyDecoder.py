@@ -50,7 +50,6 @@ import json
 import test_common as tc
 import logging
 import random
-from parameterized import parameterized
 
 
 class TestDecoder(unittest.TestCase):
