@@ -106,7 +106,7 @@
         "num_frames": 16,
         "color_space": "ColorSpace.BT_709",
         "color_range": "ColorRange.MPEG"
-    },    
+    },
     "small_nv12": {
         "uri": "data/test_small.nv12",
         "width": 424,
@@ -121,9 +121,7 @@
         "width": 848,
         "height": 464,
         "pix_fmt": "PixelFormat.P10",
-        "num_frames": 16,
-        "color_space": "ColorSpace.BT_709",
-        "color_range": "ColorRange.MPEG"
+        "num_frames": 16
     },
     "hevc10_nv12": {
         "uri": "data/test_hevc10.nv12",
