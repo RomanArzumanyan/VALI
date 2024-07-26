@@ -365,7 +365,7 @@ struct FfmpegDecodeFrame_Impl {
        */
       AVBufferRef* hwdevice_ctx = nullptr;
       auto res = av_hwdevice_ctx_create(&hwdevice_ctx, AV_HWDEVICE_TYPE_CUDA,
-                                        NULL, options, 0);  
+                                        NULL, options, 0);
 
       if (res < 0) {
         std::stringstream ss;
@@ -582,12 +582,12 @@ struct FfmpegDecodeFrame_Impl {
    *
    * Upont error returns DEC_ERROR.
    */
-  DECODE_STATUS DecodeSinglePacket(const AVPacket* pkt_Src, Token& dst) {
+  DECODE_STATUS DecodeSinglePacket(AVPacket* pkt, Token& dst) {
     SaveCurrentRes();
     int res = 0;
 
     if (!m_flush) {
-      res = avcodec_send_packet(m_avc_ctx.get(), pkt_Src);
+      res = avcodec_send_packet(m_avc_ctx.get(), pkt);
       if (AVERROR_EOF == res) {
         // Flush decoder;
         res = 0;
@@ -600,6 +600,9 @@ struct FfmpegDecodeFrame_Impl {
         return DEC_ERROR;
       } else {
         m_num_pkt_sent++;
+        if (pkt) {
+          av_packet_unref(pkt);
+        }
       }
     }
 
@@ -607,7 +610,7 @@ struct FfmpegDecodeFrame_Impl {
     if (res == AVERROR_EOF) {
       return DEC_EOS;
     } else if (res == AVERROR(EAGAIN)) {
-      if (m_flush) {
+      if (m_flush) {        
         m_flush = false;
         m_resend = true;
       }
