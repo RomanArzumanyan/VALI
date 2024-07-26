@@ -96,14 +96,14 @@ jobs:
       shell: cmd
       run: | 
         git submodule update --init --recursive
-        ./tmp/venv_vali/Scripts/activate
-        python -mpip install pydantic pycuda torch torchvision parameterized
+        source /tmp/venv_vali/Scripts/activate
+        python -mpip install pydantic json torch torchvision parameterized
         python -mpip install . --verbose
 
     - name: 'Run tests'
       shell: cmd
       run: |
-        ./tmp/venv_vali/Scripts/activate
+        source /tmp/venv_vali/Scripts/activate
         cd tests
         python ./test_PyDecoder.py
         python ./test_PyFrameConverter.py
