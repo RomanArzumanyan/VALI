@@ -97,9 +97,7 @@ jobs:
       run: | 
         git submodule update --init --recursive
         ./tmp/venv_vali/Scripts/activate
-        python -mpip install pydantic
-        python -mpip install pycuda
-        python -mpip install torch torchvision
+        python -mpip install pydantic pycuda torch torchvision parameterized
         python -mpip install . --verbose
 
     - name: 'Run tests'
