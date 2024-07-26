@@ -86,24 +86,17 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-      
-    - name: 'Setup venv'
-      shell: cmd
-      run: |
-        python -m venv /tmp/venv_vali
-        
+            
     - name: 'Build and install Package'
       shell: cmd
       run: | 
         git submodule update --init --recursive
-        /tmp/venv_vali/Scripts/activate
         python -mpip install pydantic torch torchvision parameterized
         python -mpip install . --verbose
 
     - name: 'Run tests'
       shell: cmd
       run: |
-        /tmp/venv_vali/Scripts/activate
         cd tests
         python ./test_PyDecoder.py
         python ./test_PyFrameConverter.py
