@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     skbuild.setup(
         name="PyNvCodec",
-        version="3.2.10",
+        version="3.2.11",
         description="Video Processing Library with full NVENC/NVDEC hardware acceleration",
         author="Roman Arzumanyan",
         license="Apache 2.0",
@@ -40,6 +40,7 @@ if __name__ == "__main__":
             "tests": [
                 "torch", 
                 "torchvision", 
+                "parameterized",
                 "pydantic", 
                 "unittest", 
                 "json", 

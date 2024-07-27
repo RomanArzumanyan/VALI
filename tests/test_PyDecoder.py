@@ -50,6 +50,7 @@ import json
 import test_common as tc
 import logging
 import random
+from parameterized import parameterized
 
 
 class TestDecoder(unittest.TestCase):
@@ -65,13 +66,49 @@ class TestDecoder(unittest.TestCase):
 
         self.log = logging.getLogger(__name__)
 
-    def test_width(self):
-        pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
-        self.assertEqual(self.gtInfo.width, pyDec.Width())
+    def gtByName(self, name: str) -> tc.GroundTruth:
+        if name == "basic":
+            return self.gtInfo
+        elif name == "basic_yuv420":
+            return self.yuvInfo
+        elif name == "basic_nv12":
+            return self.self.nv12Info
+        elif name == "hevc10":
+            return self.hbdInfo
 
-    def test_height(self):
-        pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
-        self.assertEqual(self.gtInfo.height, pyDec.Height())
+    @parameterized.expand([
+        ["avc_8bit", "basic",],
+        ["hevc_10bit", "hevc10"],
+    ])
+    def test_width(self, case_name: str, gt_name: str):
+        pyDec = nvc.PyDecoder(self.gtByName(gt_name).uri, {})
+        self.assertEqual(self.gtByName(gt_name).width, pyDec.Width())
+
+    @parameterized.expand([
+        ["avc_8bit", "basic",],
+        ["hevc_10bit", "hevc10"],
+    ])
+    def test_height(self, case_name: str, gt_name: str):
+        pyDec = nvc.PyDecoder(self.gtByName(gt_name).uri, {})
+        self.assertEqual(self.gtByName(gt_name).height, pyDec.Height())
+
+    @parameterized.expand([
+        ["avc_8bit_cpu", -1, "basic",],
+        ["avc_8bit_gpu", 0, "basic",],
+        ["hevc_10bit_cpu", -1, "hevc10"],
+        # Skip: known issue #58
+        # ["hevc_10bit_gpu", 0,  "hevc10"],
+    ])
+    def test_format(self, case_name: str, gpu_id: int, gt_name: str):
+        pyDec = nvc.PyDecoder(self.gtByName(gt_name).uri, {}, gpu_id)
+
+        # SW decoder returns frames in YUV420, HW decoder does it in NV12.
+        # Chroma sampling is the only difference, so treat both as NV12.
+        format = pyDec.Format()
+        if format == nvc.PixelFormat.YUV420:
+            format = nvc.PixelFormat.NV12
+
+        self.assertEqual(self.gtByName(gt_name).pix_fmt, str(format))
 
     def test_level(self):
         pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
@@ -117,15 +154,6 @@ class TestDecoder(unittest.TestCase):
         pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
         self.assertEqual(self.gtInfo.color_range, str(pyDec.ColorRange()))
 
-    def test_format(self):
-        pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
-        # The only difference between NV12 and YUV420 is chroma sampling
-        # So we consider them the same.
-        format = pyDec.Format()
-        if pyDec.Format() == nvc.PixelFormat.YUV420:
-            format = nvc.PixelFormat.NV12
-        self.assertEqual(self.gtInfo.pix_fmt, str(format))
-
     def test_framerate(self):
         pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
         self.assertEqual(self.gtInfo.framerate, pyDec.Framerate())
@@ -166,8 +194,9 @@ class TestDecoder(unittest.TestCase):
         self.assertEqual(self.gtInfo.num_frames, dec_frames)
         self.assertEqual(details, nvc.TaskExecInfo.END_OF_STREAM)
 
-    @unittest.skip("HBD is known to be broken on GPU: #58")
+    @unittest.skip("known issue #58")
     def test_decode_high_bit_depth_gpu(self):
+        nvc.SetFFMpegLogLevel(nvc.FfmpegLogLevel.INFO)
         gpu_id = 0
         pyDec = nvc.PyDecoder(self.hbdInfo.uri, {}, gpu_id)
         dec_frames = 0
