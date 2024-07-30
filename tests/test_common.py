@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import Optional
 import numpy as np
 from math import log10, sqrt
-import unittest
+from pynvml import *
 
 
 class GroundTruth(BaseModel):
@@ -82,3 +82,35 @@ def measurePSNR(gt: np.ndarray, dist: np.ndarray) -> float:
 
     max_pixel = 255.0
     return 20 * log10(max_pixel / sqrt(mse))
+
+
+g_devices = []
+
+
+def getDevices() -> list:
+    """
+    Get list of devices (CPU and GPU) alongside their IDs.
+    
+    CPU device has ID of -1.
+    GPU devices have IDs starting from 0.
+
+    Example:
+    [['CPU', -1], ['NVIDIA GeForce RTX 3070', 0]]
+    """
+    global g_devices
+    if len(g_devices):
+        return g_devices
+
+    g_devices = [['CPU', -1]]
+
+    try:
+        nvmlInit()
+        for idx in range(nvmlDeviceGetCount()):
+            handle = nvmlDeviceGetHandleByIndex(0)
+            descr = [nvmlDeviceGetName(handle), idx]
+            g_devices.append(descr)
+        nvmlShutdown()
+    except Exception:
+        pass
+
+    return g_devices

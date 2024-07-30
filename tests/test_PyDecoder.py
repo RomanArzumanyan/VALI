@@ -110,65 +110,79 @@ class TestDecoder(unittest.TestCase):
 
         self.assertEqual(self.gtByName(gt_name).pix_fmt, str(format))
 
-    def test_level(self):
-        pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
+    @parameterized.expand(tc.getDevices())
+    def test_level(self, device_name: str, device_id: int):
+        pyDec = nvc.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         self.assertEqual(self.gtInfo.level, pyDec.Level())
 
-    def test_profile(self):
-        pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
+    @parameterized.expand(tc.getDevices())
+    def test_profile(self, device_name: str, device_id: int):
+        pyDec = nvc.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         self.assertEqual(self.gtInfo.profile, pyDec.Profile())
 
-    def test_delay(self):
-        pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
+    @parameterized.expand(tc.getDevices())
+    def test_delay(self, device_name: str, device_id: int):
+        pyDec = nvc.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         self.assertEqual(self.gtInfo.delay, pyDec.Delay())
 
-    def test_gop_size(self):
-        pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
+    @parameterized.expand(tc.getDevices())
+    def test_gop_size(self, device_name: str, device_id: int):
+        pyDec = nvc.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         self.assertEqual(self.gtInfo.gop_size, pyDec.GopSize())
 
-    def test_bitrate(self):
-        pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
+    @parameterized.expand(tc.getDevices())
+    def test_bitrate(self, device_name: str, device_id: int):
+        pyDec = nvc.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         self.assertEqual(self.gtInfo.bitrate, pyDec.Bitrate())
 
-    def test_num_streams(self):
-        pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
+    @parameterized.expand(tc.getDevices())
+    def test_num_streams(self, device_name: str, device_id: int):
+        pyDec = nvc.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         self.assertEqual(self.gtInfo.num_streams, pyDec.NumStreams())
 
-    def test_video_stream_idx(self):
-        pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
+    @parameterized.expand(tc.getDevices())
+    def test_video_stream_idx(self, device_name: str, device_id: int):
+        pyDec = nvc.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         self.assertEqual(self.gtInfo.video_stream_idx, pyDec.StreamIndex())
 
-    def test_start_time(self):
-        pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
+    @parameterized.expand(tc.getDevices())
+    def test_start_time(self, device_name: str, device_id: int):
+        pyDec = nvc.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         self.assertEqual(self.gtInfo.start_time, pyDec.StartTime())
 
-    def test_metadata(self):
-        pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
+    @parameterized.expand(tc.getDevices())
+    def test_metadata(self, device_name: str, device_id: int):
+        pyDec = nvc.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         self.assertGreater(len(pyDec.Metadata()), 0)
 
-    def test_color_space(self):
-        pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
+    @parameterized.expand(tc.getDevices())
+    def test_color_space(self, device_name: str, device_id: int):
+        pyDec = nvc.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         self.assertEqual(self.gtInfo.color_space, str(pyDec.ColorSpace()))
 
-    def test_color_range(self):
-        pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
+    @parameterized.expand(tc.getDevices())
+    def test_color_range(self, device_name: str, device_id: int):
+        pyDec = nvc.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         self.assertEqual(self.gtInfo.color_range, str(pyDec.ColorRange()))
 
-    def test_framerate(self):
-        pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
+    @parameterized.expand(tc.getDevices())
+    def test_framerate(self, device_name: str, device_id: int):
+        pyDec = nvc.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         self.assertEqual(self.gtInfo.framerate, pyDec.Framerate())
 
-    def test_avgframerate(self):
-        pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
+    @parameterized.expand(tc.getDevices())
+    def test_avgframerate(self, device_name: str, device_id: int):
+        pyDec = nvc.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         self.assertEqual(self.gtInfo.framerate, pyDec.AvgFramerate())
 
-    def test_timebase(self):
-        pyDec = nvc.PyDecoder(self.gtInfo.uri, {})
+    @parameterized.expand(tc.getDevices())
+    def test_timebase(self, device_name: str, device_id: int):
+        pyDec = nvc.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         epsilon = 1e-4
         self.assertLessEqual(
             np.abs(self.gtInfo.timebase - pyDec.Timebase()), epsilon)
 
-    def test_decode_all_frames(self):
+    def test_decode_all_frames_cpu(self):
         pyDec = nvc.PyDecoder(self.gtInfo.uri, {}, gpu_id=-1)
         dec_frames = 0
         frame = np.ndarray(dtype=np.uint8, shape=())
@@ -180,7 +194,7 @@ class TestDecoder(unittest.TestCase):
         self.assertEqual(self.gtInfo.num_frames, dec_frames)
         self.assertEqual(details, nvc.TaskExecInfo.END_OF_STREAM)
 
-    def test_decode_all_surfaces(self):
+    def test_decode_all_surfaces_gpu(self):
         gpu_id = 0
         pyDec = nvc.PyDecoder(self.gtInfo.uri, {}, gpu_id)
         dec_frames = 0
@@ -223,7 +237,7 @@ class TestDecoder(unittest.TestCase):
         self.assertEqual(self.hbdInfo.num_frames, dec_frames)
         self.assertEqual(details, nvc.TaskExecInfo.END_OF_STREAM)
 
-    def test_check_all_frames(self):
+    def test_check_all_frames_cpu(self):
         pyDec = nvc.PyDecoder(input=self.gtInfo.uri, opts={}, gpu_id=-1)
 
         dec_frames = 0
@@ -255,7 +269,7 @@ class TestDecoder(unittest.TestCase):
         self.assertEqual(self.yuvInfo.num_frames, dec_frames)
 
     @tc.repeat(3)
-    def test_check_all_surfaces(self):
+    def test_check_all_surfaces_gpu(self):
         pyDec = nvc.PyDecoder(input=self.gtInfo.uri, opts={}, gpu_id=0)
         pyDwn = nvc.PySurfaceDownloader(gpu_id=0)
 
@@ -302,7 +316,7 @@ class TestDecoder(unittest.TestCase):
 
         self.assertEqual(self.nv12Info.num_frames, dec_frames)
 
-    def test_check_decode_status(self):
+    def test_check_decode_status_cpu(self):
         pyDec = nvc.PyDecoder(self.gtInfo.uri, {}, gpu_id=-1)
         frame = np.ndarray(dtype=np.uint8, shape=())
         while True:
@@ -312,7 +326,7 @@ class TestDecoder(unittest.TestCase):
                 break
             self.assertEqual(details, nvc.TaskExecInfo.SUCCESS)
 
-    def test_decode_single_frame_out_pkt_data(self):
+    def test_decode_single_frame_out_pkt_data_cpu(self):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
 
@@ -332,7 +346,7 @@ class TestDecoder(unittest.TestCase):
             dec_frame += 1
             last_pts = pdata.pts
 
-    def test_seek_cpu_decoder(self):
+    def test_seek_cpu(self):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
 
@@ -377,7 +391,7 @@ class TestDecoder(unittest.TestCase):
                     "Seek frame isnt same as continuous decode frame")
 
     @tc.repeat(3)
-    def test_seek_gpu_decoder(self):
+    def test_seek_gpu(self):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
 
@@ -429,7 +443,7 @@ class TestDecoder(unittest.TestCase):
                 self.fail(
                     "Seek frame isnt same as continuous decode frame")
 
-    def test_get_motion_vectors(self):
+    def test_get_motion_vectors_cpu(self):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
             pyDec = nvc.PyDecoder(
@@ -460,7 +474,7 @@ class TestDecoder(unittest.TestCase):
         self.assertNotEqual(first_mv.source, 0)
         self.assertNotEqual(first_mv.motion_scale, 0)
 
-    def test_decode_resolution_change_gpu(self):
+    def test_resolution_change_gpu(self):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["res_change"])
 
@@ -494,7 +508,7 @@ class TestDecoder(unittest.TestCase):
 
         self.assertEqual(dec_frame, gtInfo.num_frames)
 
-    def test_decode_resolution_change_cpu(self):
+    def test_resolution_change_cpu(self):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["res_change"])
 
