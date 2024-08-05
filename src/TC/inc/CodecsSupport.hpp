@@ -27,31 +27,31 @@ struct PacketData {
 };
 
 struct VideoContext {
-  int64_t width;
-  int64_t height;
-  int64_t profile;
-  int64_t level;
-  int64_t delay;
-  int64_t gop_size;
-  int64_t num_frames;
-  int64_t is_vfr;
-  int64_t num_streams;  
-  int64_t stream_index;
-  int64_t host_frame_size;
-  int64_t bit_rate;
+  int64_t width = 0;
+  int64_t height = 0;
+  int64_t profile = 0;
+  int64_t level = 0;
+  int64_t delay = 0;
+  int64_t gop_size = 0;
+  int64_t num_frames = 0;
+  int64_t is_vfr = 0;
+  int64_t num_streams = 0;  
+  int64_t stream_index = 0;
+  int64_t host_frame_size = 0;
+  int64_t bit_rate = 0;
 
-  double frame_rate;
-  double avg_frame_rate;
-  double time_base;
-  double start_time;
-  double duration;
+  double frame_rate = .0;
+  double avg_frame_rate = .0;
+  double time_base = .0;
+  double start_time = .0;
+  double duration = .0;
 
-  Pixel_Format format;
+  Pixel_Format format = UNDEFINED;
 
-  ColorSpace color_space;
-  ColorRange color_range;
+  ColorSpace color_space = UNSPEC;
+  ColorRange color_range = UDEF;
 
-  std::map<std::string, std::string> metadata;
+  std::map<std::string, std::string> metadata = {};
 };
 
 struct AudioContext {
