@@ -63,6 +63,7 @@ class TestDecoder(unittest.TestCase):
         self.yuvInfo = tc.GroundTruth(**self.data["basic_yuv420"])
         self.nv12Info = tc.GroundTruth(**self.data["basic_nv12"])
         self.hbdInfo = tc.GroundTruth(**self.data["hevc10"])
+        self.p10Info = tc.GroundTruth(**self.data["hevc10_p10"])
 
         self.log = logging.getLogger(__name__)
 
@@ -72,9 +73,11 @@ class TestDecoder(unittest.TestCase):
         elif name == "basic_yuv420":
             return self.yuvInfo
         elif name == "basic_nv12":
-            return self.self.nv12Info
+            return self.nv12Info
         elif name == "hevc10":
             return self.hbdInfo
+        elif name == "hevc10_p10":
+            return self.p10Info
 
     @parameterized.expand([
         ["avc_8bit", "basic",],
@@ -208,9 +211,7 @@ class TestDecoder(unittest.TestCase):
         self.assertEqual(self.gtInfo.num_frames, dec_frames)
         self.assertEqual(details, nvc.TaskExecInfo.END_OF_STREAM)
 
-    @unittest.skip("known issue #58")
     def test_decode_high_bit_depth_gpu(self):
-        nvc.SetFFMpegLogLevel(nvc.FfmpegLogLevel.INFO)
         gpu_id = 0
         pyDec = nvc.PyDecoder(self.hbdInfo.uri, {}, gpu_id)
         dec_frames = 0
@@ -268,13 +269,21 @@ class TestDecoder(unittest.TestCase):
 
         self.assertEqual(self.yuvInfo.num_frames, dec_frames)
 
-    @tc.repeat(3)
-    def test_check_all_surfaces_gpu(self):
-        pyDec = nvc.PyDecoder(input=self.gtInfo.uri, opts={}, gpu_id=0)
+    @parameterized.expand([
+        ["avc_8bit", "basic", "basic_nv12"],
+        ["hevc_10bit", "hevc10", "hevc10_p10"],
+    ])
+    def test_check_all_surfaces_gpu(self, case_name: str, gt_comp_name: str,
+                                    gt_raw_name: str):
+
+        gt_comp = self.gtByName(gt_comp_name)
+        gt_raw = self.gtByName(gt_raw_name)
+
+        pyDec = nvc.PyDecoder(input=gt_comp.uri, opts={}, gpu_id=0)
         pyDwn = nvc.PySurfaceDownloader(gpu_id=0)
 
         dec_frames = 0
-        with open(self.nv12Info.uri, "rb") as f_in:
+        with open(gt_raw.uri, "rb") as f_in:
             while True:
                 surf = nvc.Surface.Make(
                     pyDec.Format(), pyDec.Width(), pyDec.Height(), gpu_id=0)
@@ -295,7 +304,7 @@ class TestDecoder(unittest.TestCase):
                 frame_gt = np.fromfile(
                     file=f_in, dtype=np.uint8, count=frame.size)
                 if not frame_gt.size == frame.size:
-                    if dec_frames < self.nv12Info.num_frames:
+                    if dec_frames < gt_raw.num_frames:
                         self.log.error(
                             "Failed to read GT video frame " + str(dec_frames))
                     break
