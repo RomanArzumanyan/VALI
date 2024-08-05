@@ -890,7 +890,7 @@ uint32_t DecodeFrame::GetHostFrameSize() const {
 }
 
 void DecodeFrame::GetParams(MuxingParams& params) {
-  memset((void*)&params, 0, sizeof(params));
+  params = MuxingParams();
 
   params.videoContext.width = pImpl->GetWidth();
   params.videoContext.height = pImpl->GetHeight();
