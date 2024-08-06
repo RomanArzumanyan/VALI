@@ -14,3 +14,9 @@ addopts = "-ra -q"
 testpaths = [
     "tests",
 ]
+
+[project]
+name = "VALI"
+authors = [{name = "Roman Arzumanyan", email = "roman.arzum@gmail.com"}]
+description = "Video processing in Python "
+license = {file = "LICENSE"}

@@ -22,6 +22,8 @@ if __name__ == "__main__":
         name="python_vali",
         version="4.0.0",
         description="Video Processing Library with full NVENC/NVDEC hardware acceleration",
+        long_description=open('README.md').read(),
+        long_description_content_type='text/markdown',
         author="Roman Arzumanyan",
         license="Apache 2.0",
         install_requires=["numpy"],
