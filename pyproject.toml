@@ -16,7 +16,7 @@ testpaths = [
 ]
 
 [project]
-name = "VALI"
+name = "python_vali"
 authors = [{name = "Roman Arzumanyan", email = "roman.arzum@gmail.com"}]
 description = "Video processing in Python"
 dynamic = ["version", "dependencies", "license", "optional-dependencies", "readme"]
