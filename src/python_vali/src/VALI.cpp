@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "PyNvCodec.hpp"
+#include "VALI.hpp"
 #include "dlpack.h"
 
 using namespace std;
@@ -251,7 +251,7 @@ void Init_PySurface(py::module&);
 
 void Init_PyFrameConverter(py::module&);
 
-PYBIND11_MODULE(_PyNvCodec, m) {
+PYBIND11_MODULE(_python_vali, m) {
 
   py::class_<MotionVector, std::shared_ptr<MotionVector>>(
       m, "MotionVector", "This class stores iformation about motion vector.")
@@ -511,7 +511,7 @@ PYBIND11_MODULE(_PyNvCodec, m) {
            R"pbdoc(
         Deep copy = CUDA mem alloc + CUDA mem copy.
 
-        :rtype: PyNvCodec.CudaBuffer
+        :rtype: python_vali.CudaBuffer
     )pbdoc")
       .def(
           "CopyFrom",
@@ -552,7 +552,7 @@ PYBIND11_MODULE(_PyNvCodec, m) {
         :param elem_size: single buffer element size in bytes
         :param num_elems: number of elements in buffer
         :param gpu_id: GPU to use for memcopy
-        :rtype: PyNvCodec.CudaBuffer
+        :rtype: python_vali.CudaBuffer
     )pbdoc");
 
   m.def("GetNumGpus", &CudaResMgr::GetNumGpus, R"pbdoc(
@@ -589,9 +589,9 @@ PYBIND11_MODULE(_PyNvCodec, m) {
   av_log_set_level(AV_LOG_ERROR);
 
   m.doc() = R"pbdoc(
-        PyNvCodec
+        python_vali
         ----------
-        .. currentmodule:: PyNvCodec
+        .. currentmodule:: python_vali
         .. autosummary::
            :toctree: _generate
 

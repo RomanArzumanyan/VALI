@@ -13,7 +13,7 @@
  */
 
 #include "CudaUtils.hpp"
-#include "PyNvCodec.hpp"
+#include "VALI.hpp"
 #include "dlpack.h"
 #include <map>
 #include <sstream>
@@ -319,9 +319,9 @@ void Init_PySurface(py::module& m) {
         DLPack: Make Surface from dlpack, don not own memory.
 
         :param capsule: capsule object with manager dltensor inside
-        :param fmt: pixel format, by default PyNvCodec.PixelFormat.RGB
+        :param fmt: pixel format, by default python_vali.PixelFormat.RGB
         :return: Surface
-        :rtype: PyNvCodec.Surface
+        :rtype: python_vali.Surface
     )pbdoc")
       .def(
           "PlanePtr",

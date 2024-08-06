@@ -18,7 +18,7 @@
 #
 cmake_minimum_required(VERSION 3.21)
 
-project(PyNvCodec)
+project(python_vali)
 
 set(CMAKE_CXX_STANDARD 17)
 

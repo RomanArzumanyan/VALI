@@ -38,6 +38,6 @@ endif()
 fetchcontent_makeavailable(ffmpeg)
 set(FFMPEG_ROOT "${FETCHCONTENT_BASE_DIR}/ffmpeg-src")
 
-add_subdirectory(PyNvCodec)
+add_subdirectory(python_vali)
 add_subdirectory(TC)
 

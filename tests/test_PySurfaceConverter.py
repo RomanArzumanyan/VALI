@@ -41,7 +41,7 @@ if os.name == "nt":
         print("PATH environment variable is not set.", file=sys.stderr)
         exit(1)
 
-import PyNvCodec as nvc
+import python_vali as vali
 import numpy as np
 import unittest
 import json
@@ -60,54 +60,54 @@ class TestSurfaceConverter(unittest.TestCase):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
 
-        pyDec = nvc.PyDecoder(
+        pyDec = vali.PyDecoder(
             input=gtInfo.uri, opts={}, gpu_id=0)
 
-        nvCvt = nvc.PySurfaceConverter(
-            nvc.PixelFormat.NV12,
-            nvc.PixelFormat.RGB,
+        nvCvt = vali.PySurfaceConverter(
+            vali.PixelFormat.NV12,
+            vali.PixelFormat.RGB,
             gpu_id=0)
 
         # NV12 > RGB NPP conversion doesn't support BT601 + MPEG params.
-        cc_ctx = nvc.ColorspaceConversionContext(
-            nvc.ColorSpace.BT_601,
-            nvc.ColorRange.MPEG)
+        cc_ctx = vali.ColorspaceConversionContext(
+            vali.ColorSpace.BT_601,
+            vali.ColorRange.MPEG)
 
-        surf_src = nvc.Surface.Make(
+        surf_src = vali.Surface.Make(
             pyDec.Format(), pyDec.Width(), pyDec.Height(), gpu_id=0)
         success, _ = pyDec.DecodeSingleSurface(surf_src)
         if not success:
             self.fail("Fail to decode surface")
 
-        surf_dst = nvc.Surface.Make(
-            nvc.PixelFormat.RGB, surf_src.Width(), surf_src.Height(), gpu_id=0)
+        surf_dst = vali.Surface.Make(
+            vali.PixelFormat.RGB, surf_src.Width(), surf_src.Height(), gpu_id=0)
 
         surf_dst, details = nvCvt.Run(surf_src, surf_dst, cc_ctx)
-        self.assertEqual(details, nvc.TaskExecInfo.UNSUPPORTED_FMT_CONV_PARAMS)
+        self.assertEqual(details, vali.TaskExecInfo.UNSUPPORTED_FMT_CONV_PARAMS)
 
     def test_no_cc_ctx(self):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
 
-        pyDec = nvc.PyDecoder(
+        pyDec = vali.PyDecoder(
             input=gtInfo.uri, opts={}, gpu_id=0)
 
-        nvCvt = nvc.PySurfaceConverter(
-            nvc.PixelFormat.NV12,
-            nvc.PixelFormat.RGB,
+        nvCvt = vali.PySurfaceConverter(
+            vali.PixelFormat.NV12,
+            vali.PixelFormat.RGB,
             gpu_id=0)
 
-        surf_src = nvc.Surface.Make(
+        surf_src = vali.Surface.Make(
             pyDec.Format(), pyDec.Width(), pyDec.Height(), gpu_id=0)
         success, _ = pyDec.DecodeSingleSurface(surf_src)
         if not success:
             self.fail("Fail to decode surface")
 
-        surf_dst = nvc.Surface.Make(
-            nvc.PixelFormat.RGB, surf_src.Width(), surf_src.Height(), gpu_id=0)
+        surf_dst = vali.Surface.Make(
+            vali.PixelFormat.RGB, surf_src.Width(), surf_src.Height(), gpu_id=0)
 
         surf_dst, details = nvCvt.Run(surf_src, surf_dst)
-        self.assertEqual(details, nvc.TaskExecInfo.SUCCESS)        
+        self.assertEqual(details, vali.TaskExecInfo.SUCCESS)        
 
     def test_rgb_deinterleave(self):
         with open("gt_files.json") as f:
@@ -115,20 +115,20 @@ class TestSurfaceConverter(unittest.TestCase):
             dst_info = tc.GroundTruth(**gt_values["basic_rgb"])
             pln_info = tc.GroundTruth(**gt_values["basic_rgb_planar"])
 
-            nvUpl = nvc.PyFrameUploader(
+            nvUpl = vali.PyFrameUploader(
                 gpu_id=0)
 
-            toPLN = nvc.PySurfaceConverter(
-                nvc.PixelFormat.RGB,
-                nvc.PixelFormat.RGB_PLANAR,
+            toPLN = vali.PySurfaceConverter(
+                vali.PixelFormat.RGB,
+                vali.PixelFormat.RGB_PLANAR,
                 gpu_id=0)
 
-            nvDwn = nvc.PySurfaceDownloader(gpu_id=0)
+            nvDwn = vali.PySurfaceDownloader(gpu_id=0)
 
             # Use color space and range of original file.
-            cc_ctx = nvc.ColorspaceConversionContext(
-                nvc.ColorSpace.BT_709,
-                nvc.ColorRange.MPEG)
+            cc_ctx = vali.ColorspaceConversionContext(
+                vali.ColorSpace.BT_709,
+                vali.ColorRange.MPEG)
 
             f_in = open(dst_info.uri, "rb")
             f_gt = open(pln_info.uri, "rb")
@@ -139,15 +139,15 @@ class TestSurfaceConverter(unittest.TestCase):
                     file=f_in, dtype=np.uint8, count=frame_size)
 
                 # Upload to GPU
-                surf_rgb = nvc.Surface.Make(nvc.PixelFormat.RGB, dst_info.width,
+                surf_rgb = vali.Surface.Make(vali.PixelFormat.RGB, dst_info.width,
                                             dst_info.height, gpu_id=0)
                 success = nvUpl.Run(dist_frame, surf_rgb)
                 if not success:
                     self.fail("Fail to upload frame.")
 
                 # Deinterleave
-                surf_pln = nvc.Surface.Make(
-                    nvc.PixelFormat.RGB_PLANAR,
+                surf_pln = vali.Surface.Make(
+                    vali.PixelFormat.RGB_PLANAR,
                     pln_info.width,
                     pln_info.height,
                     gpu_id=0)
@@ -183,19 +183,19 @@ class TestSurfaceConverter(unittest.TestCase):
             src_info = tc.GroundTruth(**gt_values["basic_nv12"])
             dst_info = tc.GroundTruth(**gt_values["basic_rgb"])
 
-        nvUpl = nvc.PyFrameUploader(gpu_id=0)
+        nvUpl = vali.PyFrameUploader(gpu_id=0)
 
-        nvCvt = nvc.PySurfaceConverter(
-            nvc.PixelFormat.NV12,
-            nvc.PixelFormat.RGB,
+        nvCvt = vali.PySurfaceConverter(
+            vali.PixelFormat.NV12,
+            vali.PixelFormat.RGB,
             gpu_id=0)
 
-        nvDwn = nvc.PySurfaceDownloader(gpu_id=0)
+        nvDwn = vali.PySurfaceDownloader(gpu_id=0)
 
         # Use color space and range of original file.
-        cc_ctx = nvc.ColorspaceConversionContext(
-            nvc.ColorSpace.BT_709,
-            nvc.ColorRange.MPEG)
+        cc_ctx = vali.ColorspaceConversionContext(
+            vali.ColorSpace.BT_709,
+            vali.ColorRange.MPEG)
 
         src_fin = open(src_info.uri, "rb")
         dst_fin = open(dst_info.uri, "rb")
@@ -206,15 +206,15 @@ class TestSurfaceConverter(unittest.TestCase):
                 src_fin, np.uint8, int(src_info.width * src_info.height * 3 / 2))
 
             # Upload to GPU
-            surf_src = nvc.Surface.Make(nvc.PixelFormat.NV12, src_info.width,
+            surf_src = vali.Surface.Make(vali.PixelFormat.NV12, src_info.width,
                                         src_info.height, gpu_id=0)
             success = nvUpl.Run(frame_src, surf_src)
             if not success:
                 self.fail("Failed to upload frame")
 
             # Convert to RGB
-            surf_dst = nvc.Surface.Make(
-                nvc.PixelFormat.RGB, surf_src.Width(), surf_src.Height(), gpu_id=0)
+            surf_dst = vali.Surface.Make(
+                vali.PixelFormat.RGB, surf_src.Width(), surf_src.Height(), gpu_id=0)
 
             success, details = nvCvt.Run(
                 surf_src, surf_dst, cc_ctx)
@@ -252,20 +252,20 @@ class TestSurfaceConverter(unittest.TestCase):
             src_info = tc.GroundTruth(**gt_values["hevc10_p10"])
             dst_info = tc.GroundTruth(**gt_values["hevc10_nv12"])
 
-        nvUpl = nvc.PyFrameUploader(
+        nvUpl = vali.PyFrameUploader(
             gpu_id=0)
 
-        nvCvt = nvc.PySurfaceConverter(
-            nvc.PixelFormat.P10,
-            nvc.PixelFormat.NV12,
+        nvCvt = vali.PySurfaceConverter(
+            vali.PixelFormat.P10,
+            vali.PixelFormat.NV12,
             gpu_id=0)
 
-        nvDwn = nvc.PySurfaceDownloader(gpu_id=0)
+        nvDwn = vali.PySurfaceDownloader(gpu_id=0)
 
         # Use color space and range of original file.
-        cc_ctx = nvc.ColorspaceConversionContext(
-            nvc.ColorSpace.BT_709,
-            nvc.ColorRange.MPEG)
+        cc_ctx = vali.ColorspaceConversionContext(
+            vali.ColorSpace.BT_709,
+            vali.ColorRange.MPEG)
 
         src_fin = open(src_info.uri, "rb")
         dst_fin = open(dst_info.uri, "rb")
@@ -276,15 +276,15 @@ class TestSurfaceConverter(unittest.TestCase):
                 src_fin, np.uint16, int(src_info.width * src_info.height * 3 / 2))
 
             # Upload to GPU
-            surf_src = nvc.Surface.Make(nvc.PixelFormat.P10, src_info.width,
+            surf_src = vali.Surface.Make(vali.PixelFormat.P10, src_info.width,
                                         src_info.height, gpu_id=0)
             success = nvUpl.Run(frame_src, surf_src)
             if not success:
                 self.fail("Failed to upload frame")
 
             # Convert to destination format
-            surf_dst = nvc.Surface.Make(
-                nvc.PixelFormat.NV12, surf_src.Width(), surf_src.Height(), gpu_id=0)
+            surf_dst = vali.Surface.Make(
+                vali.PixelFormat.NV12, surf_src.Width(), surf_src.Height(), gpu_id=0)
 
             success, details = nvCvt.Run(surf_src, surf_dst, cc_ctx)
             if not success:

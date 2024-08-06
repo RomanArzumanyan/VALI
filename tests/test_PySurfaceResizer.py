@@ -41,7 +41,7 @@ if os.name == "nt":
         print("PATH environment variable is not set.", file=sys.stderr)
         exit(1)
 
-import PyNvCodec as nvc
+import python_vali as vali
 import numpy as np
 import unittest
 import json
@@ -62,23 +62,23 @@ class TestSurfaceResizer(unittest.TestCase):
             nv12Info = tc.GroundTruth(**gt_values["basic_nv12"])
             nv12SmallInfo = tc.GroundTruth(**gt_values["small_nv12"])
 
-        nvUpl = nvc.PyFrameUploader(gpu_id=0)
-        nvRes = nvc.PySurfaceResizer(nvc.PixelFormat.NV12, gpu_id=0)
-        nvDwn = nvc.PySurfaceDownloader(gpu_id=0)
+        nvUpl = vali.PyFrameUploader(gpu_id=0)
+        nvRes = vali.PySurfaceResizer(vali.PixelFormat.NV12, gpu_id=0)
+        nvDwn = vali.PySurfaceDownloader(gpu_id=0)
 
         nv12_fin = open(nv12Info.uri, "rb")
         small_nv12_fin = open(nv12SmallInfo.uri, "rb")
 
         for i in range(0, nv12Info.num_frames):
             # Make input and output Surfaces
-            surf_src = nvc.Surface.Make(
-                nvc.PixelFormat.NV12, 
+            surf_src = vali.Surface.Make(
+                vali.PixelFormat.NV12, 
                 nv12Info.width,
                 nv12Info.height, 
                 gpu_id=0)
             
-            surf_dst = nvc.Surface.Make(
-                nvc.PixelFormat.NV12, 
+            surf_dst = vali.Surface.Make(
+                vali.PixelFormat.NV12, 
                 nv12SmallInfo.width,
                 nv12SmallInfo.height, 
                 gpu_id=0)

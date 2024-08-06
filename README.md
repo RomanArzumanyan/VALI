@@ -56,7 +56,7 @@ pip3 install .
 
 To check whether VALI is correctly installed run the following Python script
 ```python
-import PyNvCodec
+import python_vali
 ```
 If using Docker via [Nvidia Container Runtime](https://developer.nvidia.com/nvidia-container-runtime),
 please make sure to enable the `video` driver capability: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/user-guide.html#driver-capabilities via
@@ -74,7 +74,7 @@ pip install .
 ```
 To check whether VALI is correctly installed run the following Python script
 ```python
-import PyNvCodec
+import python_vali
 ```
 ## Docker
 

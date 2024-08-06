@@ -49,7 +49,7 @@ if os.name == "nt":
         print("PATH environment variable is not set.", file=sys.stderr)
         exit(1)
 
-import PyNvCodec as nvc
+import python_vali as vali
 
 coco_names = [
     "__background__",
@@ -177,32 +177,32 @@ class TestTorchSegmentation(unittest.TestCase):
 
     def run_inference_on_video(self, gpu_id: int, input_video: str):
         # Init HW decoder
-        pyDec = nvc.PyDecoder(input=input_video, opts={}, gpu_id=gpu_id)
+        pyDec = vali.PyDecoder(input=input_video, opts={}, gpu_id=gpu_id)
 
         # NN expects images to be 3 channel planar RGB.
         # No requirements for input image resolution, it will be rescaled internally.
         target_w, target_h = pyDec.Width(), pyDec.Height()
 
         # Converter from NV12 which is pyDec native pixel fomat.
-        to_rgb = nvc.PySurfaceConverter(
-            nvc.PixelFormat.NV12, nvc.PixelFormat.RGB, gpu_id
+        to_rgb = vali.PySurfaceConverter(
+            vali.PixelFormat.NV12, vali.PixelFormat.RGB, gpu_id
         )
 
         # Converter from RGB to planar RGB because that's the way
         # pytorch likes to store the data in it's tensors.
-        to_pln = nvc.PySurfaceConverter(
-            nvc.PixelFormat.RGB, nvc.PixelFormat.RGB_PLANAR, gpu_id
+        to_pln = vali.PySurfaceConverter(
+            vali.PixelFormat.RGB, vali.PixelFormat.RGB_PLANAR, gpu_id
         )
 
         # Use bt709 and jpeg just for illustration purposes.
-        cc_ctx = nvc.ColorspaceConversionContext(
-            nvc.ColorSpace.BT_709, nvc.ColorRange.JPEG)
+        cc_ctx = vali.ColorspaceConversionContext(
+            vali.ColorSpace.BT_709, vali.ColorRange.JPEG)
 
         # Decoding cycle + inference on video frames.
         detections = []
         frame_number = 0
         while True:
-            surf_nv12 = nvc.Surface.Make(
+            surf_nv12 = vali.Surface.Make(
                 pyDec.Format(), pyDec.Width(), pyDec.Height(), gpu_id=0)
             # Decode 1 compressed video frame to CUDA memory.
             success, _ = pyDec.DecodeSingleSurface(surf_nv12)
@@ -210,16 +210,16 @@ class TestTorchSegmentation(unittest.TestCase):
                 break
 
             # Convert NV12 > RGB.
-            surg_rgb = nvc.Surface.Make(
-                nvc.PixelFormat.RGB, surf_nv12.Width(), surf_nv12.Height(), gpu_id=0)
+            surg_rgb = vali.Surface.Make(
+                vali.PixelFormat.RGB, surf_nv12.Width(), surf_nv12.Height(), gpu_id=0)
             success, details = to_rgb.Run(surf_nv12, surg_rgb, cc_ctx)
             if not success:
                 print("Can not convert nv12 -> rgb: " + details)
                 break
 
             # Convert RGB > planar RGB.
-            surf_pln = nvc.Surface.Make(
-                nvc.PixelFormat.RGB_PLANAR, surg_rgb.Width(), surg_rgb.Height(), gpu_id=0)
+            surf_pln = vali.Surface.Make(
+                vali.PixelFormat.RGB_PLANAR, surg_rgb.Width(), surg_rgb.Height(), gpu_id=0)
             success, details = to_pln.Run(surg_rgb, surf_pln, cc_ctx)
             if not success:
                 print("Can not convert rgb -> rgb planar: " + details)

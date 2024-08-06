@@ -1,4 +1,4 @@
 .. toctree::
    :maxdepth: 2
 
-   PyNvCodec
+   python_vali

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "PyNvCodec.hpp"
+#include "VALI.hpp"
 
 using namespace std;
 using namespace VPF;
@@ -476,7 +476,7 @@ void Init_PyDecoder(py::module& m) {
         If there are no movion vectors it will return empty list.
 
        :return: list of motion vectors
-       :rtype: List[nvc.MotionVector]
+       :rtype: List[vali.MotionVector]
     )pbdoc")
       .def("Metadata", &PyDecoder::Metadata,
            R"pbdoc(

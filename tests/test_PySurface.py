@@ -41,7 +41,7 @@ if os.name == "nt":
         print("PATH environment variable is not set.", file=sys.stderr)
         exit(1)
 
-import PyNvCodec as nvc
+import python_vali as vali
 import numpy as np
 import unittest
 import json
@@ -59,22 +59,22 @@ class TestSurface(unittest.TestCase):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
 
-            pyDec = nvc.PyDecoder(
+            pyDec = vali.PyDecoder(
                 input=gtInfo.uri, opts={}, gpu_id=0)
 
-            nvCvt = nvc.PySurfaceConverter(
-                nvc.PixelFormat.NV12,
-                nvc.PixelFormat.RGB,
+            nvCvt = vali.PySurfaceConverter(
+                vali.PixelFormat.NV12,
+                vali.PixelFormat.RGB,
                 gpu_id=0)
 
-            nvDwn = nvc.PySurfaceDownloader(gpu_id=0)
+            nvDwn = vali.PySurfaceDownloader(gpu_id=0)
 
             # Use color space and range of original file.
-            cc_ctx = nvc.ColorspaceConversionContext(
-                nvc.ColorSpace.BT_709,
-                nvc.ColorRange.MPEG)
+            cc_ctx = vali.ColorspaceConversionContext(
+                vali.ColorSpace.BT_709,
+                vali.ColorRange.MPEG)
 
-            surf_src = nvc.Surface.Make(
+            surf_src = vali.Surface.Make(
                 pyDec.Format(),
                 pyDec.Width(),
                 pyDec.Height(),
@@ -86,8 +86,8 @@ class TestSurface(unittest.TestCase):
                 if not success:
                     self.fail("Failed to decode surface")
 
-                surf_dst = nvc.Surface.Make(
-                    nvc.PixelFormat.RGB,
+                surf_dst = vali.Surface.Make(
+                    vali.PixelFormat.RGB,
                     surf_src.Width(),
                     surf_src.Height(),
                     gpu_id=0)
@@ -121,24 +121,24 @@ class TestSurface(unittest.TestCase):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
 
-            pyDec = nvc.PyDecoder(
+            pyDec = vali.PyDecoder(
                 input=gtInfo.uri,
                 opts={},
                 gpu_id=0)
 
-            nvCvt = nvc.PySurfaceConverter(
-                nvc.PixelFormat.NV12,
-                nvc.PixelFormat.RGB,
+            nvCvt = vali.PySurfaceConverter(
+                vali.PixelFormat.NV12,
+                vali.PixelFormat.RGB,
                 gpu_id=0)
 
-            nvDwn = nvc.PySurfaceDownloader(gpu_id=0)
+            nvDwn = vali.PySurfaceDownloader(gpu_id=0)
 
             # Use color space and range of original file.
-            cc_ctx = nvc.ColorspaceConversionContext(
-                nvc.ColorSpace.BT_709,
-                nvc.ColorRange.MPEG)
+            cc_ctx = vali.ColorspaceConversionContext(
+                vali.ColorSpace.BT_709,
+                vali.ColorRange.MPEG)
 
-            surf_dec = nvc.Surface.Make(
+            surf_dec = vali.Surface.Make(
                 pyDec.Format(),
                 pyDec.Width(),
                 pyDec.Height(),
@@ -149,8 +149,8 @@ class TestSurface(unittest.TestCase):
                 if not success:
                     self.fail("Fail to decode surface: " + details)
 
-                surf_cvt = nvc.Surface.Make(
-                    nvc.PixelFormat.RGB,
+                surf_cvt = vali.Surface.Make(
+                    vali.PixelFormat.RGB,
                     surf_dec.Width(),
                     surf_dec.Height(),
                     gpu_id=0)
@@ -202,12 +202,12 @@ class TestSurface(unittest.TestCase):
         tensor = torch.from_numpy(rgb_frame).to(device="cuda")
         tensor = torch.reshape(tensor, (rgbInfo.height, rgbInfo.width * 3))
 
-        surface = nvc.Surface.from_dlpack(
+        surface = vali.Surface.from_dlpack(
             torch.utils.dlpack.to_dlpack(tensor))
         if not surface or surface.Empty():
             self.fail("Failed to import Surface from dlpack")
 
-        nvDwn = nvc.PySurfaceDownloader(gpu_id=0)
+        nvDwn = vali.PySurfaceDownloader(gpu_id=0)
 
         # Check dimensions
         self.assertEqual(len(tensor.shape), 2)

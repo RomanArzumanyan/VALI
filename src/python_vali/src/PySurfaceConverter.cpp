@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "PyNvCodec.hpp"
+#include "VALI.hpp"
 
 using namespace VPF;
 
