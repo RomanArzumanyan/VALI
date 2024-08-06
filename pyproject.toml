@@ -19,5 +19,4 @@ testpaths = [
 name = "VALI"
 authors = [{name = "Roman Arzumanyan", email = "roman.arzum@gmail.com"}]
 description = "Video processing in Python"
-version = "4.0.0"
-license = {file = "LICENSE"}
+dynamic = ["version", "dependencies", "license", "optional-dependencies", "readme"]
