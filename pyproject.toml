@@ -18,5 +18,6 @@ testpaths = [
 [project]
 name = "VALI"
 authors = [{name = "Roman Arzumanyan", email = "roman.arzum@gmail.com"}]
-description = "Video processing in Python "
+description = "Video processing in Python"
+version = "4.0.0"
 license = {file = "LICENSE"}
