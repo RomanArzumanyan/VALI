@@ -65,10 +65,9 @@ endif()
 
 include("${PROJECT_ROOT_DIR}/common.cmake")
 find_FFMpeg(${FFMPEG_ROOT})
-# message(FATAL_ERROR "FFMPEG_LIBS_ALL: ${FFMPEG_LIBS_ALL}")
 
 target_link_libraries(
-	_python_vali PUBLIC 
+	_python_vali PRIVATE 
 	TC_CORE 
 	TC
 	CUDA::cuda_driver
@@ -92,7 +91,7 @@ set_target_properties(_python_vali PROPERTIES INSTALL_RPATH "$ORIGIN")
 
 if (WIN32)
 	install(FILES ${FFMPEG_DLLS} DESTINATION python_vali)
-else ()	
+else ()
 	install(FILES ${FFMPEG_LIBS_ALL} DESTINATION python_vali)
 endif (WIN32)
 install(TARGETS _python_vali RUNTIME DESTINATION python_vali LIBRARY DESTINATION python_vali)
