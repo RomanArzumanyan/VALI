@@ -3,7 +3,7 @@
 VALI is a video analytics and processing project for python. VALI is a spin off from NVIDIA's VPF.
 It’s set of C++ libraries and Python bindings which provides full HW acceleration for video processing tasks such as decoding, encoding, transcoding and GPU-accelerated color space and pixel format conversions.
 
-VALI also supports DLPack and can share memory with all the modules which supports DLPack (e. g. hare decoded surfaces with torch).
+VALI also supports DLPack and can share memory with all the modules which supports DLPack (e. g. share decoded surfaces with torch).
 
 ## Documentation
 https://romanarzumanyan.github.io/VALI
@@ -74,6 +74,8 @@ pip install .
 ```
 To check whether VALI is correctly installed run the following Python script
 ```python
+cuda_path = os.environ["CUDA_PATH"]
+os.add_dll_directory(os.path.join(cuda_path, "bin"))
 import PyNvCodec
 ```
 ## Docker
