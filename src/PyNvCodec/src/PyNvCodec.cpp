@@ -483,25 +483,25 @@ PYBIND11_MODULE(_PyNvCodec, m) {
 
   py::class_<CudaBuffer, shared_ptr<CudaBuffer>>(
       m, "CudaBuffer", "General purpose data storage class in GPU memory.")
-      .def("GetRawMemSize", &CudaBuffer::GetRawMemSize,
+      .def_property_readonly("RawMemSize", &CudaBuffer::GetRawMemSize,
            R"pbdoc(
         Get size of buffer in bytes.
 
         :rtype: Int
     )pbdoc")
-      .def("GetNumElems", &CudaBuffer::GetNumElems,
+      .def_property_readonly("NumElems", &CudaBuffer::GetNumElems,
            R"pbdoc(
         Get number of elements in buffer.
 
         :rtype: Int
     )pbdoc")
-      .def("GetElemSize", &CudaBuffer::GetElemSize,
+      .def_property_readonly("ElemSize", &CudaBuffer::GetElemSize,
            R"pbdoc(
         Get size of single element in bytes
 
         :rtype: Int
     )pbdoc")
-      .def("GpuMem", &CudaBuffer::GpuMem,
+      .def_property_readonly("GpuMem", &CudaBuffer::GpuMem,
            R"pbdoc(
         Get CUdeviceptr of memory allocation.
 
