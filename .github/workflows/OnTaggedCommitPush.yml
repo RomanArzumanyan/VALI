@@ -22,10 +22,9 @@ jobs:
         python3 -m cibuildwheel
       env:
         CIBW_BUILD_VERBOSITY: 1
-        CIBW_ARCHS_LINUX: "x86_64"
         CIBW_SKIP: "*musl*"
-        CIBW_BEFORE_ALL: >
-          apt install -y python3.10 python3.10-dev            
+        CIBW_ARCHS: "x86_64"        
+        CIBW_BEFORE_ALL_LINUX: apt install -y python3.10 python3.10-dev            
     - name: Store the distribution packages
       uses: actions/upload-artifact@v3
       with:
