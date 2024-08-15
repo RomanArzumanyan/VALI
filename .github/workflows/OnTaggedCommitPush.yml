@@ -24,12 +24,8 @@ jobs:
           CIBW_BUILD_VERBOSITY: 1
           CIBW_ARCHS_LINUX: "x86_64"
           CIBW_SKIP: "*musl*"
-          CIBW_BEFORE_ALL: >
-            pip install cuda-toolkit python-36 python-37 python-38 python-39 python-310 python-311 python-312 python-313 &&
-            ls -al /usr/local &&
-            export PATH=$PATH:/usr/local/cuda/bin &&
-            nvcc --version &&
-            export BUILD_WITH_CUDA=1            
+          CIBW_BEFORE_BUILD: >
+            apt install -y python3.10 python3.10-dev            
     - name: Store the distribution packages
       uses: actions/upload-artifact@v3
       with:
