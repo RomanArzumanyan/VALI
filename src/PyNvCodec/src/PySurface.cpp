@@ -116,23 +116,23 @@ void Init_PySurface(py::module& m) {
       m, "SurfacePlane",
       "Continious 2D chunk of memory stored in vRAM which represents single "
       "plane / channel of video frame. It supports DLPack specification.")
-      .def("Width", &SurfacePlane::Width,
+      .def_property_readonly("Width", &SurfacePlane::Width,
            R"pbdoc(
         Get width in pixels
     )pbdoc")
-      .def("Height", &SurfacePlane::Height,
+      .def_property_readonly("Height", &SurfacePlane::Height,
            R"pbdoc(
         Get height in pixels
     )pbdoc")
-      .def("Pitch", &SurfacePlane::Pitch,
+      .def_property_readonly("Pitch", &SurfacePlane::Pitch,
            R"pbdoc(
         Get pitch in bytes
     )pbdoc")
-      .def("ElemSize", &SurfacePlane::ElemSize,
+      .def_property_readonly("ElemSize", &SurfacePlane::ElemSize,
            R"pbdoc(
         Get element size in bytes
     )pbdoc")
-      .def("HostFrameSize", &SurfacePlane::HostMemSize,
+      .def_property_readonly("HostFrameSize", &SurfacePlane::HostMemSize,
            R"pbdoc(
         Get amount of host memory needed to store this SurfacePlane
     )pbdoc")
@@ -166,47 +166,35 @@ void Init_PySurface(py::module& m) {
 
   py::class_<Surface, shared_ptr<Surface>>(
       m, "Surface", "Image stored in vRAM. Consists of 1+ SurfacePlane(s).")
-      .def("Width", &Surface::Width, py::arg("plane") = 0U,
+      .def_property_readonly("Width", [](shared_ptr<Surface> self) { return self->Width(0); },
            R"pbdoc(
-        Width in pixels.
-        Please note that different SurfacePlane may have different dimensions
-        depending on pixel format.
-
-        :param plane: SurfacePlane index
+        Width in pixels of plane 0.
     )pbdoc")
-      .def("Height", &Surface::Height, py::arg("plane") = 0U,
+      .def_property_readonly("Height", [](shared_ptr<Surface> self) { return self->Height(0); },
            R"pbdoc(
-        Height in pixels.
-        Please note that different SurfacePlane may have different dimensions
-        depending on pixel format.
-
-        :param plane: SurfacePlane index
+        Height in pixels of plane 0.
     )pbdoc")
-      .def("Pitch", &Surface::Pitch, py::arg("plane") = 0U,
+      .def_property_readonly("Pitch", [](shared_ptr<Surface> self) { return self->Pitch(0); },
            R"pbdoc(
-        Pitch in bytes.
-        Please note that different SurfacePlane may have different dimensions
-        depending on pixel format.
-
-        :param plane: SurfacePlane index
+        Pitch in bytes of plane 0.
     )pbdoc")
-      .def("Format", &Surface::PixelFormat,
+      .def_property_readonly("Format", &Surface::PixelFormat,
            R"pbdoc(
         Get pixel format
     )pbdoc")
-      .def("Empty", &Surface::Empty,
+      .def_property_readonly("IsEmpty", &Surface::Empty,
            R"pbdoc(
         Tell if Surface plane has memory allocated or it's empty inside.
     )pbdoc")
-      .def("NumPlanes", &Surface::NumPlanes,
+      .def_property_readonly("NumPlanes", &Surface::NumPlanes,
            R"pbdoc(
         Number of SurfacePlanes
     )pbdoc")
-      .def("HostSize", &Surface::HostMemSize,
+      .def_property_readonly("HostSize", &Surface::HostMemSize,
            R"pbdoc(
         Amount of memory in bytes which is needed for DtoH memcopy.
     )pbdoc")
-      .def("OwnMemory", &Surface::OwnMemory,
+      .def_property_readonly("IsOwnMemory", &Surface::OwnMemory,
            R"pbdoc(
         Return True if Surface owns memory, False if it only references actual
         memory allocation but doesn't own it.
@@ -323,13 +311,15 @@ void Init_PySurface(py::module& m) {
         :return: Surface
         :rtype: PyNvCodec.Surface
     )pbdoc")
-      .def(
-          "PlanePtr",
-          [](shared_ptr<Surface> self, int i) {
-            auto plane = self->GetSurfacePlane(i);
-            return make_shared<SurfacePlane>(plane);
+      .def_property_readonly("Planes",
+          [](shared_ptr<Surface> self) {
+            py::tuple planes(self->NumPlanes());
+            for (int i = 0U; i < self->NumPlanes(); i++) {
+              auto plane = self->GetSurfacePlane(i);
+              planes[i] = py::cast(make_shared<SurfacePlane>(plane));
+            }
+            return planes;
           },
-          py::arg("plane") = 0U, py::return_value_policy::take_ownership,
           R"pbdoc(
         Get SurfacePlane reference
 

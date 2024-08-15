@@ -77,7 +77,7 @@ void Init_PyFrameConverter(py::module& m) {
         :param src_format: input frame pixel format
         :param dst_format: output frame pixel format
     )pbdoc")
-      .def("Format", &PyFrameConverter::GetFormat, R"pbdoc(
+      .def_property_readonly("Format", &PyFrameConverter::GetFormat, R"pbdoc(
         Get pixel format.
     )pbdoc")
       .def(
