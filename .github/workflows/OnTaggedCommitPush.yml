@@ -23,8 +23,8 @@ jobs:
       env:
         CIBW_BUILD_VERBOSITY: 1
         CIBW_SKIP: "*musl*"
-        CIBW_ARCHS: "x86_64"        
-        CIBW_BEFORE_ALL_LINUX: apt install -y python3.10 python3.10-dev            
+        CIBW_ARCHS_LINUX: "x86_64"        
+        CIBW_BEFORE_ALL_LINUX: apt install -y cuda-toolkit           
     - name: Store the distribution packages
       uses: actions/upload-artifact@v3
       with:
