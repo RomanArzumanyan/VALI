@@ -24,7 +24,14 @@ jobs:
         CIBW_BUILD_VERBOSITY: 1
         CIBW_SKIP: "*musl*"
         CIBW_ARCHS_LINUX: "x86_64"        
-        CIBW_BEFORE_ALL_LINUX: apt install -y cuda-toolkit           
+        CIBW_BEFORE_ALL: >
+          yum-config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo &&
+          yum clean all &&
+          yum -y install cuda-toolkit &&
+          ls -al /usr/local &&
+          export PATH=$PATH:/usr/local/cuda/bin &&
+          nvcc --version &&
+          export BUILD_WITH_CUDA=1         
     - name: Store the distribution packages
       uses: actions/upload-artifact@v3
       with:
