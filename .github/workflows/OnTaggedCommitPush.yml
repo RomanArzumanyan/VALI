@@ -15,14 +15,21 @@ jobs:
         python-version: "3.x"
     - name: Install pypa/build
       run: |
-        python3 -m pip install build --user
-    - name: Build a binary wheel and a source tarball
+        python3 -m pip install cibuildwheel --user
+    - name: Build a binary wheel
       run: |
         git submodule update --init --recursive
-        export CUDACXX=/usr/local/cuda/bin/nvcc
-        export PATH=/usr/local/cuda/bin:$PATH
-        export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
-        python3 -m build
+        python3 -m cibuildwheel
+      env:
+          CIBW_BUILD_VERBOSITY: 1
+          CIBW_ARCHS_LINUX: "x86_64"
+          CIBW_SKIP: "*musl*"
+          CIBW_BEFORE_ALL: >
+            pip install cuda-toolkit python-36 python-37 python-38 python-39 python-310 python-311 python-312 python-313 &&
+            ls -al /usr/local &&
+            export PATH=$PATH:/usr/local/cuda/bin &&
+            nvcc --version &&
+            export BUILD_WITH_CUDA=1            
     - name: Store the distribution packages
       uses: actions/upload-artifact@v3
       with:

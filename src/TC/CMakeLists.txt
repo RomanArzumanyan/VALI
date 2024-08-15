@@ -59,9 +59,6 @@ add_library(
     src/SurfacePlane.cpp
     src/CudaUtils.cpp
     src/Surfaces.cpp
-    src/LibCuda.cpp
-    src/LibNpp.cpp
-    src/LibraryLoader.cpp
 )
 
 if (WIN32)
