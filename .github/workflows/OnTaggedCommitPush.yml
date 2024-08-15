@@ -23,8 +23,8 @@ jobs:
       env:
         CIBW_BUILD_VERBOSITY: 1
         CIBW_ARCHS_LINUX: "x86_64"
-        CIBW_SKIP: "*musl* *686* *aarch* *pypy* *ppc* *390*"
-        CIBW_BEFORE_BUILD: >
+        CIBW_BUILD: "x86_64"
+        CIBW_BEFORE_ALL: >
           apt install -y python3.10 python3.10-dev            
     - name: Store the distribution packages
       uses: actions/upload-artifact@v3
