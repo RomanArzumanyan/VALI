@@ -29,10 +29,10 @@ constexpr auto TASK_EXEC_FAIL = TaskExecStatus::TASK_EXEC_FAIL;
 CudaResMgr::CudaResMgr() {
   lock_guard<mutex> lock_ctx(CudaResMgr::gInsMutex);
 
-  ThrowOnCudaError(cuInit(0), __LINE__);
+  ThrowOnCudaError(LibCuda::cuInit(0), __LINE__);
 
   int nGpu;
-  ThrowOnCudaError(cuDeviceGetCount(&nGpu), __LINE__);
+  ThrowOnCudaError(LibCuda::cuDeviceGetCount(&nGpu), __LINE__);
 
   for (int i = 0; i < nGpu; i++) {
     CUdevice cuDevice = 0;
@@ -55,8 +55,9 @@ CUcontext CudaResMgr::GetCtx(size_t idx) {
   auto& ctx = g_Contexts[idx];
   if (!ctx.second) {
     CUdevice cuDevice = 0;
-    ThrowOnCudaError(cuDeviceGet(&cuDevice, idx), __LINE__);
-    ThrowOnCudaError(cuDevicePrimaryCtxRetain(&ctx.second, cuDevice), __LINE__);
+    ThrowOnCudaError(LibCuda::cuDeviceGet(&cuDevice, idx), __LINE__);
+    ThrowOnCudaError(LibCuda::cuDevicePrimaryCtxRetain(&ctx.second, cuDevice),
+                     __LINE__);
   }
 
   return g_Contexts[idx].second;
@@ -73,7 +74,8 @@ CUstream CudaResMgr::GetStream(size_t idx) {
   if (!str) {
     auto ctx = GetCtx(idx);
     CudaCtxPush push(ctx);
-    ThrowOnCudaError(cuStreamCreate(&str, CU_STREAM_NON_BLOCKING), __LINE__);
+    ThrowOnCudaError(LibCuda::cuStreamCreate(&str, CU_STREAM_NON_BLOCKING),
+                     __LINE__);
   }
 
   return g_Streams[idx];
@@ -89,8 +91,9 @@ CudaResMgr::~CudaResMgr() {
     {
       for (auto& cuStream : g_Streams) {
         if (cuStream) {
-          cuStreamDestroy(cuStream); // Avoiding CUDA_ERROR_DEINITIALIZED while
-                                     // destructing.
+          LibCuda::cuStreamDestroy(
+              cuStream); // Avoiding CUDA_ERROR_DEINITIALIZED while
+                         // destructing.
         }
       }
       g_Streams.clear();
@@ -99,7 +102,7 @@ CudaResMgr::~CudaResMgr() {
     {
       for (int i = 0; i < g_Contexts.size(); i++) {
         if (g_Contexts[i].second) {
-          cuDevicePrimaryCtxRelease(
+          LibCuda::cuDevicePrimaryCtxRelease(
               g_Contexts[i].first); // Avoiding CUDA_ERROR_DEINITIALIZED while
                                     // destructing.
         }
@@ -135,10 +138,10 @@ auto CopyBuffer_Ctx_Str = [](shared_ptr<CudaBuffer> dst,
   }
 
   CudaCtxPush ctxPush(str);
-  ThrowOnCudaError(cuMemcpyDtoDAsync(dst->GpuMem(), src->GpuMem(),
-                                     src->GetRawMemSize(), str),
+  ThrowOnCudaError(LibCuda::cuMemcpyDtoDAsync(dst->GpuMem(), src->GpuMem(),
+                                              src->GetRawMemSize(), str),
                    __LINE__);
-  ThrowOnCudaError(cuStreamSynchronize(str), __LINE__);
+  ThrowOnCudaError(LibCuda::cuStreamSynchronize(str), __LINE__);
 };
 
 auto CopyBuffer = [](shared_ptr<CudaBuffer> dst, shared_ptr<CudaBuffer> src,

@@ -22,7 +22,7 @@ const char* const LibNpp::filenames[] = {
     "", "", "", ""
 #endif
 #else
-    "libnppig.so.11", "libnppicc.so.11", "libnppidei.so.11", "libnppial.so.11"
+    "libnppig.so", "libnppicc.so", "libnppidei.so", "libnppial.so"
 #endif
 };
 

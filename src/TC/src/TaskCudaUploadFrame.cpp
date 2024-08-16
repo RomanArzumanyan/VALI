@@ -17,7 +17,7 @@
 #include "Tasks.hpp"
 
 auto const cuda_stream_sync = [](void* stream) {
-  cuStreamSynchronize((CUstream)stream);
+  LibCuda::cuStreamSynchronize((CUstream)stream);
 };
 
 CudaUploadFrame::CudaUploadFrame(CUstream stream)
@@ -67,7 +67,7 @@ TaskExecDetails CudaUploadFrame::Run() {
       m.WidthInBytes = m.srcPitch;
       m.Height = plane.Height();
 
-      ThrowOnCudaError(cuMemcpy2DAsync(&m, m_stream), __LINE__);
+      ThrowOnCudaError(LibCuda::cuMemcpy2DAsync(&m, m_stream), __LINE__);
       p_src_host += m.WidthInBytes * m.Height;
     }
   } catch (std::exception& e) {

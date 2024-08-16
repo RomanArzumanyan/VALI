@@ -139,12 +139,14 @@ void SurfacePlane::Allocate(CUcontext context, bool pitched) {
   CUdeviceptr gpu_mem = 0U;
   CudaCtxPush ctxPush(context);
   if (pitched) {
-    ThrowOnCudaError(
-        cuMemAllocPitch(&gpu_mem, &m_pitch, m_width * ElemSize(), m_height, 16),
-        __LINE__);
-  } else {
-    ThrowOnCudaError(cuMemAlloc(&gpu_mem, m_width * ElemSize() * m_height),
+    ThrowOnCudaError(LibCuda::LibCuda::cuMemAllocPitch(&gpu_mem, &m_pitch,
+                                                       m_width * ElemSize(),
+                                                       m_height, 16),
                      __LINE__);
+  } else {
+    ThrowOnCudaError(
+        LibCuda::cuMemAlloc(&gpu_mem, m_width * ElemSize() * m_height),
+        __LINE__);
     m_pitch = m_width * ElemSize();
   }
 
@@ -152,7 +154,7 @@ void SurfacePlane::Allocate(CUcontext context, bool pitched) {
   m_own_gpu_mem = std::shared_ptr<void>((void*)gpu_mem, [](void* dptr) {
     try {
       CudaCtxPush ctxPush(GetContextByDptr((CUdeviceptr)dptr));
-      cuMemFree((CUdeviceptr)dptr);
+      LibCuda::cuMemFree((CUdeviceptr)dptr);
     } catch (...) {
     }
   });

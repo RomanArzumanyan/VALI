@@ -73,4 +73,6 @@ public:
       cuLaunchHostFunc;
   static LoadableFunction<LoadCuda, CUresult, CUstream, CUcontext*>
       cuStreamGetCtx;
+  static LoadableFunction<LoadCuda, CUresult, CUevent, CUstream> cuEventRecord;
+  static LoadableFunction<LoadCuda, CUresult, CUevent> cuEventSynchronize;
 };

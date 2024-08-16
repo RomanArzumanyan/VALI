@@ -70,13 +70,6 @@ target_link_libraries(
 	_python_vali PRIVATE 
 	TC_CORE 
 	TC
-	# CUDA::cuda_driver
-	# CUDA::cudart
-	# CUDA::npps
-	# CUDA::nppig
-	# CUDA::nppial
-	# CUDA::nppicc
-	# CUDA::nppidei
 	${FFMPEG_LIBRARIES})
 
 include_directories(

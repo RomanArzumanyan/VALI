@@ -23,7 +23,6 @@
 #include "CudaUtils.hpp"
 
 #include <chrono>
-#include <cuda_runtime.h>
 #include <iostream>
 #include <mutex>
 #include <pybind11/cast.h>

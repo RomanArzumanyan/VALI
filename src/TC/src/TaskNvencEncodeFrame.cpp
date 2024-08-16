@@ -79,7 +79,7 @@ void NvEncoderCuda::AllocateInputBuffers(int32_t numInputBuffers) {
         chromaHeight = GetChromaHeight(GetPixelFormat(), GetMaxEncodeHeight());
       }
 
-      CHECK_CUDA_CALL(cuMemAllocPitch(
+      CHECK_CUDA_CALL(LibCuda::cuMemAllocPitch(
           &pDeviceFrame, &m_cudaPitch,
           GetWidthInBytes(GetPixelFormat(), GetMaxEncodeWidth()),
           GetMaxEncodeHeight() + chromaHeight, 16));
@@ -106,14 +106,14 @@ void NvEncoderCuda::ReleaseCudaResources() {
 
   for (auto inputFrame : m_vInputFrames) {
     if (inputFrame.inputPtr) {
-      cuMemFree(reinterpret_cast<CUdeviceptr>(inputFrame.inputPtr));
+      LibCuda::cuMemFree(reinterpret_cast<CUdeviceptr>(inputFrame.inputPtr));
     }
   }
   m_vInputFrames.clear();
 
   for (auto referenceFrame : m_vReferenceFrames) {
     if (referenceFrame.inputPtr) {
-      cuMemFree(reinterpret_cast<CUdeviceptr>(referenceFrame.inputPtr));
+      LibCuda::cuMemFree(reinterpret_cast<CUdeviceptr>(referenceFrame.inputPtr));
     }
   }
   m_vReferenceFrames.clear();
@@ -150,7 +150,7 @@ void NvEncoderCuda::CopyToDeviceFrame(CUstream stream, void* pSrcFrame,
   m.WidthInBytes = NvEncoder::GetWidthInBytes(pixelFormat, width);
   m.Height = height;
 
-  CHECK_CUDA_CALL(cuMemcpy2DAsync(&m, stream));
+  CHECK_CUDA_CALL(LibCuda::cuMemcpy2DAsync(&m, stream));
 
   vector<uint32_t> srcChromaOffsets;
   NvEncoder::GetChromaSubPlaneOffsets(pixelFormat, srcPitch, height,
@@ -174,7 +174,7 @@ void NvEncoderCuda::CopyToDeviceFrame(CUstream stream, void* pSrcFrame,
       m.dstPitch = destChromaPitch;
       m.WidthInBytes = chromaWidthInBytes;
       m.Height = chromaHeight;
-      CHECK_CUDA_CALL(cuMemcpy2DAsync(&m, stream));
+      CHECK_CUDA_CALL(LibCuda::cuMemcpy2DAsync(&m, stream));
     }
   }
 }
@@ -1109,7 +1109,7 @@ bool VPF::NvencEncodeFrame::Reconfigure(NvEncoderClInterface& cli_iface,
 }
 
 auto const cuda_stream_sync = [](void* stream) {
-  cuStreamSynchronize((CUstream)stream);
+  LibCuda::cuStreamSynchronize((CUstream)stream);
 };
 
 NvencEncodeFrame::NvencEncodeFrame(CUstream cuStream,

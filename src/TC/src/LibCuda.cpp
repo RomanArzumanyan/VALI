@@ -57,3 +57,5 @@ DEFINE(LibCuda, cuMemFree_v2);
 DEFINE(LibCuda, cuPointerGetAttribute);
 DEFINE(LibCuda, cuLaunchHostFunc);
 DEFINE(LibCuda, cuStreamGetCtx);
+DEFINE(LibCuda, cuEventRecord);
+DEFINE(LibCuda, cuEventSynchronize);

@@ -18,24 +18,24 @@ namespace VPF {
 
 CudaStrSync::CudaStrSync(CUstream stream) { str = stream; }
 
-CudaStrSync::~CudaStrSync() { cuStreamSynchronize(str); }
+CudaStrSync::~CudaStrSync() { LibCuda::cuStreamSynchronize(str); }
 
 CudaCtxPush::CudaCtxPush(CUcontext ctx) {
-  ThrowOnCudaError(cuCtxPushCurrent(ctx), __LINE__);
+  ThrowOnCudaError(LibCuda::cuCtxPushCurrent(ctx), __LINE__);
 }
 
 CudaCtxPush::CudaCtxPush(CUstream str) {
-  ThrowOnCudaError(cuCtxPushCurrent(GetContextByStream(str)), __LINE__);
+  ThrowOnCudaError(LibCuda::cuCtxPushCurrent(GetContextByStream(str)), __LINE__);
 }
 
-CudaCtxPush::~CudaCtxPush() { cuCtxPopCurrent(nullptr); }
+CudaCtxPush::~CudaCtxPush() { LibCuda::cuCtxPopCurrent(nullptr); }
 
 CudaStreamEvent::CudaStreamEvent(CUstream stream) {
-  ThrowOnCudaError(cuEventRecord(m_event, stream), __LINE__);
+  ThrowOnCudaError(LibCuda::cuEventRecord(m_event, stream), __LINE__);
 }
 
 void CudaStreamEvent::Wait() {
-  ThrowOnCudaError(cuEventSynchronize(m_event), __LINE__);
+  ThrowOnCudaError(LibCuda::cuEventSynchronize(m_event), __LINE__);
 }
 
 CudaStreamEvent::~CudaStreamEvent() {
@@ -55,14 +55,14 @@ void ThrowOnCudaError(CUresult res, int lineNum) {
     }
 
     const char* errName = nullptr;
-    if (CUDA_SUCCESS != cuGetErrorName(res, &errName)) {
+    if (CUDA_SUCCESS != LibCuda::cuGetErrorName(res, &errName)) {
       ss << "CUDA error with code " << res << std::endl;
     } else {
       ss << "CUDA error: " << errName << std::endl;
     }
 
     const char* errDesc = nullptr;
-    cuGetErrorString(res, &errDesc);
+    LibCuda::cuGetErrorString(res, &errDesc);
 
     if (!errDesc) {
       ss << "No error string available" << std::endl;
@@ -91,14 +91,14 @@ void ThrowOnNppError(NppStatus res, int lineNum) {
 int GetDeviceIdByDptr(CUdeviceptr dptr) {
   CudaCtxPush ctxPush(GetContextByDptr(dptr));
   CUdevice device_id = 0U;
-  ThrowOnCudaError(cuCtxGetDevice(&device_id), __LINE__);
+  ThrowOnCudaError(LibCuda::cuCtxGetDevice(&device_id), __LINE__);
   return (int)device_id;
 }
 
 int GetDeviceIdByContext(CUcontext ctx) {
   CudaCtxPush ctxPush(ctx);
   CUdevice device_id = 0U;
-  ThrowOnCudaError(cuCtxGetDevice(&device_id), __LINE__);
+  ThrowOnCudaError(LibCuda::cuCtxGetDevice(&device_id), __LINE__);
   return (int)device_id;
 }
 
@@ -109,7 +109,7 @@ int GetDeviceIdByStream(CUstream str) {
 
 CUcontext GetContextByDptr(CUdeviceptr dptr) {
   CUcontext cuda_ctx = NULL;
-  ThrowOnCudaError(cuPointerGetAttribute((void*)&cuda_ctx,
+  ThrowOnCudaError(LibCuda::cuPointerGetAttribute((void*)&cuda_ctx,
                                          CU_POINTER_ATTRIBUTE_CONTEXT, dptr),
                    __LINE__);
   return cuda_ctx;
@@ -119,7 +119,7 @@ CUdeviceptr GetDevicePointer(CUdeviceptr dptr) {
   CudaCtxPush ctxPush(GetContextByDptr(dptr));
   CUdeviceptr gpu_ptr = 0U;
 
-  ThrowOnCudaError(cuPointerGetAttribute((void*)&gpu_ptr,
+  ThrowOnCudaError(LibCuda::cuPointerGetAttribute((void*)&gpu_ptr,
                                          CU_POINTER_ATTRIBUTE_DEVICE_POINTER,
                                          dptr),
                    __LINE__);
@@ -128,7 +128,7 @@ CUdeviceptr GetDevicePointer(CUdeviceptr dptr) {
 
 CUcontext GetContextByStream(CUstream str) {
   CUcontext ctx;
-  ThrowOnCudaError(cuStreamGetCtx(str, &ctx), __LINE__);
+  ThrowOnCudaError(LibCuda::cuStreamGetCtx(str, &ctx), __LINE__);
   return ctx;
 }
 
@@ -139,6 +139,6 @@ void CudaStreamSync(void* args) {
 
   auto stream = (CUstream)args;
   CudaCtxPush lock(GetContextByStream(stream));
-  ThrowOnCudaError(cuStreamSynchronize(stream), __LINE__);
+  ThrowOnCudaError(LibCuda::cuStreamSynchronize(stream), __LINE__);
 };
 } // namespace VPF
