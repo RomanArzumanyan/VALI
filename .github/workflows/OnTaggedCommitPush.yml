@@ -16,7 +16,7 @@ jobs:
       run: |
         python3 -m pip install cibuildwheel --user
     - name: Build a binary wheel
-      run: |
+      run: |        
         git submodule update --init --recursive
         python3 -m cibuildwheel --output-dir dist
       env:
@@ -30,12 +30,15 @@ jobs:
           rpm -ivh raven-release*.rpm &&
           yum config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo &&
           yum clean all && 
-          yum -y install cuda-toolkit python310 python310-devel          
+          yum -y install cuda-toolkit python310 python310-devel &&
+          wget -c "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-lgpl-shared.tar.xz"
+          tar -xf ffmpeg-master-latest-linux64-lgpl-shared.tar.xz &&
+          ls -la
         CIBW_ENVIRONMENT: >
           BUILD_WITH_CUDA=1 
           PATH=$PATH:/usr/local/cuda/bin 
           CUDACXX=/usr/local/cuda/bin/nvcc 
-          LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64 
+          LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64:ffmpeg-master-latest-linux64-lgpl-shared/lib
     - name: Store the distribution packages
       uses: actions/upload-artifact@v3
       with:
