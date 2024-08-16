@@ -21,6 +21,7 @@ jobs:
         python3 -m cibuildwheel --output-dir dist
       env:
         CIBW_BUILD_VERBOSITY: 1
+        CIBW_PROJECT_REQUIRES_PYTHON: ">=3.10"
         CIBW_SKIP: "*musl*"
         CIBW_ARCHS_LINUX: "x86_64"        
         CIBW_BEFORE_ALL: >
