@@ -32,7 +32,8 @@ jobs:
           export CUDACXX=/usr/local/cuda/bin/nvcc &&
           export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64 &&
           export BUILD_WITH_CUDA=1 &&
-          nvcc --version
+          which nvcc &&
+          $CUDACXX --version
     - name: Store the distribution packages
       uses: actions/upload-artifact@v3
       with:
