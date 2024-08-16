@@ -26,13 +26,7 @@ jobs:
         CIBW_BEFORE_ALL: >
           yum-config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo &&
           yum clean all && 
-          yum install epel-release dnf &&
-          dnf install devtoolset-8-gcc devtoolset-8-gcc-c++ --allowerasing &&
-          gcc --version &&
           yum -y install cuda-toolkit python3-devel          
-        CIBW_BEFORE_BUILD: >
-          which nvcc && 
-          nvcc --version &&
         CIBW_ENVIRONMENT: >
           BUILD_WITH_CUDA=1 
           PATH=$PATH:/usr/local/cuda/bin 
