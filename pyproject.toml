@@ -20,3 +20,7 @@ name = "python_vali"
 authors = [{name = "Roman Arzumanyan", email = "roman.arzum@gmail.com"}]
 description = "Video processing in Python"
 dynamic = ["version", "dependencies", "license", "optional-dependencies", "readme"]
+
+[tool.cibuildwheel]
+# Normal options, etc.
+manylinux-x86_64-image = "manylinux_2_26"
