@@ -14,7 +14,7 @@
 #pragma once
 
 #include "NvEncoder.h"
-#include <cuda.h>
+#include "LibCuda.hpp"
 #include <mutex>
 #include <stdint.h>
 #include <vector>

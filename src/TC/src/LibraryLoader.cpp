@@ -1,5 +1,6 @@
 /*
- * Copyright 2020 NVIDIA Corporation
+ * Copyright 2024 Vision Labs LLC
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -11,7 +12,12 @@
  * limitations under the License.
  */
 
-#include "LibNpp.hpp"
-#include "LibCuda.hpp"
+#include "LibraryLoader.hpp"
 
-void SetupNppContext(CUstream stream, NppStreamContext& nppCtx);
+LibraryLoader::LibraryLoader(const char* filename) : filename(filename) {
+  hModule = tc_dlopen(filename);
+}
+LibraryLoader::~LibraryLoader() {
+  if (hModule)
+    tc_dlclose(hModule);
+}

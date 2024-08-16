@@ -20,9 +20,9 @@
 #include "NvCodecCLIOptions.h"
 #include "TC_CORE.hpp"
 #include "Tasks.hpp"
+#include "CudaUtils.hpp"
 
 #include <chrono>
-#include <cuda.h>
 #include <cuda_runtime.h>
 #include <iostream>
 #include <mutex>

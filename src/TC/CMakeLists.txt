@@ -16,21 +16,21 @@
 
 cmake_minimum_required(VERSION 3.21)
 
-# This must be set before enabling CUDA. Otherwise it will be set to the default ARCH by nvcc (e.g. 52 by nvcc 11.7)
-if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-    # Define Volta / Turing / Ampere / Ada if not set by the user
-    set(CMAKE_CUDA_ARCHITECTURES
-        60
-        70
-        72
-        75
-        80
-        86
-        #89 # Require CUDA 11.8 for CC 89 or cmake 3.23 for CMAKE_CUDA_ARCHITECTURES_{ALL,ALL_MAJOR}
-    )
-endif()
+# # This must be set before enabling CUDA. Otherwise it will be set to the default ARCH by nvcc (e.g. 52 by nvcc 11.7)
+# if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+#     # Define Volta / Turing / Ampere / Ada if not set by the user
+#     set(CMAKE_CUDA_ARCHITECTURES
+#         60
+#         70
+#         72
+#         75
+#         80
+#         86
+#         #89 # Require CUDA 11.8 for CC 89 or cmake 3.23 for CMAKE_CUDA_ARCHITECTURES_{ALL,ALL_MAJOR}
+#     )
+# endif()
 
-project(TC LANGUAGES CXX CUDA)
+# project(TC LANGUAGES CXX CUDA)
 
 add_subdirectory(TC_CORE)
 
@@ -59,6 +59,9 @@ add_library(
     src/SurfacePlane.cpp
     src/CudaUtils.cpp
     src/Surfaces.cpp
+    src/LibCuda.cpp
+    src/LibNpp.cpp
+    src/LibraryLoader.cpp
 )
 
 if (WIN32)
@@ -89,15 +92,15 @@ generate_export_header(TC)
 target_link_libraries(
     TC
     PUBLIC
-        CUDA::cuda_driver
-        CUDA::cudart
-        CUDA::npps
-        CUDA::nppig
-        CUDA::nppial
-        CUDA::nppicc
-        CUDA::nppidei
-        ${FFMPEG_LIBRARIES}
-        TC_CORE    
+    # CUDA::cuda_driver
+    # CUDA::cudart
+    # CUDA::npps
+    # CUDA::nppig
+    # CUDA::nppial
+    # CUDA::nppicc
+    # CUDA::nppidei
+    ${FFMPEG_LIBRARIES}
+    TC_CORE    
 )
 
 target_compile_features(TC PRIVATE cxx_std_17)

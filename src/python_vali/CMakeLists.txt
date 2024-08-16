@@ -70,17 +70,18 @@ target_link_libraries(
 	_python_vali PRIVATE 
 	TC_CORE 
 	TC
-	CUDA::cuda_driver
-	CUDA::cudart
-	CUDA::npps
-	CUDA::nppig
-	CUDA::nppial
-	CUDA::nppicc
-	CUDA::nppidei
+	# CUDA::cuda_driver
+	# CUDA::cudart
+	# CUDA::npps
+	# CUDA::nppig
+	# CUDA::nppial
+	# CUDA::nppicc
+	# CUDA::nppidei
 	${FFMPEG_LIBRARIES})
 
 include_directories(
 	${FFMPEG_INCLUDE_DIRS}
+	${CUDAToolkit_INCLUDE_DIRS}
 	"${PROJECT_ROOT_DIR}/extern/dlpack/include/dlpack"
 )
 

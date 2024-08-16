@@ -16,6 +16,7 @@ endif(WIN32)
 
 find_package(CUDAToolkit 11.2 REQUIRED)
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/inc")
+include_directories(${CUDAToolkit_INCLUDE_DIRS})
 
 option(FETCHCONTENT_QUIET OFF)
 include(FetchContent)
