@@ -29,6 +29,7 @@ jobs:
           yum -y install cuda-toolkit python3-devel &&
           ls -al /usr/local &&
           export PATH=$PATH:/usr/local/cuda/bin &&
+          export CUDACXX=/usr/local/cuda/bin/nvcc &&
           nvcc --version &&
           export BUILD_WITH_CUDA=1         
     - name: Store the distribution packages
