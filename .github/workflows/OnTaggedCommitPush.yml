@@ -27,11 +27,11 @@ jobs:
           yum-config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo &&
           yum clean all &&
           yum -y install cuda-toolkit python3-devel &&
-          ls -al /usr/local &&
+          export BUILD_WITH_CUDA=1
+        CIBW_BEFORE_BUILD: >
           export PATH=$PATH:/usr/local/cuda/bin &&
           export CUDACXX=/usr/local/cuda/bin/nvcc &&
-          nvcc --version &&
-          export BUILD_WITH_CUDA=1         
+          nvcc --version
     - name: Store the distribution packages
       uses: actions/upload-artifact@v3
       with:
