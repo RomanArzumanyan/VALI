@@ -35,7 +35,8 @@ jobs:
           BUILD_WITH_CUDA=1 
           PATH=$PATH:/usr/local/cuda/bin 
           CUDACXX=/usr/local/cuda/bin/nvcc 
-          LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64
+          LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64 
+        CIBW_REPAIR_WHEEL_COMMAND: "auditwheel repair -w {dest_dir} {wheel} --exclude libcuda*"
     - name: Store the distribution packages
       uses: actions/upload-artifact@v3
       with:
