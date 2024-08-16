@@ -5,7 +5,7 @@ on: push
 jobs:
   build:
     name: Build distribution
-    runs-on: [Linux, x64]
+    runs-on: [ubuntu-latest]
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python
@@ -26,11 +26,12 @@ jobs:
         CIBW_BEFORE_ALL: >
           yum-config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo &&
           yum clean all &&
-          yum -y install cuda-toolkit python3-devel &&
-          export BUILD_WITH_CUDA=1
+          yum -y install cuda-toolkit python3-devel
         CIBW_BEFORE_BUILD: >
           export PATH=$PATH:/usr/local/cuda/bin &&
           export CUDACXX=/usr/local/cuda/bin/nvcc &&
+          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64 &&
+          export BUILD_WITH_CUDA=1 &&
           nvcc --version
     - name: Store the distribution packages
       uses: actions/upload-artifact@v3
@@ -43,7 +44,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')  # only publish to PyPI on tag pushes
     needs:
     - build
-    runs-on: [Linux, x64]
+    runs-on: [ubuntu-latest]
     environment:
       name: pypi
       url: https://pypi.org/p/python_vali
@@ -63,7 +64,7 @@ jobs:
     name: Sign the VALI with Sigstore and upload to GitHub Release
     needs:
     - publish-to-pypi
-    runs-on: [Linux, x64]
+    runs-on: [ubuntu-latest]
 
     permissions:
       contents: write  # IMPORTANT: mandatory for making GitHub Releases
@@ -104,7 +105,7 @@ jobs:
     name: Publish to TestPyPI
     needs:
     - build
-    runs-on: [Linux, x64]
+    runs-on: [ubuntu-latest]
 
     environment:
       name: testpypi
