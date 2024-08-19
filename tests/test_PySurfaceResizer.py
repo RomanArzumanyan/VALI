@@ -51,10 +51,10 @@ import test_common as tc
 # If two images have PSNR higher than 42 (dB) we consider them the same.
 psnr_threshold = 42.0
 
+
 class TestSurfaceResizer(unittest.TestCase):
     def __init__(self, methodName):
         super().__init__(methodName=methodName)
- 
 
     def test_resize_nv12(self):
         with open("gt_files.json") as f:
@@ -72,20 +72,20 @@ class TestSurfaceResizer(unittest.TestCase):
         for i in range(0, nv12Info.num_frames):
             # Make input and output Surfaces
             surf_src = vali.Surface.Make(
-                vali.PixelFormat.NV12, 
+                vali.PixelFormat.NV12,
                 nv12Info.width,
-                nv12Info.height, 
+                nv12Info.height,
                 gpu_id=0)
-            
+
             surf_dst = vali.Surface.Make(
-                vali.PixelFormat.NV12, 
+                vali.PixelFormat.NV12,
                 nv12SmallInfo.width,
-                nv12SmallInfo.height, 
+                nv12SmallInfo.height,
                 gpu_id=0)
 
             # Read input and GT frames from file
-            frame_nv12 = np.fromfile(nv12_fin, np.uint8, surf_src.HostSize())
-            frame_gt = np.fromfile(small_nv12_fin, np.uint8, surf_dst.HostSize())
+            frame_nv12 = np.fromfile(nv12_fin, np.uint8, surf_src.HostSize)
+            frame_gt = np.fromfile(small_nv12_fin, np.uint8, surf_dst.HostSize)
 
             # Upload src to GPU
             if not nvUpl.Run(frame_nv12, surf_src):
@@ -106,24 +106,24 @@ class TestSurfaceResizer(unittest.TestCase):
             # Dump both frames to disk in case of failure
             if score < psnr_threshold:
                 tc.dumpFrameToDisk(
-                    frame_nv12, 
-                    "res", 
+                    frame_nv12,
+                    "res",
                     nv12SmallInfo.width,
-                    nv12SmallInfo.height, 
+                    nv12SmallInfo.height,
                     "nv12_dist")
-                
+
                 tc.dumpFrameToDisk(
                     frame_gt,
                     "res",
                     nv12SmallInfo.width,
                     nv12SmallInfo.height,
                     "nv12_gt")
-                
+
                 self.fail(
                     "PSNR score is below threshold: " + str(score))
 
         nv12_fin.close()
-        small_nv12_fin.close()        
+        small_nv12_fin.close()
 
 
 if __name__ == "__main__":

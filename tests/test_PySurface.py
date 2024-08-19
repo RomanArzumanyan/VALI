@@ -75,9 +75,9 @@ class TestSurface(unittest.TestCase):
                 vali.ColorRange.MPEG)
 
             surf_src = vali.Surface.Make(
-                pyDec.Format(),
-                pyDec.Width(),
-                pyDec.Height(),
+                pyDec.Format,
+                pyDec.Width,
+                pyDec.Height,
                 gpu_id=0)
 
             for i in range(0, gtInfo.num_frames):
@@ -88,28 +88,28 @@ class TestSurface(unittest.TestCase):
 
                 surf_dst = vali.Surface.Make(
                     vali.PixelFormat.RGB,
-                    surf_src.Width(),
-                    surf_src.Height(),
+                    surf_src.Width,
+                    surf_src.Height,
                     gpu_id=0)
 
                 success, details = nvCvt.Run(surf_src, surf_dst, cc_ctx)
                 if not success:
                     self.fail("Failed to convert surface: " + details)
 
-                src_tensor = torch.from_dlpack(surf_dst.PlanePtr())
+                src_tensor = torch.from_dlpack(surf_dst.Planes[0])
 
                 # Check dimensions
                 self.assertEqual(len(src_tensor.shape), 2)
                 self.assertEqual(src_tensor.shape[0] * src_tensor.shape[1],
-                                 surf_dst.HostSize())
+                                 surf_dst.HostSize)
 
                 # Check if sizes are equal
                 rgb_frame = src_tensor.cpu().numpy().flatten()
-                self.assertEqual(rgb_frame.size, surf_dst.HostSize())
+                self.assertEqual(rgb_frame.size, surf_dst.HostSize)
 
                 # Check if memory is bit 2 bit equal
                 frame_dst = np.ndarray(
-                    shape=(surf_dst.HostSize()),
+                    shape=(surf_dst.HostSize),
                     dtype=np.uint8)
 
                 success, details = nvDwn.Run(surf_dst, frame_dst)
@@ -139,9 +139,9 @@ class TestSurface(unittest.TestCase):
                 vali.ColorRange.MPEG)
 
             surf_dec = vali.Surface.Make(
-                pyDec.Format(),
-                pyDec.Width(),
-                pyDec.Height(),
+                pyDec.Format,
+                pyDec.Width,
+                pyDec.Height,
                 gpu_id=0)
 
             for i in range(0, gtInfo.num_frames):
@@ -151,8 +151,8 @@ class TestSurface(unittest.TestCase):
 
                 surf_cvt = vali.Surface.Make(
                     vali.PixelFormat.RGB,
-                    surf_dec.Width(),
-                    surf_dec.Height(),
+                    surf_dec.Width,
+                    surf_dec.Height,
                     gpu_id=0)
 
                 success, details = nvCvt.Run(surf_dec, surf_cvt, cc_ctx)
@@ -163,17 +163,17 @@ class TestSurface(unittest.TestCase):
 
                 # Check dimensions
                 self.assertEqual(len(ten_rgb.shape), 3)
-                self.assertEqual(ten_rgb.shape[0], surf_cvt.Height())
-                self.assertEqual(ten_rgb.shape[1], surf_cvt.Width())
+                self.assertEqual(ten_rgb.shape[0], surf_cvt.Height)
+                self.assertEqual(ten_rgb.shape[1], surf_cvt.Width)
                 self.assertEqual(ten_rgb.shape[2], 3)
 
                 # Check size in bytes
                 frame_ten = ten_rgb.cpu().numpy().flatten()
-                self.assertEqual(frame_ten.size, surf_cvt.HostSize())
+                self.assertEqual(frame_ten.size, surf_cvt.HostSize)
 
                 # Bit 2 bit memory cmp
                 frame_surf = np.ndarray(
-                    shape=(surf_cvt.HostSize()),
+                    shape=(surf_cvt.HostSize),
                     dtype=np.uint8)
 
                 success, details = nvDwn.Run(surf_cvt, frame_surf)
@@ -184,10 +184,10 @@ class TestSurface(unittest.TestCase):
                     self.log.error(
                         "PSNR: " + str(tc.measurePSNR(frame_ten, frame_surf)))
 
-                    tc.dumpFrameToDisk(frame_ten, "from_tensor", surf_cvt.Width(),
-                                       surf_cvt.Height(), ".rgb")
-                    tc.dumpFrameToDisk(frame_surf, "from_surface", surf_cvt.Width(),
-                                       surf_cvt.Height(), ".rgb")
+                    tc.dumpFrameToDisk(frame_ten, "from_tensor", surf_cvt.Width,
+                                       surf_cvt.Height, ".rgb")
+                    tc.dumpFrameToDisk(frame_surf, "from_surface", surf_cvt.Width,
+                                       surf_cvt.Height, ".rgb")
                     self.fail("Mismatch at frame " + str(i))
 
     def test_surface_from_tensor(self):
@@ -204,17 +204,17 @@ class TestSurface(unittest.TestCase):
 
         surface = vali.Surface.from_dlpack(
             torch.utils.dlpack.to_dlpack(tensor))
-        if not surface or surface.Empty():
+        if not surface or surface.IsEmpty:
             self.fail("Failed to import Surface from dlpack")
 
         nvDwn = vali.PySurfaceDownloader(gpu_id=0)
 
         # Check dimensions
         self.assertEqual(len(tensor.shape), 2)
-        self.assertEqual(tensor.shape[0] * tensor.shape[1], surface.HostSize())
+        self.assertEqual(tensor.shape[0] * tensor.shape[1], surface.HostSize)
 
         # Check if memory is bit 2 bit equal
-        frame = np.ndarray(shape=(surface.HostSize()), dtype=np.uint8)
+        frame = np.ndarray(shape=(surface.HostSize), dtype=np.uint8)
         if not nvDwn.Run(surface, frame):
             self.fail("Failed to download decoded surface")
 

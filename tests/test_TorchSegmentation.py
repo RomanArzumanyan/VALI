@@ -171,7 +171,7 @@ class TestTorchSegmentation(unittest.TestCase):
 
         # NN expects images to be 3 channel planar RGB.
         # No requirements for input image resolution, it will be rescaled internally.
-        target_w, target_h = pyDec.Width(), pyDec.Height()
+        target_w, target_h = pyDec.Width, pyDec.Height
 
         # Converter from NV12 which is pyDec native pixel fomat.
         to_rgb = vali.PySurfaceConverter(
@@ -193,7 +193,7 @@ class TestTorchSegmentation(unittest.TestCase):
         frame_number = 0
         while True:
             surf_nv12 = vali.Surface.Make(
-                pyDec.Format(), pyDec.Width(), pyDec.Height(), gpu_id=0)
+                pyDec.Format, pyDec.Width, pyDec.Height, gpu_id=0)
             # Decode 1 compressed video frame to CUDA memory.
             success, _ = pyDec.DecodeSingleSurface(surf_nv12)
             if not success:
@@ -201,7 +201,7 @@ class TestTorchSegmentation(unittest.TestCase):
 
             # Convert NV12 > RGB.
             surg_rgb = vali.Surface.Make(
-                vali.PixelFormat.RGB, surf_nv12.Width(), surf_nv12.Height(), gpu_id=0)
+                vali.PixelFormat.RGB, surf_nv12.Width, surf_nv12.Height, gpu_id=0)
             success, details = to_rgb.Run(surf_nv12, surg_rgb, cc_ctx)
             if not success:
                 print("Can not convert nv12 -> rgb: " + details)
@@ -209,7 +209,7 @@ class TestTorchSegmentation(unittest.TestCase):
 
             # Convert RGB > planar RGB.
             surf_pln = vali.Surface.Make(
-                vali.PixelFormat.RGB_PLANAR, surg_rgb.Width(), surg_rgb.Height(), gpu_id=0)
+                vali.PixelFormat.RGB_PLANAR, surg_rgb.Width, surg_rgb.Height, gpu_id=0)
             success, details = to_pln.Run(surg_rgb, surf_pln, cc_ctx)
             if not success:
                 print("Can not convert rgb -> rgb planar: " + details)

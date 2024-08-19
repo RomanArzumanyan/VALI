@@ -77,7 +77,7 @@ class TestEncoderBasic(unittest.TestCase):
         frames_recv = 0
 
         surf = vali.Surface.Make(
-            pyDec.Format(), pyDec.Width(), pyDec.Height(), gpu_id=0)
+            pyDec.Format, pyDec.Width, pyDec.Height, gpu_id=0)
         while True:
             success, _ = pyDec.DecodeSingleSurface(surf)
             if not success:

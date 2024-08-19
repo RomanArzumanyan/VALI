@@ -74,16 +74,17 @@ class TestSurfaceConverter(unittest.TestCase):
             vali.ColorRange.MPEG)
 
         surf_src = vali.Surface.Make(
-            pyDec.Format(), pyDec.Width(), pyDec.Height(), gpu_id=0)
+            pyDec.Format, pyDec.Width, pyDec.Height, gpu_id=0)
         success, _ = pyDec.DecodeSingleSurface(surf_src)
         if not success:
             self.fail("Fail to decode surface")
 
         surf_dst = vali.Surface.Make(
-            vali.PixelFormat.RGB, surf_src.Width(), surf_src.Height(), gpu_id=0)
+            vali.PixelFormat.RGB, surf_src.Width, surf_src.Height, gpu_id=0)
 
         surf_dst, details = nvCvt.Run(surf_src, surf_dst, cc_ctx)
-        self.assertEqual(details, vali.TaskExecInfo.UNSUPPORTED_FMT_CONV_PARAMS)
+        self.assertEqual(
+            details, vali.TaskExecInfo.UNSUPPORTED_FMT_CONV_PARAMS)
 
     def test_no_cc_ctx(self):
         with open("gt_files.json") as f:
@@ -98,16 +99,16 @@ class TestSurfaceConverter(unittest.TestCase):
             gpu_id=0)
 
         surf_src = vali.Surface.Make(
-            pyDec.Format(), pyDec.Width(), pyDec.Height(), gpu_id=0)
+            pyDec.Format, pyDec.Width, pyDec.Height, gpu_id=0)
         success, _ = pyDec.DecodeSingleSurface(surf_src)
         if not success:
             self.fail("Fail to decode surface")
 
         surf_dst = vali.Surface.Make(
-            vali.PixelFormat.RGB, surf_src.Width(), surf_src.Height(), gpu_id=0)
+            vali.PixelFormat.RGB, surf_src.Width, surf_src.Height, gpu_id=0)
 
         surf_dst, details = nvCvt.Run(surf_src, surf_dst)
-        self.assertEqual(details, vali.TaskExecInfo.SUCCESS)        
+        self.assertEqual(details, vali.TaskExecInfo.SUCCESS)
 
     def test_rgb_deinterleave(self):
         with open("gt_files.json") as f:
@@ -140,7 +141,7 @@ class TestSurfaceConverter(unittest.TestCase):
 
                 # Upload to GPU
                 surf_rgb = vali.Surface.Make(vali.PixelFormat.RGB, dst_info.width,
-                                            dst_info.height, gpu_id=0)
+                                             dst_info.height, gpu_id=0)
                 success = nvUpl.Run(dist_frame, surf_rgb)
                 if not success:
                     self.fail("Fail to upload frame.")
@@ -207,14 +208,14 @@ class TestSurfaceConverter(unittest.TestCase):
 
             # Upload to GPU
             surf_src = vali.Surface.Make(vali.PixelFormat.NV12, src_info.width,
-                                        src_info.height, gpu_id=0)
+                                         src_info.height, gpu_id=0)
             success = nvUpl.Run(frame_src, surf_src)
             if not success:
                 self.fail("Failed to upload frame")
 
             # Convert to RGB
             surf_dst = vali.Surface.Make(
-                vali.PixelFormat.RGB, surf_src.Width(), surf_src.Height(), gpu_id=0)
+                vali.PixelFormat.RGB, surf_src.Width, surf_src.Height, gpu_id=0)
 
             success, details = nvCvt.Run(
                 surf_src, surf_dst, cc_ctx)
@@ -225,13 +226,13 @@ class TestSurfaceConverter(unittest.TestCase):
 
             # Download to numpy array
             dist_frame = np.ndarray(
-                shape=(surf_dst.HostSize()), dtype=np.uint8)
+                shape=(surf_dst.HostSize), dtype=np.uint8)
             if not nvDwn.Run(surf_dst, dist_frame):
                 self.fail("Fail to download surface")
 
             # Read ethalon RGB frame and compare
             gt_frame = np.fromfile(
-                dst_fin, np.uint8, surf_dst.HostSize())
+                dst_fin, np.uint8, surf_dst.HostSize)
             score = tc.measurePSNR(gt_frame, dist_frame)
 
             # Dump both frames to disk in case of failure
@@ -277,14 +278,14 @@ class TestSurfaceConverter(unittest.TestCase):
 
             # Upload to GPU
             surf_src = vali.Surface.Make(vali.PixelFormat.P10, src_info.width,
-                                        src_info.height, gpu_id=0)
+                                         src_info.height, gpu_id=0)
             success = nvUpl.Run(frame_src, surf_src)
             if not success:
                 self.fail("Failed to upload frame")
 
             # Convert to destination format
             surf_dst = vali.Surface.Make(
-                vali.PixelFormat.NV12, surf_src.Width(), surf_src.Height(), gpu_id=0)
+                vali.PixelFormat.NV12, surf_src.Width, surf_src.Height, gpu_id=0)
 
             success, details = nvCvt.Run(surf_src, surf_dst, cc_ctx)
             if not success:
@@ -293,13 +294,13 @@ class TestSurfaceConverter(unittest.TestCase):
 
             # Download to numpy array
             dist_frame = np.ndarray(
-                shape=(surf_dst.HostSize()), dtype=np.uint8)
+                shape=(surf_dst.HostSize), dtype=np.uint8)
             success = nvDwn.Run(surf_dst, dist_frame)
             if not success:
                 self.fail("Fail to download surface")
 
             # Read ethalon frame and compare
-            gt_frame = np.fromfile(dst_fin, np.uint8, surf_dst.HostSize())
+            gt_frame = np.fromfile(dst_fin, np.uint8, surf_dst.HostSize)
             score = tc.measurePSNR(gt_frame, dist_frame)
 
             # Dump both frames to disk in case of failure

@@ -68,9 +68,9 @@ class TestFrameConverter(unittest.TestCase):
             gpu_id=-1)
 
         ffCvt = vali.PyFrameConverter(
-            pyDec.Width(),
-            pyDec.Height(),
-            pyDec.Format(),
+            pyDec.Width,
+            pyDec.Height,
+            pyDec.Format,
             vali.PixelFormat.RGB)
 
         # Use color space and range of original file.
