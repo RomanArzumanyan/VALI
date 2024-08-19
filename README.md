@@ -22,6 +22,13 @@ VALI works on Linux(tested on Ubuntu 22.04) and Windows
 - Install a C++ toolchain either via Visual Studio or Tools for Visual Studio.
   - Recommended version is Visual Studio 2017 and above (Windows only)
 
+## Licensing
+VALI sources are available under Apache 2 license.
+
+Wheels contain FFMpeg libraries downloaded from https://github.com/BtbN/FFmpeg-Builds/releases that are licensed under LGPLv2.1.
+
+This software uses code of <a href=http://ffmpeg.org>FFmpeg</a> licensed under the <a href=http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html>LGPLv2.1</a> and its source can be downloaded <a href=https://github.com/BtbN/FFmpeg-Builds>here</a>
+
 ## Install from PyPi
 ```bash
 python3 -m pip install python_vali
