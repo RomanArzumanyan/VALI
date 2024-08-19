@@ -18,13 +18,16 @@ VALI works on Linux(tested on Ubuntu 22.04) and Windows
   - VALI will download FFMPEG build from https://github.com/BtbN/FFmpeg-Builds
   - Make sure you don't have system FFMPEG packages installed. Otherwise, CMake will use them instead. You may run ```apt remove libavfilter-dev libavformat-dev libavcodec-dev libswresample-dev libavutil-dev``` on Ubuntu to remove them. Alternatively, build in Docker.
 
-- Python 3 and above
+- Python 3.10 and above
 - Install a C++ toolchain either via Visual Studio or Tools for Visual Studio.
-  - Recommended version is Visual Studio 2017 and above
-(Windows only)
+  - Recommended version is Visual Studio 2017 and above (Windows only)
 
-## Samples and best practices
-VALI unit tests are written in a way to illustrate the API usage. One may follow them as samples.
+## Install from PyPi
+```bash
+python3 -m pip install python_vali
+```
+
+All information below is relevant if you want to build VALI on your local machine.
 
 ### Linux
 Ubuntu 22.04 is recommended.
@@ -37,7 +40,7 @@ apt install -y \
           git
 ```
 
-##### Install CUDA Toolkit (if not already present)
+##### Install CUDA Toolkit
 ```bash
 wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.0-1_all.deb
 sudo dpkg -i cuda-keyring_1.0-1_all.deb
@@ -47,7 +50,7 @@ sudo apt-get install -y cuda
 export PATH=/usr/local/cuda/bin:$PATH
 ```
 
-##### Install VALI
+##### Install locally with pip
 ```bash
 # Update git submodules
 git submodule update --init --recursive
@@ -56,7 +59,7 @@ pip3 install .
 
 To check whether VALI is correctly installed run the following Python script
 ```python
-import python_vali
+import python_vali as vali
 ```
 If using Docker via [Nvidia Container Runtime](https://developer.nvidia.com/nvidia-container-runtime),
 please make sure to enable the `video` driver capability: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/user-guide.html#driver-capabilities via
@@ -76,7 +79,7 @@ To check whether VALI is correctly installed run the following Python script
 ```python
 cuda_path = os.environ["CUDA_PATH"]
 os.add_dll_directory(os.path.join(cuda_path, "bin"))
-import python_vali
+import python_vali as vali
 ```
 ## Docker
 
@@ -111,3 +114,4 @@ You can then open `_build/html/index.html` with your browser.
 Please use project's Discussions page for that.
 
 [![OnPullRequest](https://github.com/RomanArzumanyan/VALI/actions/workflows/onPullRequest.yml/badge.svg)](https://github.com/RomanArzumanyan/VALI/actions/workflows/onPullRequest.yml)
+z
