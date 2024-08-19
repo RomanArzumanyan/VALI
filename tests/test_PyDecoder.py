@@ -85,7 +85,7 @@ class TestDecoder(unittest.TestCase):
     ])
     def test_width(self, case_name: str, gt_name: str):
         pyDec = vali.PyDecoder(self.gtByName(gt_name).uri, {})
-        self.assertEqual(self.gtByName(gt_name).width, pyDec.Width())
+        self.assertEqual(self.gtByName(gt_name).width, pyDec.Width)
 
     @parameterized.expand([
         ["avc_8bit", "basic",],
@@ -93,21 +93,20 @@ class TestDecoder(unittest.TestCase):
     ])
     def test_height(self, case_name: str, gt_name: str):
         pyDec = vali.PyDecoder(self.gtByName(gt_name).uri, {})
-        self.assertEqual(self.gtByName(gt_name).height, pyDec.Height())
+        self.assertEqual(self.gtByName(gt_name).height, pyDec.Height)
 
     @parameterized.expand([
         ["avc_8bit_cpu", -1, "basic",],
         ["avc_8bit_gpu", 0, "basic",],
         ["hevc_10bit_cpu", -1, "hevc10"],
-        # Skip: known issue #58
-        # ["hevc_10bit_gpu", 0,  "hevc10"],
+        ["hevc_10bit_gpu", 0,  "hevc10"],
     ])
     def test_format(self, case_name: str, gpu_id: int, gt_name: str):
         pyDec = vali.PyDecoder(self.gtByName(gt_name).uri, {}, gpu_id)
 
         # SW decoder returns frames in YUV420, HW decoder does it in NV12.
         # Chroma sampling is the only difference, so treat both as NV12.
-        format = pyDec.Format()
+        format = pyDec.Format
         if format == vali.PixelFormat.YUV420:
             format = vali.PixelFormat.NV12
 
@@ -116,74 +115,74 @@ class TestDecoder(unittest.TestCase):
     @parameterized.expand(tc.getDevices())
     def test_level(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
-        self.assertEqual(self.gtInfo.level, pyDec.Level())
+        self.assertEqual(self.gtInfo.level, pyDec.Level)
 
     @parameterized.expand(tc.getDevices())
     def test_profile(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
-        self.assertEqual(self.gtInfo.profile, pyDec.Profile())
+        self.assertEqual(self.gtInfo.profile, pyDec.Profile)
 
     @parameterized.expand(tc.getDevices())
     def test_delay(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
-        self.assertEqual(self.gtInfo.delay, pyDec.Delay())
+        self.assertEqual(self.gtInfo.delay, pyDec.Delay)
 
     @parameterized.expand(tc.getDevices())
     def test_gop_size(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
-        self.assertEqual(self.gtInfo.gop_size, pyDec.GopSize())
+        self.assertEqual(self.gtInfo.gop_size, pyDec.GopSize)
 
     @parameterized.expand(tc.getDevices())
     def test_bitrate(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
-        self.assertEqual(self.gtInfo.bitrate, pyDec.Bitrate())
+        self.assertEqual(self.gtInfo.bitrate, pyDec.Bitrate)
 
     @parameterized.expand(tc.getDevices())
     def test_num_streams(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
-        self.assertEqual(self.gtInfo.num_streams, pyDec.NumStreams())
+        self.assertEqual(self.gtInfo.num_streams, pyDec.NumStreams)
 
     @parameterized.expand(tc.getDevices())
     def test_video_stream_idx(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
-        self.assertEqual(self.gtInfo.video_stream_idx, pyDec.StreamIndex())
+        self.assertEqual(self.gtInfo.video_stream_idx, pyDec.StreamIndex)
 
     @parameterized.expand(tc.getDevices())
     def test_start_time(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
-        self.assertEqual(self.gtInfo.start_time, pyDec.StartTime())
+        self.assertEqual(self.gtInfo.start_time, pyDec.StartTime)
 
     @parameterized.expand(tc.getDevices())
     def test_metadata(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
-        self.assertGreater(len(pyDec.Metadata()), 0)
+        self.assertGreater(len(pyDec.Metadata), 0)
 
     @parameterized.expand(tc.getDevices())
     def test_color_space(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
-        self.assertEqual(self.gtInfo.color_space, str(pyDec.ColorSpace()))
+        self.assertEqual(self.gtInfo.color_space, str(pyDec.ColorSpace))
 
     @parameterized.expand(tc.getDevices())
     def test_color_range(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
-        self.assertEqual(self.gtInfo.color_range, str(pyDec.ColorRange()))
+        self.assertEqual(self.gtInfo.color_range, str(pyDec.ColorRange))
 
     @parameterized.expand(tc.getDevices())
     def test_framerate(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
-        self.assertEqual(self.gtInfo.framerate, pyDec.Framerate())
+        self.assertEqual(self.gtInfo.framerate, pyDec.Framerate)
 
     @parameterized.expand(tc.getDevices())
     def test_avgframerate(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
-        self.assertEqual(self.gtInfo.framerate, pyDec.AvgFramerate())
+        self.assertEqual(self.gtInfo.framerate, pyDec.AvgFramerate)
 
     @parameterized.expand(tc.getDevices())
     def test_timebase(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         epsilon = 1e-4
         self.assertLessEqual(
-            np.abs(self.gtInfo.timebase - pyDec.Timebase()), epsilon)
+            np.abs(self.gtInfo.timebase - pyDec.Timebase), epsilon)
 
     def test_decode_all_frames_cpu(self):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=-1)
@@ -202,7 +201,7 @@ class TestDecoder(unittest.TestCase):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id)
         dec_frames = 0
         surf = vali.Surface.Make(
-            pyDec.Format(), pyDec.Width(), pyDec.Height(), gpu_id)
+            pyDec.Format, pyDec.Width, pyDec.Height, gpu_id)
         while True:
             success, details = pyDec.DecodeSingleSurface(surf)
             if not success:
@@ -216,7 +215,7 @@ class TestDecoder(unittest.TestCase):
         pyDec = vali.PyDecoder(self.hbdInfo.uri, {}, gpu_id)
         dec_frames = 0
         surf = vali.Surface.Make(
-            pyDec.Format(), pyDec.Width(), pyDec.Height(), gpu_id)
+            pyDec.Format, pyDec.Width, pyDec.Height, gpu_id)
         while True:
             success, details = pyDec.DecodeSingleSurface(surf)
             if not success:
@@ -286,8 +285,8 @@ class TestDecoder(unittest.TestCase):
         with open(gt_raw.uri, "rb") as f_in:
             while True:
                 surf = vali.Surface.Make(
-                    pyDec.Format(), pyDec.Width(), pyDec.Height(), gpu_id=0)
-                frame = np.ndarray(dtype=np.uint8, shape=surf.HostSize())
+                    pyDec.Format, pyDec.Width, pyDec.Height, gpu_id=0)
+                frame = np.ndarray(dtype=np.uint8, shape=surf.HostSize)
 
                 # Decode single surface from file
                 success, details = pyDec.DecodeSingleSurface(surf)
@@ -314,10 +313,10 @@ class TestDecoder(unittest.TestCase):
                     self.log.error(
                         "PSNR: " + str(tc.measurePSNR(frame_gt, frame)))
 
-                    tc.dumpFrameToDisk(frame_gt, "dec", surf.Width(),
-                                       surf.Height(), "yuv_gt.yuv")
-                    tc.dumpFrameToDisk(frame, "dec", surf.Width(),
-                                       surf.Height(), "yuv_dist.yuv")
+                    tc.dumpFrameToDisk(frame_gt, "dec", surf.Width,
+                                       surf.Height, "yuv_gt.yuv")
+                    tc.dumpFrameToDisk(frame, "dec", surf.Width,
+                                       surf.Height, "yuv_dist.yuv")
 
                     break
 
@@ -392,10 +391,10 @@ class TestDecoder(unittest.TestCase):
             self.log.warning("PSNR: " + str(psnr_score))
 
             if psnr_score < 40:
-                tc.dumpFrameToDisk(frame_gt, "dec", pyDec.Width(),
-                                   pyDec.Height(), "yuv_cont.yuv")
-                tc.dumpFrameToDisk(frame, "dec", pyDec.Width(),
-                                   pyDec.Height(), "yuv_seek.yuv")
+                tc.dumpFrameToDisk(frame_gt, "dec", pyDec.Width,
+                                   pyDec.Height, "yuv_cont.yuv")
+                tc.dumpFrameToDisk(frame, "dec", pyDec.Width,
+                                   pyDec.Height, "yuv_seek.yuv")
                 self.fail(
                     "Seek frame isnt same as continuous decode frame")
 
@@ -408,9 +407,9 @@ class TestDecoder(unittest.TestCase):
         pyDwn = vali.PySurfaceDownloader(gpu_id=0)
 
         surf = vali.Surface.Make(
-            pyDec.Format(), pyDec.Width(), pyDec.Height(), gpu_id=0)
-        frame = np.ndarray(dtype=np.uint8, shape=(surf.HostSize()))
-        frame_gt = np.ndarray(dtype=np.uint8, shape=(surf.HostSize()))
+            pyDec.Format, pyDec.Width, pyDec.Height, gpu_id=0)
+        frame = np.ndarray(dtype=np.uint8, shape=(surf.HostSize))
+        frame_gt = np.ndarray(dtype=np.uint8, shape=(surf.HostSize))
 
         # Seek to random frame within input video frames range
         start_frame = random.randint(0, gtInfo.num_frames - 1)
@@ -445,10 +444,10 @@ class TestDecoder(unittest.TestCase):
             self.log.warning("PSNR: " + str(psnr_score))
 
             if psnr_score < 40:
-                tc.dumpFrameToDisk(frame_gt, "dec", pyDec.Width(),
-                                   pyDec.Height(), "yuv_cont.yuv")
-                tc.dumpFrameToDisk(frame, "dec", pyDec.Width(),
-                                   pyDec.Height(), "yuv_seek.yuv")
+                tc.dumpFrameToDisk(frame_gt, "dec", pyDec.Width,
+                                   pyDec.Height, "yuv_cont.yuv")
+                tc.dumpFrameToDisk(frame, "dec", pyDec.Width,
+                                   pyDec.Height, "yuv_seek.yuv")
                 self.fail(
                     "Seek frame isnt same as continuous decode frame")
 
@@ -464,7 +463,7 @@ class TestDecoder(unittest.TestCase):
         self.assertTrue(success)
 
         # First frame shall be I frame, hence no motion vectors.
-        mv = pyDec.GetMotionVectors()
+        mv = pyDec.MotionVectors
         self.assertEqual(len(mv), 0)
 
         success, _ = pyDec.DecodeSingleFrame(frame)
@@ -472,7 +471,7 @@ class TestDecoder(unittest.TestCase):
 
         # Second frame shall be either P or B, hence motion vectors
         # shall be there.
-        mv = pyDec.GetMotionVectors()
+        mv = pyDec.MotionVectors
         self.assertGreater(len(mv), 0)
 
         # Very basic sanity check:
@@ -494,7 +493,7 @@ class TestDecoder(unittest.TestCase):
 
         dec_frame = 0
         while True:
-            surf = vali.Surface.Make(pyDec.Format(), width, height, gpu_id=0)
+            surf = vali.Surface.Make(pyDec.Format, width, height, gpu_id=0)
             success, info = pyDec.DecodeSingleSurface(surf)
 
             if not success:
@@ -507,13 +506,13 @@ class TestDecoder(unittest.TestCase):
                 # Upon resolution change decoder will not return decoded
                 # pixels to user. Hence surface dimensions will not be same
                 # to that of decoder.
-                self.assertNotEqual(surf.Width(), width)
-                self.assertNotEqual(surf.Height(), height)
+                self.assertNotEqual(surf.Width, width)
+                self.assertNotEqual(surf.Height, height)
             else:
                 dec_frame += 1
 
-            self.assertEqual(pyDec.Width(), width, str(dec_frame))
-            self.assertEqual(pyDec.Height(), height, str(dec_frame))
+            self.assertEqual(pyDec.Width, width, str(dec_frame))
+            self.assertEqual(pyDec.Height, height, str(dec_frame))
 
         self.assertEqual(dec_frame, gtInfo.num_frames)
 
@@ -541,12 +540,12 @@ class TestDecoder(unittest.TestCase):
                 # Upon resolution change decoder will not return decoded
                 # pixels to user. Hence frame size will not be same
                 # to that of decoder.
-                self.assertNotEqual(pyDec.HostFrameSize(), frame.size)
+                self.assertNotEqual(pyDec.HostFrameSize, frame.size)
             else:
                 dec_frame += 1
 
-            self.assertEqual(pyDec.Width(), width, str(dec_frame))
-            self.assertEqual(pyDec.Height(), height, str(dec_frame))
+            self.assertEqual(pyDec.Width, width, str(dec_frame))
+            self.assertEqual(pyDec.Height, height, str(dec_frame))
 
         self.assertEqual(dec_frame, gtInfo.num_frames)
 
