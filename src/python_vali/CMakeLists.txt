@@ -31,7 +31,7 @@ endif()
 
 configure_file("inc/Version.hpp.in" "pynvcode_version.h")
 
-find_package(Python3 3.10 REQUIRED COMPONENTS Interpreter Development)
+find_package(Python3 3.10 COMPONENTS Interpreter Development.Module REQUIRED)
 
 option(FETCHCONTENT_QUIET OFF)
 include(FetchContent)
