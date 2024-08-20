@@ -20,6 +20,19 @@
 #include <stdexcept>
 #include <string>
 
+// These macro definitions are used to put together library names and versions.
+#ifndef XCONCAT
+#define XCONCAT(A, B, C) A##B##C
+#endif
+
+#ifndef XSTR
+#define XSTR(A) XSTRINGIFY(A)
+#endif
+
+#ifndef XSTRINGIFY
+#define XSTRINGIFY(A) #A
+#endif
+
 class LibraryLoader {
 public:
   LibraryLoader(const char* filename);
