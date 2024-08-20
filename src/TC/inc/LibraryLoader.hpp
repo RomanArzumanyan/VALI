@@ -16,23 +16,9 @@
 
 #include "tc_dlopen.h"
 
-#include <iostream>
 #include <memory>
 #include <stdexcept>
 #include <string>
-
-// These macro definitions are used to put together library names and versions.
-#ifndef XCONCAT
-#define XCONCAT(A, B, C) A##B##C
-#endif
-
-#ifndef XSTR
-#define XSTR(A) XSTRINGIFY(A)
-#endif
-
-#ifndef XSTRINGIFY
-#define XSTRINGIFY(A) #A
-#endif
 
 class LibraryLoader {
 public:
@@ -41,6 +27,8 @@ public:
 
   TC_LIB getHandle() const { return m_hModule; }
   const std::string& getFilename() const { return m_filename; };
+  static const char* makeFilename(const char*, int libVersion,
+                                  const char* libFileExt);
 
 private:
   const std::string m_filename;

@@ -13,6 +13,7 @@
  */
 
 #include "LibraryLoader.hpp"
+#include <sstream>
 
 LibraryLoader::LibraryLoader(const char* filename) : m_filename(filename) {
   m_hModule = tc_dlopen(filename);
@@ -22,4 +23,11 @@ LibraryLoader::~LibraryLoader() {
   if (m_hModule) {
     tc_dlclose(m_hModule);
   }
+}
+
+const char* LibraryLoader::makeFilename(const char* libName, int libVersion,
+                                        const char* libFileExt) {
+  std::stringstream name;
+  name << libName << libVersion << libFileExt;
+  return name.str().c_str();
 }

@@ -13,15 +13,14 @@
  */
 
 #include "LibNpp.hpp"
-#include <iostream>
 
 const char* const LibNpp::filenames[] = {
 #if defined(_WIN32)
 #if defined(_WIN64)
-    XSTR(XCONCAT(nppig64_, NPP_VER_MAJOR, .dll)),
-    XSTR(XCONCAT(nppicc64_, NPP_VER_MAJOR, .dll)),
-    XSTR(XCONCAT(nppidei64_, NPP_VER_MAJOR, .dll)),
-    XSTR(XCONCAT(nppial64_, NPP_VER_MAJOR, .dll)),
+    LibraryLoader::makeFilename("nppig64_", NPP_VERSION_MAJOR, ".dll"),
+    LibraryLoader::makeFilename("nppicc64_", NPP_VERSION_MAJOR, ".dll"),
+    LibraryLoader::makeFilename("nppial64_", NPP_VERSION_MAJOR, ".dll"),
+    LibraryLoader::makeFilename("nppidei64_", NPP_VERSION_MAJOR, ".dll")
 #else
     "", "", "", ""
 #endif
