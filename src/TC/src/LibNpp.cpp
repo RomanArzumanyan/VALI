@@ -17,10 +17,7 @@
 const char* const LibNpp::filenames[] = {
 #if defined(_WIN32)
 #if defined(_WIN64)
-    LibraryLoader::makeFilename("nppig64_", NPP_VERSION_MAJOR, ".dll"),
-    LibraryLoader::makeFilename("nppicc64_", NPP_VERSION_MAJOR, ".dll"),
-    LibraryLoader::makeFilename("nppial64_", NPP_VERSION_MAJOR, ".dll"),
-    LibraryLoader::makeFilename("nppidei64_", NPP_VERSION_MAJOR, ".dll")
+    "nppig64_11.dll", "nppicc64_11.dll", "nppial64_11.dll", "nppidei64_11.dll"
 #else
     "", "", "", ""
 #endif
