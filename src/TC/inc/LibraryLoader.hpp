@@ -16,6 +16,7 @@
 
 #include "tc_dlopen.h"
 
+#include <iostream>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -38,42 +39,42 @@ public:
   LibraryLoader(const char* filename);
   ~LibraryLoader();
 
-  TC_LIB getHandle() const { return hModule; }
-  const std::string& getFilename() const { return filename; };
+  TC_LIB getHandle() const { return m_hModule; }
+  const std::string& getFilename() const { return m_filename; };
 
 private:
-  const std::string filename;
-  TC_LIB hModule;
+  const std::string m_filename;
+  TC_LIB m_hModule;
 };
 
 template <std::shared_ptr<LibraryLoader> (*LoadLibrary)(), typename Return,
           typename... Args>
 class LoadableFunction {
 public:
-  LoadableFunction(const char* name) : name(name) {
+  LoadableFunction(const char* name) : m_name(name) {
     auto pLoader = LoadLibrary();
+    m_filename = pLoader->getFilename();
     if (pLoader->getHandle()) {
-      filename = pLoader->getFilename();
-      f = reinterpret_cast<decltype(f)>(tc_dlsym(pLoader->getHandle(), name));
+      m_fptr = reinterpret_cast<decltype(m_fptr)>(
+          tc_dlsym(pLoader->getHandle(), m_name.c_str()));
     }
   }
-  Return operator()(Args... args) {
-    if (f)
-      return (*f)(args...);
-    printf("Not found\n");
 
-    if (filename.empty())
-      throw std::runtime_error(name + " unavailable, because library \"" +
-                               filename + "\" not found");
-    else
-      throw std::runtime_error(name + " not found in \"" + filename + '"');
+  Return operator()(Args... args) {
+    if (m_fptr) {
+      return (*m_fptr)(args...);
+    }
+
+    if (m_filename.empty()) {
+      throw std::runtime_error(m_name + " unavailable, because library " +
+                               m_filename + " was not found");
+    } else {
+      throw std::runtime_error(m_name + " not found in " + m_filename);
+    }
   }
 
 private:
-  const std::string name;
-  std::string filename;
-  Return (*f)(Args...){};
+  const std::string m_name;
+  std::string m_filename;
+  Return (*m_fptr)(Args...){};
 };
-
-#define WITH_NAME(x)                                                           \
-  x { #x }

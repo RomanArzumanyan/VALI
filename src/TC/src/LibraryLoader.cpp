@@ -14,10 +14,12 @@
 
 #include "LibraryLoader.hpp"
 
-LibraryLoader::LibraryLoader(const char* filename) : filename(filename) {
-  hModule = tc_dlopen(filename);
+LibraryLoader::LibraryLoader(const char* filename) : m_filename(filename) {
+  m_hModule = tc_dlopen(filename);
 }
+
 LibraryLoader::~LibraryLoader() {
-  if (hModule)
-    tc_dlclose(hModule);
+  if (m_hModule) {
+    tc_dlclose(m_hModule);
+  }
 }
