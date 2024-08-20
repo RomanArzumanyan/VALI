@@ -84,7 +84,7 @@ set_target_properties(_python_vali PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 set_target_properties(_python_vali PROPERTIES INSTALL_RPATH "$ORIGIN")
 
 # Only copy ffmpeg libs for local builds. PyPi builds rely on wheel repair.
-if (NOT $ENV{PYPI_BUILD})
+if (NOT DEFINED $ENV{PYPI_BUILD})
 	if (WIN32)
 		install(FILES ${FFMPEG_DLLS} DESTINATION python_vali)
 	else ()
