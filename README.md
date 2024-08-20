@@ -1,7 +1,7 @@
 # VALI
 
-VALI is a video analytics and processing project for python. VALI is a spin off from NVIDIA's VPF.
-It’s set of C++ libraries and Python bindings which provides full HW acceleration for video processing tasks such as decoding, encoding, transcoding and GPU-accelerated color space and pixel format conversions.
+VALI is a video analytics and processing project for python.
+It’s set of C++ libraries and Python bindings which provide full HW acceleration for video processing tasks such as decoding, encoding, transcoding and GPU-accelerated color space and pixel format conversions.
 
 VALI also supports DLPack and can share memory with all the modules which supports DLPack (e. g. share decoded surfaces with torch).
 
@@ -29,7 +29,7 @@ Wheels contain FFMpeg libraries downloaded from https://github.com/BtbN/FFmpeg-B
 
 This software uses code of <a href=http://ffmpeg.org>FFmpeg</a> licensed under the <a href=http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html>LGPLv2.1</a> and its source can be downloaded <a href=https://github.com/BtbN/FFmpeg-Builds>here</a>
 
-## Install from PyPi
+## Install from PyPi (Linux only for now)
 ```bash
 python3 -m pip install python_vali
 ```
@@ -121,4 +121,3 @@ You can then open `_build/html/index.html` with your browser.
 Please use project's Discussions page for that.
 
 [![OnPullRequest](https://github.com/RomanArzumanyan/VALI/actions/workflows/onPullRequest.yml/badge.svg)](https://github.com/RomanArzumanyan/VALI/actions/workflows/onPullRequest.yml)
-z
