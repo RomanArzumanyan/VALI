@@ -83,13 +83,22 @@ include(GNUInstallDirs)
 set_target_properties(_python_vali PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 set_target_properties(_python_vali PROPERTIES INSTALL_RPATH "$ORIGIN")
 
+if ("$ENV{PYPI_BUILD}" STREQUAL "")
+	set(PYPI_BUILD "0" CACHE INTERNAL "Copy FFMpeg libraries to wheel directory")
+else()
+	set(PYPI_BUILD "1" CACHE INTERNAL "Rely on wheel repair")
+endif()
+
 # Only copy ffmpeg libs for local builds. PyPi builds rely on wheel repair.
-if (NOT DEFINED $ENV{PYPI_BUILD})
+if ("${PYPI_BUILD}" STREQUAL "0")
+	message(STATUS "Copy FFMpeg libs")
 	if (WIN32)
 		install(FILES ${FFMPEG_DLLS} DESTINATION python_vali)
 	else ()
 		install(FILES ${FFMPEG_LIBS_ALL} DESTINATION python_vali)
 	endif (WIN32)
+else()
+	message(STATUS "Skip FFMpeg libs copy")
 endif (${COPY_FFMPEG_LIBS})
 
 install(TARGETS _python_vali RUNTIME DESTINATION python_vali LIBRARY DESTINATION python_vali)
