@@ -13,33 +13,40 @@
  */
 
 #include "LibNpp.hpp"
+#include "CudaUtils.hpp"
+#include <sstream>
+#include <string>
 
-const char* const LibNpp::filenames[] = {
-#if defined(_WIN32)
-#if defined(_WIN64)
-    "nppig64_11.dll", "nppicc64_11.dll", "nppial64_11.dll", "nppidei64_11.dll"
+const std::string getDynLibName(const char* nppLibName) {
+  std::stringstream ss;
+  auto const cuda_version = VPF::CudaResMgr::Instance().GetVersion() / 1000;
+
+#ifdef _WIN64
+  ss << nppLibName << "64_" << cuda_version << ".dll";
 #else
-    "", "", "", ""
+  ss << "lib" << nppLibName << ".so";
 #endif
-#else
-    "libnppig.so", "libnppicc.so", "libnppidei.so", "libnppial.so"
-#endif
-};
+  return ss.str();
+}
 
 std::shared_ptr<LibraryLoader> LibNpp::LoadNppIg() {
-  static LibraryLoader lib(filenames[0]);
+  auto const filename = getDynLibName("nppig");
+  static LibraryLoader lib(filename.c_str());
   return std::shared_ptr<LibraryLoader>(std::shared_ptr<LibraryLoader>{}, &lib);
 }
 std::shared_ptr<LibraryLoader> LibNpp::LoadNppIcc() {
-  static LibraryLoader lib(filenames[1]);
+  auto const filename = getDynLibName("nppicc");
+  static LibraryLoader lib(filename.c_str());
   return std::shared_ptr<LibraryLoader>(std::shared_ptr<LibraryLoader>{}, &lib);
 }
 std::shared_ptr<LibraryLoader> LibNpp::LoadNppIdei() {
-  static LibraryLoader lib(filenames[2]);
+  auto const filename = getDynLibName("nppidei");
+  static LibraryLoader lib(filename.c_str());
   return std::shared_ptr<LibraryLoader>(std::shared_ptr<LibraryLoader>{}, &lib);
 }
 std::shared_ptr<LibraryLoader> LibNpp::LoadNppIal() {
-  static LibraryLoader lib(filenames[3]);
+  auto const filename = getDynLibName("nppial");
+  static LibraryLoader lib(filename.c_str());
   return std::shared_ptr<LibraryLoader>(std::shared_ptr<LibraryLoader>{}, &lib);
 }
 

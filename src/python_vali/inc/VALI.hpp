@@ -51,30 +51,6 @@ struct MotionVector {
   int motion_scale;
 };
 
-class CudaResMgr {
-private:
-  CudaResMgr();
-
-public:
-  CudaResMgr(const CudaResMgr& other) = delete;
-  CudaResMgr(const CudaResMgr&& other) = delete;
-  CudaResMgr& operator=(CudaResMgr& other) = delete;
-  CudaResMgr& operator=(CudaResMgr&& other) = delete;
-
-  CUcontext GetCtx(size_t idx);
-  CUstream GetStream(size_t idx);
-  ~CudaResMgr();
-  static CudaResMgr& Instance();
-  static size_t GetNumGpus();
-
-  std::vector<std::pair<CUdevice, CUcontext>> g_Contexts;
-  std::vector<CUstream> g_Streams;
-
-  static std::mutex gInsMutex;
-  static std::mutex gCtxMutex;
-  static std::mutex gStrMutex;
-};
-
 class PyFrameUploader {
   std::unique_ptr<CudaUploadFrame> m_uploader = nullptr;
 

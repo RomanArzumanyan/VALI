@@ -75,4 +75,5 @@ public:
       cuStreamGetCtx;
   static LoadableFunction<LoadCuda, CUresult, CUevent, CUstream> cuEventRecord;
   static LoadableFunction<LoadCuda, CUresult, CUevent> cuEventSynchronize;
+  static LoadableFunction<LoadCuda, CUresult, int*> cuDriverGetVersion;
 };

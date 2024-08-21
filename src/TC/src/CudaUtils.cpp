@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 #include "CudaUtils.hpp"
+#include <iostream>
 #include <sstream>
 
 namespace VPF {
@@ -25,7 +26,8 @@ CudaCtxPush::CudaCtxPush(CUcontext ctx) {
 }
 
 CudaCtxPush::CudaCtxPush(CUstream str) {
-  ThrowOnCudaError(LibCuda::cuCtxPushCurrent(GetContextByStream(str)), __LINE__);
+  ThrowOnCudaError(LibCuda::cuCtxPushCurrent(GetContextByStream(str)),
+                   __LINE__);
 }
 
 CudaCtxPush::~CudaCtxPush() { LibCuda::cuCtxPopCurrent(nullptr); }
@@ -109,8 +111,8 @@ int GetDeviceIdByStream(CUstream str) {
 
 CUcontext GetContextByDptr(CUdeviceptr dptr) {
   CUcontext cuda_ctx = NULL;
-  ThrowOnCudaError(LibCuda::cuPointerGetAttribute((void*)&cuda_ctx,
-                                         CU_POINTER_ATTRIBUTE_CONTEXT, dptr),
+  ThrowOnCudaError(LibCuda::cuPointerGetAttribute(
+                       (void*)&cuda_ctx, CU_POINTER_ATTRIBUTE_CONTEXT, dptr),
                    __LINE__);
   return cuda_ctx;
 }
@@ -119,10 +121,10 @@ CUdeviceptr GetDevicePointer(CUdeviceptr dptr) {
   CudaCtxPush ctxPush(GetContextByDptr(dptr));
   CUdeviceptr gpu_ptr = 0U;
 
-  ThrowOnCudaError(LibCuda::cuPointerGetAttribute((void*)&gpu_ptr,
-                                         CU_POINTER_ATTRIBUTE_DEVICE_POINTER,
-                                         dptr),
-                   __LINE__);
+  ThrowOnCudaError(
+      LibCuda::cuPointerGetAttribute((void*)&gpu_ptr,
+                                     CU_POINTER_ATTRIBUTE_DEVICE_POINTER, dptr),
+      __LINE__);
   return gpu_ptr;
 }
 
@@ -141,4 +143,114 @@ void CudaStreamSync(void* args) {
   CudaCtxPush lock(GetContextByStream(stream));
   ThrowOnCudaError(LibCuda::cuStreamSynchronize(stream), __LINE__);
 };
+
+CudaResMgr::CudaResMgr() {
+  std::lock_guard<std::mutex> lock_ctx(CudaResMgr::gInsMutex);
+
+  ThrowOnCudaError(LibCuda::cuInit(0), __LINE__);
+
+  int nGpu;
+  ThrowOnCudaError(LibCuda::cuDeviceGetCount(&nGpu), __LINE__);
+
+  for (int i = 0; i < nGpu; i++) {
+    CUdevice cuDevice = 0;
+    CUcontext cuContext = nullptr;
+    g_Contexts.push_back(std::make_pair(cuDevice, cuContext));
+
+    CUstream cuStream = nullptr;
+    g_Streams.push_back(cuStream);
+  }
+  return;
+}
+
+CUcontext CudaResMgr::GetCtx(size_t idx) {
+  std::lock_guard<std::mutex> lock_ctx(CudaResMgr::gCtxMutex);
+
+  if (idx >= GetNumGpus()) {
+    return nullptr;
+  }
+
+  auto& ctx = g_Contexts[idx];
+  if (!ctx.second) {
+    CUdevice cuDevice = 0;
+    ThrowOnCudaError(LibCuda::cuDeviceGet(&cuDevice, idx), __LINE__);
+    ThrowOnCudaError(LibCuda::cuDevicePrimaryCtxRetain(&ctx.second, cuDevice),
+                     __LINE__);
+  }
+
+  return g_Contexts[idx].second;
+}
+
+CUstream CudaResMgr::GetStream(size_t idx) {
+  std::lock_guard<std::mutex> lock_ctx(CudaResMgr::gStrMutex);
+
+  if (idx >= GetNumGpus()) {
+    return nullptr;
+  }
+
+  auto& str = g_Streams[idx];
+  if (!str) {
+    auto ctx = GetCtx(idx);
+    CudaCtxPush push(ctx);
+    ThrowOnCudaError(LibCuda::cuStreamCreate(&str, CU_STREAM_NON_BLOCKING),
+                     __LINE__);
+  }
+
+  return g_Streams[idx];
+}
+
+CudaResMgr::~CudaResMgr() {
+  std::lock_guard<std::mutex> ins_lock(CudaResMgr::gInsMutex);
+  std::lock_guard<std::mutex> ctx_lock(CudaResMgr::gCtxMutex);
+  std::lock_guard<std::mutex> str_lock(CudaResMgr::gStrMutex);
+
+  try {
+    {
+      for (auto& cuStream : g_Streams) {
+        if (cuStream) {
+          LibCuda::cuStreamDestroy(
+              cuStream); // Avoiding CUDA_ERROR_DEINITIALIZED while
+                         // destructing.
+        }
+      }
+      g_Streams.clear();
+    }
+
+    {
+      for (int i = 0; i < g_Contexts.size(); i++) {
+        if (g_Contexts[i].second) {
+          LibCuda::cuDevicePrimaryCtxRelease(
+              g_Contexts[i].first); // Avoiding CUDA_ERROR_DEINITIALIZED while
+                                    // destructing.
+        }
+      }
+      g_Contexts.clear();
+    }
+  } catch (std::runtime_error& e) {
+    std::cerr << e.what() << std::endl;
+  }
+
+#ifdef TRACK_TOKEN_ALLOCATIONS
+  std::cout << "Checking token allocation counters: ";
+  auto res = CheckAllocationCounters();
+  std::cout << (res ? "No leaks dectected" : "Leaks detected") << std::endl;
+#endif
+}
+
+CudaResMgr& CudaResMgr::Instance() {
+  static CudaResMgr instance;
+  return instance;
+}
+
+int CudaResMgr::GetVersion() const {
+  int version;
+  ThrowOnCudaError(LibCuda::cuDriverGetVersion(&version), __LINE__);
+  return version;
+}
+
+size_t CudaResMgr::GetNumGpus() { return Instance().g_Contexts.size(); }
+
+std::mutex CudaResMgr::gInsMutex;
+std::mutex CudaResMgr::gCtxMutex;
+std::mutex CudaResMgr::gStrMutex;
 } // namespace VPF

@@ -59,3 +59,4 @@ DEFINE(LibCuda, cuLaunchHostFunc);
 DEFINE(LibCuda, cuStreamGetCtx);
 DEFINE(LibCuda, cuEventRecord);
 DEFINE(LibCuda, cuEventSynchronize);
+DEFINE(LibCuda, cuDriverGetVersion);
