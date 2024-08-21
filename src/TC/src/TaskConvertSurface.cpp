@@ -124,17 +124,17 @@ struct nv12_bgr final : public NppConvertSurface_Impl {
     switch (color_space) {
     case BT_709:
       if (JPEG == color_range) {
-        err = nppiNV12ToBGR_709HDTV_8u_P2C3R_Ctx(
+        err = LibNpp::nppiNV12ToBGR_709HDTV_8u_P2C3R_Ctx(
             pSrc, pInput->Pitch(), pDst, pOutput->Pitch(), oSizeRoi, nppCtx);
       } else {
-        err = nppiNV12ToBGR_709CSC_8u_P2C3R_Ctx(
+        err = LibNpp::nppiNV12ToBGR_709CSC_8u_P2C3R_Ctx(
             pSrc, pInput->Pitch(), pDst, pOutput->Pitch(), oSizeRoi, nppCtx);
       }
       break;
     case BT_601:
       if (JPEG == color_range) {
-        err = nppiNV12ToBGR_8u_P2C3R_Ctx(pSrc, pInput->Pitch(), pDst,
-                                         pOutput->Pitch(), oSizeRoi, nppCtx);
+        err = LibNpp::nppiNV12ToBGR_8u_P2C3R_Ctx(
+            pSrc, pInput->Pitch(), pDst, pOutput->Pitch(), oSizeRoi, nppCtx);
       } else {
         return s_unsupp_cc_ctx;
         break;
@@ -180,17 +180,17 @@ struct nv12_rgb final : public NppConvertSurface_Impl {
     switch (color_space) {
     case BT_709:
       if (JPEG == color_range) {
-        err = nppiNV12ToRGB_709HDTV_8u_P2C3R_Ctx(
+        err = LibNpp::nppiNV12ToRGB_709HDTV_8u_P2C3R_Ctx(
             pSrc, pInput->Pitch(), pDst, pOutput->Pitch(), oSizeRoi, nppCtx);
       } else {
-        err = nppiNV12ToRGB_709CSC_8u_P2C3R_Ctx(
+        err = LibNpp::nppiNV12ToRGB_709CSC_8u_P2C3R_Ctx(
             pSrc, pInput->Pitch(), pDst, pOutput->Pitch(), oSizeRoi, nppCtx);
       }
       break;
     case BT_601:
       if (JPEG == color_range) {
-        err = nppiNV12ToRGB_8u_P2C3R_Ctx(pSrc, pInput->Pitch(), pDst,
-                                         pOutput->Pitch(), oSizeRoi, nppCtx);
+        err = LibNpp::nppiNV12ToRGB_8u_P2C3R_Ctx(
+            pSrc, pInput->Pitch(), pDst, pOutput->Pitch(), oSizeRoi, nppCtx);
       } else {
         return s_unsupp_cc_ctx;
       }
@@ -238,13 +238,13 @@ struct nv12_yuv420 final : public NppConvertSurface_Impl {
     auto const color_range = pCtx ? pCtx->color_range : JPEG;
     switch (color_range) {
     case JPEG:
-      err = nppiNV12ToYUV420_8u_P2P3R_Ctx(pSrc, pInput->Pitch(0U), pDst,
-                                          dstStep, roi, nppCtx);
+      err = LibNpp::nppiNV12ToYUV420_8u_P2P3R_Ctx(pSrc, pInput->Pitch(0U), pDst,
+                                                  dstStep, roi, nppCtx);
       break;
     case MPEG:
-      err = nppiYCbCr420_8u_P2P3R_Ctx(pSrc[0], pInput->Pitch(0U), pSrc[1],
-                                      pInput->Pitch(1U), pDst, dstStep, roi,
-                                      nppCtx);
+      err = LibNpp::nppiYCbCr420_8u_P2P3R_Ctx(pSrc[0], pInput->Pitch(0U),
+                                              pSrc[1], pInput->Pitch(1U), pDst,
+                                              dstStep, roi, nppCtx);
       break;
     default:
       return s_unsupp_cc_ctx;
@@ -284,8 +284,8 @@ struct nv12_y final : public NppConvertSurface_Impl {
       m.WidthInBytes = pInput->WidthInBytes();
 
       CudaCtxPush ctxPush(cu_str);
-      ThrowOnCudaError(cuMemcpy2DAsync(&m, cu_str), __LINE__);
-      ThrowOnCudaError(cuStreamSynchronize(cu_str), __LINE__);
+      ThrowOnCudaError(LibCuda::cuMemcpy2DAsync(&m, cu_str), __LINE__);
+      ThrowOnCudaError(LibCuda::cuStreamSynchronize(cu_str), __LINE__);
     } catch (...) {
       return s_fail;
     }
@@ -310,7 +310,7 @@ struct rbg8_y final : public NppConvertSurface_Impl {
 
     NppiSize roi = {(int)pOutput->Width(), (int)pOutput->Height()};
 
-    auto ret = nppiRGBToGray_8u_C3C1R_Ctx(
+    auto ret = LibNpp::nppiRGBToGray_8u_C3C1R_Ctx(
         (const Npp8u*)pInput->PixelPtr(), pInput->Pitch(),
         (Npp8u*)pOutput->PixelPtr(), pOutput->Pitch(), roi, nppCtx);
 
@@ -355,11 +355,11 @@ struct yuv420_rgb final : public NppConvertSurface_Impl {
       return s_unsupp_cc_ctx;
     case BT_601:
       if (JPEG == color_range) {
-        err = nppiYUV420ToRGB_8u_P3C3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
-                                           nppCtx);
+        err = LibNpp::nppiYUV420ToRGB_8u_P3C3R_Ctx(pSrc, srcStep, pDst, dstStep,
+                                                   roi, nppCtx);
       } else {
-        err = nppiYCbCr420ToRGB_8u_P3C3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
-                                             nppCtx);
+        err = LibNpp::nppiYCbCr420ToRGB_8u_P3C3R_Ctx(pSrc, srcStep, pDst,
+                                                     dstStep, roi, nppCtx);
       }
       break;
     default:
@@ -407,11 +407,11 @@ struct yuv420_bgr final : public NppConvertSurface_Impl {
       return s_unsupp_cc_ctx;
     case BT_601:
       if (JPEG == color_range) {
-        err = nppiYUV420ToBGR_8u_P3C3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
-                                           nppCtx);
+        err = LibNpp::nppiYUV420ToBGR_8u_P3C3R_Ctx(pSrc, srcStep, pDst, dstStep,
+                                                   roi, nppCtx);
       } else {
-        err = nppiYCbCr420ToBGR_8u_P3C3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
-                                             nppCtx);
+        err = LibNpp::nppiYCbCr420ToBGR_8u_P3C3R_Ctx(pSrc, srcStep, pDst,
+                                                     dstStep, roi, nppCtx);
       }
       break;
     default:
@@ -459,12 +459,12 @@ struct yuv444_bgr final : public NppConvertSurface_Impl {
 
     switch (color_range) {
     case MPEG:
-      err = nppiYCbCrToBGR_8u_P3C3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
-                                        nppCtx);
+      err = LibNpp::nppiYCbCrToBGR_8u_P3C3R_Ctx(pSrc, srcStep, pDst, dstStep,
+                                                roi, nppCtx);
       break;
     case JPEG:
-      err =
-          nppiYUVToBGR_8u_P3C3R_Ctx(pSrc, srcStep, pDst, dstStep, roi, nppCtx);
+      err = LibNpp::nppiYUVToBGR_8u_P3C3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
+                                              nppCtx);
       break;
     default:
       err = NPP_NO_OPERATION_WARNING;
@@ -512,8 +512,8 @@ struct yuv444_rgb final : public NppConvertSurface_Impl {
 
     switch (color_range) {
     case JPEG:
-      err =
-          nppiYUVToRGB_8u_P3C3R_Ctx(pSrc, srcStep, pDst, dstStep, roi, nppCtx);
+      err = LibNpp::nppiYUVToRGB_8u_P3C3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
+                                              nppCtx);
       break;
     default:
       err = NPP_NO_OPERATION_WARNING;
@@ -563,7 +563,8 @@ struct yuv444_rgb_planar final : public NppConvertSurface_Impl {
 
     switch (color_range) {
     case JPEG:
-      err = nppiYUVToRGB_8u_P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi, nppCtx);
+      err = LibNpp::nppiYUVToRGB_8u_P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
+                                            nppCtx);
       break;
     default:
       err = NPP_NO_OPERATION_WARNING;
@@ -611,12 +612,12 @@ struct bgr_yuv444 final : public NppConvertSurface_Impl {
 
     switch (color_range) {
     case MPEG:
-      err = nppiBGRToYCbCr_8u_C3P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
-                                        nppCtx);
+      err = LibNpp::nppiBGRToYCbCr_8u_C3P3R_Ctx(pSrc, srcStep, pDst, dstStep,
+                                                roi, nppCtx);
       break;
     case JPEG:
-      err =
-          nppiBGRToYUV_8u_C3P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi, nppCtx);
+      err = LibNpp::nppiBGRToYUV_8u_C3P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
+                                              nppCtx);
       break;
     default:
       err = NPP_NO_OPERATION_WARNING;
@@ -664,12 +665,12 @@ struct rgb_yuv444 final : public NppConvertSurface_Impl {
     auto err = NPP_NO_ERROR;
     switch (color_range) {
     case JPEG:
-      err =
-          nppiRGBToYUV_8u_C3P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi, nppCtx);
+      err = LibNpp::nppiRGBToYUV_8u_C3P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
+                                              nppCtx);
       break;
     case MPEG:
-      err = nppiRGBToYCbCr_8u_C3R_Ctx(pSrc, srcStep, pDst[0], dstStep, roi,
-                                      nppCtx);
+      err = LibNpp::nppiRGBToYCbCr_8u_C3R_Ctx(pSrc, srcStep, pDst[0], dstStep,
+                                              roi, nppCtx);
       break;
     default:
       err = NPP_NO_OPERATION_WARNING;
@@ -719,11 +720,12 @@ struct rgb_planar_yuv444 final : public NppConvertSurface_Impl {
     auto err = NPP_NO_ERROR;
     switch (color_range) {
     case JPEG:
-      err = nppiRGBToYUV_8u_P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi, nppCtx);
+      err = LibNpp::nppiRGBToYUV_8u_P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
+                                            nppCtx);
       break;
     case MPEG:
-      err =
-          nppiRGBToYCbCr_8u_P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi, nppCtx);
+      err = LibNpp::nppiRGBToYCbCr_8u_P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
+                                              nppCtx);
       break;
     default:
       err = NPP_NO_OPERATION_WARNING;
@@ -758,7 +760,8 @@ struct y_yuv444 final : public NppConvertSurface_Impl {
       Npp8u* pDst = (Npp8u*)pOutput->PixelPtr(i);
       int nDstStep = pOutput->Pitch(i);
       NppiSize roi = {(int)pOutput->Width(i), (int)pOutput->Height(i)};
-      auto err = nppiSet_8u_C1R_Ctx(nValue, pDst, nDstStep, roi, nppCtx);
+      auto err =
+          LibNpp::nppiSet_8u_C1R_Ctx(nValue, pDst, nDstStep, roi, nppCtx);
       if (NPP_NO_ERROR != err) {
         return s_fail;
       }
@@ -770,7 +773,8 @@ struct y_yuv444 final : public NppConvertSurface_Impl {
     Npp8u* pDst = (Npp8u*)pOutput->PixelPtr(0U);
     int nDstStep = pOutput->Pitch(0U);
     NppiSize roi = {(int)pInput->Width(), (int)pInput->Height()};
-    auto err = nppiCopy_8u_C1R_Ctx(pSrc, nSrcStep, pDst, nDstStep, roi, nppCtx);
+    auto err = LibNpp::nppiCopy_8u_C1R_Ctx(pSrc, nSrcStep, pDst, nDstStep, roi,
+                                           nppCtx);
     if (NPP_NO_ERROR != err) {
       return s_fail;
     }
@@ -813,13 +817,13 @@ struct rgb_yuv420 final : public NppConvertSurface_Impl {
     auto err = NPP_NO_ERROR;
     switch (color_range) {
     case JPEG:
-      err = nppiRGBToYUV420_8u_C3P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
-                                         nppCtx);
+      err = LibNpp::nppiRGBToYUV420_8u_C3P3R_Ctx(pSrc, srcStep, pDst, dstStep,
+                                                 roi, nppCtx);
       break;
 
     case MPEG:
-      err = nppiRGBToYCbCr420_8u_C3P3R_Ctx(pSrc, srcStep, pDst, dstStep, roi,
-                                           nppCtx);
+      err = LibNpp::nppiRGBToYCbCr420_8u_C3P3R_Ctx(pSrc, srcStep, pDst, dstStep,
+                                                   roi, nppCtx);
       break;
 
     default:
@@ -862,8 +866,8 @@ struct yuv420_nv12 final : public NppConvertSurface_Impl {
     NppiSize roi = {(int)pInput->Width(), (int)pInput->Height()};
 
     CudaCtxPush ctxPush(cu_str);
-    auto err = nppiYCbCr420_8u_P3P2R_Ctx(pSrc, srcStep, pDst[0], dstStep[0],
-                                         pDst[1], dstStep[1], roi, nppCtx);
+    auto err = LibNpp::nppiYCbCr420_8u_P3P2R_Ctx(
+        pSrc, srcStep, pDst[0], dstStep[0], pDst[1], dstStep[1], roi, nppCtx);
     if (NPP_NO_ERROR != err) {
       return s_fail;
     }
@@ -899,8 +903,8 @@ struct rgb8_deinterleave final : public NppConvertSurface_Impl {
     oSizeRoi.width = pOutput->Width();
 
     CudaCtxPush ctxPush(cu_str);
-    auto err =
-        nppiCopy_8u_C3P3R_Ctx(pSrc, nSrcStep, aDst, nDstStep, oSizeRoi, nppCtx);
+    auto err = LibNpp::nppiCopy_8u_C3P3R_Ctx(pSrc, nSrcStep, aDst, nDstStep,
+                                             oSizeRoi, nppCtx);
     if (NPP_NO_ERROR != err) {
       return s_fail;
     }
@@ -936,8 +940,8 @@ struct rgb8_interleave final : public NppConvertSurface_Impl {
     oSizeRoi.width = pOutput->Width();
 
     CudaCtxPush ctxPush(cu_str);
-    auto err =
-        nppiCopy_8u_P3C3R_Ctx(pSrc, nSrcStep, pDst, nDstStep, oSizeRoi, nppCtx);
+    auto err = LibNpp::nppiCopy_8u_P3C3R_Ctx(pSrc, nSrcStep, pDst, nDstStep,
+                                             oSizeRoi, nppCtx);
     if (NPP_NO_ERROR != err) {
       return s_fail;
     }
@@ -970,8 +974,8 @@ struct rgb_bgr final : public NppConvertSurface_Impl {
     // rgb to brg
     const int aDstOrder[3] = {2, 1, 0};
     CudaCtxPush ctxPush(cu_str);
-    auto err = nppiSwapChannels_8u_C3R_Ctx(pSrc, nSrcStep, pDst, nDstStep,
-                                           oSizeRoi, aDstOrder, nppCtx);
+    auto err = LibNpp::nppiSwapChannels_8u_C3R_Ctx(
+        pSrc, nSrcStep, pDst, nDstStep, oSizeRoi, aDstOrder, nppCtx);
     if (NPP_NO_ERROR != err) {
       return s_fail;
     }
@@ -1004,8 +1008,8 @@ struct bgr_rgb final : public NppConvertSurface_Impl {
     // brg to rgb
     const int aDstOrder[3] = {2, 1, 0};
     CudaCtxPush ctxPush(cu_str);
-    auto err = nppiSwapChannels_8u_C3R_Ctx(pSrc, nSrcStep, pDst, nDstStep,
-                                           oSizeRoi, aDstOrder, nppCtx);
+    auto err = LibNpp::nppiSwapChannels_8u_C3R_Ctx(
+        pSrc, nSrcStep, pDst, nDstStep, oSizeRoi, aDstOrder, nppCtx);
     if (NPP_NO_ERROR != err) {
       return s_fail;
     }
@@ -1042,8 +1046,8 @@ struct rbg8_rgb32f final : public NppConvertSurface_Impl {
 
     CudaCtxPush ctxPush(cu_str);
 
-    auto err = nppiScale_8u32f_C3R_Ctx(pSrc, nSrcStep, pDst, nDstStep, oSizeRoi,
-                                       nMin, nMax, nppCtx);
+    auto err = LibNpp::nppiScale_8u32f_C3R_Ctx(pSrc, nSrcStep, pDst, nDstStep,
+                                               oSizeRoi, nMin, nMax, nppCtx);
     if (NPP_NO_ERROR != err) {
       return s_fail;
     }
@@ -1080,8 +1084,8 @@ struct rgb32f_deinterleave final : public NppConvertSurface_Impl {
     oSizeRoi.width = pOutput->Width();
 
     CudaCtxPush ctxPush(cu_str);
-    auto err = nppiCopy_32f_C3P3R_Ctx(pSrc, nSrcStep, aDst, nDstStep, oSizeRoi,
-                                      nppCtx);
+    auto err = LibNpp::nppiCopy_32f_C3P3R_Ctx(pSrc, nSrcStep, aDst, nDstStep,
+                                              oSizeRoi, nppCtx);
     if (NPP_NO_ERROR != err) {
       return s_fail;
     }
@@ -1130,7 +1134,7 @@ struct p16_nv12 final : public NppConvertSurface_Impl {
       oSizeRoi.height = pScratch->Height();
       oSizeRoi.width = pScratch->Width();
       ThrowOnNppError(
-          nppiDivC_16u_C1RSfs_Ctx(
+          LibNpp::nppiDivC_16u_C1RSfs_Ctx(
               (Npp16u*)src_plane.GpuMem(), src_plane.Pitch(),
               1 << (src_plane.ElemSize() - dst_plane.ElemSize()) * 8,
               (Npp16u*)pScratch->GpuMem(), pScratch->Pitch(), oSizeRoi, 0,
@@ -1140,7 +1144,7 @@ struct p16_nv12 final : public NppConvertSurface_Impl {
       // Bit depth conversion from 16-bit scratch to output;
       oSizeRoi.height = dst_plane.Height();
       oSizeRoi.width = dst_plane.Width();
-      ThrowOnNppError(nppiConvert_16u8u_C1R_Ctx(
+      ThrowOnNppError(LibNpp::nppiConvert_16u8u_C1R_Ctx(
                           (Npp16u*)pScratch->GpuMem(), pScratch->Pitch(),
                           (Npp8u*)dst_plane.GpuMem(), dst_plane.Pitch(),
                           oSizeRoi, nppCtx),
@@ -1158,7 +1162,7 @@ struct p16_nv12 final : public NppConvertSurface_Impl {
 } // namespace VPF
 
 auto const cuda_stream_sync = [](void* stream) {
-  cuStreamSynchronize((CUstream)stream);
+  LibCuda::cuStreamSynchronize((CUstream)stream);
 };
 
 ConvertSurface::ConvertSurface(Pixel_Format src, Pixel_Format dst, CUstream str)

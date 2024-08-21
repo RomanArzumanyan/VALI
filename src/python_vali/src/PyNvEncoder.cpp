@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "PyNvCodec.hpp"
+#include "VALI.hpp"
 
 using namespace std;
 using namespace VPF;
@@ -419,23 +419,23 @@ void Init_PyNvEncoder(py::module& m) {
         :param verbose: output verbose information to log
         :return:
     )pbdoc")
-      .def("Width", &PyNvEncoder::Width,
+      .def_property_readonly("Width", &PyNvEncoder::Width,
            R"pbdoc(
         Return encoded video stream width in pixels.
     )pbdoc")
-      .def("Height", &PyNvEncoder::Height,
+      .def_property_readonly("Height", &PyNvEncoder::Height,
            R"pbdoc(
         Return encoded video stream height in pixels.
     )pbdoc")
-      .def("Format", &PyNvEncoder::GetPixelFormat,
+      .def_property_readonly("Format", &PyNvEncoder::GetPixelFormat,
            R"pbdoc(
         Return encoded video stream pixel format.
     )pbdoc")
-      .def("GetFrameSizeInBytes", &PyNvEncoder::GetFrameSizeInBytes,
+      .def_property_readonly("FrameSizeInBytes", &PyNvEncoder::GetFrameSizeInBytes,
            R"pbdoc(
         This function is used to get the current frame size based on pixel format.
     )pbdoc")
-      .def("Capabilities", &PyNvEncoder::Capabilities,
+      .def_property_readonly("Capabilities", &PyNvEncoder::Capabilities,
            py::return_value_policy::move,
            R"pbdoc(
         Return dictionary with Nvenc capabilities.

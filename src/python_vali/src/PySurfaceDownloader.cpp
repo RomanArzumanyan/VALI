@@ -15,7 +15,7 @@
  */
 
 #include "CudaUtils.hpp"
-#include "PyNvCodec.hpp"
+#include "VALI.hpp"
 #include "memory"
 
 using namespace VPF;

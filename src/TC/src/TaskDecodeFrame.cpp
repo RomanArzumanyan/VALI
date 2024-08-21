@@ -520,7 +520,7 @@ struct FfmpegDecodeFrame_Impl {
       m.WidthInBytes = dst.Width(i) * dst.ElemSize();
       m.Height = dst.Height(i);
 
-      ThrowOnCudaError(cuMemcpy2DAsync(&m, av_cuda_ctx->stream), __LINE__);
+      ThrowOnCudaError(LibCuda::cuMemcpy2DAsync(&m, av_cuda_ctx->stream), __LINE__);
     }
     CudaStrSync sync(av_cuda_ctx->stream);
   }

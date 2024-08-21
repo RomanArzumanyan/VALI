@@ -24,7 +24,7 @@ if os.name == "nt":
     # Add CUDA_PATH env variable
     cuda_path = os.environ["CUDA_PATH"]
     if cuda_path:
-        os.add_dll_directory(cuda_path)
+        os.add_dll_directory(os.path.join(cuda_path, "bin"))
     else:
         print("CUDA_PATH environment variable is not set.", file=sys.stderr)
         print("Can't set CUDA DLLs search path.", file=sys.stderr)
@@ -41,7 +41,7 @@ if os.name == "nt":
         print("PATH environment variable is not set.", file=sys.stderr)
         exit(1)
 
-import PyNvCodec as nvc
+import python_vali as vali
 import numpy as np
 import unittest
 import test_common as tc
@@ -60,8 +60,8 @@ class TestEncoderBasic(unittest.TestCase):
         res = str(gtInfo.width) + "x" + str(gtInfo.height)
         encFrame = np.ndarray(shape=(0), dtype=np.uint8)
 
-        pyDec = nvc.PyDecoder(gtInfo.uri, {}, gpu_id)
-        nvEnc = nvc.PyNvEncoder(
+        pyDec = vali.PyDecoder(gtInfo.uri, {}, gpu_id)
+        nvEnc = vali.PyNvEncoder(
             {
                 "preset": "P4",
                 "tuning_info": "high_quality",
@@ -76,8 +76,8 @@ class TestEncoderBasic(unittest.TestCase):
         frames_sent = 0
         frames_recv = 0
 
-        surf = nvc.Surface.Make(
-            pyDec.Format(), pyDec.Width(), pyDec.Height(), gpu_id=0)
+        surf = vali.Surface.Make(
+            pyDec.Format, pyDec.Width, pyDec.Height, gpu_id=0)
         while True:
             success, _ = pyDec.DecodeSingleSurface(surf)
             if not success:

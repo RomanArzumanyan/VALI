@@ -19,9 +19,11 @@ if __name__ == "__main__":
     import skbuild
 
     skbuild.setup(
-        name="PyNvCodec",
-        version="3.2.13",
+        name="python_vali",
+        version="4.0.0-6",
         description="Video Processing Library with full NVENC/NVDEC hardware acceleration",
+        long_description=open('README.md').read(),
+        long_description_content_type='text/markdown',
         author="Roman Arzumanyan",
         license="Apache 2.0",
         install_requires=["numpy"],
@@ -61,8 +63,8 @@ if __name__ == "__main__":
         dependency_links=[
             "https://pypi.ngc.nvidia.com"
         ],
-        packages=["PyNvCodec"],
-        package_data={"PyNvCodec": ["__init__.pyi"]},
+        packages=["python_vali"],
+        package_data={"python_vali": ["__init__.pyi"]},
         package_dir={"": "src"},
         cmake_install_dir="src",
         # cmake_args=["-DTRACK_TOKEN_ALLOCATIONS=ON"],

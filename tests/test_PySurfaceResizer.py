@@ -24,7 +24,7 @@ if os.name == "nt":
     # Add CUDA_PATH env variable
     cuda_path = os.environ["CUDA_PATH"]
     if cuda_path:
-        os.add_dll_directory(cuda_path)
+        os.add_dll_directory(os.path.join(cuda_path, "bin"))
     else:
         print("CUDA_PATH environment variable is not set.", file=sys.stderr)
         print("Can't set CUDA DLLs search path.", file=sys.stderr)
@@ -41,7 +41,7 @@ if os.name == "nt":
         print("PATH environment variable is not set.", file=sys.stderr)
         exit(1)
 
-import PyNvCodec as nvc
+import python_vali as vali
 import numpy as np
 import unittest
 import json
@@ -51,10 +51,10 @@ import test_common as tc
 # If two images have PSNR higher than 42 (dB) we consider them the same.
 psnr_threshold = 42.0
 
+
 class TestSurfaceResizer(unittest.TestCase):
     def __init__(self, methodName):
         super().__init__(methodName=methodName)
- 
 
     def test_resize_nv12(self):
         with open("gt_files.json") as f:
@@ -62,30 +62,30 @@ class TestSurfaceResizer(unittest.TestCase):
             nv12Info = tc.GroundTruth(**gt_values["basic_nv12"])
             nv12SmallInfo = tc.GroundTruth(**gt_values["small_nv12"])
 
-        nvUpl = nvc.PyFrameUploader(gpu_id=0)
-        nvRes = nvc.PySurfaceResizer(nvc.PixelFormat.NV12, gpu_id=0)
-        nvDwn = nvc.PySurfaceDownloader(gpu_id=0)
+        nvUpl = vali.PyFrameUploader(gpu_id=0)
+        nvRes = vali.PySurfaceResizer(vali.PixelFormat.NV12, gpu_id=0)
+        nvDwn = vali.PySurfaceDownloader(gpu_id=0)
 
         nv12_fin = open(nv12Info.uri, "rb")
         small_nv12_fin = open(nv12SmallInfo.uri, "rb")
 
         for i in range(0, nv12Info.num_frames):
             # Make input and output Surfaces
-            surf_src = nvc.Surface.Make(
-                nvc.PixelFormat.NV12, 
+            surf_src = vali.Surface.Make(
+                vali.PixelFormat.NV12,
                 nv12Info.width,
-                nv12Info.height, 
+                nv12Info.height,
                 gpu_id=0)
-            
-            surf_dst = nvc.Surface.Make(
-                nvc.PixelFormat.NV12, 
+
+            surf_dst = vali.Surface.Make(
+                vali.PixelFormat.NV12,
                 nv12SmallInfo.width,
-                nv12SmallInfo.height, 
+                nv12SmallInfo.height,
                 gpu_id=0)
 
             # Read input and GT frames from file
-            frame_nv12 = np.fromfile(nv12_fin, np.uint8, surf_src.HostSize())
-            frame_gt = np.fromfile(small_nv12_fin, np.uint8, surf_dst.HostSize())
+            frame_nv12 = np.fromfile(nv12_fin, np.uint8, surf_src.HostSize)
+            frame_gt = np.fromfile(small_nv12_fin, np.uint8, surf_dst.HostSize)
 
             # Upload src to GPU
             if not nvUpl.Run(frame_nv12, surf_src):
@@ -106,24 +106,24 @@ class TestSurfaceResizer(unittest.TestCase):
             # Dump both frames to disk in case of failure
             if score < psnr_threshold:
                 tc.dumpFrameToDisk(
-                    frame_nv12, 
-                    "res", 
+                    frame_nv12,
+                    "res",
                     nv12SmallInfo.width,
-                    nv12SmallInfo.height, 
+                    nv12SmallInfo.height,
                     "nv12_dist")
-                
+
                 tc.dumpFrameToDisk(
                     frame_gt,
                     "res",
                     nv12SmallInfo.width,
                     nv12SmallInfo.height,
                     "nv12_gt")
-                
+
                 self.fail(
                     "PSNR score is below threshold: " + str(score))
 
         nv12_fin.close()
-        small_nv12_fin.close()        
+        small_nv12_fin.close()
 
 
 if __name__ == "__main__":

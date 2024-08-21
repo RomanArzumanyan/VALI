@@ -20,10 +20,9 @@
 #include "NvCodecCLIOptions.h"
 #include "TC_CORE.hpp"
 #include "Tasks.hpp"
+#include "CudaUtils.hpp"
 
 #include <chrono>
-#include <cuda.h>
-#include <cuda_runtime.h>
 #include <iostream>
 #include <mutex>
 #include <pybind11/cast.h>
@@ -50,30 +49,6 @@ struct MotionVector {
   int dst_x, dst_y;
   int motion_x, motion_y;
   int motion_scale;
-};
-
-class CudaResMgr {
-private:
-  CudaResMgr();
-
-public:
-  CudaResMgr(const CudaResMgr& other) = delete;
-  CudaResMgr(const CudaResMgr&& other) = delete;
-  CudaResMgr& operator=(CudaResMgr& other) = delete;
-  CudaResMgr& operator=(CudaResMgr&& other) = delete;
-
-  CUcontext GetCtx(size_t idx);
-  CUstream GetStream(size_t idx);
-  ~CudaResMgr();
-  static CudaResMgr& Instance();
-  static size_t GetNumGpus();
-
-  std::vector<std::pair<CUdevice, CUcontext>> g_Contexts;
-  std::vector<CUstream> g_Streams;
-
-  static std::mutex gInsMutex;
-  static std::mutex gCtxMutex;
-  static std::mutex gStrMutex;
 };
 
 class PyFrameUploader {

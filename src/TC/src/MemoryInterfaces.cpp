@@ -16,7 +16,6 @@
 #include "Surfaces.hpp"
 #include <algorithm>
 #include <cstring>
-#include <cuda_runtime.h>
 #include <iostream>
 #include <new>
 #include <sstream>
@@ -259,7 +258,7 @@ CudaBuffer* CudaBuffer::Clone() {
   auto pCopy = CudaBuffer::Make(elem_size, num_elems, ctx);
 
   if (CUDA_SUCCESS !=
-      cuMemcpyDtoD(pCopy->GpuMem(), GpuMem(), GetRawMemSize())) {
+      LibCuda::cuMemcpyDtoD(pCopy->GpuMem(), GpuMem(), GetRawMemSize())) {
     delete pCopy;
     return nullptr;
   }
@@ -290,18 +289,16 @@ CudaBuffer::CudaBuffer(const void* ptr, size_t elemSize, size_t numElems,
   }
 
   CudaCtxPush lock(ctx);
-  auto res = cuMemcpyHtoDAsync(gpuMem, ptr, GetRawMemSize(), str);
-  ThrowOnCudaError(res, __LINE__);
+  ThrowOnCudaError(
+      LibCuda::cuMemcpyHtoDAsync(gpuMem, ptr, GetRawMemSize(), str), __LINE__);
 
-  res = cuStreamSynchronize(str);
-  ThrowOnCudaError(res, __LINE__);
+  ThrowOnCudaError(LibCuda::cuStreamSynchronize(str), __LINE__);
 }
 
 bool CudaBuffer::Allocate() {
   if (GetRawMemSize()) {
     CudaCtxPush lock(ctx);
-    auto res = cuMemAlloc(&gpuMem, GetRawMemSize());
-    ThrowOnCudaError(res, __LINE__);
+    ThrowOnCudaError(LibCuda::cuMemAlloc(&gpuMem, GetRawMemSize()), __LINE__);
 
     if (0U != gpuMem) {
 #ifdef TRACK_TOKEN_ALLOCATIONS
@@ -314,7 +311,7 @@ bool CudaBuffer::Allocate() {
 }
 
 void CudaBuffer::Deallocate() {
-  ThrowOnCudaError(cuMemFree(gpuMem), __LINE__);
+  ThrowOnCudaError(LibCuda::cuMemFree(gpuMem), __LINE__);
   gpuMem = 0U;
 
 #ifdef TRACK_TOKEN_ALLOCATIONS
@@ -427,9 +424,10 @@ Surface* Surface::Clone() {
     m.Height = src.Height();
     m.WidthInBytes = src.Width() * src.ElemSize();
 
-    ThrowOnCudaError(cuMemcpy2D(&m), __LINE__);
+    ThrowOnCudaError(LibCuda::cuMemcpy2DAsync(&m, 0), __LINE__);
   }
 
+  CudaStrSync sync(0);
   return newSurf;
 }
 

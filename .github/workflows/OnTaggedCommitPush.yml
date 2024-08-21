@@ -1,0 +1,134 @@
+name: Publish to PyPI and TestPyPI
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    name: Build distribution
+    runs-on: [ubuntu-latest]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.x"
+    - name: Install pypa/build
+      run: |
+        python3 -m pip install cibuildwheel --user
+    - name: Build a binary wheel
+      run: |        
+        git submodule update --init --recursive
+        python3 -m cibuildwheel --output-dir dist
+      env:
+        CIBW_BUILD_VERBOSITY: 1
+        CIBW_PROJECT_REQUIRES_PYTHON: ">=3.10"
+        CIBW_SKIP: "*musl* pp*"
+        CIBW_ARCHS_LINUX: "x86_64"        
+        CIBW_BEFORE_ALL: >
+          dnf install --assumeyes wget &&
+          wget $(echo "https://pkgs.dyn.su/el9/base/x86_64/raven-release.el9.noarch.rpm" | sed "s/el9/el$(rpm -q --queryformat '%{RELEASE}' rpm | grep -oP 'el\K[0-9]+')/g") &&
+          rpm -ivh raven-release*.rpm &&
+          yum config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo &&
+          yum clean all && 
+          yum -y install cuda-toolkit python310 python310-devel &&
+          wget -c https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-lgpl-shared.tar.xz &&
+          tar -xf ffmpeg-master-latest-linux64-lgpl-shared.tar.xz &&
+          ls -la
+        CIBW_ENVIRONMENT: >
+          BUILD_WITH_CUDA=1 
+          PATH=$PATH:/usr/local/cuda/bin 
+          CUDACXX=/usr/local/cuda/bin/nvcc 
+          LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64:$(pwd)/ffmpeg-master-latest-linux64-lgpl-shared/lib
+          PYPI_BUILD=1
+    - name: Store the distribution packages
+      uses: actions/upload-artifact@v3
+      with:
+        name: python-package-distributions
+        path: dist/
+
+  publish-to-testpypi:
+    name: Publish to TestPyPI
+
+    needs:
+    - build
+    runs-on: [ubuntu-latest]
+
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/python_vali
+
+    permissions:
+      id-token: write  # IMPORTANT: mandatory for trusted publishing
+
+    steps:
+    - name: Download all the dists
+      uses: actions/download-artifact@v3
+      with:
+        name: python-package-distributions
+        path: dist/
+    - name: Publish distribution to TestPyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        repository-url: https://test.pypi.org/legacy/
+
+  publish-to-pypi:
+    name: Publish to PyPI
+    needs:
+    - build
+    - publish-to-testpypi
+    runs-on: [ubuntu-latest]
+    environment:
+      name: pypi
+      url: https://pypi.org/p/python_vali
+    permissions:
+      id-token: write  # IMPORTANT: mandatory for trusted publishing
+
+    steps:
+    - name: Download all the dists
+      uses: actions/download-artifact@v3
+      with:
+        name: python-package-distributions
+        path: dist/
+    - name: Publish distribution to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+
+  github-release:
+    name: Sign the VALI with Sigstore and upload to GitHub Release
+    needs:
+    - publish-to-pypi
+    runs-on: [ubuntu-latest]
+
+    permissions:
+      contents: write  # IMPORTANT: mandatory for making GitHub Releases
+      id-token: write  # IMPORTANT: mandatory for sigstore
+
+    steps:
+    - name: Download all the dists
+      uses: actions/download-artifact@v3
+      with:
+        name: python-package-distributions
+        path: dist/
+    - name: Sign the dists with Sigstore
+      uses: sigstore/gh-action-sigstore-python@v2.1.1
+      with:
+        inputs: >-
+          ./dist/*.tar.gz
+          ./dist/*.whl
+    - name: Create GitHub Release
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: >-
+        gh release create
+        '${{ github.ref_name }}'
+        --repo '${{ github.repository }}'
+        --notes ""
+    - name: Upload artifact signatures to GitHub Release
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      # Upload to GitHub Release using the `gh` CLI.
+      # `dist/` contains the built packages, and the
+      # sigstore-produced signatures and certificates.
+      run: >-
+        gh release upload
+        '${{ github.ref_name }}' dist/**
+        --repo '${{ github.repository }}'

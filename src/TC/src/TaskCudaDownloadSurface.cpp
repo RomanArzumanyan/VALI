@@ -17,7 +17,7 @@
 #include "Tasks.hpp"
 
 auto const cuda_stream_sync = [](void* stream) {
-  cuStreamSynchronize((CUstream)stream);
+  LibCuda::cuStreamSynchronize((CUstream)stream);
 };
 
 CudaDownloadSurface::CudaDownloadSurface(CUstream stream)
@@ -67,7 +67,7 @@ TaskExecDetails CudaDownloadSurface::Run() {
       m.WidthInBytes = m.dstPitch;
       m.Height = plane.Height();
 
-      ThrowOnCudaError(cuMemcpy2DAsync(&m, m_stream), __LINE__);
+      ThrowOnCudaError(LibCuda::cuMemcpy2DAsync(&m, m_stream), __LINE__);
       p_dst_host += m.WidthInBytes * m.Height;
     }
   } catch (std::exception& e) {

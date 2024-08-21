@@ -16,6 +16,7 @@ endif(WIN32)
 
 find_package(CUDAToolkit 11.2 REQUIRED)
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/inc")
+include_directories(${CUDAToolkit_INCLUDE_DIRS})
 
 option(FETCHCONTENT_QUIET OFF)
 include(FetchContent)
@@ -38,6 +39,6 @@ endif()
 fetchcontent_makeavailable(ffmpeg)
 set(FFMPEG_ROOT "${FETCHCONTENT_BASE_DIR}/ffmpeg-src")
 
-add_subdirectory(PyNvCodec)
+add_subdirectory(python_vali)
 add_subdirectory(TC)
 

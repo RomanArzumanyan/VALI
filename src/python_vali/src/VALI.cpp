@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "PyNvCodec.hpp"
+#include "VALI.hpp"
 #include "dlpack.h"
 
 using namespace std;
@@ -26,108 +26,6 @@ namespace py = pybind11;
 constexpr auto TASK_EXEC_SUCCESS = TaskExecStatus::TASK_EXEC_SUCCESS;
 constexpr auto TASK_EXEC_FAIL = TaskExecStatus::TASK_EXEC_FAIL;
 
-CudaResMgr::CudaResMgr() {
-  lock_guard<mutex> lock_ctx(CudaResMgr::gInsMutex);
-
-  ThrowOnCudaError(cuInit(0), __LINE__);
-
-  int nGpu;
-  ThrowOnCudaError(cuDeviceGetCount(&nGpu), __LINE__);
-
-  for (int i = 0; i < nGpu; i++) {
-    CUdevice cuDevice = 0;
-    CUcontext cuContext = nullptr;
-    g_Contexts.push_back(make_pair(cuDevice, cuContext));
-
-    CUstream cuStream = nullptr;
-    g_Streams.push_back(cuStream);
-  }
-  return;
-}
-
-CUcontext CudaResMgr::GetCtx(size_t idx) {
-  lock_guard<mutex> lock_ctx(CudaResMgr::gCtxMutex);
-
-  if (idx >= GetNumGpus()) {
-    return nullptr;
-  }
-
-  auto& ctx = g_Contexts[idx];
-  if (!ctx.second) {
-    CUdevice cuDevice = 0;
-    ThrowOnCudaError(cuDeviceGet(&cuDevice, idx), __LINE__);
-    ThrowOnCudaError(cuDevicePrimaryCtxRetain(&ctx.second, cuDevice), __LINE__);
-  }
-
-  return g_Contexts[idx].second;
-}
-
-CUstream CudaResMgr::GetStream(size_t idx) {
-  lock_guard<mutex> lock_ctx(CudaResMgr::gStrMutex);
-
-  if (idx >= GetNumGpus()) {
-    return nullptr;
-  }
-
-  auto& str = g_Streams[idx];
-  if (!str) {
-    auto ctx = GetCtx(idx);
-    CudaCtxPush push(ctx);
-    ThrowOnCudaError(cuStreamCreate(&str, CU_STREAM_NON_BLOCKING), __LINE__);
-  }
-
-  return g_Streams[idx];
-}
-
-CudaResMgr::~CudaResMgr() {
-  lock_guard<mutex> ins_lock(CudaResMgr::gInsMutex);
-  lock_guard<mutex> ctx_lock(CudaResMgr::gCtxMutex);
-  lock_guard<mutex> str_lock(CudaResMgr::gStrMutex);
-
-  stringstream ss;
-  try {
-    {
-      for (auto& cuStream : g_Streams) {
-        if (cuStream) {
-          cuStreamDestroy(cuStream); // Avoiding CUDA_ERROR_DEINITIALIZED while
-                                     // destructing.
-        }
-      }
-      g_Streams.clear();
-    }
-
-    {
-      for (int i = 0; i < g_Contexts.size(); i++) {
-        if (g_Contexts[i].second) {
-          cuDevicePrimaryCtxRelease(
-              g_Contexts[i].first); // Avoiding CUDA_ERROR_DEINITIALIZED while
-                                    // destructing.
-        }
-      }
-      g_Contexts.clear();
-    }
-  } catch (runtime_error& e) {
-    cerr << e.what() << endl;
-  }
-
-#ifdef TRACK_TOKEN_ALLOCATIONS
-  cout << "Checking token allocation counters: ";
-  auto res = CheckAllocationCounters();
-  cout << (res ? "No leaks dectected" : "Leaks detected") << endl;
-#endif
-}
-
-CudaResMgr& CudaResMgr::Instance() {
-  static CudaResMgr instance;
-  return instance;
-}
-
-size_t CudaResMgr::GetNumGpus() { return Instance().g_Contexts.size(); }
-
-mutex CudaResMgr::gInsMutex;
-mutex CudaResMgr::gCtxMutex;
-mutex CudaResMgr::gStrMutex;
-
 auto CopyBuffer_Ctx_Str = [](shared_ptr<CudaBuffer> dst,
                              shared_ptr<CudaBuffer> src, CUstream str) {
   if (dst->GetRawMemSize() != src->GetRawMemSize()) {
@@ -135,10 +33,10 @@ auto CopyBuffer_Ctx_Str = [](shared_ptr<CudaBuffer> dst,
   }
 
   CudaCtxPush ctxPush(str);
-  ThrowOnCudaError(cuMemcpyDtoDAsync(dst->GpuMem(), src->GpuMem(),
-                                     src->GetRawMemSize(), str),
+  ThrowOnCudaError(LibCuda::cuMemcpyDtoDAsync(dst->GpuMem(), src->GpuMem(),
+                                              src->GetRawMemSize(), str),
                    __LINE__);
-  ThrowOnCudaError(cuStreamSynchronize(str), __LINE__);
+  ThrowOnCudaError(LibCuda::cuStreamSynchronize(str), __LINE__);
 };
 
 auto CopyBuffer = [](shared_ptr<CudaBuffer> dst, shared_ptr<CudaBuffer> src,
@@ -251,7 +149,7 @@ void Init_PySurface(py::module&);
 
 void Init_PyFrameConverter(py::module&);
 
-PYBIND11_MODULE(_PyNvCodec, m) {
+PYBIND11_MODULE(_python_vali, m) {
 
   py::class_<MotionVector, std::shared_ptr<MotionVector>>(
       m, "MotionVector", "This class stores iformation about motion vector.")
@@ -483,25 +381,25 @@ PYBIND11_MODULE(_PyNvCodec, m) {
 
   py::class_<CudaBuffer, shared_ptr<CudaBuffer>>(
       m, "CudaBuffer", "General purpose data storage class in GPU memory.")
-      .def("GetRawMemSize", &CudaBuffer::GetRawMemSize,
+      .def_property_readonly("RawMemSize", &CudaBuffer::GetRawMemSize,
            R"pbdoc(
         Get size of buffer in bytes.
 
         :rtype: Int
     )pbdoc")
-      .def("GetNumElems", &CudaBuffer::GetNumElems,
+      .def_property_readonly("NumElems", &CudaBuffer::GetNumElems,
            R"pbdoc(
         Get number of elements in buffer.
 
         :rtype: Int
     )pbdoc")
-      .def("GetElemSize", &CudaBuffer::GetElemSize,
+      .def_property_readonly("ElemSize", &CudaBuffer::GetElemSize,
            R"pbdoc(
         Get size of single element in bytes
 
         :rtype: Int
     )pbdoc")
-      .def("GpuMem", &CudaBuffer::GpuMem,
+      .def_property_readonly("GpuMem", &CudaBuffer::GpuMem,
            R"pbdoc(
         Get CUdeviceptr of memory allocation.
 
@@ -511,7 +409,7 @@ PYBIND11_MODULE(_PyNvCodec, m) {
            R"pbdoc(
         Deep copy = CUDA mem alloc + CUDA mem copy.
 
-        :rtype: PyNvCodec.CudaBuffer
+        :rtype: python_vali.CudaBuffer
     )pbdoc")
       .def(
           "CopyFrom",
@@ -552,7 +450,7 @@ PYBIND11_MODULE(_PyNvCodec, m) {
         :param elem_size: single buffer element size in bytes
         :param num_elems: number of elements in buffer
         :param gpu_id: GPU to use for memcopy
-        :rtype: PyNvCodec.CudaBuffer
+        :rtype: python_vali.CudaBuffer
     )pbdoc");
 
   m.def("GetNumGpus", &CudaResMgr::GetNumGpus, R"pbdoc(
@@ -589,9 +487,9 @@ PYBIND11_MODULE(_PyNvCodec, m) {
   av_log_set_level(AV_LOG_ERROR);
 
   m.doc() = R"pbdoc(
-        PyNvCodec
+        python_vali
         ----------
-        .. currentmodule:: PyNvCodec
+        .. currentmodule:: python_vali
         .. autosummary::
            :toctree: _generate
 

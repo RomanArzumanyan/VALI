@@ -1,9 +1,9 @@
 # VALI
 
-VALI is a video analytics and processing project for python. VALI is a spin off from NVIDIA's VPF.
-It’s set of C++ libraries and Python bindings which provides full HW acceleration for video processing tasks such as decoding, encoding, transcoding and GPU-accelerated color space and pixel format conversions.
+VALI is a video analytics and processing project for python.
+It’s set of C++ libraries and Python bindings which provide full HW acceleration for video processing tasks such as decoding, encoding, transcoding and GPU-accelerated color space and pixel format conversions.
 
-VALI also supports DLPack and can share memory with all the modules which supports DLPack (e. g. hare decoded surfaces with torch).
+VALI also supports DLPack and can share memory with all the modules which supports DLPack (e. g. share decoded surfaces with torch).
 
 ## Documentation
 https://romanarzumanyan.github.io/VALI
@@ -18,13 +18,23 @@ VALI works on Linux(tested on Ubuntu 22.04) and Windows
   - VALI will download FFMPEG build from https://github.com/BtbN/FFmpeg-Builds
   - Make sure you don't have system FFMPEG packages installed. Otherwise, CMake will use them instead. You may run ```apt remove libavfilter-dev libavformat-dev libavcodec-dev libswresample-dev libavutil-dev``` on Ubuntu to remove them. Alternatively, build in Docker.
 
-- Python 3 and above
+- Python 3.10 and above
 - Install a C++ toolchain either via Visual Studio or Tools for Visual Studio.
-  - Recommended version is Visual Studio 2017 and above
-(Windows only)
+  - Recommended version is Visual Studio 2017 and above (Windows only)
 
-## Samples and best practices
-VALI unit tests are written in a way to illustrate the API usage. One may follow them as samples.
+## Licensing
+VALI sources are available under Apache 2 license.
+
+Wheels contain FFMpeg libraries downloaded from https://github.com/BtbN/FFmpeg-Builds/releases that are licensed under LGPLv2.1.
+
+This software uses code of <a href=http://ffmpeg.org>FFmpeg</a> licensed under the <a href=http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html>LGPLv2.1</a> and its source can be downloaded <a href=https://github.com/BtbN/FFmpeg-Builds>here</a>
+
+## Install from PyPi (Linux only for now)
+```bash
+python3 -m pip install python_vali
+```
+
+All information below is relevant if you want to build VALI on your local machine.
 
 ### Linux
 Ubuntu 22.04 is recommended.
@@ -37,7 +47,7 @@ apt install -y \
           git
 ```
 
-##### Install CUDA Toolkit (if not already present)
+##### Install CUDA Toolkit
 ```bash
 wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.0-1_all.deb
 sudo dpkg -i cuda-keyring_1.0-1_all.deb
@@ -47,7 +57,7 @@ sudo apt-get install -y cuda
 export PATH=/usr/local/cuda/bin:$PATH
 ```
 
-##### Install VALI
+##### Install locally with pip
 ```bash
 # Update git submodules
 git submodule update --init --recursive
@@ -56,7 +66,7 @@ pip3 install .
 
 To check whether VALI is correctly installed run the following Python script
 ```python
-import PyNvCodec
+import python_vali as vali
 ```
 If using Docker via [Nvidia Container Runtime](https://developer.nvidia.com/nvidia-container-runtime),
 please make sure to enable the `video` driver capability: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/user-guide.html#driver-capabilities via
@@ -74,7 +84,9 @@ pip install .
 ```
 To check whether VALI is correctly installed run the following Python script
 ```python
-import PyNvCodec
+cuda_path = os.environ["CUDA_PATH"]
+os.add_dll_directory(os.path.join(cuda_path, "bin"))
+import python_vali as vali
 ```
 ## Docker
 

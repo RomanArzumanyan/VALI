@@ -16,7 +16,7 @@
 
 cmake_minimum_required(VERSION 3.21)
 
-project(PyNvCodec VERSION 1.0)
+project(python_vali VERSION 1.0)
 
 set(PYNVCODEC_VERSION_MAJOR 1)
 set(PYNVCODEC_VERSION_MINOR 0)
@@ -31,7 +31,7 @@ endif()
 
 configure_file("inc/Version.hpp.in" "pynvcode_version.h")
 
-find_package(Python3 3.6 REQUIRED COMPONENTS Interpreter Development)
+find_package(Python3 3.10 COMPONENTS Interpreter Development.Module REQUIRED)
 
 option(FETCHCONTENT_QUIET OFF)
 include(FetchContent)
@@ -45,10 +45,10 @@ fetchcontent_declare(
 )
 fetchcontent_makeavailable(pybind11)
 
-pybind11_add_module(_PyNvCodec MODULE 
+pybind11_add_module(_python_vali MODULE 
 	src/PyDecoder.cpp
 	src/PyFrameUploader.cpp
-	src/PyNvCodec.cpp
+	src/VALI.cpp
 	src/PyNvEncoder.cpp
 	src/PySurface.cpp
 	src/PySurfaceConverter.cpp
@@ -56,8 +56,8 @@ pybind11_add_module(_PyNvCodec MODULE
 	src/PySurfaceResizer.cpp
 	src/PyFrameConverter.cpp
 )
-set_property(TARGET _PyNvCodec PROPERTY CXX_STANDARD 17)
-target_include_directories(_PyNvCodec PRIVATE inc)
+set_property(TARGET _python_vali PROPERTY CXX_STANDARD 17)
+target_include_directories(_python_vali PRIVATE inc)
 
 if (NOT DEFINED FFMPEG_ROOT)
     message (FATAL "Define FFMPEG_ROOT")
@@ -65,34 +65,31 @@ endif()
 
 include("${PROJECT_ROOT_DIR}/common.cmake")
 find_FFMpeg(${FFMPEG_ROOT})
-# message(FATAL_ERROR "FFMPEG_LIBS_ALL: ${FFMPEG_LIBS_ALL}")
 
 target_link_libraries(
-	_PyNvCodec PUBLIC 
+	_python_vali PRIVATE 
 	TC_CORE 
 	TC
-	CUDA::cuda_driver
-	CUDA::cudart
-	CUDA::npps
-	CUDA::nppig
-	CUDA::nppial
-	CUDA::nppicc
-	CUDA::nppidei
 	${FFMPEG_LIBRARIES})
 
 include_directories(
 	${FFMPEG_INCLUDE_DIRS}
+	${CUDAToolkit_INCLUDE_DIRS}
 	"${PROJECT_ROOT_DIR}/extern/dlpack/include/dlpack"
 )
 
 include(GNUInstallDirs)
 
-set_target_properties(_PyNvCodec PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
-set_target_properties(_PyNvCodec PROPERTIES INSTALL_RPATH "$ORIGIN")
+set_target_properties(_python_vali PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
+set_target_properties(_python_vali PROPERTIES INSTALL_RPATH "$ORIGIN")
 
-if (WIN32)
-	install(FILES ${FFMPEG_DLLS} DESTINATION PyNvCodec)
-else ()	
-	install(FILES ${FFMPEG_LIBS_ALL} DESTINATION PyNvCodec)
-endif (WIN32)
-install(TARGETS _PyNvCodec RUNTIME DESTINATION PyNvCodec LIBRARY DESTINATION PyNvCodec)
+# Only copy ffmpeg libs for local builds. PyPi builds rely on wheel repair.
+if (NOT DEFINED $ENV{PYPI_BUILD})
+	if (WIN32)
+		install(FILES ${FFMPEG_DLLS} DESTINATION python_vali)
+	else ()
+		install(FILES ${FFMPEG_LIBS_ALL} DESTINATION python_vali)
+	endif (WIN32)
+endif (${COPY_FFMPEG_LIBS})
+
+install(TARGETS _python_vali RUNTIME DESTINATION python_vali LIBRARY DESTINATION python_vali)

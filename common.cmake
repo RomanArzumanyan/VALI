@@ -42,44 +42,55 @@ function(find_FFMpeg FFMPEG_ROOT)
     # Find libraries
     set(FFMPEG_LIB_DIR ${FFMPEG_ROOT}/lib)
 
-    find_library(AVFORMAT_LIBRARIES
+    find_library(AVFORMAT_LIB
         avformat 
         ${FFMPEG_LIB_DIR})
 
-    find_library(AVCODEC_LIBRARIES
+    find_library(AVCODEC_LIB
         avcodec
         ${FFMPEG_LIB_DIR})
 
-    find_library(AVUTIL_LIBRARIES
+    find_library(AVUTIL_LIB
         avutil
         ${FFMPEG_LIB_DIR})
 
-    find_library(SWRESAMPLE_LIBRARIES
+    find_library(SWRESAMPLE_LIB
         swresample
         ${FFMPEG_LIB_DIR})
 
-    find_library(SWSCALE_LIBRARIES
+    find_library(SWSCALE_LIB
         swscale
-        ${FFMPEG_LIB_DIR})        
+        ${FFMPEG_LIB_DIR})
 
     set(FFMPEG_LIBRARIES "")
     list (APPEND
         FFMPEG_LIBRARIES
-        ${AVFORMAT_LIBRARIES}
-        ${AVCODEC_LIBRARIES}
-        ${AVUTIL_LIBRARIES}
-        ${SWRESAMPLE_LIBRARIES}
-        ${SWSCALE_LIBRARIES})
+        ${AVFORMAT_LIB}
+        ${AVCODEC_LIB}
+        ${AVUTIL_LIB}
+        ${SWRESAMPLE_LIB}
+        ${SWSCALE_LIB})    
 
     if (WIN32)
         # Find FFMpeg DLLs
         set (FFMPEG_DLLS "")
         file(GLOB FFMPEG_DLLS "${FFMPEG_ROOT}/bin/*.dll")
     else()
-        # Collect list of all shared libs + symbolic links
-        # Without that, CMake will only collect symbolic links to FFMPEG shared libs
-        # and they won't be put into module installation directory.
-        file(GLOB FFMPEG_LIBS_ALL "${FFMPEG_ROOT}/lib/*.so*")
+        # Versioned shared libs + symbolic links
+        file(GLOB AVFORMAT_LIB "${AVFORMAT_LIB}.*")
+        file(GLOB AVCODEC_LIB "${AVCODEC_LIB}.*")
+        file(GLOB AVUTIL_LIB "${AVUTIL_LIB}.*")
+        file(GLOB SWRESAMPLE_LIB "${SWRESAMPLE_LIB}.*")
+        file(GLOB SWSCALE_LIB "${SWSCALE_LIB}.*")
+
+        set(FFMPEG_LIBS_ALL "")
+        list (APPEND
+            FFMPEG_LIBS_ALL
+            ${AVFORMAT_LIB}
+            ${AVCODEC_LIB}
+            ${AVUTIL_LIB}
+            ${SWRESAMPLE_LIB}
+            ${SWSCALE_LIB})
     endif (WIN32)
 
     # Promote to parent scope

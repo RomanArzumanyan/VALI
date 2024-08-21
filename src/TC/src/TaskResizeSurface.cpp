@@ -65,9 +65,9 @@ struct NppResizeSurfacePacked3C_Impl final : ResizeSurface_Impl {
     int eInterpolation = NPPI_INTER_LANCZOS;
 
     CudaCtxPush ctxPush(cu_str);
-    auto ret = nppiResize_8u_C3R_Ctx(pSrc, nSrcStep, oSrcSize, oSrcRectROI,
-                                     pDst, nDstStep, oDstSize, oDstRectROI,
-                                     eInterpolation, nppCtx);
+    auto ret = LibNpp::nppiResize_8u_C3R_Ctx(
+        pSrc, nSrcStep, oSrcSize, oSrcRectROI, pDst, nDstStep, oDstSize,
+        oDstRectROI, eInterpolation, nppCtx);
     if (NPP_NO_ERROR != ret) {
       return s_fail;
     }
@@ -114,9 +114,9 @@ struct NppResizeSurfacePlanar_Impl final : ResizeSurface_Impl {
       int eInterpolation = NPPI_INTER_LANCZOS;
 
       CudaCtxPush ctxPush(cu_str);
-      auto ret = nppiResize_8u_C1R_Ctx(pSrc, nSrcStep, oSrcSize, oSrcRectROI,
-                                       pDst, nDstStep, oDstSize, oDstRectROI,
-                                       eInterpolation, nppCtx);
+      auto ret = LibNpp::nppiResize_8u_C1R_Ctx(
+          pSrc, nSrcStep, oSrcSize, oSrcRectROI, pDst, nDstStep, oDstSize,
+          oDstRectROI, eInterpolation, nppCtx);
       if (NPP_NO_ERROR != ret) {
         return s_fail;
       }
@@ -227,9 +227,9 @@ struct NppResizeSurfacePacked32F3C_Impl final : ResizeSurface_Impl {
     int eInterpolation = NPPI_INTER_LANCZOS;
 
     CudaCtxPush ctxPush(cu_str);
-    auto ret = nppiResize_32f_C3R_Ctx(pSrc, nSrcStep, oSrcSize, oSrcRectROI,
-                                      pDst, nDstStep, oDstSize, oDstRectROI,
-                                      eInterpolation, nppCtx);
+    auto ret = LibNpp::nppiResize_32f_C3R_Ctx(
+        pSrc, nSrcStep, oSrcSize, oSrcRectROI, pDst, nDstStep, oDstSize,
+        oDstRectROI, eInterpolation, nppCtx);
     if (NPP_NO_ERROR != ret) {
       return s_fail;
     }
@@ -276,9 +276,9 @@ struct NppResizeSurface32FPlanar_Impl final : ResizeSurface_Impl {
       int eInterpolation = NPPI_INTER_LANCZOS;
 
       CudaCtxPush ctxPush(cu_str);
-      auto ret = nppiResize_32f_C1R_Ctx(pSrc, nSrcStep, oSrcSize, oSrcRectROI,
-                                        pDst, nDstStep, oDstSize, oDstRectROI,
-                                        eInterpolation, nppCtx);
+      auto ret = LibNpp::nppiResize_32f_C1R_Ctx(
+          pSrc, nSrcStep, oSrcSize, oSrcRectROI, pDst, nDstStep, oDstSize,
+          oDstRectROI, eInterpolation, nppCtx);
       if (NPP_NO_ERROR != ret) {
         return s_fail;
       }
@@ -290,7 +290,7 @@ struct NppResizeSurface32FPlanar_Impl final : ResizeSurface_Impl {
 } // namespace VPF
 
 auto const cuda_stream_sync = [](void* stream) {
-  cuStreamSynchronize((CUstream)stream);
+  LibCuda::cuStreamSynchronize((CUstream)stream);
 };
 
 ResizeSurface::ResizeSurface(Pixel_Format format, CUstream str)

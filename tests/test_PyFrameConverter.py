@@ -24,7 +24,7 @@ if os.name == "nt":
     # Add CUDA_PATH env variable
     cuda_path = os.environ["CUDA_PATH"]
     if cuda_path:
-        os.add_dll_directory(cuda_path)
+        os.add_dll_directory(os.path.join(cuda_path, "bin"))
     else:
         print("CUDA_PATH environment variable is not set.", file=sys.stderr)
         print("Can't set CUDA DLLs search path.", file=sys.stderr)
@@ -41,7 +41,7 @@ if os.name == "nt":
         print("PATH environment variable is not set.", file=sys.stderr)
         exit(1)
 
-import PyNvCodec as nvc
+import python_vali as vali
 import numpy as np
 import unittest
 import json
@@ -62,21 +62,21 @@ class TestFrameConverter(unittest.TestCase):
             yuvInfo = tc.GroundTruth(**gt_values["basic"])
             rgbInfo = tc.GroundTruth(**gt_values["basic_rgb"])
 
-        pyDec = nvc.PyDecoder(
+        pyDec = vali.PyDecoder(
             input=yuvInfo.uri,
             opts={},
             gpu_id=-1)
 
-        ffCvt = nvc.PyFrameConverter(
-            pyDec.Width(),
-            pyDec.Height(),
-            pyDec.Format(),
-            nvc.PixelFormat.RGB)
+        ffCvt = vali.PyFrameConverter(
+            pyDec.Width,
+            pyDec.Height,
+            pyDec.Format,
+            vali.PixelFormat.RGB)
 
         # Use color space and range of original file.
-        ccCtx = nvc.ColorspaceConversionContext(
-            nvc.ColorSpace.BT_709,
-            nvc.ColorRange.MPEG)
+        ccCtx = vali.ColorspaceConversionContext(
+            vali.ColorSpace.BT_709,
+            vali.ColorRange.MPEG)
 
         yuv_frame = np.ndarray(shape=(), dtype=np.uint8)
         rgb_frame = np.ndarray(shape=(), dtype=np.uint8)

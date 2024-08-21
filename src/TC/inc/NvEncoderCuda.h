@@ -14,7 +14,7 @@
 #pragma once
 
 #include "NvEncoder.h"
-#include <cuda.h>
+#include "LibCuda.hpp"
 #include <mutex>
 #include <stdint.h>
 #include <vector>
@@ -24,7 +24,7 @@
     CUresult err__ = call;                                                     \
     if (err__ != CUDA_SUCCESS) {                                               \
       const char* szErrName = NULL;                                            \
-      cuGetErrorName(err__, &szErrName);                                       \
+      LibCuda::cuGetErrorName(err__, &szErrName);                                       \
       std::ostringstream errorLog;                                             \
       errorLog << "CUDA driver API error " << szErrName;                       \
       throw NVENCException::makeNVENCException(                                \
