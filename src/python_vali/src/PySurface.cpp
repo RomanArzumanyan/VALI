@@ -162,7 +162,7 @@ void Init_PySurface(py::module& m) {
 
   py::class_<Surface, shared_ptr<Surface>>(
       m, "Surface", "Image stored in vRAM. Consists of 1+ SurfacePlane(s).")
-    .def(py::init([](Pixel_Format format, uint32_t width, uint32_t height, int gpuID) {
+      .def(py::init([](Pixel_Format format, uint32_t width, uint32_t height, int gpuID) {
             return std::shared_ptr<Surface>(
                 Surface::Make(format, width, height, CudaResMgr::Instance().GetCtx(gpuID)));
         }),
@@ -176,7 +176,7 @@ void Init_PySurface(py::module& m) {
         :param height: height in pixels
         :param gpu_id: GPU to use.
     )pbdoc")
-    .def(py::init([](Pixel_Format format, uint32_t width, uint32_t height, size_t ctx) {
+      .def(py::init([](Pixel_Format format, uint32_t width, uint32_t height, size_t ctx) {
             return std::shared_ptr<Surface>(
                 Surface::Make(format, width, height, (CUcontext)ctx));
         }),
@@ -190,7 +190,7 @@ void Init_PySurface(py::module& m) {
         :param height: height in pixels
         :param context: CUDA context to use
     )pbdoc")
-    .def(py::init([](const PyDecoder& decoder, optional<Pixel_Format> format, int gpuID) {
+      .def(py::init([](const PyDecoder& decoder, optional<Pixel_Format> format, int gpuID) {
             return std::shared_ptr<Surface>(
                 Surface::Make(format.has_value() ? format.value() : decoder.PixelFormat(), 
                               decoder.Width(), decoder.Height(),
@@ -208,7 +208,7 @@ void Init_PySurface(py::module& m) {
         :param format: (Optional) target pixel format. If not provided, uses decoder's format.
         :param gpu_id: GPU ID to use.
     )pbdoc")    
-    .def_property_readonly(
+      .def_property_readonly(
           "Width", [](Surface& self) { return self.Width(0); },
           R"pbdoc(
         Width in pixels of plane 0.
