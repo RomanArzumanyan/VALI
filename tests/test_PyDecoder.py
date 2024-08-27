@@ -363,8 +363,7 @@ class TestDecoder(unittest.TestCase):
         frame_gt = np.ndarray(dtype=np.uint8, shape=())
 
         # Seek to random frame within input video frames range.
-        # Don't seek to the very last frame, that will cause EOF.
-        start_frame = random.randint(0, gtInfo.num_frames - 2)
+        start_frame = random.randint(0, gtInfo.num_frames - 1)
         seek_ctx = vali.SeekContext(seek_frame=start_frame)
         success, _ = pyDec.DecodeSingleFrame(
             frame=frame, seek_ctx=seek_ctx)
@@ -423,8 +422,7 @@ class TestDecoder(unittest.TestCase):
         ]
 
         # Seek to the random frame, decode, save.
-        # Don't seek to the very last frame, that will cause EOF.
-        seek_frame = random.randint(0, gtInfo.num_frames - 2)
+        seek_frame = random.randint(0, gtInfo.num_frames - 1)
 
         success, details = pyDec.DecodeSingleSurface(
             surf=surf, seek_ctx=vali.SeekContext(seek_frame))
@@ -466,8 +464,7 @@ class TestDecoder(unittest.TestCase):
         frame_gt = np.ndarray(dtype=np.uint8, shape=(surf.HostSize))
 
         # Seek to random frame within input video frames range.
-        # Don't seek to the very last frame, that will cause EOF.
-        start_frame = random.randint(0, gtInfo.num_frames - 2)
+        start_frame = random.randint(0, gtInfo.num_frames - 1)
         seek_ctx = vali.SeekContext(seek_frame=start_frame)
         success, _ = pyDec.DecodeSingleSurface(
             surf=surf, seek_ctx=seek_ctx)

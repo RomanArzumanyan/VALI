@@ -820,9 +820,17 @@ struct FfmpegDecodeFrame_Impl {
      */
     auto timestamp = ctx.IsByNumber() ? TsFromFrameNumber(ctx.seek_frame)
                                       : TsFromTime(ctx.seek_tssec);
-    if (AV_NOPTS_VALUE != GetStreamStartTime()) {
-      timestamp += GetStreamStartTime();
+    auto start_time = GetStreamStartTime();
+    if (AV_NOPTS_VALUE != start_time) {
+      timestamp += start_time;
+    } else {
+      start_time = 0;
     }
+
+    auto const was_accelerated = IsAccelerated();
+    CloseCodec();
+    OpenCodec(was_accelerated);
+
     m_timeout_handler->Reset();
     auto ret = av_seek_frame(m_fmt_ctx.get(), GetVideoStrIdx(), timestamp,
                              AVSEEK_FLAG_BACKWARD);
@@ -832,16 +840,16 @@ struct FfmpegDecodeFrame_Impl {
                              AvErrorToString(ret));
     }
 
+    /* Discard existing frame timestamp and OEF flag. 
+     * Otherwise, seek will only go forward and will return EOF if seek is done
+     * when decoder has previously get all available packets.
+     */
+    m_frame->pts = AV_NOPTS_VALUE;
+    m_eof = false;
+
     /* Decode in loop until we reach desired frame.
      */
-    auto const was_accelerated = IsAccelerated();
-    CloseCodec();
-    OpenCodec(was_accelerated);
-
-    // Discard existing frame timestamp. Otherwise, seek will only go forward.
-    m_frame->pts = AV_NOPTS_VALUE;
-
-    while (m_frame->pts < timestamp) {
+    while (m_frame->pts + start_time < timestamp) {
       auto details = DecodeSingleFrame(dst);
       if (details.m_status != TaskExecStatus::TASK_EXEC_SUCCESS) {
         return details;
