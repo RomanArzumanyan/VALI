@@ -362,9 +362,9 @@ class TestDecoder(unittest.TestCase):
         frame = np.ndarray(dtype=np.uint8, shape=())
         frame_gt = np.ndarray(dtype=np.uint8, shape=())
 
-        # Seek to random frame within input video frames range
-        # start_frame = random.randint(0, gtInfo.num_frames - 1)
-        start_frame = random.randint(0, gtInfo.num_frames - 1)
+        # Seek to random frame within input video frames range.
+        # Don't seek to the very last frame, that will cause EOF.
+        start_frame = random.randint(0, gtInfo.num_frames - 2)
         seek_ctx = vali.SeekContext(seek_frame=start_frame)
         success, _ = pyDec.DecodeSingleFrame(
             frame=frame, seek_ctx=seek_ctx)
@@ -401,8 +401,7 @@ class TestDecoder(unittest.TestCase):
     @tc.repeat(3)
     def test_seek_backwards_gpu(self):
         """
-        This test seeks to the random frame in 2nd half of the video and saves 
-        decoded frame.
+        This test seeks to the random frame in video and saves it.
         
         Then it seeks in backward direction to the random frame and saves it
         as well.
@@ -423,28 +422,29 @@ class TestDecoder(unittest.TestCase):
             np.ndarray(dtype=np.uint8, shape=(surf.HostSize))
         ]
 
-        # Seek to the second half of the video
-        seek_frame = random.randint(
-            int(gtInfo.num_frames / 2),
-            gtInfo.num_frames - 1)
+        # Seek to the random frame, decode, save.
+        # Don't seek to the very last frame, that will cause EOF.
+        seek_frame = random.randint(0, gtInfo.num_frames - 2)
 
         success, details = pyDec.DecodeSingleSurface(
             surf=surf, seek_ctx=vali.SeekContext(seek_frame))
-        self.assertTrue(success, "Failed to decode frame: " + str(details))
+        self.assertTrue(success,
+                        "Failed to decode frame " + str(seek_frame) +
+                        ": " + str(details))
 
-        # Save 1st frame
         success, details = pyDwn.Run(src=surf, dst=frames[0])
         if not success:
             self.fail("Failed to download surface: " + str(details))
 
-        # Now seek back
+        # Now seek back and do the same
         seek_frame = random.randint(0, seek_frame - 1)
 
         success, details = pyDec.DecodeSingleSurface(
             surf=surf, seek_ctx=vali.SeekContext(seek_frame))
-        self.assertTrue(success, "Failed to decode frame: " + str(details))
+        self.assertTrue(success,
+                        "Failed to decode frame " + str(seek_frame) +
+                        ": " + str(details))
 
-        # Save 2nd frame
         success, details = pyDwn.Run(src=surf, dst=frames[1])
         if not success:
             self.fail("Failed to download surface: " + str(details))
@@ -465,8 +465,9 @@ class TestDecoder(unittest.TestCase):
         frame = np.ndarray(dtype=np.uint8, shape=(surf.HostSize))
         frame_gt = np.ndarray(dtype=np.uint8, shape=(surf.HostSize))
 
-        # Seek to random frame within input video frames range
-        start_frame = random.randint(0, gtInfo.num_frames - 1)
+        # Seek to random frame within input video frames range.
+        # Don't seek to the very last frame, that will cause EOF.
+        start_frame = random.randint(0, gtInfo.num_frames - 2)
         seek_ctx = vali.SeekContext(seek_frame=start_frame)
         success, _ = pyDec.DecodeSingleSurface(
             surf=surf, seek_ctx=seek_ctx)
