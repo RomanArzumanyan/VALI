@@ -450,7 +450,7 @@ class TestDecoder(unittest.TestCase):
             self.fail("Failed to download surface: " + str(details))
 
         # Check if frames are different (issue #89)
-        self.assertNotEqual(np.array_equal(frames[0], frames[1]))
+        self.assertFalse(np.array_equal(frames[0], frames[1]))
 
     @tc.repeat(3)
     def test_seek_gpu(self):
