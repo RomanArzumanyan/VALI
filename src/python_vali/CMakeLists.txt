@@ -99,6 +99,6 @@ if ("${PYPI_BUILD}" STREQUAL "0")
 	endif (WIN32)
 else()
 	message(STATUS "Skip FFMpeg libs copy")
-endif (${COPY_FFMPEG_LIBS})
+endif ()
 
 install(TARGETS _python_vali RUNTIME DESTINATION python_vali LIBRARY DESTINATION python_vali)

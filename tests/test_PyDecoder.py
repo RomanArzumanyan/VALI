@@ -399,6 +399,60 @@ class TestDecoder(unittest.TestCase):
                     "Seek frame isnt same as continuous decode frame")
 
     @tc.repeat(3)
+    def test_seek_backwards_gpu(self):
+        """
+        This test seeks to the random frame in 2nd half of the video and saves 
+        decoded frame.
+        
+        Then it seeks in backward direction to the random frame and saves it
+        as well.
+
+        Two frames are expected to be different.
+        """
+        with open("gt_files.json") as f:
+            gtInfo = tc.GroundTruth(**json.load(f)["basic"])
+
+        pyDec = vali.PyDecoder(gtInfo.uri, {}, gpu_id=0)
+        pyDwn = vali.PySurfaceDownloader(gpu_id=0)
+
+        surf = vali.Surface.Make(
+            pyDec.Format, pyDec.Width, pyDec.Height, gpu_id=0)
+
+        frames = [
+            np.ndarray(dtype=np.uint8, shape=(surf.HostSize)),
+            np.ndarray(dtype=np.uint8, shape=(surf.HostSize))
+        ]
+
+        # Seek to the second half of the video
+        seek_frame = random.randint(
+            int(gtInfo.num_frames / 2),
+            gtInfo.num_frames - 1)
+
+        success, details = pyDec.DecodeSingleSurface(
+            surf=surf, seek_ctx=vali.SeekContext(seek_frame))
+        self.assertTrue(success, "Failed to decode frame: " + str(details))
+
+        # Save 1st frame
+        success, details = pyDwn.Run(src=surf, dst=frames[0])
+        if not success:
+            self.fail("Failed to download surface: " + str(details))
+
+        # Now seek back
+        seek_frame = random.randint(0, seek_frame - 1)
+
+        success, details = pyDec.DecodeSingleSurface(
+            surf=surf, seek_ctx=vali.SeekContext(seek_frame))
+        self.assertTrue(success, "Failed to decode frame: " + str(details))
+
+        # Save 2nd frame
+        success, details = pyDwn.Run(src=surf, dst=frames[1])
+        if not success:
+            self.fail("Failed to download surface: " + str(details))
+
+        # Check if frames are different (issue #89)
+        self.assertNotEqual(np.array_equal(frames[0], frames[1]))
+
+    @tc.repeat(3)
     def test_seek_gpu(self):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])

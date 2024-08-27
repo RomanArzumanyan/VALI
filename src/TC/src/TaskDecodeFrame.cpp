@@ -838,6 +838,9 @@ struct FfmpegDecodeFrame_Impl {
     CloseCodec();
     OpenCodec(was_accelerated);
 
+    // Discard existing frame timestamp. Otherwise, seek will only go forward.
+    m_frame->pts = AV_NOPTS_VALUE;
+
     while (m_frame->pts < timestamp) {
       auto details = DecodeSingleFrame(dst);
       if (details.m_status != TaskExecStatus::TASK_EXEC_SUCCESS) {
