@@ -16,11 +16,11 @@
 
 #pragma once
 
+#include "CudaUtils.hpp"
 #include "MemoryInterfaces.hpp"
 #include "NvCodecCLIOptions.h"
 #include "TC_CORE.hpp"
 #include "Tasks.hpp"
-#include "CudaUtils.hpp"
 
 #include <chrono>
 #include <iostream>
@@ -284,4 +284,20 @@ public:
 
 private:
   bool EncodeSingleSurface(struct EncodeContext& ctx);
+};
+
+class PyNvJpegEncoder {
+public:
+  PyNvJpegEncoder(int gpu_id);
+
+  std::unique_ptr<NvJpegEncodeContext> Context(unsigned compression,
+                                               Pixel_Format format);
+  TaskExecInfo CompressImpl(NvJpegEncodeContext& encoder_context,
+                            std::list<std::shared_ptr<Surface>>& surfaces,
+                            std::list<py::array>& buffers);
+
+private:
+  std::shared_ptr<NvJpegEncodeFrame> upEncoder;
+  std::mutex m_mutex;
+  CUstream m_stream;
 };

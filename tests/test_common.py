@@ -31,6 +31,14 @@ class GroundTruth(BaseModel):
 
 
 def repeat(times):
+    """
+    Simple decorator which repeats function call multiple times.
+    Used in tests which rely on random data: seek to random frame etc.
+
+    Parameters
+    ----------
+    times:  How many times to repeat the call
+    """
     def repeatHelper(f):
         def callHelper(*args):
             for i in range(0, times):

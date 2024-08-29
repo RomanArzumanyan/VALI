@@ -13,16 +13,23 @@
  */
 
 #include "LibCuda.hpp"
+#include <sstream>
+#include <string>
 
-const char* const LibCuda::filename =
-#if defined(_WIN32) || defined(_WIN64)
-    "nvcuda.dll";
+static const std::string getDynLibName(const char* cudaLibName) {
+  std::stringstream ss;
+
+#ifdef _WIN64
+  ss << "nv" << cudaLibName << ".dll";
 #else
-    "libcuda.so.1";
+  ss << "lib" << cudaLibName << ".so";
 #endif
+  return ss.str();
+}
 
 std::shared_ptr<LibraryLoader> LibCuda::LoadCuda() {
-  static LibraryLoader lib(filename);
+  auto const filename = getDynLibName("cuda");
+  static LibraryLoader lib(filename.c_str());
   return std::shared_ptr<LibraryLoader>(std::shared_ptr<LibraryLoader>{}, &lib);
 }
 
