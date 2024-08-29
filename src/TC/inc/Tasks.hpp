@@ -1,5 +1,7 @@
 /*
  * Copyright 2019 NVIDIA Corporation
+ * Copyright 2024 Vision Labs LLC
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,6 +24,8 @@ extern "C" {
 #include <libavutil/frame.h>
 }
 
+#include "LibCuda.hpp"
+#include "LibNvJpeg.hpp"
 #include <optional>
 
 #ifdef USE_NVTX
@@ -237,5 +241,40 @@ private:
   static const uint32_t numOutputs = 0U;
 
   struct ResizeSurface_Impl* pImpl;
+};
+
+class NvJpegEncodeFrame;
+class NvJpegEncodeContext {
+public:
+  NvJpegEncodeContext(std::shared_ptr<NvJpegEncodeFrame> encoder,
+                      unsigned compression = 100U,
+                      Pixel_Format format = Pixel_Format::RGB);
+  ~NvJpegEncodeContext();
+
+  unsigned Compression() const;
+  nvjpegEncoderState_t State() const;
+  nvjpegEncoderParams_t Params() const;
+  Pixel_Format PixelFormat() const;
+  nvjpegChromaSubsampling_t Subsampling() const;
+  nvjpegInputFormat_t Format() const;
+
+private:
+  struct NvJpegEncodeContext_Impl* pImpl;
+};
+
+class TC_CORE_EXPORT NvJpegEncodeFrame final : public Task {
+public:
+  NvJpegEncodeFrame(CUstream stream);
+  ~NvJpegEncodeFrame() final;
+  TaskExecDetails Run() final;
+  void SetEncoderContext(NvJpegEncodeContext* context);
+  nvjpegHandle_t GetHandle();
+  CUstream GetStream() const;
+
+private:
+  static const uint32_t numInputs = 1U;
+  static const uint32_t numOutputs = 1U;
+
+  struct NvJpegEncodeFrame_Impl* pImpl;
 };
 } // namespace VPF

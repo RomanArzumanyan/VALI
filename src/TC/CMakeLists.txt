@@ -37,6 +37,7 @@ add_library(
     src/TaskResizeSurface.cpp
     src/TaskDecodeFrame.cpp
     src/TaskConvertFrame.cpp
+    src/TaskNvJpegEncode.cpp
     src/NppCommon.cpp
     src/NvCodecCliOptions.cpp
     src/Utils.cpp
@@ -45,6 +46,7 @@ add_library(
     src/Surfaces.cpp
     src/LibCuda.cpp
     src/LibNpp.cpp
+    src/LibNvJpeg.cpp
     src/LibraryLoader.cpp
 )
 
