@@ -26,8 +26,7 @@ PyNvJpegEncoder::PyNvJpegEncoder(int gpu_id)
 
 std::unique_ptr<NvJpegEncodeContext>
 PyNvJpegEncoder::Context(unsigned compression, Pixel_Format format) {
-  return std::make_unique<NvJpegEncodeContext>(upEncoder, compression,
-                                               format);
+  return std::make_unique<NvJpegEncodeContext>(upEncoder, compression, format);
 }
 
 TaskExecInfo
@@ -74,7 +73,9 @@ PyNvJpegEncoder::CompressImpl(NvJpegEncodeContext& encoder_context,
     buffers.clear();
   }
 
-  // Just sync CUDA stream in which jpeg encoding tasks were submitted.
+  /* No CUDA stream sync is done within encoder for better performance
+   * when compressing multiple Surfaces. Hence we need to do it here.
+   */
   CudaStrSync sync(m_stream);
 
   return info;

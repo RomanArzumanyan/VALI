@@ -179,6 +179,12 @@ nvjpegHandle_t NvJpegEncodeFrame::GetHandle() { return pImpl->m_jpegHandle; }
 
 CUstream NvJpegEncodeFrame::GetStream() const { return pImpl->m_stream; }
 
+/* No sync function is registered in constructor.
+ * It is done to avoid unnecessary CUDA stream sync when encoding multiple
+ * images.
+ *
+ * CUDA stream sync is done at higher level, inside PyNvJpegEncoder.
+ */
 NvJpegEncodeFrame::NvJpegEncodeFrame(CUstream stream)
     : Task("NvJpegEncodeFrame", NvJpegEncodeFrame::numInputs,
            NvJpegEncodeFrame::numOutputs, nullptr, static_cast<void*>(stream)) {
@@ -294,7 +300,6 @@ TaskExecDetails NvJpegEncodeFrame::Run() {
 
   return TaskExecDetails(TaskExecStatus::TASK_EXEC_SUCCESS,
                          TaskExecInfo::SUCCESS);
-  ;
 }
 
 } // namespace VPF
