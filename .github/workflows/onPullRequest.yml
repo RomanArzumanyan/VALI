@@ -79,7 +79,7 @@ jobs:
         retention-days: 1
     
     - name: 'Download all artifacts'
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4.1.7
 
   test_windows:
     runs-on: [self-hosted, Windows]
@@ -113,4 +113,4 @@ jobs:
         retention-days: 1
     
     - name: 'Download all artifacts'
-      uses: actions/download-artifact@v3   
+      uses: actions/download-artifact@v4.1.7   
