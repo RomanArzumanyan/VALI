@@ -17,7 +17,7 @@
 #include <sstream>
 #include <string>
 
-const std::string getDynLibName(const char* nppLibName) {
+static const std::string getDynLibName(const char* nppLibName) {
   std::stringstream ss;
   auto const cuda_version = VPF::CudaResMgr::Instance().GetVersion() / 1000;
 

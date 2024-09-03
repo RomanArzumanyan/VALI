@@ -55,6 +55,7 @@ pybind11_add_module(_python_vali MODULE
 	src/PySurfaceDownloader.cpp
 	src/PySurfaceResizer.cpp
 	src/PyFrameConverter.cpp
+	src/PyNvJpegEncoder.cpp
 )
 set_property(TARGET _python_vali PROPERTY CXX_STANDARD 17)
 target_include_directories(_python_vali PRIVATE inc)
@@ -99,6 +100,6 @@ if ("${PYPI_BUILD}" STREQUAL "0")
 	endif (WIN32)
 else()
 	message(STATUS "Skip FFMpeg libs copy")
-endif (${COPY_FFMPEG_LIBS})
+endif ()
 
 install(TARGETS _python_vali RUNTIME DESTINATION python_vali LIBRARY DESTINATION python_vali)

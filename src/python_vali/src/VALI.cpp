@@ -149,6 +149,8 @@ void Init_PySurface(py::module&);
 
 void Init_PyFrameConverter(py::module&);
 
+void Init_PyNvJpegEncoder(py::module& m);
+
 PYBIND11_MODULE(_python_vali, m) {
 
   py::class_<MotionVector, std::shared_ptr<MotionVector>>(
@@ -388,25 +390,25 @@ PYBIND11_MODULE(_python_vali, m) {
   py::class_<CudaBuffer, shared_ptr<CudaBuffer>>(
       m, "CudaBuffer", "General purpose data storage class in GPU memory.")
       .def_property_readonly("RawMemSize", &CudaBuffer::GetRawMemSize,
-           R"pbdoc(
+                             R"pbdoc(
         Get size of buffer in bytes.
 
         :rtype: Int
     )pbdoc")
       .def_property_readonly("NumElems", &CudaBuffer::GetNumElems,
-           R"pbdoc(
+                             R"pbdoc(
         Get number of elements in buffer.
 
         :rtype: Int
     )pbdoc")
       .def_property_readonly("ElemSize", &CudaBuffer::GetElemSize,
-           R"pbdoc(
+                             R"pbdoc(
         Get size of single element in bytes
 
         :rtype: Int
     )pbdoc")
       .def_property_readonly("GpuMem", &CudaBuffer::GpuMem,
-           R"pbdoc(
+                             R"pbdoc(
         Get CUdeviceptr of memory allocation.
 
         :rtype: Int
@@ -490,6 +492,8 @@ PYBIND11_MODULE(_python_vali, m) {
 
   Init_PyFrameConverter(m);
 
+  Init_PyNvJpegEncoder(m);
+
   av_log_set_level(AV_LOG_ERROR);
 
   m.doc() = R"pbdoc(
@@ -509,6 +513,7 @@ PYBIND11_MODULE(_python_vali, m) {
            PyDecoder
            PyFrameUploader
            PyBufferUploader
+           PyNvJpegEncoder
            SeekContext
            SurfacePlane
            Surface
