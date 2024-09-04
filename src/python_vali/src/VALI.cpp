@@ -378,6 +378,12 @@ PYBIND11_MODULE(_python_vali, m) {
       .def(py::init<>())
       .def(py::init<ColorSpace, ColorRange>(), py::arg("color_space"),
            py::arg("color_range"))
+      .def(py::init([](const PyDecoder& decoder) {
+              return make_shared<ColorspaceConversionContext>(
+                  decoder.Color_Space(), decoder.Color_Range());
+          }),
+        py::arg("decoder"),
+        "Initialize with a PyDecoder object.")  
       .def_readwrite("color_space", &ColorspaceConversionContext::color_space)
       .def_readwrite("color_range", &ColorspaceConversionContext::color_range);
 
