@@ -383,6 +383,12 @@ struct FfmpegDecodeFrame_Impl {
     }
 #endif
 
+    /* Set packet time base here because later packet PTS values will be
+     * discarded. Without that, libavcodec won't be able to reconstruct
+     * correct PTS values.
+     */
+    m_avc_ctx->pkt_timebase = m_fmt_ctx->streams[GetVideoStrIdx()]->time_base;
+
     res = avcodec_open2(m_avc_ctx.get(), p_codec, &options);
     if (options) {
       av_dict_free(&options);
@@ -394,11 +400,16 @@ struct FfmpegDecodeFrame_Impl {
   }
 
   void SavePacketData() {
-    m_packet_data.dts = m_frame->pkt_dts;
+    m_packet_data = {};
     m_packet_data.pts = m_frame->pts;
-    m_packet_data.duration = m_frame->duration;
     m_packet_data.key = (m_frame->flags & AV_FRAME_FLAG_KEY) != 0;
-    m_packet_data.pos = m_frame->pkt_pos;
+
+    if (!IsAccelerated()) {
+      // Cuvid doesn't set these fields correctly.
+      m_packet_data.dts = m_frame->pkt_dts;
+      m_packet_data.duration = m_frame->duration;
+      m_packet_data.pos = m_frame->pkt_pos;
+    }
   }
 
   TaskExecDetails DecodeSingleFrame(Token& dst) {
@@ -520,7 +531,8 @@ struct FfmpegDecodeFrame_Impl {
       m.WidthInBytes = dst.Width(i) * dst.ElemSize();
       m.Height = dst.Height(i);
 
-      ThrowOnCudaError(LibCuda::cuMemcpy2DAsync(&m, av_cuda_ctx->stream), __LINE__);
+      ThrowOnCudaError(LibCuda::cuMemcpy2DAsync(&m, av_cuda_ctx->stream),
+                       __LINE__);
     }
     CudaStrSync sync(av_cuda_ctx->stream);
   }
@@ -587,6 +599,13 @@ struct FfmpegDecodeFrame_Impl {
     int res = 0;
 
     if (!m_flush) {
+      if (pkt && IsAccelerated()) {
+        /* Non-monotonous PTS increase sometimes happens with cuvid.
+         * To deal with that, discard PTS and make libavcodec come up with
+         * correct auto-generated value.
+         */
+        pkt->pts = AV_NOPTS_VALUE;
+      }
       res = avcodec_send_packet(m_avc_ctx.get(), pkt);
       if (AVERROR_EOF == res) {
         // Flush decoder;
@@ -610,7 +629,7 @@ struct FfmpegDecodeFrame_Impl {
     if (res == AVERROR_EOF) {
       return DEC_EOS;
     } else if (res == AVERROR(EAGAIN)) {
-      if (m_flush) {        
+      if (m_flush) {
         m_flush = false;
         m_resend = true;
       }
@@ -840,7 +859,7 @@ struct FfmpegDecodeFrame_Impl {
                              AvErrorToString(ret));
     }
 
-    /* Discard existing frame timestamp and OEF flag. 
+    /* Discard existing frame timestamp and OEF flag.
      * Otherwise, seek will only go forward and will return EOF if seek is done
      * when decoder has previously get all available packets.
      */
