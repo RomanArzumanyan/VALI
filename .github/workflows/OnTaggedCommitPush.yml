@@ -41,7 +41,7 @@ jobs:
           LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64:$(pwd)/ffmpeg-master-latest-linux64-lgpl-shared/lib
           PYPI_BUILD=1
     - name: Store the distribution packages
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4.4.0
       with:
         name: python-package-distributions
         path: dist/
