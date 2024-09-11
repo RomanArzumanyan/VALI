@@ -188,6 +188,10 @@ public:
    */
   virtual DLDataTypeCode DataType() const = 0;
 
+  /* Returns Numpy array interface type string;
+   */
+  virtual std::string TypeStr() const = 0;
+
   /* Returns Surface Plane by number;
    */
   virtual SurfacePlane& GetSurfacePlane(uint32_t plane = 0U) = 0;
@@ -207,6 +211,10 @@ public:
   /* Get DLPack descriptor;
    */
   virtual DLManagedTensor* ToDLPack() = 0;
+
+  /* Get CAI v.3 descriptor;
+   */
+  virtual void ToCAI(CudaArrayInterfaceDescriptor& cai) = 0;
 
   /* Copy constructor which does CUDA memalloc + deep copy;
    */

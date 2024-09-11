@@ -157,6 +157,25 @@ void Init_PySurface(py::module& m) {
           R"pbdoc(
         DLPack: get capsule.
     )pbdoc")
+      .def_property_readonly(
+          "__cuda_array_interface__",
+          [](shared_ptr<SurfacePlane> self) {
+            CudaArrayInterfaceDescriptor cai;
+            self->ToCAI(cai);
+
+            return py::dict(
+                "shape"_a = py::make_tuple(cai.m_shape[0], cai.m_shape[1],
+                                           cai.m_shape[2]),
+                "typestr"_a = "<u1",
+                "data"_a = py::make_tuple(cai.m_ptr, cai.m_read_only),
+                "version"_a = cai.m_version,
+                "strides"_a = py::make_tuple(cai.m_strides[0], cai.m_strides[1],
+                                             cai.m_strides[2]),
+                "stream"_a = size_t(cai.m_stream));
+          },
+          R"pbdoc(
+        CAI: export necessary dict.
+    )pbdoc")
       .def("__repr__",
            [](shared_ptr<SurfacePlane> self) { return ToString(*self.get()); });
 
@@ -277,6 +296,32 @@ void Init_PySurface(py::module& m) {
           py::arg("stream") = 0,
           R"pbdoc(
         DLPack: get capsule.
+    )pbdoc")
+      .def_property_readonly(
+          "__cuda_array_interface__",
+          [](Surface& self) {
+            if (self.NumPlanes() > 1U) {
+              throw(
+                  std::runtime_error("Surface has multiple planes. Use CAI "
+                                     "methods for particular plane instead."));
+            }
+
+            auto plane = self.GetSurfacePlane(0U);
+            CudaArrayInterfaceDescriptor cai;
+            self.ToCAI(cai);
+
+            return py::dict(
+                "shape"_a = py::make_tuple(cai.m_shape[0], cai.m_shape[1],
+                                           cai.m_shape[2]),
+                "typestr"_a = "<u1",
+                "data"_a = py::make_tuple(cai.m_ptr, cai.m_read_only),
+                "version"_a = cai.m_version,
+                "strides"_a = py::make_tuple(cai.m_strides[0], cai.m_strides[1],
+                                             cai.m_strides[2]),
+                "stream"_a = size_t(cai.m_stream));
+          },
+          R"pbdoc(
+        CAI: export necessary dict.
     )pbdoc")
       .def_static(
           "from_dlpack",

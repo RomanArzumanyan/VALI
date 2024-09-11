@@ -49,7 +49,8 @@ SurfaceY::SurfaceY() {
 
 SurfaceY::SurfaceY(uint32_t width, uint32_t height, CUcontext context) {
   m_planes.clear();
-  m_planes.emplace_back(width, height, ElemSize(), DataType(), context);
+  m_planes.emplace_back(width, height, ElemSize(), DataType(), TypeStr(),
+                        context);
 }
 
 uint32_t SurfaceY::Width(uint32_t plane) const {
@@ -90,6 +91,11 @@ bool SurfaceY::Update(std::initializer_list<SurfacePlane*> planes) {
 
 DLManagedTensor* SurfaceY::ToDLPack() { return m_planes.begin()->ToDLPack(); }
 
+void SurfaceY::ToCAI(CudaArrayInterfaceDescriptor& cai) {
+  auto& plane = GetSurfacePlane();
+  plane.ToCAI(cai);
+}
+
 SurfaceNV12::SurfaceNV12() {
   m_planes.clear();
   m_planes.emplace_back();
@@ -102,7 +108,7 @@ SurfaceNV12::SurfaceNV12(uint32_t width, uint32_t height,
                          uint32_t hbd_elem_size, CUcontext context) {
   m_planes.clear();
   m_planes.emplace_back(width, height * 3 / 2, hbd_elem_size, DataType(),
-                        context);
+                        TypeStr(), context);
 }
 
 SurfaceNV12::SurfaceNV12(uint32_t width, uint32_t height, uint32_t pitch,
@@ -195,6 +201,11 @@ DLManagedTensor* SurfaceNV12::ToDLPack() {
   return m_planes.begin()->ToDLPack();
 }
 
+void SurfaceNV12::ToCAI(CudaArrayInterfaceDescriptor& cai) {
+  auto& plane = GetSurfacePlane();
+  plane.ToCAI(cai);
+}
+
 SurfaceP10::SurfaceP10() : SurfaceNV12() {}
 
 SurfaceP10::SurfaceP10(uint32_t width, uint32_t height, CUcontext context)
@@ -224,10 +235,13 @@ SurfaceYUV420::SurfaceYUV420(uint32_t width, uint32_t height,
    */
   m_planes.reserve(NumPlanes());
   // Y plane, full size;
-  m_planes.emplace_back(width, height, ElemSize(), DataType(), context);
+  m_planes.emplace_back(width, height, ElemSize(), DataType(), TypeStr(),
+                        context);
   // U and V planes, decimated size;
-  m_planes.emplace_back(width / 2, height / 2, ElemSize(), DataType(), context);
-  m_planes.emplace_back(width / 2, height / 2, ElemSize(), DataType(), context);
+  m_planes.emplace_back(width / 2, height / 2, ElemSize(), DataType(),
+                        TypeStr(), context);
+  m_planes.emplace_back(width / 2, height / 2, ElemSize(), DataType(),
+                        TypeStr(), context);
 }
 
 Surface* SurfaceYUV420::Create() { return new SurfaceYUV420; }
@@ -288,10 +302,13 @@ SurfaceYUV422::SurfaceYUV422(uint32_t width, uint32_t height,
    */
   m_planes.reserve(NumPlanes());
   // Y plane, full size;
-  m_planes.emplace_back(width, height, ElemSize(), DataType(), context);
+  m_planes.emplace_back(width, height, ElemSize(), DataType(), TypeStr(),
+                        context);
   // U and V planes, decimated size;
-  m_planes.emplace_back(width / 2, height, ElemSize(), DataType(), context);
-  m_planes.emplace_back(width / 2, height, ElemSize(), DataType(), context);
+  m_planes.emplace_back(width / 2, height, ElemSize(), DataType(), TypeStr(),
+                        context);
+  m_planes.emplace_back(width / 2, height, ElemSize(), DataType(), TypeStr(),
+                        context);
 }
 
 Surface* SurfaceYUV422::Create() { return new SurfaceYUV422; }
@@ -355,7 +372,8 @@ SurfaceYUV444::SurfaceYUV444(uint32_t width, uint32_t height,
    */
   m_planes.reserve(NumPlanes());
   for (auto i = 0; i < NumPlanes(); i++) {
-    m_planes.emplace_back(width, height, hbd_elem_size, DataType(), context);
+    m_planes.emplace_back(width, height, hbd_elem_size, DataType(), TypeStr(),
+                          context);
   }
 }
 
@@ -421,7 +439,8 @@ SurfaceRGB::SurfaceRGB(uint32_t width, uint32_t height, CUcontext context)
 SurfaceRGB::SurfaceRGB(uint32_t width, uint32_t height, uint32_t hbd_elem_size,
                        CUcontext context) {
   m_planes.clear();
-  m_planes.emplace_back(width * 3, height, hbd_elem_size, DataType(), context);
+  m_planes.emplace_back(width * 3, height, hbd_elem_size, DataType(), TypeStr(),
+                        context);
 }
 
 Surface* SurfaceRGB::Create() { return new SurfaceRGB; }
@@ -493,6 +512,19 @@ DLManagedTensor* SurfaceRGB::ToDLPack() {
   return dlmt;
 }
 
+void SurfaceRGB::ToCAI(CudaArrayInterfaceDescriptor& cai) {
+  auto& plane = GetSurfacePlane();
+  plane.ToCAI(cai);
+
+  cai.m_shape[0] = Height();
+  cai.m_shape[1] = Width();
+  cai.m_shape[2] = 3;
+
+  cai.m_strides[0] = Pitch();
+  cai.m_strides[1] = ElemSize() * 3;
+  cai.m_strides[2] = ElemSize();
+}
+
 SurfaceBGR::SurfaceBGR() : SurfaceRGB() {}
 
 SurfaceBGR::SurfaceBGR(uint32_t width, uint32_t height, CUcontext context)
@@ -519,7 +551,8 @@ SurfaceRGBPlanar::SurfaceRGBPlanar(uint32_t width, uint32_t height,
 SurfaceRGBPlanar::SurfaceRGBPlanar(uint32_t width, uint32_t height,
                                    uint32_t hbd_elem_size, CUcontext context) {
   m_planes.clear();
-  m_planes.emplace_back(width, height * 3, hbd_elem_size, DataType(), context);
+  m_planes.emplace_back(width, height * 3, hbd_elem_size, DataType(), TypeStr(),
+                        context);
 }
 
 Surface* SurfaceRGBPlanar::Create() { return new SurfaceRGBPlanar; }
@@ -593,6 +626,19 @@ DLManagedTensor* SurfaceRGBPlanar::ToDLPack() {
   }
 
   return dlmt;
+}
+
+void SurfaceRGBPlanar::ToCAI(CudaArrayInterfaceDescriptor& cai) {
+  auto& plane = GetSurfacePlane();
+  plane.ToCAI(cai);
+
+  cai.m_shape[0] = 3;
+  cai.m_shape[1] = Height();
+  cai.m_shape[2] = Width();
+
+  cai.m_strides[0] = Pitch() * Height();
+  cai.m_strides[1] = Pitch();
+  cai.m_strides[2] = ElemSize();
 }
 
 SurfaceRGB32FPlanar::SurfaceRGB32FPlanar() : SurfaceRGBPlanar() {}

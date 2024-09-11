@@ -118,13 +118,14 @@ SurfacePlane::SurfacePlane(const DLManagedTensor& dlmt) {
 }
 
 SurfacePlane::SurfacePlane(uint32_t width, uint32_t height, uint32_t elem_size,
-                           DLDataTypeCode type_code, CUcontext context,
-                           bool pitched) {
+                           DLDataTypeCode type_code, std::string type_str,
+                           CUcontext context, bool pitched) {
   m_own_mem = true;
   m_width = width;
   m_height = height;
   m_elem_size = elem_size;
   m_dlpack_ctx.m_type_code = type_code;
+  m_cai_ctx.m_type_str = type_str;
 
   Allocate(context, pitched);
 }
@@ -274,5 +275,21 @@ int SurfacePlane::DeviceId() const { return GetDeviceIdByDptr(GpuMem()); }
 
 std::shared_ptr<void> SurfacePlane::GpuMemImpl() const {
   return OwnMemory() ? m_own_gpu_mem : m_borrowed_gpu_mem.lock();
+}
+
+void SurfacePlane::ToCAI(CudaArrayInterfaceDescriptor& cai) {
+  cai.m_shape[0] = Height();
+  cai.m_shape[1] = Width();
+
+  cai.m_strides[0] = Pitch();
+  cai.m_strides[1] = ElemSize();
+
+  cai.m_typestr = m_cai_ctx.m_type_str;
+
+  cai.m_ptr = GpuMem();
+  cai.m_read_only = false;
+
+  const auto device_id = GetDeviceIdByDptr(cai.m_ptr);
+  cai.m_stream = CudaResMgr::Instance().GetStream(device_id);
 }
 } // namespace VPF
