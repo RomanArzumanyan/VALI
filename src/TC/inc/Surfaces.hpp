@@ -42,7 +42,9 @@ public:
 
   Pixel_Format PixelFormat() const { return Y; };
   DLDataTypeCode DataType() const { return kDLUInt; }
+  std::string TypeStr() const { return "<u1"; }
   DLManagedTensor* ToDLPack();
+  void ToCAI(CudaArrayInterfaceDescriptor& cai);
 
   bool Update(SurfacePlane& newPlane);
   bool Update(std::initializer_list<SurfacePlane*> planes);
@@ -69,19 +71,21 @@ public:
   virtual uint32_t ElemSize() const override { return sizeof(uint8_t); }
   virtual uint32_t NumComponents() const override { return 2U; }
   virtual uint32_t NumPlanes() const override { return 1U; }
-  virtual CUdeviceptr PixelPtr(uint32_t component = 0U) override;  
+  virtual CUdeviceptr PixelPtr(uint32_t component = 0U) override;
 
   uint32_t Width(uint32_t plane = 0U) const;
   uint32_t WidthInBytes(uint32_t plane = 0U) const;
   uint32_t Height(uint32_t plane = 0U) const;
   uint32_t Pitch(uint32_t plane = 0U) const;
   DLDataTypeCode DataType() const { return kDLUInt; }
+  std::string TypeStr() const { return "<u1"; }
 
   SurfacePlane& GetSurfacePlane(uint32_t plane = 0U);
 
   bool Update(SurfacePlane& newPlane);
   bool Update(std::initializer_list<SurfacePlane*> planes);
   DLManagedTensor* ToDLPack();
+  void ToCAI(CudaArrayInterfaceDescriptor& cai);
 
 protected:
   // For high bit depth ancestors;
@@ -104,6 +108,7 @@ public:
   Surface* Create();
   Pixel_Format PixelFormat() const { return P10; }
   uint32_t ElemSize() const { return sizeof(uint16_t); }
+  std::string TypeStr() const { return "<u2"; }
 };
 
 // 12 bit NV12;
@@ -121,6 +126,7 @@ public:
   Surface* Create();
   Pixel_Format PixelFormat() const { return P12; }
   uint32_t ElemSize() const { return sizeof(uint16_t); }
+  std::string TypeStr() const { return "<u2"; }
 };
 
 /* 8-bit YUV420P image;
@@ -148,6 +154,7 @@ public:
 
   Pixel_Format PixelFormat() const { return YUV420; }
   DLDataTypeCode DataType() const { return kDLUInt; }
+  std::string TypeStr() const { return "<u1"; }
 
   bool Update(SurfacePlane& newPlaneY, SurfacePlane& newPlaneU,
               SurfacePlane& newPlaneV);
@@ -161,6 +168,11 @@ public:
   DLManagedTensor* ToDLPack() {
     throw std::runtime_error("Number of CUDA memory allocations > 1, cant "
                              "seriaize into DLPack tensor.");
+  }
+
+  void ToCAI(CudaArrayInterfaceDescriptor& cai) {
+    throw std::runtime_error("Number of CUDA memory allocations > 1, cant "
+                             "seriaize into CUDA Adday Interface.");
   }
 };
 
@@ -187,6 +199,7 @@ public:
 
   Pixel_Format PixelFormat() const { return YUV422; }
   DLDataTypeCode DataType() const { return kDLUInt; }
+  std::string TypeStr() const { return "<u1"; }
 
   bool Update(SurfacePlane& newPlaneY, SurfacePlane& newPlaneU,
               SurfacePlane& newPlaneV);
@@ -200,7 +213,12 @@ public:
   DLManagedTensor* ToDLPack() {
     throw std::runtime_error("Number of CUDA memory allocations > 1, cant "
                              "seriaize into DLPack tensor.");
-  } 
+  }
+
+  void ToCAI(CudaArrayInterfaceDescriptor& cai) {
+    throw std::runtime_error("Number of CUDA memory allocations > 1, cant "
+                             "seriaize into CUDA Adday Interface.");
+  }
 };
 
 class TC_EXPORT SurfaceYUV444 : public Surface {
@@ -219,13 +237,14 @@ public:
   virtual uint32_t ElemSize() const override { return sizeof(uint8_t); }
   virtual uint32_t NumComponents() const override { return 3U; }
   virtual uint32_t NumPlanes() const override { return 3U; }
-  virtual CUdeviceptr PixelPtr(uint32_t component = 0U) override;  
+  virtual CUdeviceptr PixelPtr(uint32_t component = 0U) override;
 
   uint32_t Width(uint32_t plane = 0U) const;
   uint32_t WidthInBytes(uint32_t plane = 0U) const;
   uint32_t Height(uint32_t plane = 0U) const;
   uint32_t Pitch(uint32_t plane = 0U) const;
   DLDataTypeCode DataType() const { return kDLUInt; }
+  std::string TypeStr() const { return "<u1"; }
 
   SurfacePlane& GetSurfacePlane(uint32_t plane = 0U);
 
@@ -239,7 +258,12 @@ public:
   DLManagedTensor* ToDLPack() {
     throw std::runtime_error("Number of CUDA memory allocations > 1, cant "
                              "seriaize into DLPack tensor.");
-  } 
+  }
+
+  void ToCAI(CudaArrayInterfaceDescriptor& cai) {
+    throw std::runtime_error("Number of CUDA memory allocations > 1, cant "
+                             "seriaize into CUDA Adday Interface.");
+  }
 
 protected:
   // For high bit depth ancestors;
@@ -261,6 +285,7 @@ public:
   Surface* Create();
   Pixel_Format PixelFormat() const { return YUV444_10bit; }
   uint32_t ElemSize() const { return sizeof(uint16_t); }
+  std::string TypeStr() const { return "<u2"; }
 };
 
 /* 8-bit RGB image;
@@ -283,12 +308,14 @@ public:
   virtual uint32_t NumPlanes() const override { return 1U; }
   virtual CUdeviceptr PixelPtr(uint32_t component = 0U) override;
   virtual DLManagedTensor* ToDLPack() override;
+  virtual void ToCAI(CudaArrayInterfaceDescriptor& cai);
 
   uint32_t Width(uint32_t plane = 0U) const;
   uint32_t WidthInBytes(uint32_t plane = 0U) const;
   uint32_t Height(uint32_t plane = 0U) const;
   uint32_t Pitch(uint32_t plane = 0U) const;
   DLDataTypeCode DataType() const { return kDLUInt; }
+  std::string TypeStr() const { return "<u1"; }
 
   SurfacePlane& GetSurfacePlane(uint32_t plane = 0U);
 
@@ -335,6 +362,7 @@ public:
   Surface* Create();
   Pixel_Format PixelFormat() const { return RGB_32F; }
   uint32_t ElemSize() const { return sizeof(float); }
+  std::string TypeStr() const { return "<f4"; }
 };
 
 /* 8-bit planar RGB image;
@@ -357,12 +385,14 @@ public:
   virtual uint32_t NumPlanes() const override { return 1U; }
   virtual CUdeviceptr PixelPtr(uint32_t component = 0U) override;
   virtual DLManagedTensor* ToDLPack() override;
+  virtual void ToCAI(CudaArrayInterfaceDescriptor& cai) override;
 
   uint32_t Width(uint32_t plane = 0U) const;
   uint32_t WidthInBytes(uint32_t plane = 0U) const;
   uint32_t Height(uint32_t plane = 0U) const;
   uint32_t Pitch(uint32_t plane = 0U) const;
   DLDataTypeCode DataType() const { return kDLUInt; }
+  std::string TypeStr() const { return "<u1"; }
 
   SurfacePlane& GetSurfacePlane(uint32_t plane = 0U);
 
@@ -391,5 +421,8 @@ public:
   Surface* Create();
   Pixel_Format PixelFormat() const { return RGB_32F_PLANAR; }
   uint32_t ElemSize() const { return sizeof(float); }
+
+  DLDataTypeCode DataType() const { return kDLFloat; }
+  std::string TypeStr() const { return "<f4"; }
 };
 } // namespace VPF

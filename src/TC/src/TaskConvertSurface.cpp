@@ -1120,7 +1120,7 @@ struct p16_nv12 final : public NppConvertSurface_Impl {
         pScratch->Height() != input_plane.Height()) {
       pScratch = std::make_shared<SurfacePlane>(
           input_plane.Width(), input_plane.Height(), sizeof(uint16_t), kDLUInt,
-          GetContextByStream(cu_str));
+          "u", GetContextByStream(cu_str));
     }
 
     CudaCtxPush ctxPush(cu_str);

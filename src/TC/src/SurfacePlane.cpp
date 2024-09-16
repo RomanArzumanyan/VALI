@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include "SurfacePlane.hpp"
+#include "MemoryInterfaces.hpp"
 #include <cstring>
 #include <sstream>
 #include <string>
@@ -117,14 +117,66 @@ SurfacePlane::SurfacePlane(const DLManagedTensor& dlmt) {
       (CUdeviceptr)dlmt.dl_tensor.data + dlmt.dl_tensor.byte_offset;
 }
 
+SurfacePlane::SurfacePlane(const CudaArrayInterfaceDescriptor& cai,
+                           const std::string& layout) {
+  auto ndim = 0U;
+  for (; ndim < cai.m_num_elems && cai.m_shape[ndim]; ndim++) {
+  }
+
+  if (ndim < 2) {
+    throw std::runtime_error("Only 2D tensors are supported.");
+  }
+
+  if (!cai.m_stream) {
+    throw std::runtime_error("Zero CUDA stream is not supported.");
+  }
+
+  if (cai.m_read_only) {
+    throw std::runtime_error("Read-only tensors are not supported.");
+  }
+
+  if (layout == "HW") {
+    m_height = cai.m_shape[0];
+    m_width = cai.m_shape[1];
+    m_pitch = cai.m_strides[0];
+  } else if (layout == "HWC") {
+    m_height = cai.m_shape[0];
+    m_width = cai.m_shape[1] * cai.m_shape[2];
+    m_pitch = cai.m_strides[0];
+  } else if (layout == "CHW") {
+    m_height = cai.m_shape[0] * cai.m_shape[1];
+    m_width = cai.m_shape[2];
+    m_pitch = cai.m_strides[1];
+  } else {
+    throw std::runtime_error("Only HW, HWC and CHW layouts are supported.");
+  }
+
+  if (!m_pitch) {
+    m_pitch = m_width;
+  }
+
+  if ((cai.m_typestr != "<u1") && (cai.m_typestr != "|u1") &&
+      (cai.m_typestr != "<u2") && (cai.m_typestr != "|u2") &&
+      (cai.m_typestr != "<f4") && (cai.m_typestr != "|f4")) {
+    throw std::runtime_error("Only u8, u16 and f32 tensors are supported.");
+  }
+
+  m_own_mem = false;
+  m_elem_size = cai.m_typestr.back() - '0';
+  m_dlpack_ctx.m_ptr = cai.m_ptr;
+
+  CudaStrSync sync(cai.m_stream);
+}
+
 SurfacePlane::SurfacePlane(uint32_t width, uint32_t height, uint32_t elem_size,
-                           DLDataTypeCode type_code, CUcontext context,
-                           bool pitched) {
+                           DLDataTypeCode type_code, std::string type_str,
+                           CUcontext context, bool pitched) {
   m_own_mem = true;
   m_width = width;
   m_height = height;
   m_elem_size = elem_size;
   m_dlpack_ctx.m_type_code = type_code;
+  m_cai_ctx.m_type_str = type_str;
 
   Allocate(context, pitched);
 }
@@ -274,5 +326,47 @@ int SurfacePlane::DeviceId() const { return GetDeviceIdByDptr(GpuMem()); }
 
 std::shared_ptr<void> SurfacePlane::GpuMemImpl() const {
   return OwnMemory() ? m_own_gpu_mem : m_borrowed_gpu_mem.lock();
+}
+
+std::string SurfacePlane::CudaArrayInterfaceContext::LayoutFromFormat(int fmt) {
+  Pixel_Format pix_fmt = static_cast<Pixel_Format>(fmt);
+  switch (pix_fmt) {
+  case Y:
+  case P10:
+  case P12:
+  case NV12:
+  case GRAY12:
+    return "HW";
+
+  case RGB:
+  case BGR:
+  case YUV444:
+  case RGB_32F:
+  case YUV444_10bit:
+    return "HWC";
+
+  case RGB_PLANAR:
+  case RGB_32F_PLANAR:
+    return "CHW";
+
+  default:
+    return "";
+  }
+}
+
+void SurfacePlane::ToCAI(CudaArrayInterfaceDescriptor& cai) {
+  cai.m_shape[0] = Height();
+  cai.m_shape[1] = Width();
+
+  cai.m_strides[0] = Pitch();
+  cai.m_strides[1] = ElemSize();
+
+  cai.m_typestr = m_cai_ctx.m_type_str;
+
+  cai.m_ptr = GpuMem();
+  cai.m_read_only = false;
+
+  const auto device_id = GetDeviceIdByDptr(cai.m_ptr);
+  cai.m_stream = CudaResMgr::Instance().GetStream(device_id);
 }
 } // namespace VPF

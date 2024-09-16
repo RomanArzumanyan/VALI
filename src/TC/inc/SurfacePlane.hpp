@@ -20,6 +20,32 @@
 
 namespace VPF {
 
+struct CudaArrayInterfaceDescriptor {
+  /* Only Surfaces with single SurfacePlane can be serialized into CAI.
+   * Hence no need to store more than 3 elements: width, height, channels.
+   */
+  static constexpr size_t m_num_elems = 3U;
+
+  // CAI spec version.
+  int const m_version = 3;
+
+  // Size of each dimension.
+  unsigned int m_shape[m_num_elems] = {};
+
+  // Strides (distance between 2 vertically adjacent pixels in bytes).
+  unsigned int m_strides[m_num_elems] = {};
+
+  // Type of data according to NumPy array interface specs.
+  std::string m_typestr = "V";
+
+  // GPU memory pointer and read-only flag.
+  CUdeviceptr m_ptr = 0;
+  bool m_read_only = false;
+
+  // CUDA stream for sync operations.
+  CUstream m_stream = 0;
+};
+
 /* 2D chunk of GPU memory located in vRAM. It doesn't have any pixel format.
  * Just a byte storage which can be easily shared via DLPack.
  */
@@ -53,6 +79,20 @@ class TC_EXPORT SurfacePlane {
   std::shared_ptr<void> GpuMemImpl() const;
 
 public:
+  /* Everything CUDA Array Interface about this SurfacePlane;
+   */
+  struct CudaArrayInterfaceContext {
+    // CUDA Array Interface type string;
+    std::string m_type_str = "V";
+
+    /**
+     * Get layout from pixel format.
+     * Returns one of: HW, HWC, CHW.
+     * May throw exception with reason in message;
+     */
+    static std::string LayoutFromFormat(int fmt);
+  } m_cai_ctx;
+
   /* Everything DLPack about this SurfacePlane;
    */
   struct DLPackContext {
@@ -127,12 +167,18 @@ public:
    */
   SurfacePlane(const DLManagedTensor& dlmt);
 
+  /* Construct from CAI, don't own memory.
+   * May throw exception with reason in message.
+   */
+  SurfacePlane(const CudaArrayInterfaceDescriptor& cai,
+               const std::string& layout);
+
   /* Construct & own memory. If null context is given, current context will be
    * used. May throw exception with reason in message;
    */
   SurfacePlane(uint32_t width, uint32_t height, uint32_t elem_size,
-               DLDataTypeCode type_code, CUcontext context = nullptr,
-               bool pitched = true);
+               DLDataTypeCode type_code, std::string type_str,
+               CUcontext context = nullptr, bool pitched = true);
 
   /* Destruct object. GPU memory deallocation will follow usual weak_ptr logic;
    */
@@ -217,6 +263,12 @@ public:
    * May throw exception with reason in message;
    */
   DLManagedTensor* ToDLPack();
+
+  /* Serialize SurfacePlane into CUDA Array Interface descriptor;
+   * Returns raw pointer because that's what spec wants;
+   * May throw exception with reason in message;
+   */
+  void ToCAI(CudaArrayInterfaceDescriptor& cai);
 
   /* Same as previous but wrapped in smart pointer. Handy to use inside C++
    * code, no need to mess with deleter;
