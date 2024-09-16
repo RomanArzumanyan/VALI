@@ -42,7 +42,7 @@ public:
 
   Pixel_Format PixelFormat() const { return Y; };
   DLDataTypeCode DataType() const { return kDLUInt; }
-  std::string TypeStr() const { return "u"; }
+  std::string TypeStr() const { return "<u1"; }
   DLManagedTensor* ToDLPack();
   void ToCAI(CudaArrayInterfaceDescriptor& cai);
 
@@ -78,7 +78,7 @@ public:
   uint32_t Height(uint32_t plane = 0U) const;
   uint32_t Pitch(uint32_t plane = 0U) const;
   DLDataTypeCode DataType() const { return kDLUInt; }
-  std::string TypeStr() const { return "u"; }
+  std::string TypeStr() const { return "<u1"; }
 
   SurfacePlane& GetSurfacePlane(uint32_t plane = 0U);
 
@@ -108,6 +108,7 @@ public:
   Surface* Create();
   Pixel_Format PixelFormat() const { return P10; }
   uint32_t ElemSize() const { return sizeof(uint16_t); }
+  std::string TypeStr() const { return "<u2"; }
 };
 
 // 12 bit NV12;
@@ -125,6 +126,7 @@ public:
   Surface* Create();
   Pixel_Format PixelFormat() const { return P12; }
   uint32_t ElemSize() const { return sizeof(uint16_t); }
+  std::string TypeStr() const { return "<u2"; }
 };
 
 /* 8-bit YUV420P image;
@@ -152,7 +154,7 @@ public:
 
   Pixel_Format PixelFormat() const { return YUV420; }
   DLDataTypeCode DataType() const { return kDLUInt; }
-  std::string TypeStr() const { return "u"; }
+  std::string TypeStr() const { return "<u1"; }
 
   bool Update(SurfacePlane& newPlaneY, SurfacePlane& newPlaneU,
               SurfacePlane& newPlaneV);
@@ -197,7 +199,7 @@ public:
 
   Pixel_Format PixelFormat() const { return YUV422; }
   DLDataTypeCode DataType() const { return kDLUInt; }
-  std::string TypeStr() const { return "u"; }
+  std::string TypeStr() const { return "<u1"; }
 
   bool Update(SurfacePlane& newPlaneY, SurfacePlane& newPlaneU,
               SurfacePlane& newPlaneV);
@@ -242,7 +244,7 @@ public:
   uint32_t Height(uint32_t plane = 0U) const;
   uint32_t Pitch(uint32_t plane = 0U) const;
   DLDataTypeCode DataType() const { return kDLUInt; }
-  std::string TypeStr() const { return "u"; }
+  std::string TypeStr() const { return "<u1"; }
 
   SurfacePlane& GetSurfacePlane(uint32_t plane = 0U);
 
@@ -283,6 +285,7 @@ public:
   Surface* Create();
   Pixel_Format PixelFormat() const { return YUV444_10bit; }
   uint32_t ElemSize() const { return sizeof(uint16_t); }
+  std::string TypeStr() const { return "<u2"; }
 };
 
 /* 8-bit RGB image;
@@ -312,7 +315,7 @@ public:
   uint32_t Height(uint32_t plane = 0U) const;
   uint32_t Pitch(uint32_t plane = 0U) const;
   DLDataTypeCode DataType() const { return kDLUInt; }
-  std::string TypeStr() const { return "u"; }
+  std::string TypeStr() const { return "<u1"; }
 
   SurfacePlane& GetSurfacePlane(uint32_t plane = 0U);
 
@@ -359,6 +362,7 @@ public:
   Surface* Create();
   Pixel_Format PixelFormat() const { return RGB_32F; }
   uint32_t ElemSize() const { return sizeof(float); }
+  std::string TypeStr() const { return "<f4"; }
 };
 
 /* 8-bit planar RGB image;
@@ -388,7 +392,7 @@ public:
   uint32_t Height(uint32_t plane = 0U) const;
   uint32_t Pitch(uint32_t plane = 0U) const;
   DLDataTypeCode DataType() const { return kDLUInt; }
-  std::string TypeStr() const { return "u"; }
+  std::string TypeStr() const { return "<u1"; }
 
   SurfacePlane& GetSurfacePlane(uint32_t plane = 0U);
 
@@ -419,6 +423,6 @@ public:
   uint32_t ElemSize() const { return sizeof(float); }
 
   DLDataTypeCode DataType() const { return kDLFloat; }
-  std::string TypeStr() const { return "f"; }
+  std::string TypeStr() const { return "<f4"; }
 };
 } // namespace VPF

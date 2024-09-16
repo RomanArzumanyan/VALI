@@ -84,6 +84,13 @@ public:
   struct CudaArrayInterfaceContext {
     // CUDA Array Interface type string;
     std::string m_type_str = "V";
+
+    /**
+     * Get layout from pixel format.
+     * Returns one of: HW, HWC, CHW.
+     * May throw exception with reason in message;
+     */
+    static std::string LayoutFromFormat(int fmt);
   } m_cai_ctx;
 
   /* Everything DLPack about this SurfacePlane;
@@ -159,6 +166,12 @@ public:
    * May throw exception with reason in message;
    */
   SurfacePlane(const DLManagedTensor& dlmt);
+
+  /* Construct from CAI, don't own memory.
+   * May throw exception with reason in message.
+   */
+  SurfacePlane(const CudaArrayInterfaceDescriptor& cai,
+               const std::string& layout);
 
   /* Construct & own memory. If null context is given, current context will be
    * used. May throw exception with reason in message;

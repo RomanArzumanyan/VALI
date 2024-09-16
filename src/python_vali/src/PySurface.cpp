@@ -166,7 +166,7 @@ void Init_PySurface(py::module& m) {
             return py::dict(
                 "shape"_a = py::make_tuple(cai.m_shape[0], cai.m_shape[1],
                                            cai.m_shape[2]),
-                "typestr"_a = "<u1",
+                "typestr"_a = cai.m_typestr,
                 "data"_a = py::make_tuple(cai.m_ptr, cai.m_read_only),
                 "version"_a = cai.m_version,
                 "strides"_a = py::make_tuple(cai.m_strides[0], cai.m_strides[1],
@@ -313,7 +313,7 @@ void Init_PySurface(py::module& m) {
             return py::dict(
                 "shape"_a = py::make_tuple(cai.m_shape[0], cai.m_shape[1],
                                            cai.m_shape[2]),
-                "typestr"_a = "<u1",
+                "typestr"_a = cai.m_typestr,
                 "data"_a = py::make_tuple(cai.m_ptr, cai.m_read_only),
                 "version"_a = cai.m_version,
                 "strides"_a = py::make_tuple(cai.m_strides[0], cai.m_strides[1],
@@ -351,6 +351,76 @@ void Init_PySurface(py::module& m) {
         DLPack: Make Surface from dlpack, don not own memory.
 
         :param capsule: capsule object with manager dltensor inside
+        :param fmt: pixel format, by default python_vali.PixelFormat.RGB
+        :return: Surface
+        :rtype: python_vali.Surface
+    )pbdoc")
+      .def_static(
+          "from_cai",
+          [](py::object obj, Pixel_Format fmt) {
+            if (!py::hasattr(obj, "__cuda_array_interface__")) {
+              throw std::runtime_error("'__cuda_array_interface__' not found");
+            }
+
+            py::dict dict = obj.attr("__cuda_array_interface__");
+            CudaArrayInterfaceDescriptor cai;
+
+            for (auto item : dict) {
+              auto key = item.first.cast<std::string>();
+              if ("shape" == key) {
+                const auto tup = item.second.cast<py::tuple>();
+                const auto min_len = std::min(
+                    CudaArrayInterfaceDescriptor::m_num_elems, py::len(tup));
+                for (int i = 0; i < min_len; i++) {
+                  cai.m_shape[i] = tup[i].cast<unsigned int>();
+                }
+              } else if ("strides" == key) {
+                if (item.second.is_none()) {
+                  continue;
+                }
+                const auto tup = item.second.cast<py::tuple>();
+                const auto min_len = std::min(
+                    CudaArrayInterfaceDescriptor::m_num_elems, py::len(tup));
+                for (int i = 0; i < min_len; i++) {
+                  cai.m_shape[i] = tup[i].cast<unsigned int>();
+                }
+              } else if ("typestr" == key) {
+                cai.m_typestr = item.second.cast<std::string>();
+              } else if ("data" == key) {
+                const auto tup = item.second.cast<py::tuple>();
+                cai.m_ptr = (CUdeviceptr)tup[0].cast<size_t>();
+                cai.m_read_only = tup[1].cast<bool>();
+              } else if ("stream" == key) {
+                cai.m_stream = (CUstream)item.second.cast<int>();
+              } else if ("version" == key) {
+                auto const version = item.second.cast<int>();
+                if (version != 3) {
+                  throw std::runtime_error("Unsupported version " + key);
+                }
+              } else {
+                throw std::runtime_error("Unsupported attribute " + key);
+              }
+            };
+
+            std::string layout =
+                SurfacePlane::CudaArrayInterfaceContext::LayoutFromFormat(
+                    static_cast<int>(fmt));
+
+            auto surface_plane = SurfacePlane(cai, layout);
+
+            auto surface = std::shared_ptr<Surface>(Surface::Make(fmt));
+            if (!surface) {
+              throw std::runtime_error("Failed to make Surface.");
+            }
+
+            surface->Update({&surface_plane});
+            return surface;
+          },
+          py::arg("dict"), py::arg("format") = Pixel_Format::RGB,
+          R"pbdoc(
+        DLPack: Make Surface from CAI, don not own memory.
+
+        :param dict: dictionary which corresponds to CUDA Array Interface specs.
         :param fmt: pixel format, by default python_vali.PixelFormat.RGB
         :return: Surface
         :rtype: python_vali.Surface
