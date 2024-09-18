@@ -73,8 +73,8 @@ class TestGpuMem(unittest.TestCase):
     @ parameterized.expand(pixel_formats)
     def test_gpu_mem(self, name, pix_fmt):
         surf = vali.Surface.Make(format = pix_fmt, width = 640, height = 480, gpu_id = 0)
-        for idx in range(surf.NumPlanes()):
-            self.assertEqual(surf.PlanePtr(idx).GpuMem(), dlpackptr(surf.PlanePtr(idx)))
+        for idx in range(surf.NumPlanes):
+            self.assertEqual(surf.Planes[idx].GpuMem, dlpackptr(surf.Planes[idx]))
     
 if __name__ == "__main__":
     unittest.main()
