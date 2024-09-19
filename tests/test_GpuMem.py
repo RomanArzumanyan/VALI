@@ -45,20 +45,7 @@ import python_vali as vali
 import unittest
 from parameterized import parameterized
 
-import ctypes, sys
-sys.path.insert(0,"../extern/dlpack/apps/numpy_dlpack/dlpack")
-from dlpack import _c_str_dltensor, DLManagedTensor
-
-ctypes.pythonapi.PyCapsule_GetPointer.restype = ctypes.c_void_p
-ctypes.pythonapi.PyCapsule_GetPointer.argtypes = [ctypes.py_object, ctypes.c_char_p]
-
 pixel_formats=[[ k,v[0]] for k, v in vali.PixelFormat.__entries.items() if k!='UNDEFINED' ]
-
-def dlpackptr(plane:vali.SurfacePlane):
-    pycapsule=plane.__dlpack__()
-    dl_managed_tensor = ctypes.pythonapi.PyCapsule_GetPointer(pycapsule, _c_str_dltensor)
-    dl_managed_tensor_ptr = ctypes.cast(dl_managed_tensor, ctypes.POINTER(DLManagedTensor))
-    return dl_managed_tensor_ptr.contents.dl_tensor.data
 
 class TestGpuMem(unittest.TestCase):
     def __init__(self, methodName):
@@ -72,7 +59,6 @@ class TestGpuMem(unittest.TestCase):
     def test_gpu_mem(self, name, pix_fmt):
         surf = vali.Surface.Make(format = pix_fmt, width = 640, height = 480, gpu_id = 0)
         for idx in range(surf.NumPlanes):
-            #self.assertEqual(surf.Planes[idx].GpuMem, dlpackptr(surf.Planes[idx]))
             self.assertEqual(surf.Planes[idx].GpuMem, surf.Planes[idx].__cuda_array_interface__["data"][0])
     
 if __name__ == "__main__":
