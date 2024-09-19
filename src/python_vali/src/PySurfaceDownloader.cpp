@@ -37,6 +37,11 @@ bool PySurfaceDownloader::Run(Surface& src, py::array& dst,
                               TaskExecDetails& details) {
   auto buffer =
       std::shared_ptr<Buffer>(Buffer::Make(dst.nbytes(), dst.mutable_data()));
+  
+  std::cout << __FILE__ << "::" << __FUNCTION__ << "\n";
+  std::cout << "array size:   " << dst.nbytes() << "\n";
+  std::cout << "buffer size:  " << buffer->GetRawMemSize() << "\n";
+  std::cout << "surface size: " << src.HostMemSize() << "\n";
 
   upDownloader->SetInput(&src, 0U);
   upDownloader->SetInput(buffer.get(), 1U);
@@ -65,8 +70,7 @@ void Init_PySurfaceDownloader(py::module& m) {
           "Run",
           [](PySurfaceDownloader& self, Surface& src, py::array& dst) {
             TaskExecDetails details;
-            return std::make_tuple(self.Run(src, dst, details),
-                                   details.m_info);
+            return std::make_tuple(self.Run(src, dst, details), details.m_info);
           },
           py::arg("src"), py::arg("dst"),
           py::call_guard<py::gil_scoped_release>(),

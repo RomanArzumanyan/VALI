@@ -16,6 +16,8 @@
 #include "MemoryInterfaces.hpp"
 #include "Tasks.hpp"
 
+#include "iostream"
+
 auto const cuda_stream_sync = [](void* stream) {
   LibCuda::cuStreamSynchronize((CUstream)stream);
 };
@@ -39,6 +41,10 @@ TaskExecDetails CudaDownloadSurface::Run() {
     return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL,
                            TaskExecInfo::INVALID_INPUT, "empty dst");
   }
+
+  std::cout << __FILE__ << "::" << __FUNCTION__ << "\n";
+  std::cout << "buffer size:  " << dst_buffer->GetRawMemSize() << "\n";
+  std::cout << "surface size: " << src_surface->HostMemSize() << "\n";
 
   if (dst_buffer->GetRawMemSize() != src_surface->HostMemSize()) {
     return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL,
