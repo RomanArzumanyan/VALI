@@ -20,8 +20,6 @@ import sys
 import os
 from os.path import join, dirname
 
-__DBG_IMG__ = False
-
 if os.name == "nt":
     # Add CUDA_PATH env variable
     cuda_path = os.environ["CUDA_PATH"]
@@ -74,7 +72,8 @@ class TestGpuMem(unittest.TestCase):
     def test_gpu_mem(self, name, pix_fmt):
         surf = vali.Surface.Make(format = pix_fmt, width = 640, height = 480, gpu_id = 0)
         for idx in range(surf.NumPlanes):
-            self.assertEqual(surf.Planes[idx].GpuMem, dlpackptr(surf.Planes[idx]))
+            #self.assertEqual(surf.Planes[idx].GpuMem, dlpackptr(surf.Planes[idx]))
+            self.assertEqual(surf.Planes[idx].GpuMem, surf.Planes[idx].__cuda_array_interface__["data"][0])
     
 if __name__ == "__main__":
     unittest.main()
