@@ -422,7 +422,8 @@ class TestDecoder(unittest.TestCase):
         ]
 
         # Seek to the random frame, decode, save.
-        seek_frame = random.randint(0, gtInfo.num_frames - 1)
+        seek_frame = random.randint(
+            int(gtInfo.num_frames / 2), gtInfo.num_frames - 1)
 
         success, details = pyDec.DecodeSingleSurface(
             surf=surf, seek_ctx=vali.SeekContext(seek_frame))
@@ -451,15 +452,18 @@ class TestDecoder(unittest.TestCase):
         self.assertFalse(np.array_equal(frames[0], frames[1]))
 
     @tc.repeat(2)
-    def test_seek_big_timestamp(self):
-        pyDec = vali.PyDecoder("./data/output.mp4", {}, gpu_id=0)
+    def test_seek_big_timestamp_gpu(self):
+        with open("gt_files.json") as f:
+            gtInfo = tc.GroundTruth(**json.load(f)["generated"])
+
+        pyDec = vali.PyDecoder(gtInfo.uri, {}, gpu_id=0)
         surf = vali.Surface.Make(
             pyDec.Format, pyDec.Width, pyDec.Height, gpu_id=0)
 
         # Seek to random frame within second half of the video
         for i in range(0, 2):
             start_frame = random.randint(
-                int(pyDec.NumFrames / 2), pyDec.NumFrames - 1)
+                int(gtInfo.num_frames / 2), gtInfo.num_frames - 1)
             seek_ctx = vali.SeekContext(seek_frame=start_frame)
             packet_data = vali.PacketData()
             success, _ = pyDec.DecodeSingleSurface(
