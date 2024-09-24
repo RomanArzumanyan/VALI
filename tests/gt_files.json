@@ -131,5 +131,12 @@
         "num_frames": 16,
         "color_space": "ColorSpace.BT_709",
         "color_range": "ColorRange.MPEG"
+    },
+    "generated": {
+        "uri": "data/output.mp4",
+        "width": 640,
+        "height": 480,
+        "pix_fmt": "PixelFormat.NV12",
+        "num_frames": 900
     }
 }
