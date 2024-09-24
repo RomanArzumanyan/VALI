@@ -16,13 +16,13 @@
 #include "Tasks.hpp"
 #include "Utils.hpp"
 
+#include <algorithm>
 #include <iostream>
 #include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <algorithm>
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -842,7 +842,8 @@ struct FfmpegDecodeFrame_Impl {
                                       : TsFromTime(ctx.seek_tssec);
     auto min_timestamp =
         ctx.IsByNumber()
-            ? TsFromFrameNumber(std::max(ctx.seek_frame - GetGopSize(), 0L))
+            ? TsFromFrameNumber(std::max(ctx.seek_frame - GetGopSize(),
+                                         static_cast<int64_t>(0)))
             : TsFromTime(std::max(ctx.seek_tssec - 1.0, 0.0));
     auto start_time = GetStreamStartTime();
     if (AV_NOPTS_VALUE != start_time) {
