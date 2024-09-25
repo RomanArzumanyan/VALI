@@ -653,7 +653,7 @@ struct FfmpegDecodeFrame_Impl {
   }
 
   ~FfmpegDecodeFrame_Impl() {
-
+// For debug purposes
 #if 0
     std::cout << "m_num_pkt_read: " << m_num_pkt_read << std::endl;
     std::cout << "m_num_pkt_sent: " << m_num_pkt_sent << std::endl;
