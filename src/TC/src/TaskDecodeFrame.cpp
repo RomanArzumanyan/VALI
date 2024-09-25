@@ -605,7 +605,7 @@ struct FfmpegDecodeFrame_Impl {
          * To deal with that, discard PTS and make libavcodec come up with
          * correct auto-generated value.
          */
-        pkt->pts = AV_NOPTS_VALUE;
+        //pkt->pts = AV_NOPTS_VALUE; // What is that line used for? It prevents proper seeking
       }
       res = avcodec_send_packet(m_avc_ctx.get(), pkt);
       if (AVERROR_EOF == res) {
@@ -653,7 +653,7 @@ struct FfmpegDecodeFrame_Impl {
   }
 
   ~FfmpegDecodeFrame_Impl() {
-// For debug purposes
+
 #if 0
     std::cout << "m_num_pkt_read: " << m_num_pkt_read << std::endl;
     std::cout << "m_num_pkt_sent: " << m_num_pkt_sent << std::endl;
@@ -858,12 +858,14 @@ struct FfmpegDecodeFrame_Impl {
     OpenCodec(was_accelerated);
 
     m_timeout_handler->Reset();
-    auto ret = avformat_seek_file(m_fmt_ctx.get(), -1, min_timestamp, timestamp,
-                                  timestamp, 0);
+    auto ret = avformat_seek_file(m_fmt_ctx.get(), GetVideoStrIdx(), 0, timestamp,
+                                  timestamp, AVSEEK_FLAG_BACKWARD);
 
     if (ret < 0) {
       return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL, TaskExecInfo::FAIL,
                              AvErrorToString(ret));
+    }else{
+      avcodec_flush_buffers(m_avc_ctx.get());
     }
 
     /* Discard existing frame timestamp and OEF flag.
@@ -875,12 +877,18 @@ struct FfmpegDecodeFrame_Impl {
 
     /* Decode in loop until we reach desired frame.
      */
+    auto cnt=0;                                     
     while (m_frame->pts + start_time < timestamp) {
       auto details = DecodeSingleFrame(dst);
+      cnt++;
       if (details.m_status != TaskExecStatus::TASK_EXEC_SUCCESS) {
         return details;
       }
     }
+    // For debug purposes
+    #if 1
+    std::cerr<<"Seek operation decoded "<< cnt << " frames from last keyframe\n";
+    #endif
 
     return TaskExecDetails(TaskExecStatus::TASK_EXEC_SUCCESS,
                            TaskExecInfo::SUCCESS);
