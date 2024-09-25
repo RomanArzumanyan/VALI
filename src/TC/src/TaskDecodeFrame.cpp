@@ -880,6 +880,9 @@ struct FfmpegDecodeFrame_Impl {
     auto cnt=0;                                     
     while (m_frame->pts + start_time < timestamp) {
       auto details = DecodeSingleFrame(dst);
+      if (ctx.mode==EXACT_FRAME){
+          break;
+      }
       cnt++;
       if (details.m_status != TaskExecStatus::TASK_EXEC_SUCCESS) {
         return details;
