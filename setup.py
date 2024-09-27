@@ -68,5 +68,5 @@ if __name__ == "__main__":
         package_dir={"": "src"},
         cmake_install_dir="src",
         # cmake_args=["-DTRACK_TOKEN_ALLOCATIONS=ON"],
-        # cmake_args=["-DCMAKE_BUILD_TYPE=Debug"]
+        cmake_args=["-DCMAKE_BUILD_TYPE=Debug"]
     )

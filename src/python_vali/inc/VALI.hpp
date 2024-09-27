@@ -301,3 +301,16 @@ private:
   std::mutex m_mutex;
   CUstream m_stream;
 };
+
+class BufferedRandom {
+public:
+  BufferedRandom(py::object obj);
+  ~BufferedRandom() = default;
+
+  static int read(void* self, uint8_t* buf, int buf_size);
+  static int write(void* self, const uint8_t* buf, int buf_size);
+  static int64_t seek(void* self, int64_t offset, int whence);
+
+private:
+  py::object m_obj = py::none();
+};

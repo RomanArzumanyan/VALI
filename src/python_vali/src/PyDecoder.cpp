@@ -377,101 +377,103 @@ void Init_PyDecoder(py::module& m) {
         :param seek_ctx: seek context, may be None
         :return: tuple, first element is True in case of success, False otherwise. Second elements is TaskExecInfo.
     )pbdoc")
+      .def("TakeBuffer",
+           [](PyDecoder& self, py::object buf) { BufferedRandom buffer(buf); })
       .def_property_readonly("Width", &PyDecoder::Width,
-           R"pbdoc(
+                             R"pbdoc(
         Return encoded video file width in pixels.
     )pbdoc")
       .def_property_readonly("Height", &PyDecoder::Height,
-           R"pbdoc(
+                             R"pbdoc(
         Return encoded video file height in pixels.
     )pbdoc")
       .def_property_readonly("Level", &PyDecoder::Level,
-           R"pbdoc(
+                             R"pbdoc(
         Return encoded video level coding parameter.
     )pbdoc")
       .def_property_readonly("Profile", &PyDecoder::Profile,
-           R"pbdoc(
+                             R"pbdoc(
         Return encoded video profile coding parameter.
     )pbdoc")
       .def_property_readonly("Delay", &PyDecoder::Delay,
-           R"pbdoc(
+                             R"pbdoc(
         Return encoded video delay.
     )pbdoc")
       .def_property_readonly("GopSize", &PyDecoder::GopSize,
-           R"pbdoc(
+                             R"pbdoc(
         Return encoded video GOP size.
     )pbdoc")
       .def_property_readonly("Bitrate", &PyDecoder::Bitrate,
-           R"pbdoc(
+                             R"pbdoc(
         Return encoded video bitrate in bits per second.
     )pbdoc")
       .def_property_readonly("NumStreams", &PyDecoder::NumStreams,
-           R"pbdoc(
+                             R"pbdoc(
         Return number of streams in video file. E. g. 2 streams: audio and video.
     )pbdoc")
       .def_property_readonly("StreamIndex", &PyDecoder::StreamIndex,
-           R"pbdoc(
+                             R"pbdoc(
         Return number of current video stream in file. E. g. video stream has
         index 0, and audio stream has index 1. This method will return 0 then.
     )pbdoc")
       .def_property_readonly("Framerate", &PyDecoder::Framerate,
-           R"pbdoc(
+                             R"pbdoc(
         Return encoded video file framerate.
     )pbdoc")
       .def_property_readonly("AvgFramerate", &PyDecoder::AvgFramerate,
-           R"pbdoc(
+                             R"pbdoc(
         Return encoded video file average framerate.
     )pbdoc")
       .def_property_readonly("Timebase", &PyDecoder::Timebase,
-           R"pbdoc(
+                             R"pbdoc(
         Return encoded video file time base.
     )pbdoc")
       .def_property_readonly("NumFrames", &PyDecoder::NumFrames,
-           R"pbdoc(
+                             R"pbdoc(
         Return number of video frames in encoded video file.
         Please note that some video containers doesn't store this infomation.
     )pbdoc")
       .def_property_readonly("ColorSpace", &PyDecoder::Color_Space,
-           R"pbdoc(
+                             R"pbdoc(
         Get color space information stored in video file.
         Please not that some video containers may not store this information.
 
         :return: color space information
     )pbdoc")
       .def_property_readonly("ColorRange", &PyDecoder::Color_Range,
-           R"pbdoc(
+                             R"pbdoc(
         Get color range information stored in video file.
         Please not that some video containers may not store this information.
 
         :return: color range information
     )pbdoc")
       .def_property_readonly("Format", &PyDecoder::PixelFormat,
-           R"pbdoc(
+                             R"pbdoc(
         Return encoded video file pixel format.
     )pbdoc")
       .def_property_readonly("HostFrameSize", &PyDecoder::HostFrameSize,
-           R"pbdoc(
+                             R"pbdoc(
         Return amount of bytes needed to store decoded frame.
     )pbdoc")
       .def_property_readonly("StartTime", &PyDecoder::StartTime,
-           R"pbdoc(
+                             R"pbdoc(
         Return video start time in seconds.
     )pbdoc")
       .def_property_readonly("Duration", &PyDecoder::Duration,
-           R"pbdoc(
+                             R"pbdoc(
         Return video duration time in seconds. May not be present.
     )pbdoc")
       .def_property_readonly("IsVFR", &PyDecoder::IsVFR,
-           R"pbdoc(
+                             R"pbdoc(
         Return true if video has variable framerate, false otherwise.
     )pbdoc")
       .def_property_readonly("IsAccelerated", &PyDecoder::IsAccelerated,
-           R"pbdoc(
+                             R"pbdoc(
         Return true if decoder has HW acceleration support, false otherwise.
     )pbdoc")
       .def_property_readonly("MotionVectors", &PyDecoder::GetMotionVectors,
-           py::call_guard<py::gil_scoped_release>(),
-           R"pbdoc(
+                             py::call_guard<py::gil_scoped_release>(),
+                             R"pbdoc(
         Return motion vectors of last decoded frame.
         If there are no movion vectors it will return empty list.
 
@@ -479,7 +481,7 @@ void Init_PyDecoder(py::module& m) {
        :rtype: List[vali.MotionVector]
     )pbdoc")
       .def_property_readonly("Metadata", &PyDecoder::Metadata,
-           R"pbdoc(
+                             R"pbdoc(
         Return dictionary with video file metadata.
     )pbdoc");
 

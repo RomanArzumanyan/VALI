@@ -183,6 +183,15 @@ class TestDecoder(unittest.TestCase):
         epsilon = 1e-4
         self.assertLessEqual(
             np.abs(self.gtInfo.timebase - pyDec.Timebase), epsilon)
+        
+    def test_take_input_buffer(self):
+        with open("gt_files.json") as f:
+            gtInfo = tc.GroundTruth(**json.load(f)["basic"])
+
+        pyDec = vali.PyDecoder(gtInfo.uri, {}, gpu_id=0)
+        with open(self.yuvInfo.uri, "rb") as f_in:
+            pyDec.TakeBuffer(f_in)
+        
 
     def test_decode_all_frames_cpu(self):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=-1)
