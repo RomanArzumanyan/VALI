@@ -132,6 +132,15 @@
         "color_space": "ColorSpace.BT_709",
         "color_range": "ColorRange.MPEG"
     },
+    "pts_increase_check": {
+        "uri": "data/pts_test_video.mkv",
+        "width": 1920,
+        "height": 1080,
+        "is_vfr": false,
+        "pix_fmt": "PixelFormat.NV12",
+        "framerate": 30,
+        "num_frames": 300
+    },
     "generated": {
         "uri": "data/output.mp4",
         "width": 640,
