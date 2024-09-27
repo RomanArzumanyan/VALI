@@ -64,6 +64,7 @@ class TestDecoder(unittest.TestCase):
         self.nv12Info = tc.GroundTruth(**self.data["basic_nv12"])
         self.hbdInfo = tc.GroundTruth(**self.data["hevc10"])
         self.p10Info = tc.GroundTruth(**self.data["hevc10_p10"])
+        self.ptsInfo = tc.GroundTruth(**self.data["pts_increase_check"])
 
         self.log = logging.getLogger(__name__)
 
@@ -78,6 +79,10 @@ class TestDecoder(unittest.TestCase):
             return self.hbdInfo
         elif name == "hevc10_p10":
             return self.p10Info
+        elif name == "pts_increase_check":
+            return self.ptsInfo
+        else:
+            return None
 
     @parameterized.expand([
         ["avc_8bit", "basic",],
@@ -267,6 +272,45 @@ class TestDecoder(unittest.TestCase):
                 dec_frames += 1
 
         self.assertEqual(self.yuvInfo.num_frames, dec_frames)
+
+    @parameterized.expand([
+    ["basic"],
+    ["pts_increase_check"],
+    ])
+    def test_monotonous_pts_increase_cpu(self, case_name: str):
+        gtInfo = self.gtByName(case_name)
+
+        pyDec = vali.PyDecoder(input=gtInfo.uri, opts={}, gpu_id=-1)
+        frame = np.ndarray(dtype=np.uint8, shape=(pyDec.HostFrameSize))
+        pktData = vali.PacketData()
+        lastPts = vali.NO_PTS
+
+        while True:
+            success, info = pyDec.DecodeSingleFrame(frame, pktData)
+            if not success:
+                break
+            self.assertGreaterEqual(pktData.pts, lastPts)
+            lastPts = pktData.pts
+
+    @parameterized.expand([
+        ["basic"],
+        ["pts_increase_check"],
+    ])
+    def test_monotonous_pts_increase_gpu(self, case_name: str):
+        gtInfo = self.gtByName(case_name)
+
+        pyDec = vali.PyDecoder(input=gtInfo.uri, opts={}, gpu_id=0)
+        surf = vali.Surface.Make(pyDec.Format, pyDec.Width, pyDec.Height,
+                                 gpu_id=0)
+        pktData = vali.PacketData()
+        lastPts = vali.NO_PTS
+
+        while True:
+            success, info = pyDec.DecodeSingleSurface(surf, pktData)
+            if not success:
+                break
+            self.assertGreaterEqual(pktData.pts, lastPts)
+            lastPts = pktData.pts
 
     @parameterized.expand([
         ["avc_8bit", "basic", "basic_nv12"],

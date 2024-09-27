@@ -248,7 +248,13 @@ int CudaResMgr::GetVersion() const {
   return version;
 }
 
-size_t CudaResMgr::GetNumGpus() { return Instance().g_Contexts.size(); }
+size_t CudaResMgr::GetNumGpus() {
+  try {
+    return Instance().g_Contexts.size();
+  } catch (std::exception& e) {
+    return 0U;
+  }
+}
 
 std::mutex CudaResMgr::gInsMutex;
 std::mutex CudaResMgr::gCtxMutex;

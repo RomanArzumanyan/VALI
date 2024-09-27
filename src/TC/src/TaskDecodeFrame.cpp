@@ -163,7 +163,7 @@ struct FfmpegDecodeFrame_Impl {
       if (options) {
         av_dict_free(options);
       }
-      throw std::runtime_error(msg + AvErrorToString(res));
+      throw std::runtime_error(msg + ": " + AvErrorToString(res));
     }
   }
 
@@ -235,7 +235,7 @@ struct FfmpegDecodeFrame_Impl {
             swr_ctx_, [](void* p) { swr_free((SwrContext**)&p); });
       }
 
-      ThrowOnAvError(res, "Can't open souce file" + std::string(URL), nullptr);
+      ThrowOnAvError(res, "Can't open souce file " + std::string(URL), nullptr);
     }
 
     m_fmt_ctx = std::shared_ptr<AVFormatContext>(
