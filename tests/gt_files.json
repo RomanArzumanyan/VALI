@@ -140,5 +140,12 @@
         "pix_fmt": "PixelFormat.NV12",
         "framerate": 30,
         "num_frames": 300
+    },
+    "generated": {
+        "uri": "data/output.mp4",
+        "width": 640,
+        "height": 480,
+        "pix_fmt": "PixelFormat.NV12",
+        "num_frames": 900
     }
 }

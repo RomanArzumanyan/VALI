@@ -466,7 +466,8 @@ class TestDecoder(unittest.TestCase):
         ]
 
         # Seek to the random frame, decode, save.
-        seek_frame = random.randint(0, gtInfo.num_frames - 1)
+        seek_frame = random.randint(
+            int(gtInfo.num_frames / 2), gtInfo.num_frames - 1)
 
         success, details = pyDec.DecodeSingleSurface(
             surf=surf, seek_ctx=vali.SeekContext(seek_frame))
@@ -493,6 +494,36 @@ class TestDecoder(unittest.TestCase):
 
         # Check if frames are different (issue #89)
         self.assertFalse(np.array_equal(frames[0], frames[1]))
+
+    @tc.repeat(2)
+    def test_seek_big_timestamp_gpu(self):
+        with open("gt_files.json") as f:
+            gtInfo = tc.GroundTruth(**json.load(f)["generated"])
+
+        pyDec = vali.PyDecoder(gtInfo.uri, {}, gpu_id=0)
+        surf = vali.Surface.Make(
+            pyDec.Format, pyDec.Width, pyDec.Height, gpu_id=0)
+
+        # Seek to random frame within second half of the video
+        for i in range(0, 2):
+            start_frame = random.randint(
+                int(gtInfo.num_frames / 2), gtInfo.num_frames - 1)
+            seek_ctx = vali.SeekContext(seek_frame=start_frame)
+            packet_data = vali.PacketData()
+            success, _ = pyDec.DecodeSingleSurface(
+                surf, packet_data, seek_ctx)
+            self.assertTrue(success)
+
+            # This video has duration of 512 units per every frame.
+            # Calculate expected timestamp. For cuvid, timestamps are
+            # reconstructed by FFMpeg, so they may vary very slightly.
+            #
+            # Delta below 1% is considered acceptable.
+            expected_pts = start_frame * 512
+            self.assertLessEqual(
+                abs(packet_data.pts - expected_pts) / expected_pts,
+                0.01
+            )
 
     @tc.repeat(3)
     def test_seek_gpu(self):

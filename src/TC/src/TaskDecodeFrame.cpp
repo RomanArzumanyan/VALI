@@ -16,6 +16,7 @@
 #include "Tasks.hpp"
 #include "Utils.hpp"
 
+#include <algorithm>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -585,8 +586,8 @@ struct FfmpegDecodeFrame_Impl {
    * Upon successful decoder copies decoded frame to dst token and returns
    * DEC_SUCCESS.
    *
-   * Upon resolution change doesn't copy decoded frame to dst token and returns
-   * DEC_RES_CHANGE.
+   * Upon resolution change doesn't copy decoded frame to dst token and
+   * returns DEC_RES_CHANGE.
    *
    * Upon EOF returns DEC_EOS.
    *
@@ -800,8 +801,8 @@ struct FfmpegDecodeFrame_Impl {
 
   int64_t TsFromTime(double ts_sec) {
     /* Timestasmp in stream time base units.
-     * Internal timestamp representation is integer, so multiply to AV_TIME_BASE
-     * and switch to fixed point precision arithmetics.
+     * Internal timestamp representation is integer, so multiply to
+     * AV_TIME_BASE and switch to fixed point precision arithmetics.
      */
     auto const ts_tbu = llround(ts_sec * AV_TIME_BASE);
 
@@ -817,9 +818,9 @@ struct FfmpegDecodeFrame_Impl {
   }
 
   TaskExecDetails SeekDecode(Token& dst, const SeekContext& ctx) {
-    /* Across this function packet presentation timestamp (PTS) values are used
-     * to compare given timestamp against. That's done so because ffmpeg seek
-     * relies on PTS.
+    /* Across this function packet presentation timestamp (PTS) values are
+     * used to compare given timestamp against. That's done so because ffmpeg
+     * seek relies on PTS.
      */
 
     if (IsVFR() && ctx.IsByNumber()) {
@@ -839,9 +840,15 @@ struct FfmpegDecodeFrame_Impl {
      */
     auto timestamp = ctx.IsByNumber() ? TsFromFrameNumber(ctx.seek_frame)
                                       : TsFromTime(ctx.seek_tssec);
+    auto min_timestamp =
+        ctx.IsByNumber()
+            ? TsFromFrameNumber(std::max(ctx.seek_frame - GetGopSize(),
+                                         static_cast<int64_t>(0)))
+            : TsFromTime(std::max(ctx.seek_tssec - 1.0, 0.0));
     auto start_time = GetStreamStartTime();
     if (AV_NOPTS_VALUE != start_time) {
       timestamp += start_time;
+      min_timestamp += start_time;
     } else {
       start_time = 0;
     }
@@ -851,8 +858,8 @@ struct FfmpegDecodeFrame_Impl {
     OpenCodec(was_accelerated);
 
     m_timeout_handler->Reset();
-    auto ret = av_seek_frame(m_fmt_ctx.get(), GetVideoStrIdx(), timestamp,
-                             AVSEEK_FLAG_BACKWARD);
+    auto ret = avformat_seek_file(m_fmt_ctx.get(), -1, min_timestamp, timestamp,
+                                  timestamp, 0);
 
     if (ret < 0) {
       return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL, TaskExecInfo::FAIL,
@@ -860,8 +867,8 @@ struct FfmpegDecodeFrame_Impl {
     }
 
     /* Discard existing frame timestamp and OEF flag.
-     * Otherwise, seek will only go forward and will return EOF if seek is done
-     * when decoder has previously get all available packets.
+     * Otherwise, seek will only go forward and will return EOF if seek is
+     * done when decoder has previously get all available packets.
      */
     m_frame->pts = AV_NOPTS_VALUE;
     m_eof = false;
@@ -878,7 +885,7 @@ struct FfmpegDecodeFrame_Impl {
     return TaskExecDetails(TaskExecStatus::TASK_EXEC_SUCCESS,
                            TaskExecInfo::SUCCESS);
   }
-};
+}; // namespace VPF
 } // namespace VPF
 
 TaskExecDetails DecodeFrame::Run() {
