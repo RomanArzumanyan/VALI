@@ -1,0 +1,23 @@
+﻿python\_vali.PySurfaceDownloader
+================================
+
+.. currentmodule:: python_vali
+
+.. autoclass:: PySurfaceDownloader
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PySurfaceDownloader.Run
+      ~PySurfaceDownloader.__init__
+   
+   
+
+   
+   
+   
