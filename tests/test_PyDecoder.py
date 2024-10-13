@@ -408,7 +408,7 @@ class TestDecoder(unittest.TestCase):
 
         # Seek to random frame within input video frames range.
         start_frame = random.randint(0, gtInfo.num_frames - 1)
-        seek_ctx = vali.SeekContext(seek_frame=start_frame)
+        seek_ctx = vali.SeekContext(seek_frame=start_frame, mode=vali.SeekMode.EXACT_FRAME)
         success, _ = pyDec.DecodeSingleFrame(
             frame=frame, seek_ctx=seek_ctx)
         self.assertTrue(success)
@@ -470,7 +470,7 @@ class TestDecoder(unittest.TestCase):
             int(gtInfo.num_frames / 2), gtInfo.num_frames - 1)
 
         success, details = pyDec.DecodeSingleSurface(
-            surf=surf, seek_ctx=vali.SeekContext(seek_frame))
+            surf=surf, seek_ctx=vali.SeekContext(seek_frame, mode=vali.SeekMode.EXACT_FRAME))
         self.assertTrue(success,
                         "Failed to decode frame " + str(seek_frame) +
                         ": " + str(details))
@@ -483,7 +483,7 @@ class TestDecoder(unittest.TestCase):
         seek_frame = random.randint(0, seek_frame - 1)
 
         success, details = pyDec.DecodeSingleSurface(
-            surf=surf, seek_ctx=vali.SeekContext(seek_frame))
+            surf=surf, seek_ctx=vali.SeekContext(seek_frame, mode=vali.SeekMode.EXACT_FRAME))
         self.assertTrue(success,
                         "Failed to decode frame " + str(seek_frame) +
                         ": " + str(details))
@@ -508,7 +508,7 @@ class TestDecoder(unittest.TestCase):
         for i in range(0, 2):
             start_frame = random.randint(
                 int(gtInfo.num_frames / 2), gtInfo.num_frames - 1)
-            seek_ctx = vali.SeekContext(seek_frame=start_frame)
+            seek_ctx = vali.SeekContext(seek_frame=start_frame, mode=vali.SeekMode.EXACT_FRAME)
             packet_data = vali.PacketData()
             success, _ = pyDec.DecodeSingleSurface(
                 surf, packet_data, seek_ctx)
@@ -540,7 +540,7 @@ class TestDecoder(unittest.TestCase):
 
         # Seek to random frame within input video frames range.
         start_frame = random.randint(0, gtInfo.num_frames - 1)
-        seek_ctx = vali.SeekContext(seek_frame=start_frame)
+        seek_ctx = vali.SeekContext(seek_frame=start_frame, mode=vali.SeekMode.EXACT_FRAME)
         success, _ = pyDec.DecodeSingleSurface(
             surf=surf, seek_ctx=seek_ctx)
         self.assertTrue(success)
