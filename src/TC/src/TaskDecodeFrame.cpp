@@ -600,13 +600,6 @@ struct FfmpegDecodeFrame_Impl {
     int res = 0;
 
     if (!m_flush) {
-      if (pkt && IsAccelerated()) {
-        /* Non-monotonous PTS increase sometimes happens with cuvid.
-         * To deal with that, discard PTS and make libavcodec come up with
-         * correct auto-generated value.
-         */
-        pkt->pts = AV_NOPTS_VALUE;
-      }
       res = avcodec_send_packet(m_avc_ctx.get(), pkt);
       if (AVERROR_EOF == res) {
         // Flush decoder;
@@ -858,12 +851,14 @@ struct FfmpegDecodeFrame_Impl {
     OpenCodec(was_accelerated);
 
     m_timeout_handler->Reset();
-    auto ret = avformat_seek_file(m_fmt_ctx.get(), -1, min_timestamp, timestamp,
-                                  timestamp, 0);
+    auto ret = avformat_seek_file(m_fmt_ctx.get(), GetVideoStrIdx(), 0, timestamp,
+                                  timestamp, AVSEEK_FLAG_BACKWARD);
 
     if (ret < 0) {
       return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL, TaskExecInfo::FAIL,
                              AvErrorToString(ret));
+    }else{
+      avcodec_flush_buffers(m_avc_ctx.get());
     }
 
     /* Discard existing frame timestamp and OEF flag.
