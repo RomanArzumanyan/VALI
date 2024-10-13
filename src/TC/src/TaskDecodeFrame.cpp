@@ -875,9 +875,6 @@ struct FfmpegDecodeFrame_Impl {
       if (details.m_status != TaskExecStatus::TASK_EXEC_SUCCESS) {
         return details;
       }
-      if (ctx.mode==PREV_KEY_FRAME){
-          break;
-      }
     }
 
     return TaskExecDetails(TaskExecStatus::TASK_EXEC_SUCCESS,

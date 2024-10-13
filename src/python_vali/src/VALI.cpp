@@ -268,15 +268,6 @@ PYBIND11_MODULE(_python_vali, m) {
              "CUDA managed/unified memory allocated by cudaMallocManaged.")
       .export_values();
 
-  py::enum_<SeekMode>(m, "SeekMode")
-      .value("EXACT_FRAME", SeekMode::EXACT_FRAME,
-             "Use this to seek for exac frame. Notice that if it's P or B "
-             "frame, decoder may not be able to get it unless it reconstructs "
-             "all the frames that desired frame use for reference.")
-      .value("PREV_KEY_FRAME", SeekMode::PREV_KEY_FRAME,
-             "Seek for closes key frame in past.")
-      .export_values();
-
   py::enum_<FFMpegLogLevel>(m, "FfmpegLogLevel")
       .value("PANIC", FFMpegLogLevel::LOG_PANIC, "AV_LOG_PANIC")
       .value("FATAL", FFMpegLogLevel::LOG_FATAL, "AV_LOG_FATAL")
@@ -297,27 +288,12 @@ PYBIND11_MODULE(_python_vali, m) {
 
         :param seek_frame: number of frame to seek for, starts from 0
     )pbdoc")
-      .def(py::init<int64_t, SeekMode>(), py::arg("seek_frame"),
-           py::arg("mode"),
-           R"pbdoc(
-        Constructor method.
-
-        :param seek_frame: number of frame to seek for, starts from 0
-        :param mode: seek to exact frame number or to closest previous key frame
-    )pbdoc")
       .def(py::init<double>(), py::arg("seek_ts"),
            R"pbdoc(
         Constructor method.
         Will initialize context for seek by frame timestamp.
 
         :param seek_frame: timestamp (s) of frame to seek for.
-    )pbdoc")
-      .def(py::init<double, SeekMode>(), py::arg("seek_ts"), py::arg("mode"),
-           R"pbdoc(
-        Constructor method.
-
-        :param seek_frame: timestamp (s) of frame to seek for.
-        :param mode: seek to exact frame number or to closest previous key frame
     )pbdoc")
       .def_readwrite("seek_frame", &SeekContext::seek_frame,
                      R"pbdoc(
@@ -326,18 +302,6 @@ PYBIND11_MODULE(_python_vali, m) {
       .def_readwrite("seek_tssec", &SeekContext::seek_tssec,
                      R"pbdoc(
         Timestamp we want to seek.
-    )pbdoc")
-      .def_readwrite("mode", &SeekContext::mode,
-                     R"pbdoc(
-        Seek mode: by frame number or timestamp
-    )pbdoc")
-      .def_readwrite("out_frame_pts", &SeekContext::out_frame_pts,
-                     R"pbdoc(
-        PTS of frame decoded after seek.
-    )pbdoc")
-      .def_readonly("num_frames_decoded", &SeekContext::num_frames_decoded,
-                    R"pbdoc(
-        Number of frames, decoded if seek was done to closest previous key frame.
     )pbdoc");
 
   py::class_<PacketData, shared_ptr<PacketData>>(m, "PacketData",
