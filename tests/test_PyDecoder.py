@@ -274,8 +274,8 @@ class TestDecoder(unittest.TestCase):
         self.assertEqual(self.yuvInfo.num_frames, dec_frames)
 
     @parameterized.expand([
-    ["basic"],
-    ["pts_increase_check"],
+        ["basic"],
+        ["pts_increase_check"],
     ])
     def test_monotonous_pts_increase_cpu(self, case_name: str):
         gtInfo = self.gtByName(case_name)
