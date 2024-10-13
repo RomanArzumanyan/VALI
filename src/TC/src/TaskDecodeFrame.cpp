@@ -600,13 +600,6 @@ struct FfmpegDecodeFrame_Impl {
     int res = 0;
 
     if (!m_flush) {
-      if (pkt && IsAccelerated()) {
-        /* Non-monotonous PTS increase sometimes happens with cuvid.
-         * To deal with that, discard PTS and make libavcodec come up with
-         * correct auto-generated value.
-         */
-        //pkt->pts = AV_NOPTS_VALUE; // What is that line used for? It prevents proper seeking
-      }
       res = avcodec_send_packet(m_avc_ctx.get(), pkt);
       if (AVERROR_EOF == res) {
         // Flush decoder;
@@ -877,10 +870,8 @@ struct FfmpegDecodeFrame_Impl {
 
     /* Decode in loop until we reach desired frame.
      */
-    auto cnt=0;                                     
     while (m_frame->pts + start_time < timestamp) {
       auto details = DecodeSingleFrame(dst);
-      cnt++;
       if (details.m_status != TaskExecStatus::TASK_EXEC_SUCCESS) {
         return details;
       }
@@ -888,10 +879,6 @@ struct FfmpegDecodeFrame_Impl {
           break;
       }
     }
-    // For debug purposes
-    #if 1
-    std::cerr<<"Seek operation decoded "<< cnt << " frames from last keyframe\n";
-    #endif
 
     return TaskExecDetails(TaskExecStatus::TASK_EXEC_SUCCESS,
                            TaskExecInfo::SUCCESS);
