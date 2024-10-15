@@ -189,7 +189,7 @@ class TestDecoder(unittest.TestCase):
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
 
         pyDec = vali.PyDecoder(gtInfo.uri, {}, gpu_id=0)
-        with open(self.yuvInfo.uri, "rb") as f_in:
+        with open("/home/vlabs/git/VALI/README.md", "rb") as f_in:
             pyDec.TakeBuffer(f_in)
         
 
