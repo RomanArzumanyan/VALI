@@ -24,24 +24,27 @@ int BufferedRandom::read(void* self, uint8_t* buf, int buf_size) {
     return 1;
   }
 
+  /* Get read method and run it. It return bytes so we have to memcpy from
+   * bytes to actual buffer
+   */
   auto read_func = py::reinterpret_borrow<py::function>(me->m_obj.attr("read"));
   py::buffer_info info(py::buffer(read_func(buf_size)).request());
-  
-  if (info.shape[0] != buf_size) {
-    return 1;
-  }
 
   memcpy((void*)buf, info.ptr, buf_size);
-  return 0;
+  return info.shape[0];
 }
 
 int BufferedRandom::write(void* self, const uint8_t* buf, int buf_size) {
   auto me = static_cast<BufferedRandom*>(self);
-  if (!me) {
+  if (!me || !buf || buf_size <= 0) {
     return 1;
   }
 
-  return 0;
+  auto write_func =
+      py::reinterpret_borrow<py::function>(me->m_obj.attr("write"));
+  
+  std::vector<uint8_t> bytes(buf, buf + buf_size);
+  return write_func(bytes).cast<int>();
 }
 
 int64_t BufferedRandom::seek(void* self, int64_t offset, int whence) {
@@ -51,7 +54,5 @@ int64_t BufferedRandom::seek(void* self, int64_t offset, int whence) {
   }
 
   auto seek_func = py::reinterpret_borrow<py::function>(me->m_obj.attr("seek"));
-  auto result = seek_func(offset, whence);
-
-  return 0;
+  return seek_func(offset, whence).cast<int64_t>();
 }

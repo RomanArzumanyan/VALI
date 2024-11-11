@@ -37,6 +37,19 @@ PyDecoder::PyDecoder(const string& pathToFile,
   upDecoder.reset(DecodeFrame::Make(pathToFile.c_str(), cli_iface, stream));
 }
 
+PyDecoder::PyDecoder(py::object buffered_reader,
+                     const map<string, string>& ffmpeg_options, int gpuID) {
+  gpu_id = gpuID;
+  NvDecoderClInterface cli_iface(ffmpeg_options);
+  auto stream =
+      gpu_id >= 0
+          ? std::optional<CUstream>(CudaResMgr::Instance().GetStream(gpu_id))
+          : std::nullopt;
+
+  upBuff.reset(new BufferedRandom(buffered_reader));
+  upDecoder.reset(DecodeFrame::Make(pathToFile.c_str(), cli_iface, stream));
+}
+
 bool PyDecoder::DecodeImpl(TaskExecDetails& details, PacketData& pkt_data,
                            Token& dst, std::optional<SeekContext> seek_ctx) {
   upDecoder->ClearInputs();
@@ -286,6 +299,15 @@ void Init_PyDecoder(py::module& m) {
         Constructor method.
 
         :param input: path to input file
+        :param opts: AVDictionary options that will be passed to AVFormat context.
+        :param gpu_id: GPU ID. Default value is 0. Pass negative value to use CPU decoder.
+    )pbdoc")
+      .def(py::init<py::object, const map<string, string>&, int>(),
+           py::arg("buffered_reader"), py::arg("opts"), py::arg("gpu_id") = 0,
+           R"pbdoc(
+        Constructor method.
+
+        :param buffered_reader: io.BufferedReader object
         :param opts: AVDictionary options that will be passed to AVFormat context.
         :param gpu_id: GPU ID. Default value is 0. Pass negative value to use CPU decoder.
     )pbdoc")
