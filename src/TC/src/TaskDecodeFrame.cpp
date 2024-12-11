@@ -153,21 +153,6 @@ struct FfmpegDecodeFrame_Impl {
   uint32_t m_num_pkt_sent = 0U;
   uint32_t m_num_frm_recv = 0U;
 
-  // Helper functions
-  void ThrowOnAvError(int res, const std::string& msg) const {
-    ThrowOnAvError(res, msg, nullptr);
-  }
-
-  void ThrowOnAvError(int res, const std::string& msg,
-                      AVDictionary** options) const {
-    if (res < 0) {
-      if (options) {
-        av_dict_free(options);
-      }
-      throw std::runtime_error(msg + ": " + AvErrorToString(res));
-    }
-  }
-
   FfmpegDecodeFrame_Impl(
       const char* URL, const std::map<std::string, std::string>& ffmpeg_options,
       std::optional<CUstream> stream) {
@@ -198,20 +183,8 @@ struct FfmpegDecodeFrame_Impl {
     m_options = std::shared_ptr<AVDictionary>(
         options, [](void* p) { av_dict_free((AVDictionary**)&p); });
 
-    /* Set the timeout.
-     *
-     * Unfortunately, 'timeout' and 'stimeout' AVDictionary options do work for
-     * some formats and don't for others.
-     *
-     * So explicit timeout handler is used instead. In worst case scenario, 2
-     * handlers with same value will be registered within format context which
-     * is of no harm. */
-    auto it = ffmpeg_options.find("timeout");
-    if (it != ffmpeg_options.end()) {
-      m_timeout_handler.reset(new TimeoutHandler(std::stoi(it->second)));
-    } else {
-      m_timeout_handler.reset(new TimeoutHandler());
-    }
+    // Set the timeout.
+    m_timeout_handler.reset(new TimeoutHandler(&options, fmt_ctx));
 
     /* Copy class member options because some avcodec API functions like to
      * free input options and replace them with list of unrecognized options.

@@ -1,7 +1,9 @@
 #include "Utils.hpp"
+#include <iostream>
 #include <vector>
 
 extern "C" {
+#include <libavformat/avformat.h>
 #include <libavutil/frame.h>
 #include <libavutil/imgutils.h>
 }
@@ -29,11 +31,6 @@ AVDictionary*
 GetAvOptions(const std::map<std::string, std::string>& ffmpeg_options) {
   AVDictionary* options = nullptr;
   for (auto& pair : ffmpeg_options) {
-    // Handle 'timeout' option separately
-    if (pair.first == "timeout") {
-      continue;
-    }
-
     auto err =
         av_dict_set(&options, pair.first.c_str(), pair.second.c_str(), 0);
 
@@ -223,3 +220,100 @@ ColorRange fromFfmpegColorRange(AVColorRange range) {
 
   return UDEF;
 }
+
+// Helper functions
+void ThrowOnAvError(int res, const std::string& msg) {
+  ThrowOnAvError(res, msg, nullptr);
+}
+
+void ThrowOnAvError(int res, const std::string& msg, AVDictionary** options) {
+  if (res < 0) {
+    if (options) {
+      av_dict_free(options);
+    }
+    throw std::runtime_error(msg + ": " + AvErrorToString(res));
+  }
+}
+
+static void RegisterTimeout(TimeoutHandler* handler, AVFormatContext* fmt_ctx) {
+  if (!handler || !fmt_ctx) {
+    throw std::runtime_error("Can not register timeout. Null pointer given.");
+  }
+
+  fmt_ctx->interrupt_callback.opaque = (void*)handler;
+  fmt_ctx->interrupt_callback.callback = &TimeoutHandler::Check;
+}
+
+TimeoutHandler::TimeoutHandler(unsigned long timeout_ms,
+                               AVFormatContext* fmt_ctx) {
+  m_timeout = std::chrono::milliseconds(timeout_ms);
+  RegisterTimeout(this, fmt_ctx);
+  Reset();
+}
+
+static std::chrono::milliseconds fromString(const char* val) {
+  try {
+    return std::chrono::milliseconds(std::stoul(val));
+  } catch (std::exception& e) {
+    std::cerr << "Error parsing timeout value: " << e.what() << "\n";
+    std::cerr << "Using default timeout value: "
+              << TimeoutHandler::GetDefaultTimeout();
+    std::cerr << std::endl;
+
+    return std::chrono::milliseconds(TimeoutHandler::GetDefaultTimeout());
+  }
+}
+
+TimeoutHandler::TimeoutHandler(const char* timeout_str,
+                               AVFormatContext* fmt_ctx) {
+  m_timeout = fromString(timeout_str);
+  RegisterTimeout(this, fmt_ctx);
+  Reset();
+}
+
+TimeoutHandler::TimeoutHandler(AVDictionary** dict, AVFormatContext* fmt_ctx) {
+  m_timeout = std::chrono::milliseconds(TimeoutHandler::GetDefaultTimeout());
+  auto entry = av_dict_get(*dict, "timeout", nullptr, 0);
+
+  if (entry) {
+    m_timeout = fromString(entry->value);
+  }
+
+  // Delete "timeout" and "stimeout" entries.
+  const char* tbd[] = {"timeout", "stimeout"};
+  for (auto& key : tbd) {
+    auto entry = av_dict_get(*dict, key, nullptr, 0);
+    if (entry) {
+      ThrowOnAvError(av_dict_set(dict, key, nullptr, 0),
+                     "Failed to reset timeout", dict);
+    }
+  }
+
+  RegisterTimeout(this, fmt_ctx);
+  Reset();
+}
+
+bool TimeoutHandler::IsTimeout() const {
+  auto delay = std::chrono::steady_clock::now() - m_last_time;
+  auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(delay);
+  return diff > m_timeout;
+}
+
+int TimeoutHandler::Check(void* self) {
+  return self && static_cast<TimeoutHandler*>(self)->IsTimeout();
+}
+
+void TimeoutHandler::SetDefaultTimeout(unsigned long new_default_timeout) {
+  std::lock_guard<std::mutex> lock(s_lock);
+  s_default_timeout = new_default_timeout;
+}
+
+unsigned long TimeoutHandler::GetDefaultTimeout() {
+  std::lock_guard<std::mutex> lock(s_lock);
+  return s_default_timeout;
+}
+
+void TimeoutHandler::Reset() { m_last_time = std::chrono::steady_clock::now(); }
+
+unsigned long TimeoutHandler::s_default_timeout = 3000U;
+std::mutex TimeoutHandler::s_lock;

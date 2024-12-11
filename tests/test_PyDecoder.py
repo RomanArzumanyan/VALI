@@ -676,6 +676,25 @@ class TestDecoder(unittest.TestCase):
 
         self.assertEqual(dec_frame, gtInfo.num_frames)
 
+    @parameterized.expand(tc.getDevices())
+    def test_invalid_url(self, device_name: str, device_id: int):
+        """
+        This test checks invalid input URL. Decoder shall raise exception.
+
+        Args:
+            device_name (str): device name
+            device_id (int): gpu ID or -1 if run on CPU
+        """
+        err_str = 'I/O error' if os.name == 'nt' else 'Input/output error'
+        try:
+            url = "http://www.middle.of.nowhere:8765/cam_9000"
+            pyDec = vali.PyDecoder(url, {}, device_id)
+        except RuntimeError as e:
+            self.assertRegex(str(e), err_str)
+            return
+
+        self.fail("Test is expected to raise exception")
+
 
 if __name__ == "__main__":
     unittest.main()
