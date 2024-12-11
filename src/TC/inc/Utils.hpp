@@ -37,29 +37,40 @@ struct AVFrame;
 // AVFormatContext timeout handler;
 class TimeoutHandler {
   std::chrono::milliseconds m_timeout;
-  std::chrono::time_point<std::chrono::system_clock> m_last_time;
+  std::chrono::time_point<std::chrono::steady_clock> m_last_time;
+  static std::mutex s_lock;
 
 public:
+  static unsigned long s_default_timeout;
+
+  TimeoutHandler() = delete;
   ~TimeoutHandler() = default;
 
-  TimeoutHandler(uint32_t timeout_ms) : m_timeout(timeout_ms) {}
+  /**
+   * @brief Create from timeout value and register within format context.
+   */
+  TimeoutHandler(unsigned long timeout_ms, struct AVFormatContext* fmt_ctx);
 
-  TimeoutHandler() {
-    constexpr uint32_t default_timeout_ms = 3000U;
-    m_timeout = std::chrono::milliseconds(default_timeout_ms);
-  }
+  /**
+   * @brief Create from value string and register within format context.
+   */
+  TimeoutHandler(const char* timeout_str, struct AVFormatContext* fmt_ctx);
 
-  bool IsTimeout() const {
-    auto delay = std::chrono::system_clock::now() - m_last_time;
-    return std::chrono::duration_cast<std::chrono::milliseconds>(delay) >
-           m_timeout;
-  }
+  /**
+   * @brief Create from list of AVDictionary options. If dictionary doesn't
+   * contain "timeout" entry, default timeout value will be used. Register
+   * within format context.
+   *
+   * @note "timeout" and "stimeout" entries will be removed from dict.
+   */
+  TimeoutHandler(struct AVDictionary** dict, struct AVFormatContext* fmt_ctx);
 
-  static int Check(void* self) {
-    return self && static_cast<TimeoutHandler*>(self)->IsTimeout();
-  }
+  void Reset();
+  bool IsTimeout() const;
 
-  void Reset() { m_last_time = std::chrono::system_clock::now(); }
+  static int Check(void* self);
+  static void SetDefaultTimeout(unsigned long new_default_timeout);
+  static unsigned long GetDefaultTimeout();
 };
 
 std::string AvErrorToString(int av_error_code);
@@ -103,3 +114,8 @@ std::shared_ptr<Buffer> makeBufferFromAVFrame(std::shared_ptr<AVFrame> src);
 
 size_t getBufferSize(int width, int height, AVPixelFormat format,
                      int alignment = 1);
+
+// Helper functions
+void ThrowOnAvError(int res, const std::string& msg);
+
+void ThrowOnAvError(int res, const std::string& msg, AVDictionary** options);
