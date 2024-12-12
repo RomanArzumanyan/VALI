@@ -577,6 +577,8 @@ CUdeviceptr SurfaceRGBPlanar::PixelPtr(uint32_t component) {
   if (component < NumComponents()) {
     return m_planes.at(component).GpuMem() + Height() * Pitch() * component;
   }
+
+  return 0U;
 }
 
 SurfacePlane& SurfaceRGBPlanar::GetSurfacePlane(uint32_t plane) {

@@ -23,6 +23,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <array>
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -110,6 +111,7 @@ struct FfmpegDecodeFrame_Impl {
   std::map<AVFrameSideDataType, Buffer*> m_side_data;
   std::shared_ptr<AVDictionary> m_options;
   std::shared_ptr<TimeoutHandler> m_timeout_handler;
+  std::shared_ptr<AVIOContext> m_io_ctx;
   PacketData m_packet_data;
   CUstream m_stream;
 
@@ -155,7 +157,8 @@ struct FfmpegDecodeFrame_Impl {
 
   FfmpegDecodeFrame_Impl(
       const char* URL, const std::map<std::string, std::string>& ffmpeg_options,
-      std::optional<CUstream> stream) {
+      std::optional<CUstream> stream, std::shared_ptr<AVIOContext> p_io_ctx)
+      : m_io_ctx(p_io_ctx) {
 
     // Allocate format context first to set timeout before opening the input.
     AVFormatContext* fmt_ctx = avformat_alloc_context();
@@ -163,8 +166,29 @@ struct FfmpegDecodeFrame_Impl {
       throw std::runtime_error("Failed to allocate format context");
     }
 
-    /* Set neccessary AVOptions for HW decoding.
+    /* Have to determine input format by hand if using custom IO context.
+     * Otherwise libavformat may read couple MB of input data to do that.
+     * There's no way to tell how much data libavformat will need and that
+     * amount may exceed the custom AVIOFormat buffer size.
      */
+    if (m_io_ctx) {
+      fmt_ctx->pb = m_io_ctx.get();
+      fmt_ctx->flags |= AVFMT_FLAG_CUSTOM_IO;
+
+      std::array<uint8_t, 1024U> probe;
+      auto nbytes = fmt_ctx->pb->read_packet(fmt_ctx->pb->opaque, probe.data(),
+                                             probe.size());
+      fmt_ctx->pb->seek(fmt_ctx->pb->opaque, 0U, SEEK_SET);
+
+      AVProbeData probe_data = {};
+      probe_data.buf = probe.data();
+      probe_data.buf_size = nbytes;
+      probe_data.filename = "";
+
+      fmt_ctx->iformat = av_probe_input_format(&probe_data, 1);
+    }
+
+    // Set neccessary AVOptions for HW decoding.
     auto options = GetAvOptions(ffmpeg_options);
     if (stream) {
       m_stream = stream.value();
@@ -194,7 +218,7 @@ struct FfmpegDecodeFrame_Impl {
     ThrowOnAvError(res, "Can't copy AVOptions", options ? &options : nullptr);
 
     m_timeout_handler->Reset();
-    res = avformat_open_input(&fmt_ctx, URL, NULL, &options);
+    res = avformat_open_input(&fmt_ctx, m_io_ctx ? "" : URL, NULL, &options);
     if (options) {
       av_dict_free(&options);
     }
@@ -951,26 +975,29 @@ TaskExecDetails DecodeFrame::GetSideData(AVFrameSideDataType data_type) {
 }
 
 DecodeFrame* DecodeFrame::Make(const char* URL, NvDecoderClInterface& cli_iface,
-                               std::optional<CUstream> stream) {
-  return new DecodeFrame(URL, cli_iface, stream);
+                               std::optional<CUstream> stream,
+                               std::shared_ptr<AVIOContext> p_io_ctx) {
+  return new DecodeFrame(URL, cli_iface, stream, p_io_ctx);
 }
 
 /* Don't mention any sync call in parent class constructor because GPU
  * acceleration is optional. Sync in decode method(s) instead.
  */
 DecodeFrame::DecodeFrame(const char* URL, NvDecoderClInterface& cli_iface,
-                         std::optional<CUstream> stream)
+                         std::optional<CUstream> stream,
+                         std::shared_ptr<AVIOContext> p_io_ctx)
     : Task("DecodeFrame", DecodeFrame::num_inputs, DecodeFrame::num_outputs) {
   std::map<std::string, std::string> ffmpeg_options;
   cli_iface.GetOptions(ffmpeg_options);
 
   // Try to use HW acceleration first and fall back to SW decoding
   try {
-    pImpl = new FfmpegDecodeFrame_Impl(URL, ffmpeg_options, stream);
+    pImpl = new FfmpegDecodeFrame_Impl(URL, ffmpeg_options, stream, p_io_ctx);
   } catch (std::exception& e) {
     std::cerr << "Failed to create HW decoder. Reason: " << e.what()
               << ". Using SW decoder.";
-    pImpl = new FfmpegDecodeFrame_Impl(URL, ffmpeg_options, std::nullopt);
+    pImpl =
+        new FfmpegDecodeFrame_Impl(URL, ffmpeg_options, std::nullopt, p_io_ctx);
   }
 }
 

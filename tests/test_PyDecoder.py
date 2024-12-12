@@ -189,8 +189,19 @@ class TestDecoder(unittest.TestCase):
         self.assertLessEqual(
             np.abs(self.gtInfo.timebase - pyDec.Timebase), epsilon)
 
-    def test_decode_all_frames_cpu(self):
-        pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=-1)
+    @parameterized.expand([
+        ["from_url"],
+        ["from_buf"]
+    ])
+    def test_decode_all_frames_cpu(self, input_type):
+        buf = None
+
+        if input_type == "from_url":
+            pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=-1)
+        else:
+            buf = open(self.gtInfo.uri, "rb")
+            pyDec = vali.PyDecoder(buf, {}, gpu_id=-1)
+
         dec_frames = 0
         frame = np.ndarray(dtype=np.uint8, shape=())
         while True:
@@ -201,9 +212,21 @@ class TestDecoder(unittest.TestCase):
         self.assertEqual(self.gtInfo.num_frames, dec_frames)
         self.assertEqual(details, vali.TaskExecInfo.END_OF_STREAM)
 
-    def test_decode_all_surfaces_gpu(self):
+        if buf is not None:
+            buf.close()
+
+    @parameterized.expand([
+        ["from_url"],
+        ["from_buf"]
+    ])
+    def test_decode_all_surfaces_gpu(self, input_type):
+        buf = None
         gpu_id = 0
-        pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id)
+        if input_type == "from_url":
+            pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id)
+        else:
+            buf = open(self.gtInfo.uri, "rb")
+            pyDec = vali.PyDecoder(buf, {}, gpu_id)
         dec_frames = 0
         surf = vali.Surface.Make(
             pyDec.Format, pyDec.Width, pyDec.Height, gpu_id)
@@ -214,6 +237,9 @@ class TestDecoder(unittest.TestCase):
             dec_frames += 1
         self.assertEqual(self.gtInfo.num_frames, dec_frames)
         self.assertEqual(details, vali.TaskExecInfo.END_OF_STREAM)
+
+        if buf is not None:
+            buf.close()
 
     def test_decode_high_bit_depth_gpu(self):
         gpu_id = 0
@@ -242,8 +268,18 @@ class TestDecoder(unittest.TestCase):
         self.assertEqual(self.hbdInfo.num_frames, dec_frames)
         self.assertEqual(details, vali.TaskExecInfo.END_OF_STREAM)
 
-    def test_check_all_frames_cpu(self):
-        pyDec = vali.PyDecoder(input=self.gtInfo.uri, opts={}, gpu_id=-1)
+    @parameterized.expand([
+        ["from_url"],
+        ["from_buf"]
+    ])
+    def test_check_all_frames_cpu(self, input_type):
+        buf = None
+
+        if input_type == "from_url":
+            pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=-1)
+        else:
+            buf = open(self.gtInfo.uri, "rb")
+            pyDec = vali.PyDecoder(buf, {}, gpu_id=-1)
 
         dec_frames = 0
         with open(self.yuvInfo.uri, "rb") as f_in:
@@ -272,6 +308,9 @@ class TestDecoder(unittest.TestCase):
                 dec_frames += 1
 
         self.assertEqual(self.yuvInfo.num_frames, dec_frames)
+        
+        if buf is not None:
+            buf.close()
 
     @parameterized.expand([
         ["basic"],
