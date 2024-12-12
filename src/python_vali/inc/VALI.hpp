@@ -33,6 +33,7 @@
 #include <sstream>
 
 extern "C" {
+#include <libavformat/avio.h>
 #include <libavutil/frame.h>
 #include <libavutil/motion_vector.h>
 }
@@ -158,24 +159,26 @@ public:
   void SetCloneSurface(Surface* p_surface);
 };
 
-class BufferedRandom {
+class BufferedReader {
 public:
-  BufferedRandom(py::object obj);
-  ~BufferedRandom() = default;
+  BufferedReader(py::object obj);
+  ~BufferedReader() = default;
 
   static int read(void* self, uint8_t* buf, int buf_size);
-  static int write(void* self, const uint8_t* buf, int buf_size);
   static int64_t seek(void* self, int64_t offset, int whence);
 
-  std::unique_ptr<AVIOContext> MakeAVIOContext();
+  // Default buffer size is 1MB.
+  std::shared_ptr<AVIOContext> GetAVIOContext(size_t buffer_size = 1048510U);
 
 private:
   py::object m_obj = py::none();
+  size_t m_buffer_size = 0U;
+  std::shared_ptr<AVIOContext> m_io_ctx_ptr;
 };
 
 class PyDecoder {
   std::unique_ptr<DecodeFrame> upDecoder = nullptr;
-  std::unique_ptr<BufferedRandom> upBuff = nullptr;
+  std::unique_ptr<BufferedReader> upBuff = nullptr;
 
   void* GetSideData(AVFrameSideDataType data_type, size_t& raw_size);
 

@@ -22,6 +22,7 @@
 
 extern "C" {
 #include <libavutil/frame.h>
+#include <libavformat/avio.h>
 }
 
 #include "LibCuda.hpp"
@@ -118,7 +119,8 @@ public:
 
   ~DecodeFrame() final;
   static DecodeFrame* Make(const char* URL, NvDecoderClInterface& cli_iface,
-                           std::optional<CUstream> stream);
+                           std::optional<CUstream> stream,
+                           std::shared_ptr<AVIOContext> p_io_ctx = nullptr);
   const PacketData& GetLastPacketData() const;
 
 private:
@@ -134,7 +136,8 @@ private:
   struct FfmpegDecodeFrame_Impl* pImpl = nullptr;
 
   DecodeFrame(const char* URL, NvDecoderClInterface& cli_iface,
-              std::optional<CUstream> stream);
+              std::optional<CUstream> stream,
+              std::shared_ptr<AVIOContext> p_io_ctx = nullptr);
 };
 
 class TC_CORE_EXPORT CudaUploadFrame final : public Task {

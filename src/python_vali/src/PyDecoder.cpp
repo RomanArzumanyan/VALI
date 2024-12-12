@@ -46,8 +46,9 @@ PyDecoder::PyDecoder(py::object buffered_reader,
           ? std::optional<CUstream>(CudaResMgr::Instance().GetStream(gpu_id))
           : std::nullopt;
 
-  upBuff.reset(new BufferedRandom(buffered_reader));
-  upDecoder.reset(DecodeFrame::Make(pathToFile.c_str(), cli_iface, stream));
+  upBuff.reset(new BufferedReader(buffered_reader));
+  upDecoder.reset(
+      DecodeFrame::Make("", cli_iface, stream, upBuff->GetAVIOContext()));
 }
 
 bool PyDecoder::DecodeImpl(TaskExecDetails& details, PacketData& pkt_data,
@@ -401,9 +402,9 @@ void Init_PyDecoder(py::module& m) {
     )pbdoc")
       .def("TakeBuffer",
            [](PyDecoder& self, py::object buf) {
-             BufferedRandom buffer(buf);
+             BufferedReader buffer(buf);
              std::vector<uint8_t> scrap(128);
-             BufferedRandom::read((void*)&buffer, scrap.data(), scrap.size());
+             BufferedReader::read((void*)&buffer, scrap.data(), scrap.size());
            })
       .def_property_readonly("Width", &PyDecoder::Width,
                              R"pbdoc(

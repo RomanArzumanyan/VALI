@@ -56,7 +56,7 @@ pybind11_add_module(_python_vali MODULE
 	src/PySurfaceResizer.cpp
 	src/PyFrameConverter.cpp
 	src/PyNvJpegEncoder.cpp
-	src/BufferedRandom.cpp
+	src/BufferedReader.cpp
 )
 set_property(TARGET _python_vali PROPERTY CXX_STANDARD 17)
 target_include_directories(_python_vali PRIVATE inc)
