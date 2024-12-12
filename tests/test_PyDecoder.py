@@ -64,6 +64,7 @@ class TestDecoder(unittest.TestCase):
         self.nv12Info = tc.GroundTruth(**self.data["basic_nv12"])
         self.hbdInfo = tc.GroundTruth(**self.data["hevc10"])
         self.p10Info = tc.GroundTruth(**self.data["hevc10_p10"])
+        self.ptsInfo = tc.GroundTruth(**self.data["pts_increase_check"])
 
         self.log = logging.getLogger(__name__)
 
@@ -78,6 +79,10 @@ class TestDecoder(unittest.TestCase):
             return self.hbdInfo
         elif name == "hevc10_p10":
             return self.p10Info
+        elif name == "pts_increase_check":
+            return self.ptsInfo
+        else:
+            return None
 
     @parameterized.expand([
         ["avc_8bit", "basic",],
@@ -308,6 +313,45 @@ class TestDecoder(unittest.TestCase):
             buf.close()
 
     @parameterized.expand([
+        ["basic"],
+        ["pts_increase_check"],
+    ])
+    def test_monotonous_pts_increase_cpu(self, case_name: str):
+        gtInfo = self.gtByName(case_name)
+
+        pyDec = vali.PyDecoder(input=gtInfo.uri, opts={}, gpu_id=-1)
+        frame = np.ndarray(dtype=np.uint8, shape=(pyDec.HostFrameSize))
+        pktData = vali.PacketData()
+        lastPts = vali.NO_PTS
+
+        while True:
+            success, info = pyDec.DecodeSingleFrame(frame, pktData)
+            if not success:
+                break
+            self.assertGreaterEqual(pktData.pts, lastPts)
+            lastPts = pktData.pts
+
+    @parameterized.expand([
+        ["basic"],
+        ["pts_increase_check"],
+    ])
+    def test_monotonous_pts_increase_gpu(self, case_name: str):
+        gtInfo = self.gtByName(case_name)
+
+        pyDec = vali.PyDecoder(input=gtInfo.uri, opts={}, gpu_id=0)
+        surf = vali.Surface.Make(pyDec.Format, pyDec.Width, pyDec.Height,
+                                 gpu_id=0)
+        pktData = vali.PacketData()
+        lastPts = vali.NO_PTS
+
+        while True:
+            success, info = pyDec.DecodeSingleSurface(surf, pktData)
+            if not success:
+                break
+            self.assertGreaterEqual(pktData.pts, lastPts)
+            lastPts = pktData.pts
+
+    @parameterized.expand([
         ["avc_8bit", "basic", "basic_nv12"],
         ["hevc_10bit", "hevc10", "hevc10_p10"],
     ])
@@ -461,7 +505,8 @@ class TestDecoder(unittest.TestCase):
         ]
 
         # Seek to the random frame, decode, save.
-        seek_frame = random.randint(0, gtInfo.num_frames - 1)
+        seek_frame = random.randint(
+            int(gtInfo.num_frames / 2), gtInfo.num_frames - 1)
 
         success, details = pyDec.DecodeSingleSurface(
             surf=surf, seek_ctx=vali.SeekContext(seek_frame))
@@ -488,6 +533,36 @@ class TestDecoder(unittest.TestCase):
 
         # Check if frames are different (issue #89)
         self.assertFalse(np.array_equal(frames[0], frames[1]))
+
+    @tc.repeat(2)
+    def test_seek_big_timestamp_gpu(self):
+        with open("gt_files.json") as f:
+            gtInfo = tc.GroundTruth(**json.load(f)["generated"])
+
+        pyDec = vali.PyDecoder(gtInfo.uri, {}, gpu_id=0)
+        surf = vali.Surface.Make(
+            pyDec.Format, pyDec.Width, pyDec.Height, gpu_id=0)
+
+        # Seek to random frame within second half of the video
+        for i in range(0, 2):
+            start_frame = random.randint(
+                int(gtInfo.num_frames / 2), gtInfo.num_frames - 1)
+            seek_ctx = vali.SeekContext(seek_frame=start_frame)
+            packet_data = vali.PacketData()
+            success, _ = pyDec.DecodeSingleSurface(
+                surf, packet_data, seek_ctx)
+            self.assertTrue(success)
+
+            # This video has duration of 512 units per every frame.
+            # Calculate expected timestamp. For cuvid, timestamps are
+            # reconstructed by FFMpeg, so they may vary very slightly.
+            #
+            # Delta below 1% is considered acceptable.
+            expected_pts = start_frame * 512
+            self.assertLessEqual(
+                abs(packet_data.pts - expected_pts) / expected_pts,
+                0.01
+            )
 
     @tc.repeat(3)
     def test_seek_gpu(self):
@@ -639,6 +714,25 @@ class TestDecoder(unittest.TestCase):
             self.assertEqual(pyDec.Height, height, str(dec_frame))
 
         self.assertEqual(dec_frame, gtInfo.num_frames)
+
+    @parameterized.expand(tc.getDevices())
+    def test_invalid_url(self, device_name: str, device_id: int):
+        """
+        This test checks invalid input URL. Decoder shall raise exception.
+
+        Args:
+            device_name (str): device name
+            device_id (int): gpu ID or -1 if run on CPU
+        """
+        err_str = 'I/O error' if os.name == 'nt' else 'Input/output error'
+        try:
+            url = "http://www.middle.of.nowhere:8765/cam_9000"
+            pyDec = vali.PyDecoder(url, {}, device_id)
+        except RuntimeError as e:
+            self.assertRegex(str(e), err_str)
+            return
+
+        self.fail("Test is expected to raise exception")
 
 
 if __name__ == "__main__":
