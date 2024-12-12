@@ -22,6 +22,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <array>
 
 extern "C" {
 #include <libavcodec/avcodec.h>
