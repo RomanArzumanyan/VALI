@@ -21,7 +21,8 @@ BufferedReader::BufferedReader(py::object obj) : m_obj(obj) {}
 int BufferedReader::read(void* self, uint8_t* buf, int buf_size) {
   auto me = static_cast<BufferedReader*>(self);
   if (!me || !buf || buf_size <= 0) {
-    return 1;
+    std::cerr << __FUNCTION__ << "Invalid argument given";
+    return AVERROR_UNKNOWN;
   }
 
   /* Get read method and run it. It return bytes so we have to memcpy from
@@ -37,7 +38,8 @@ int BufferedReader::read(void* self, uint8_t* buf, int buf_size) {
 int64_t BufferedReader::seek(void* self, int64_t offset, int whence) {
   auto me = static_cast<BufferedReader*>(self);
   if (!me) {
-    return 1;
+    std::cerr << __FUNCTION__ << "Invalid argument given";
+    return AVERROR_UNKNOWN;
   }
 
   // Handle special whence parameter values.
@@ -45,6 +47,7 @@ int64_t BufferedReader::seek(void* self, int64_t offset, int whence) {
     return me->m_buffer_size;
   } else if (whence & AVSEEK_FORCE) {
     std::cerr << "AVSEEK_FORCE isn't supported as whence parameter value";
+    return AVERROR_UNKNOWN;
   }
 
   auto seek_func = py::reinterpret_borrow<py::function>(me->m_obj.attr("seek"));
