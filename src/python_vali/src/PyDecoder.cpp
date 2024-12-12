@@ -400,12 +400,6 @@ void Init_PyDecoder(py::module& m) {
         :param seek_ctx: seek context, may be None
         :return: tuple, first element is True in case of success, False otherwise. Second elements is TaskExecInfo.
     )pbdoc")
-      .def("TakeBuffer",
-           [](PyDecoder& self, py::object buf) {
-             BufferedReader buffer(buf);
-             std::vector<uint8_t> scrap(128);
-             BufferedReader::read((void*)&buffer, scrap.data(), scrap.size());
-           })
       .def_property_readonly("Width", &PyDecoder::Width,
                              R"pbdoc(
         Return encoded video file width in pixels.
