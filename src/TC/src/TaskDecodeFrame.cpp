@@ -735,6 +735,8 @@ struct FfmpegDecodeFrame_Impl {
   Pixel_Format GetPixelFormat() const {
     auto const format =
         IsAccelerated() ? m_avc_ctx->sw_pix_fmt : m_avc_ctx->pix_fmt;
+    auto fmt_name = av_get_pix_fmt_name(format);
+    std::stringstream err_msg;
 
     switch (format) {
     case AV_PIX_FMT_NV12:
@@ -757,8 +759,11 @@ struct FfmpegDecodeFrame_Impl {
     case AV_PIX_FMT_P012:
       return P12;
     default:
-      std::cerr << "Unknown pixel format: " << av_get_pix_fmt_name(format)
-                << std::endl;
+      err_msg << "Unknown pixel format: ";
+      if (fmt_name) {
+        err_msg << fmt_name;
+      }
+      std::cerr << err_msg.str() << "\n";
       return UNDEFINED;
     }
   }
