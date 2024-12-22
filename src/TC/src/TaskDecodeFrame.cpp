@@ -17,13 +17,13 @@
 #include "Utils.hpp"
 
 #include <algorithm>
+#include <array>
 #include <iostream>
 #include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <array>
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -175,17 +175,19 @@ struct FfmpegDecodeFrame_Impl {
       fmt_ctx->pb = m_io_ctx.get();
       fmt_ctx->flags |= AVFMT_FLAG_CUSTOM_IO;
 
-      std::array<uint8_t, 1024U> probe;
-      auto nbytes = fmt_ctx->pb->read_packet(fmt_ctx->pb->opaque, probe.data(),
-                                             probe.size());
-      fmt_ctx->pb->seek(fmt_ctx->pb->opaque, 0U, SEEK_SET);
+      if (fmt_ctx->pb->seek) {
+        std::array<uint8_t, 1024U> probe;
+        auto nbytes = fmt_ctx->pb->read_packet(fmt_ctx->pb->opaque,
+                                               probe.data(), probe.size());
+        fmt_ctx->pb->seek(fmt_ctx->pb->opaque, 0U, SEEK_SET);
 
-      AVProbeData probe_data = {};
-      probe_data.buf = probe.data();
-      probe_data.buf_size = nbytes;
-      probe_data.filename = "";
+        AVProbeData probe_data = {};
+        probe_data.buf = probe.data();
+        probe_data.buf_size = nbytes;
+        probe_data.filename = "";
 
-      fmt_ctx->iformat = av_probe_input_format(&probe_data, 1);
+        fmt_ctx->iformat = av_probe_input_format(&probe_data, 1);
+      }
     }
 
     // Set neccessary AVOptions for HW decoding.
@@ -813,11 +815,21 @@ struct FfmpegDecodeFrame_Impl {
   }
 
   TaskExecDetails SeekDecode(Token& dst, const SeekContext& ctx) {
+    /* If custom AVIOContext was used, have to check the seek support.
+     * May not be enabled.
+     */
+    if (m_fmt_ctx->flags & AVFMT_FLAG_CUSTOM_IO) {
+      if (!m_fmt_ctx->pb->seek) {
+        return TaskExecDetails(
+            TaskExecStatus::TASK_EXEC_FAIL, TaskExecInfo::NOT_SUPPORTED,
+            "Seek operation is not supported by AVIOContext.");
+      }
+    }
+
     /* Across this function packet presentation timestamp (PTS) values are
      * used to compare given timestamp against. That's done so because ffmpeg
      * seek relies on PTS.
      */
-
     if (IsVFR() && ctx.IsByNumber()) {
       return TaskExecDetails(
           TaskExecStatus::TASK_EXEC_FAIL, TaskExecInfo::NOT_SUPPORTED,
@@ -853,13 +865,13 @@ struct FfmpegDecodeFrame_Impl {
     OpenCodec(was_accelerated);
 
     m_timeout_handler->Reset();
-    auto ret = avformat_seek_file(m_fmt_ctx.get(), GetVideoStrIdx(), 0, timestamp,
-                                  timestamp, AVSEEK_FLAG_BACKWARD);
+    auto ret = avformat_seek_file(m_fmt_ctx.get(), GetVideoStrIdx(), 0,
+                                  timestamp, timestamp, AVSEEK_FLAG_BACKWARD);
 
     if (ret < 0) {
       return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL, TaskExecInfo::FAIL,
                              AvErrorToString(ret));
-    }else{
+    } else {
       avcodec_flush_buffers(m_avc_ctx.get());
     }
 
@@ -995,15 +1007,7 @@ DecodeFrame::DecodeFrame(const char* URL, NvDecoderClInterface& cli_iface,
   std::map<std::string, std::string> ffmpeg_options;
   cli_iface.GetOptions(ffmpeg_options);
 
-  // Try to use HW acceleration first and fall back to SW decoding
-  try {
-    pImpl = new FfmpegDecodeFrame_Impl(URL, ffmpeg_options, stream, p_io_ctx);
-  } catch (std::exception& e) {
-    std::cerr << "Failed to create HW decoder. Reason: " << e.what()
-              << ". Using SW decoder.";
-    pImpl =
-        new FfmpegDecodeFrame_Impl(URL, ffmpeg_options, std::nullopt, p_io_ctx);
-  }
+  pImpl = new FfmpegDecodeFrame_Impl(URL, ffmpeg_options, stream, p_io_ctx);
 }
 
 DecodeFrame::~DecodeFrame() { delete pImpl; }

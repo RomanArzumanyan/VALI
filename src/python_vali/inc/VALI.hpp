@@ -167,13 +167,15 @@ public:
   static int read(void* self, uint8_t* buf, int buf_size);
   static int64_t seek(void* self, int64_t offset, int whence);
 
-  // Default buffer size is 1MB.
-  std::shared_ptr<AVIOContext> GetAVIOContext(size_t buffer_size = 1048510U);
+  // Default buffer size is 4MB.
+  std::shared_ptr<AVIOContext> GetAVIOContext(size_t buffer_size = 4 * 1024U *
+                                                                   1024U);
 
 private:
   py::object m_obj = py::none();
   size_t m_buffer_size = 0U;
   std::shared_ptr<AVIOContext> m_io_ctx_ptr;
+  bool m_is_seekable = true;
 };
 
 class PyDecoder {
