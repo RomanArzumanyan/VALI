@@ -1007,15 +1007,7 @@ DecodeFrame::DecodeFrame(const char* URL, NvDecoderClInterface& cli_iface,
   std::map<std::string, std::string> ffmpeg_options;
   cli_iface.GetOptions(ffmpeg_options);
 
-  // Try to use HW acceleration first and fall back to SW decoding
-  try {
-    pImpl = new FfmpegDecodeFrame_Impl(URL, ffmpeg_options, stream, p_io_ctx);
-  } catch (std::exception& e) {
-    std::cerr << "Failed to create HW decoder. Reason: " << e.what()
-              << ". Using SW decoder.";
-    pImpl =
-        new FfmpegDecodeFrame_Impl(URL, ffmpeg_options, std::nullopt, p_io_ctx);
-  }
+  pImpl = new FfmpegDecodeFrame_Impl(URL, ffmpeg_options, stream, p_io_ctx);
 }
 
 DecodeFrame::~DecodeFrame() { delete pImpl; }

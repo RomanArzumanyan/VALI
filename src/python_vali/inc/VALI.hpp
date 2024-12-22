@@ -167,8 +167,9 @@ public:
   static int read(void* self, uint8_t* buf, int buf_size);
   static int64_t seek(void* self, int64_t offset, int whence);
 
-  // Default buffer size is 65 kB.
-  std::shared_ptr<AVIOContext> GetAVIOContext(size_t buffer_size = 65536U);
+  // Default buffer size is 4MB.
+  std::shared_ptr<AVIOContext> GetAVIOContext(size_t buffer_size = 4 * 1024U *
+                                                                   1024U);
 
 private:
   py::object m_obj = py::none();

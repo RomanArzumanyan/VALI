@@ -46,8 +46,14 @@ int BufferedReader::read(void* self, uint8_t* buf, int buf_size) {
     auto read_func =
         py::reinterpret_borrow<py::function>(me->m_obj.attr("read"));
     py::buffer_info info(py::buffer(read_func(buf_size)).request());
-    memcpy((void*)buf, info.ptr, buf_size);
-    return info.shape[0];
+
+    auto const num_bytes = info.shape[0];
+    if (num_bytes) {
+      memcpy((void*)buf, info.ptr, buf_size);
+      return num_bytes;
+    } else {
+      return AVERROR_EOF;
+    }
   } catch (std::exception& e) {
     std::cerr << e.what();
     return AVERROR_UNKNOWN;
