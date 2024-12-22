@@ -49,7 +49,7 @@ int BufferedReader::read(void* self, uint8_t* buf, int buf_size) {
 
     auto const num_bytes = info.shape[0];
     if (num_bytes) {
-      memcpy((void*)buf, info.ptr, buf_size);
+      memcpy((void*)buf, info.ptr, num_bytes);
       return num_bytes;
     } else {
       return AVERROR_EOF;
