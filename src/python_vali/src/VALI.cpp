@@ -329,6 +329,14 @@ PYBIND11_MODULE(_python_vali, m) {
         return ss.str();
       });
 
+  py::class_<CudaStreamEvent, shared_ptr<CudaStreamEvent>>(m, "CudaStreamEvent",
+                                                           "CUDA stream event")
+      .def("Wait", &CudaStreamEvent::Wait,
+           R"pbdoc(
+      Will not return until CUDA event is synchronized.
+      Acts exactly like cuEventSyncronize.
+      )pbdoc");
+
   py::class_<TaskExecDetails, shared_ptr<TaskExecDetails>>(m, "TaskExecDetails")
       .def(py::init<>())
       .def_readwrite("info", &TaskExecDetails::m_info)

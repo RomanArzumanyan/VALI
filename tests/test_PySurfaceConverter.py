@@ -46,6 +46,7 @@ import numpy as np
 import unittest
 import json
 import test_common as tc
+from parameterized import parameterized
 
 # We use 42 (dB) as the measure of similarity.
 # If two images have PSNR higher than 42 (dB) we consider them the same.
@@ -86,7 +87,11 @@ class TestSurfaceConverter(unittest.TestCase):
         self.assertEqual(
             details, vali.TaskExecInfo.UNSUPPORTED_FMT_CONV_PARAMS)
 
-    def test_no_cc_ctx(self):
+    @parameterized.expand([
+        [True],
+        [False]
+    ])
+    def test_no_cc_ctx(self, is_async):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
 
@@ -107,10 +112,18 @@ class TestSurfaceConverter(unittest.TestCase):
         surf_dst = vali.Surface.Make(
             vali.PixelFormat.RGB, surf_src.Width, surf_src.Height, gpu_id=0)
 
-        surf_dst, details = nvCvt.Run(surf_src, surf_dst)
+        if is_async:
+            success, details, event = nvCvt.RunAsync(surf_src, surf_dst)
+            event.Wait()
+        else:
+            success, details = nvCvt.Run(surf_src, surf_dst)
         self.assertEqual(details, vali.TaskExecInfo.SUCCESS)
 
-    def test_rgb_deinterleave(self):
+    @parameterized.expand([
+        [True],
+        [False]
+    ])
+    def test_rgb_deinterleave(self, is_async):
         with open("gt_files.json") as f:
             gt_values = json.load(f)
             dst_info = tc.GroundTruth(**gt_values["basic_rgb"])
@@ -153,7 +166,12 @@ class TestSurfaceConverter(unittest.TestCase):
                     pln_info.height,
                     gpu_id=0)
 
-                success, details = toPLN.Run(surf_rgb, surf_pln, cc_ctx)
+                if is_async:
+                    success, details, event = toPLN.RunAsync(
+                        surf_rgb, surf_pln, cc_ctx)
+                    event.Wait()
+                else:
+                    success, details = toPLN.Run(surf_rgb, surf_pln, cc_ctx)
                 if not success:
                     self.fail("Fail to convert RGB > RGB_PLANAR: " + details)
 

@@ -67,3 +67,5 @@ DEFINE(LibCuda, cuStreamGetCtx);
 DEFINE(LibCuda, cuEventRecord);
 DEFINE(LibCuda, cuEventSynchronize);
 DEFINE(LibCuda, cuDriverGetVersion);
+DEFINE(LibCuda, cuEventDestroy);
+DEFINE(LibCuda, cuEventCreate);

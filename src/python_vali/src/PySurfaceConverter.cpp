@@ -25,14 +25,15 @@ constexpr auto TASK_EXEC_FAIL = TaskExecStatus::TASK_EXEC_FAIL;
 
 PySurfaceConverter::PySurfaceConverter(Pixel_Format src, Pixel_Format dst,
                                        uint32_t gpuID) {
-  upConverter = std::make_unique<ConvertSurface>(
-      src, dst, CudaResMgr::Instance().GetStream(gpuID));
+  m_stream = CudaResMgr::Instance().GetStream(gpuID);
+  upConverter = std::make_unique<ConvertSurface>(src, dst, m_stream);
   upCtxBuffer.reset(Buffer::MakeOwnMem(sizeof(ColorspaceConversionContext)));
 }
 
 PySurfaceConverter::PySurfaceConverter(Pixel_Format src, Pixel_Format dst,
                                        CUstream str) {
-  upConverter = std::make_unique<ConvertSurface>(src, dst, str);
+  m_stream = str;
+  upConverter = std::make_unique<ConvertSurface>(src, dst, m_stream);
   upCtxBuffer.reset(Buffer::MakeOwnMem(sizeof(ColorspaceConversionContext)));
 }
 
@@ -80,8 +81,10 @@ void Init_PySurfaceConverter(py::module& m) {
           [](PySurfaceConverter& self, Surface& src, Surface& dst,
              std::optional<ColorspaceConversionContext> cc_ctx) {
             TaskExecDetails details;
-            return std::make_tuple(self.Run(src, dst, cc_ctx, details),
-                                   details.m_info);
+            bool res = self.Run(src, dst, cc_ctx, details);
+            CudaStreamEvent event(self.m_stream);
+            event.Wait();
+            return std::make_tuple(res, details.m_info);
           },
           py::arg("src"), py::arg("dst"), py::arg("cc_ctx") = std::nullopt,
           py::call_guard<py::gil_scoped_release>(),
@@ -91,9 +94,32 @@ void Init_PySurfaceConverter(py::module& m) {
         :param src: input Surface. Must be of same format class instance was created with.
         :param dst: output Surface. Must be of suitable format.
         :param cc_ctx: colorspace conversion context. Describes color space and color range used for conversion. Optional parameter. If not given, VALI will automatically pick supported color conversion parameters.
-        :return: tuple containing:
+        :return: tuple:
           success (Bool) True in case of success, False otherwise.
           info (TaskExecInfo) task execution information.
+        :rtype: tuple
+    )pbdoc")
+      .def(
+          "RunAsync",
+          [](PySurfaceConverter& self, Surface& src, Surface& dst,
+             std::optional<ColorspaceConversionContext> cc_ctx) {
+            TaskExecDetails details;
+            return std::make_tuple(
+                self.Run(src, dst, cc_ctx, details), details.m_info,
+                std::make_shared<CudaStreamEvent>(self.m_stream));
+          },
+          py::arg("src"), py::arg("dst"), py::arg("cc_ctx") = std::nullopt,
+          py::call_guard<py::gil_scoped_release>(),
+          R"pbdoc(
+        Perform pixel format conversion.
+
+        :param src: input Surface. Must be of same format class instance was created with.
+        :param dst: output Surface. Must be of suitable format.
+        :param cc_ctx: colorspace conversion context. Describes color space and color range used for conversion. Optional parameter. If not given, VALI will automatically pick supported color conversion parameters.
+        :return: tuple:
+          success (Bool) True in case of success, False otherwise.
+          info (TaskExecInfo) task execution information.
+          event (CudaStreamEvent) CUDA stream event
         :rtype: tuple
     )pbdoc");
 }
