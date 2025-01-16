@@ -102,13 +102,16 @@ void Init_PySurfaceConverter(py::module& m) {
       .def(
           "RunAsync",
           [](PySurfaceConverter& self, Surface& src, Surface& dst,
-             std::optional<ColorspaceConversionContext> cc_ctx) {
+             std::optional<ColorspaceConversionContext> cc_ctx,
+             bool record_event) {
             TaskExecDetails details;
             return std::make_tuple(
                 self.Run(src, dst, cc_ctx, details), details.m_info,
-                std::make_shared<CudaStreamEvent>(self.m_stream));
+                record_event ? std::make_shared<CudaStreamEvent>(self.m_stream)
+                             : nullptr);
           },
           py::arg("src"), py::arg("dst"), py::arg("cc_ctx") = std::nullopt,
+          py::arg("record_event") = true,
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
         Perform pixel format conversion.
@@ -116,6 +119,7 @@ void Init_PySurfaceConverter(py::module& m) {
         :param src: input Surface. Must be of same format class instance was created with.
         :param dst: output Surface. Must be of suitable format.
         :param cc_ctx: colorspace conversion context. Describes color space and color range used for conversion. Optional parameter. If not given, VALI will automatically pick supported color conversion parameters.
+        :param record_event: If False, no event will be recorded. Useful for chain calls.
         :return: tuple:
           success (Bool) True in case of success, False otherwise.
           info (TaskExecInfo) task execution information.

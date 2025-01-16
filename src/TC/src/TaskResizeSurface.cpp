@@ -295,7 +295,7 @@ auto const cuda_stream_sync = [](void* stream) {
 
 ResizeSurface::ResizeSurface(Pixel_Format format, CUstream str)
     : Task("NppResizeSurface", ResizeSurface::numInputs,
-           ResizeSurface::numOutputs, cuda_stream_sync, (void*)str) {
+           ResizeSurface::numOutputs, nullptr, (void*)str) {
   if (RGB == format || BGR == format) {
     pImpl = new NppResizeSurfacePacked3C_Impl(str, format);
   } else if (YUV420 == format || YUV444 == format || RGB_PLANAR == format) {

@@ -120,6 +120,8 @@ public:
       : PySurfaceResizer(format, (CUstream)str) {}
 
   bool Run(Surface& src, Surface& dst, TaskExecDetails& details);
+
+  CUstream m_stream;
 };
 
 class DecodeContext {
