@@ -26,12 +26,13 @@ constexpr auto TASK_EXEC_SUCCESS = TaskExecStatus::TASK_EXEC_SUCCESS;
 constexpr auto TASK_EXEC_FAIL = TaskExecStatus::TASK_EXEC_FAIL;
 
 PySurfaceResizer::PySurfaceResizer(Pixel_Format format, CUstream str) {
-  upResizer = std::make_unique<ResizeSurface>(format, str);
+  m_stream = str;
+  upResizer = std::make_unique<ResizeSurface>(format, m_stream);
 }
 
 PySurfaceResizer::PySurfaceResizer(Pixel_Format format, uint32_t gpuID) {
-  upResizer = std::make_unique<ResizeSurface>(
-      format, CudaResMgr::Instance().GetStream(gpuID));
+  m_stream = CudaResMgr::Instance().GetStream(gpuID);
+  upResizer = std::make_unique<ResizeSurface>(format, m_stream);
 }
 
 bool PySurfaceResizer::Run(Surface& src, Surface& dst,
@@ -66,7 +67,10 @@ void Init_PySurfaceResizer(py::module& m) {
           "Run",
           [](PySurfaceResizer& self, Surface& src, Surface& dst) {
             TaskExecDetails details;
-            return std::make_tuple(self.Run(src, dst, details), details.m_info);
+            bool res = self.Run(src, dst, details);
+            CudaStreamEvent event(self.m_stream);
+            event.Wait();
+            return std::make_tuple(res, details.m_info);
           },
           py::arg("src"), py::arg("dst"),
           py::call_guard<py::gil_scoped_release>(),
@@ -78,6 +82,31 @@ void Init_PySurfaceResizer(py::module& m) {
         :return: tuple containing:
           success (Bool) True in case of success, False otherwise.
           info (TaskExecInfo) task execution information.
+        :rtype: tuple
+    )pbdoc")
+      .def(
+          "RunAsync",
+          [](PySurfaceResizer& self, Surface& src, Surface& dst,
+             bool record_event) {
+            TaskExecDetails details;
+            bool res = self.Run(src, dst, details);
+            return std::make_tuple(
+                res, details.m_info,
+                record_event ? std::make_shared<CudaStreamEvent>(self.m_stream)
+                             : nullptr);
+          },
+          py::arg("src"), py::arg("dst"), py::arg("record_event") = true,
+          py::call_guard<py::gil_scoped_release>(),
+          R"pbdoc(
+        Resize input Surface.
+
+        :param src: input Surface. Must be of same format class instance was created with.
+        :param dst: output Surface. Must be of same format class instance was created with.
+        :param record_event: If False, no event will be recorded. Useful for chain calls.
+        :return: tuple containing:
+          success (Bool) True in case of success, False otherwise.
+          info (TaskExecInfo) task execution information.
+          event (CudaStreamEvent) CUDA stream event
         :rtype: tuple
     )pbdoc");
 }
