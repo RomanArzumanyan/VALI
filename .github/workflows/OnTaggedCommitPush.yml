@@ -26,6 +26,9 @@ jobs:
         CIBW_ARCHS_LINUX: "x86_64"        
         CIBW_BEFORE_ALL: >
           dnf install --assumeyes wget &&
+          yum config-manager --add-repo http://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo &&
+          yum clean all && 
+          yum -y install cuda-toolkit &&
           wget -c https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-lgpl-shared.tar.xz &&
           tar -xf ffmpeg-master-latest-linux64-lgpl-shared.tar.xz &&
           ls -la
