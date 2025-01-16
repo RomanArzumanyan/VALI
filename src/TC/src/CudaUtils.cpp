@@ -33,16 +33,21 @@ CudaCtxPush::CudaCtxPush(CUstream str) {
 CudaCtxPush::~CudaCtxPush() { LibCuda::cuCtxPopCurrent(nullptr); }
 
 CudaStreamEvent::CudaStreamEvent(CUstream stream) {
+  m_ctx = GetContextByStream(stream);
+  CudaCtxPush push(m_ctx);
+  ThrowOnCudaError(LibCuda::cuEventCreate(&m_event, 0U), __LINE__);
   ThrowOnCudaError(LibCuda::cuEventRecord(m_event, stream), __LINE__);
 }
 
 void CudaStreamEvent::Wait() {
+  CudaCtxPush push(m_ctx);
   ThrowOnCudaError(LibCuda::cuEventSynchronize(m_event), __LINE__);
 }
 
 CudaStreamEvent::~CudaStreamEvent() {
   try {
-    Wait();
+    CudaCtxPush push(m_ctx);
+    ThrowOnCudaError(LibCuda::cuEventDestroy(m_event), __LINE__);
   } catch (...) {
   }
 }

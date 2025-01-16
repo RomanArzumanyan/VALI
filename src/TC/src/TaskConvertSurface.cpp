@@ -1167,7 +1167,7 @@ auto const cuda_stream_sync = [](void* stream) {
 
 ConvertSurface::ConvertSurface(Pixel_Format src, Pixel_Format dst, CUstream str)
     : Task("NppConvertSurface", ConvertSurface::numInputs,
-           ConvertSurface::numOutputs, cuda_stream_sync, (void*)str) {
+           ConvertSurface::numOutputs, nullptr, (void*)str) {
   if (NV12 == src && YUV420 == dst) {
     pImpl = new nv12_yuv420(str);
   } else if (YUV420 == src && NV12 == dst) {

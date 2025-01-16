@@ -91,6 +91,7 @@ public:
  */
 class TC_EXPORT CudaStreamEvent final {
   CUevent m_event;
+  CUcontext m_ctx;
 
 public:
   CudaStreamEvent() = delete;

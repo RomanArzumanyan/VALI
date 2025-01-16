@@ -87,6 +87,8 @@ public:
   bool Run(Surface& src, Surface& dst,
            std::optional<ColorspaceConversionContext> context,
            TaskExecDetails& details);
+
+  CUstream m_stream;
 };
 
 class PyFrameConverter {
