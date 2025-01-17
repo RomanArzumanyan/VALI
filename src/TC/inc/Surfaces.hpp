@@ -72,12 +72,12 @@ public:
   virtual uint32_t NumComponents() const override { return 2U; }
   virtual uint32_t NumPlanes() const override { return 1U; }
   virtual CUdeviceptr PixelPtr(uint32_t component = 0U) override;
+  virtual DLDataTypeCode DataType() const override { return kDLUInt; }
 
   uint32_t Width(uint32_t plane = 0U) const;
   uint32_t WidthInBytes(uint32_t plane = 0U) const;
   uint32_t Height(uint32_t plane = 0U) const;
   uint32_t Pitch(uint32_t plane = 0U) const;
-  DLDataTypeCode DataType() const { return kDLUInt; }
   std::string TypeStr() const { return "<u1"; }
 
   SurfacePlane& GetSurfacePlane(uint32_t plane = 0U);
@@ -90,7 +90,7 @@ public:
 protected:
   // For high bit depth ancestors;
   SurfaceNV12(uint32_t width, uint32_t height, uint32_t hbd_elem_size,
-              CUcontext context);
+              DLDataTypeCode code, CUcontext context);
 };
 
 // 10 bit NV12;
@@ -238,12 +238,12 @@ public:
   virtual uint32_t NumComponents() const override { return 3U; }
   virtual uint32_t NumPlanes() const override { return 3U; }
   virtual CUdeviceptr PixelPtr(uint32_t component = 0U) override;
+  virtual DLDataTypeCode DataType() const override { return kDLUInt; }
 
   uint32_t Width(uint32_t plane = 0U) const;
   uint32_t WidthInBytes(uint32_t plane = 0U) const;
   uint32_t Height(uint32_t plane = 0U) const;
   uint32_t Pitch(uint32_t plane = 0U) const;
-  DLDataTypeCode DataType() const { return kDLUInt; }
   std::string TypeStr() const { return "<u1"; }
 
   SurfacePlane& GetSurfacePlane(uint32_t plane = 0U);
@@ -268,7 +268,7 @@ public:
 protected:
   // For high bit depth ancestors;
   SurfaceYUV444(uint32_t width, uint32_t height, uint32_t hbd_elem_size,
-                CUcontext context);
+                DLDataTypeCode code, CUcontext context);
 };
 
 class TC_EXPORT SurfaceYUV444_10bit final : public SurfaceYUV444 {
@@ -309,12 +309,13 @@ public:
   virtual CUdeviceptr PixelPtr(uint32_t component = 0U) override;
   virtual DLManagedTensor* ToDLPack() override;
   virtual void ToCAI(CudaArrayInterfaceDescriptor& cai);
+  virtual DLDataTypeCode DataType() const override { return kDLUInt; }
 
   uint32_t Width(uint32_t plane = 0U) const;
   uint32_t WidthInBytes(uint32_t plane = 0U) const;
   uint32_t Height(uint32_t plane = 0U) const;
   uint32_t Pitch(uint32_t plane = 0U) const;
-  DLDataTypeCode DataType() const { return kDLUInt; }
+
   std::string TypeStr() const { return "<u1"; }
 
   SurfacePlane& GetSurfacePlane(uint32_t plane = 0U);
@@ -325,7 +326,7 @@ public:
 protected:
   // For high bit depth ancestors;
   SurfaceRGB(uint32_t width, uint32_t height, uint32_t hbd_elem_size,
-             CUcontext context);
+             DLDataTypeCode code, CUcontext context);
 };
 
 /* 8-bit BGR image;
@@ -363,6 +364,7 @@ public:
   Pixel_Format PixelFormat() const { return RGB_32F; }
   uint32_t ElemSize() const { return sizeof(float); }
   std::string TypeStr() const { return "<f4"; }
+  DLDataTypeCode DataType() const { return kDLFloat; }
 };
 
 /* 8-bit planar RGB image;
@@ -386,12 +388,13 @@ public:
   virtual CUdeviceptr PixelPtr(uint32_t component = 0U) override;
   virtual DLManagedTensor* ToDLPack() override;
   virtual void ToCAI(CudaArrayInterfaceDescriptor& cai) override;
+  virtual DLDataTypeCode DataType() const override { return kDLUInt; }
 
   uint32_t Width(uint32_t plane = 0U) const;
   uint32_t WidthInBytes(uint32_t plane = 0U) const;
   uint32_t Height(uint32_t plane = 0U) const;
   uint32_t Pitch(uint32_t plane = 0U) const;
-  DLDataTypeCode DataType() const { return kDLUInt; }
+
   std::string TypeStr() const { return "<u1"; }
 
   SurfacePlane& GetSurfacePlane(uint32_t plane = 0U);
@@ -402,7 +405,7 @@ public:
 protected:
   // For high bit depth ancestors;
   SurfaceRGBPlanar(uint32_t width, uint32_t height, uint32_t hbd_elem_size,
-                   CUcontext context);
+                   DLDataTypeCode code, CUcontext context);
 };
 
 /* 32-bit float planar RGB image;

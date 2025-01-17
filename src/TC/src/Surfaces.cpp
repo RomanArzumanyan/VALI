@@ -102,13 +102,14 @@ SurfaceNV12::SurfaceNV12() {
 }
 
 SurfaceNV12::SurfaceNV12(uint32_t width, uint32_t height, CUcontext context)
-    : SurfaceNV12(width, height, ElemSize(), context) {}
+    : SurfaceNV12(width, height, ElemSize(), DataType(), context) {}
 
 SurfaceNV12::SurfaceNV12(uint32_t width, uint32_t height,
-                         uint32_t hbd_elem_size, CUcontext context) {
+                         uint32_t hbd_elem_size, DLDataTypeCode code,
+                         CUcontext context) {
   m_planes.clear();
-  m_planes.emplace_back(width, height * 3 / 2, hbd_elem_size, DataType(),
-                        TypeStr(), context);
+  m_planes.emplace_back(width, height * 3 / 2, hbd_elem_size, code, TypeStr(),
+                        context);
 }
 
 SurfaceNV12::SurfaceNV12(uint32_t width, uint32_t height, uint32_t pitch,
@@ -209,14 +210,14 @@ void SurfaceNV12::ToCAI(CudaArrayInterfaceDescriptor& cai) {
 SurfaceP10::SurfaceP10() : SurfaceNV12() {}
 
 SurfaceP10::SurfaceP10(uint32_t width, uint32_t height, CUcontext context)
-    : SurfaceNV12(width, height, ElemSize(), context) {}
+    : SurfaceNV12(width, height, ElemSize(), DataType(), context) {}
 
 Surface* SurfaceP10::Create() { return new SurfaceP10; }
 
 SurfaceP12::SurfaceP12() : SurfaceNV12() {}
 
 SurfaceP12::SurfaceP12(uint32_t width, uint32_t height, CUcontext context)
-    : SurfaceNV12(width, height, ElemSize(), context) {}
+    : SurfaceNV12(width, height, ElemSize(), DataType(), context) {}
 
 Surface* SurfaceP12::Create() { return new SurfaceP12; }
 
@@ -362,17 +363,18 @@ SurfaceYUV444::SurfaceYUV444() {
 }
 
 SurfaceYUV444::SurfaceYUV444(uint32_t width, uint32_t height, CUcontext context)
-    : SurfaceYUV444(width, height, ElemSize(), context) {}
+    : SurfaceYUV444(width, height, ElemSize(), DataType(), context) {}
 
 SurfaceYUV444::SurfaceYUV444(uint32_t width, uint32_t height,
-                             uint32_t hbd_elem_size, CUcontext context) {
+                             uint32_t hbd_elem_size, DLDataTypeCode code,
+                             CUcontext context) {
   m_planes.clear();
   /* Need to reserve place, otherwise vector may reallocate and SurfacePlane
    * instances will be copied to new address loosing the memory ownership. Sic!
    */
   m_planes.reserve(NumPlanes());
   for (auto i = 0; i < NumPlanes(); i++) {
-    m_planes.emplace_back(width, height, hbd_elem_size, DataType(), TypeStr(),
+    m_planes.emplace_back(width, height, hbd_elem_size, code, TypeStr(),
                           context);
   }
 }
@@ -424,7 +426,7 @@ SurfaceYUV444_10bit::SurfaceYUV444_10bit() : SurfaceYUV444() {}
 
 SurfaceYUV444_10bit::SurfaceYUV444_10bit(uint32_t width, uint32_t height,
                                          CUcontext context)
-    : SurfaceYUV444(width, height, ElemSize(), context) {}
+    : SurfaceYUV444(width, height, ElemSize(), DataType(), context) {}
 
 Surface* SurfaceYUV444_10bit::Create() { return new SurfaceYUV444_10bit; }
 
@@ -434,12 +436,12 @@ SurfaceRGB::SurfaceRGB() {
 }
 
 SurfaceRGB::SurfaceRGB(uint32_t width, uint32_t height, CUcontext context)
-    : SurfaceRGB(width, height, ElemSize(), context) {}
+    : SurfaceRGB(width, height, ElemSize(), DataType(), context) {}
 
 SurfaceRGB::SurfaceRGB(uint32_t width, uint32_t height, uint32_t hbd_elem_size,
-                       CUcontext context) {
+                       DLDataTypeCode code, CUcontext context) {
   m_planes.clear();
-  m_planes.emplace_back(width * 3, height, hbd_elem_size, DataType(), TypeStr(),
+  m_planes.emplace_back(width * 3, height, hbd_elem_size, code, TypeStr(),
                         context);
 }
 
@@ -535,7 +537,7 @@ Surface* SurfaceBGR::Create() { return new SurfaceBGR; }
 SurfaceRGB32F::SurfaceRGB32F() : SurfaceRGB() {}
 
 SurfaceRGB32F::SurfaceRGB32F(uint32_t width, uint32_t height, CUcontext context)
-    : SurfaceRGB(width, height, ElemSize(), context) {}
+    : SurfaceRGB(width, height, ElemSize(), DataType(), context) {}
 
 Surface* SurfaceRGB32F::Create() { return new SurfaceRGB32F; }
 
@@ -546,12 +548,13 @@ SurfaceRGBPlanar::SurfaceRGBPlanar() {
 
 SurfaceRGBPlanar::SurfaceRGBPlanar(uint32_t width, uint32_t height,
                                    CUcontext context)
-    : SurfaceRGBPlanar(width, height, ElemSize(), context) {}
+    : SurfaceRGBPlanar(width, height, ElemSize(), DataType(), context) {}
 
 SurfaceRGBPlanar::SurfaceRGBPlanar(uint32_t width, uint32_t height,
-                                   uint32_t hbd_elem_size, CUcontext context) {
+                                   uint32_t hbd_elem_size, DLDataTypeCode code,
+                                   CUcontext context) {
   m_planes.clear();
-  m_planes.emplace_back(width, height * 3, hbd_elem_size, DataType(), TypeStr(),
+  m_planes.emplace_back(width, height * 3, hbd_elem_size, code, TypeStr(),
                         context);
 }
 
@@ -647,6 +650,6 @@ SurfaceRGB32FPlanar::SurfaceRGB32FPlanar() : SurfaceRGBPlanar() {}
 
 SurfaceRGB32FPlanar::SurfaceRGB32FPlanar(uint32_t width, uint32_t height,
                                          CUcontext context)
-    : SurfaceRGBPlanar(width, height, ElemSize(), context) {}
+    : SurfaceRGBPlanar(width, height, ElemSize(), DataType(), context) {}
 
 Surface* SurfaceRGB32FPlanar::Create() { return new SurfaceRGB32FPlanar; }
