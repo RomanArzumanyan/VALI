@@ -54,6 +54,11 @@ bool PySurfaceConverter::Run(Surface& src, Surface& dst,
   return (TASK_EXEC_SUCCESS == details.m_status);
 }
 
+std::list<std::pair<Pixel_Format, Pixel_Format>>
+PySurfaceConverter::GetConversions() {
+  return upConverter->GetSupportedConversions();
+}
+
 void Init_PySurfaceConverter(py::module& m) {
   py::class_<PySurfaceConverter>(
       m, "PySurfaceConverter",
@@ -125,5 +130,9 @@ void Init_PySurfaceConverter(py::module& m) {
           info (TaskExecInfo) task execution information.
           event (CudaStreamEvent) CUDA stream event
         :rtype: tuple
+    )pbdoc")
+      .def_property_readonly("Conversions", &PySurfaceConverter::GetConversions,
+                             R"pbdoc(
+        Return list of supported color conversions.
     )pbdoc");
 }
