@@ -88,7 +88,7 @@ public:
            std::optional<ColorspaceConversionContext> context,
            TaskExecDetails& details);
 
-  std::list<std::pair<Pixel_Format, Pixel_Format>> GetConversions();
+  static std::list<std::pair<Pixel_Format, Pixel_Format>> GetConversions();
 
   CUstream m_stream;
 };
