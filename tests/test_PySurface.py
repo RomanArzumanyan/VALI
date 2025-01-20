@@ -47,6 +47,7 @@ import unittest
 import json
 import test_common as tc
 import torch
+import torchvision
 import logging
 from PIL import Image
 from nvidia import nvimgcodec
@@ -55,6 +56,7 @@ from io import BytesIO
 # We use 42 (dB) as the measure of similarity.
 # If two images have PSNR higher than 42 (dB) we consider them the same.
 psnr_threshold = 42.0
+
 
 class TestSurface(unittest.TestCase):
     def __init__(self, methodName):
@@ -243,13 +245,13 @@ class TestSurface(unittest.TestCase):
             rgbInfo.width,
             rgbInfo.height,
             gpu_id=0)
-        
+
         nvJpg = vali.PyNvJpegEncoder(gpu_id=0)
 
         nvJpgCtx = nvJpg.Context(
             compression=100,
             pixel_format=vali.PixelFormat.RGB)
-        
+
         success, info = pyUpl.Run(rgb_frame, surf_rgb)
         if not success:
             self.fail("Failed to upload RGB frame: " + str(info))
@@ -269,7 +271,7 @@ class TestSurface(unittest.TestCase):
         # Measure PSNR scores between them to make sure RGB Surface was
         # exported to nvcv image correctly via __cuda_array_interface__.
         psnr_score = tc.measurePSNR(
-            np.asarray(Image.open("frame_nvcv.jpg")), 
+            np.asarray(Image.open("frame_nvcv.jpg")),
             np.asarray(Image.open("frame_vali.jpg")))
         self.assertGreaterEqual(psnr_score, psnr_threshold)
 
@@ -293,7 +295,7 @@ class TestSurface(unittest.TestCase):
         nvJpgCtx = nvJpg.Context(
             compression=100,
             pixel_format=vali.PixelFormat.RGB)
-        
+
         buffers, info = nvJpg.Run(nvJpgCtx, [vali_img])
         if len(buffers) != 1:
             self.fail("Failed to encode jpeg: " + str(info))
@@ -302,9 +304,10 @@ class TestSurface(unittest.TestCase):
             fout.write(buffers[0])
 
         psnr_score = tc.measurePSNR(
-            np.asarray(Image.open("data/frame_0.jpg")), 
+            np.asarray(Image.open("data/frame_0.jpg")),
             np.asarray(Image.open(BytesIO(np.ndarray.tobytes(buffers[0])))))
         self.assertGreaterEqual(psnr_score, psnr_threshold)
+
 
 if __name__ == "__main__":
     unittest.main()

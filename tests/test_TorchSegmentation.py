@@ -169,58 +169,73 @@ class TestTorchSegmentation(unittest.TestCase):
         # Init HW decoder
         pyDec = vali.PyDecoder(input=input_video, opts={}, gpu_id=gpu_id)
 
-        # NN expects images to be 3 channel planar RGB.
-        # No requirements for input image resolution, it will be rescaled internally.
-        target_w, target_h = pyDec.Width, pyDec.Height
+        surfaces = [
+            vali.Surface.Make(
+                format=pyDec.Format,
+                width=pyDec.Width,
+                height=pyDec.Height,
+                gpu_id=0),
 
-        # Converter from NV12 which is pyDec native pixel fomat.
-        to_rgb = vali.PySurfaceConverter(
-            vali.PixelFormat.NV12, vali.PixelFormat.RGB, gpu_id
-        )
+            vali.Surface.Make(
+                format=vali.PixelFormat.RGB,
+                width=pyDec.Width,
+                height=pyDec.Height,
+                gpu_id=0),
 
-        # Converter from RGB to planar RGB because that's the way
-        # pytorch likes to store the data in it's tensors.
-        to_pln = vali.PySurfaceConverter(
-            vali.PixelFormat.RGB, vali.PixelFormat.RGB_PLANAR, gpu_id
-        )
+            vali.Surface.Make(
+                format=vali.PixelFormat.RGB_32F,
+                width=pyDec.Width,
+                height=pyDec.Height,
+                gpu_id=0),
 
-        # Use bt709 and jpeg just for illustration purposes.
-        cc_ctx = vali.ColorspaceConversionContext(
-            vali.ColorSpace.BT_709, vali.ColorRange.JPEG)
+            vali.Surface.Make(
+                format=vali.PixelFormat.RGB_32F_PLANAR,
+                width=pyDec.Width,
+                height=pyDec.Height,
+                gpu_id=0)
+        ]
+
+        pyCvt = [
+            vali.PySurfaceConverter(
+                pyDec.Format,
+                vali.PixelFormat.RGB,
+                gpu_id=0),
+
+            vali.PySurfaceConverter(
+                vali.PixelFormat.RGB,
+                vali.PixelFormat.RGB_32F,
+                gpu_id=0),
+
+            vali.PySurfaceConverter(
+                vali.PixelFormat.RGB_32F,
+                vali.PixelFormat.RGB_32F_PLANAR,
+                gpu_id=0)
+        ]
 
         # Decoding cycle + inference on video frames.
         detections = []
         frame_number = 0
         while True:
-            surf_nv12 = vali.Surface.Make(
-                pyDec.Format, pyDec.Width, pyDec.Height, gpu_id=0)
-            # Decode 1 compressed video frame to CUDA memory.
-            success, _ = pyDec.DecodeSingleSurface(surf_nv12)
+            # Decode
+            success, _ = pyDec.DecodeSingleSurface(surfaces[0])
             if not success:
                 break
 
-            # Convert NV12 > RGB.
-            surg_rgb = vali.Surface.Make(
-                vali.PixelFormat.RGB, surf_nv12.Width, surf_nv12.Height, gpu_id=0)
-            success, details = to_rgb.Run(surf_nv12, surg_rgb, cc_ctx)
-            if not success:
-                print("Can not convert nv12 -> rgb: " + details)
-                break
-
-            # Convert RGB > planar RGB.
-            surf_pln = vali.Surface.Make(
-                vali.PixelFormat.RGB_PLANAR, surg_rgb.Width, surg_rgb.Height, gpu_id=0)
-            success, details = to_pln.Run(surg_rgb, surf_pln, cc_ctx)
-            if not success:
-                print("Can not convert rgb -> rgb planar: " + details)
-                break
+            # Go through color conversion chain
+            event = None
+            for i in range(0, len(pyCvt)):
+                is_last_conv = i == len(pyCvt) - 1
+                success, details, event = pyCvt[i].RunAsync(
+                    src=surfaces[i], dst=surfaces[i+1], record_event=is_last_conv)
+                if not success:
+                    break
+            event.Wait()
 
             # Export to PyTorch tensor.
             # Please note that from_dlpack doesn't copy anything so we have to do
             # that manually. Otherwise, torch will use memory owned by VALI.
-            img_tensor = torch.from_dlpack(surf_pln)
+            img_tensor = torch.from_dlpack(surfaces[-1])
             img_tensor = img_tensor.clone().detach()
-            img_tensor = img_tensor.type(dtype=torch.cuda.FloatTensor)
 
             # Normalize tensor to meet the NN expectations.
             img_tensor = torch.divide(img_tensor, 255.0)

@@ -18,7 +18,7 @@ VALI works on Linux(tested on Ubuntu 22.04) and Windows
   - VALI will download FFMPEG build from https://github.com/BtbN/FFmpeg-Builds
   - Make sure you don't have system FFMPEG packages installed. Otherwise, CMake will use them instead. You may run ```apt remove libavfilter-dev libavformat-dev libavcodec-dev libswresample-dev libavutil-dev``` on Ubuntu to remove them. Alternatively, build in Docker.
 
-- Python 3.10 and above
+- Python 3.11 and above
 - Install a C++ toolchain either via Visual Studio or Tools for Visual Studio.
   - Recommended version is Visual Studio 2017 and above (Windows only)
 
