@@ -34,7 +34,7 @@ This software uses code of <a href=http://ffmpeg.org>FFmpeg</a> licensed under t
 python3 -m pip install python_vali
 ```
 
-All information below is relevant if you want to build VALI on your local machine.
+## Build VALI on your local machine.
 
 ### Linux
 Ubuntu 22.04 is recommended.
@@ -75,7 +75,10 @@ the `NVIDIA_DRIVER_CAPABILITIES` environment variable in the container or the `-
 
 ### Windows
 
-- Install a C++ toolchain either via Visual Studio or Tools for Visual Studio (https://visualstudio.microsoft.com/downloads/)
+- Install a C++ toolchain either via Visual Studio or Tools for Visual Studio (https://visualstudio.microsoft.com/downloads/). For Visual Studio, you need to install the workload Desktop Development with C++ and these optional components
+  - MSVC (any version)
+  - C++ CMake tools for Windows
+  - Windows SDK (any version)
 - Install the CUDA Toolkit: https://developer.nvidia.com/cuda-downloads?target_os=Windows&target_arch=x86_64
 ```pwsh
 # Update git submodules
@@ -84,8 +87,6 @@ pip install .
 ```
 To check whether VALI is correctly installed run the following Python script
 ```python
-cuda_path = os.environ["CUDA_PATH"]
-os.add_dll_directory(os.path.join(cuda_path, "bin"))
 import python_vali as vali
 ```
 ## Docker

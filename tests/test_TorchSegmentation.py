@@ -15,11 +15,6 @@
 # limitations under the License.
 #
 
-# Starting from Python 3.8 DLL search policy has changed.
-# We need to add path to CUDA DLLs explicitly.
-import sys
-import os
-
 import numpy as np
 
 import torch
@@ -27,17 +22,6 @@ import torchvision
 import json
 import test_common as tc
 import unittest
-
-if os.name == "nt":
-    # Add CUDA_PATH env variable
-    cuda_path = os.environ["CUDA_PATH"]
-    if cuda_path:
-        os.add_dll_directory(os.path.join(cuda_path, "bin"))
-    else:
-        print("CUDA_PATH environment variable is not set.", file=sys.stderr)
-        print("Can't set CUDA DLLs search path.", file=sys.stderr)
-        exit(1)
-
 
 import python_vali as vali
 
