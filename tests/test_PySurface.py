@@ -126,61 +126,77 @@ class TestSurface(unittest.TestCase):
                 self.assertTrue(np.array_equal(rgb_frame, frame_dst))
 
     def test_tensor_from_surface(self):
-        """
-        This test creates cuda float tensor from surface
-        """
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
 
-            py_dec = vali.PyDecoder(
+            pyDec = vali.PyDecoder(
                 input=gtInfo.uri,
                 opts={},
                 gpu_id=0)
 
-            convs = [
-                vali.PySurfaceConverter(
-                    py_dec.Format, vali.PixelFormat.RGB, gpu_id=0),
+            nvCvt = vali.PySurfaceConverter(
+                vali.PixelFormat.NV12,
+                vali.PixelFormat.RGB,
+                gpu_id=0)
 
-                vali.PySurfaceConverter(
-                    vali.PixelFormat.RGB, vali.PixelFormat.RGB_32F, gpu_id=0),
+            nvDwn = vali.PySurfaceDownloader(gpu_id=0)
 
-                vali.PySurfaceConverter(
-                    vali.PixelFormat.RGB_32F, vali.PixelFormat.RGB_32F_PLANAR, gpu_id=0)
-            ]
+            # Use color space and range of original file.
+            cc_ctx = vali.ColorspaceConversionContext(
+                vali.ColorSpace.BT_709,
+                vali.ColorRange.MPEG)
 
-            surfaces = [
-                vali.Surface.Make(
-                    format=py_dec.Format, width=py_dec.Width, height=py_dec.Height, gpu_id=0),
-
-                vali.Surface.Make(
-                    format=vali.PixelFormat.RGB, width=py_dec.Width, height=py_dec.Height, gpu_id=0),
-
-                vali.Surface.Make(
-                    format=vali.PixelFormat.RGB_32F, width=py_dec.Width, height=py_dec.Height, gpu_id=0),
-
-                vali.Surface.Make(format=vali.PixelFormat.RGB_32F_PLANAR,
-                                  width=py_dec.Width, height=py_dec.Height, gpu_id=0)
-            ]
+            surf_dec = vali.Surface.Make(
+                pyDec.Format,
+                pyDec.Width,
+                pyDec.Height,
+                gpu_id=0)
 
             for i in range(0, gtInfo.num_frames):
-                success, details = py_dec.DecodeSingleSurface(surfaces[0])
+                success, details = pyDec.DecodeSingleSurface(surf_dec)
                 if not success:
-                    self.fail(f"Fail to decode surface: {details}")
+                    self.fail("Fail to decode surface: " + details)
 
-                for i in range(0, len(convs)):
-                    success, details = convs[i].Run(
-                        src=surfaces[i], dst=surfaces[i+1])
-                    if not success:
-                        self.fail(f"Fail to convert surface: {details}")
+                surf_cvt = vali.Surface.Make(
+                    vali.PixelFormat.RGB,
+                    surf_dec.Width,
+                    surf_dec.Height,
+                    gpu_id=0)
 
-                    img_tensor = torch.from_dlpack(surfaces[3])
-                    img_tensor = img_tensor.clone().detach()
+                success, details = nvCvt.Run(surf_dec, surf_cvt, cc_ctx)
+                if not success:
+                    self.fail("Failed to convert surface: " + details)
 
-                    # Normalize tensor to meet the NN expectations.
-                    data_transforms = torchvision.transforms.Normalize(
-                        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-                    )
-                    data_transforms(img_tensor)
+                ten_rgb = torch.from_dlpack(surf_cvt)
+
+                # Check dimensions
+                self.assertEqual(len(ten_rgb.shape), 3)
+                self.assertEqual(ten_rgb.shape[0], surf_cvt.Height)
+                self.assertEqual(ten_rgb.shape[1], surf_cvt.Width)
+                self.assertEqual(ten_rgb.shape[2], 3)
+
+                # Check size in bytes
+                frame_ten = ten_rgb.cpu().numpy().flatten()
+                self.assertEqual(frame_ten.size, surf_cvt.HostSize)
+
+                # Bit 2 bit memory cmp
+                frame_surf = np.ndarray(
+                    shape=(surf_cvt.HostSize),
+                    dtype=np.uint8)
+
+                success, details = nvDwn.Run(surf_cvt, frame_surf)
+                if not success:
+                    self.fail("Failed to download decoded surface: " + details)
+
+                if not np.array_equal(frame_ten, frame_surf):
+                    self.log.error(
+                        "PSNR: " + str(tc.measurePSNR(frame_ten, frame_surf)))
+
+                    tc.dumpFrameToDisk(frame_ten, "from_tensor", surf_cvt.Width,
+                                       surf_cvt.Height, ".rgb")
+                    tc.dumpFrameToDisk(frame_surf, "from_surface", surf_cvt.Width,
+                                       surf_cvt.Height, ".rgb")
+                    self.fail("Mismatch at frame " + str(i))
 
     def test_surface_from_tensor(self):
         with open("gt_files.json") as f:
