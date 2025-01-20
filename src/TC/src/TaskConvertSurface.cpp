@@ -1165,17 +1165,29 @@ auto const cuda_stream_sync = [](void* stream) {
 std::list<std::pair<Pixel_Format, Pixel_Format>> const&
 ConvertSurface::GetSupportedConversions() {
   static const std::list<std::pair<Pixel_Format, Pixel_Format>> convs(
-      {{NV12, YUV420},    {YUV420, NV12},
-       {P10, NV12},       {P12, NV12},
-       {NV12, BGR},       {RGB, RGB_PLANAR},
-       {RGB_PLANAR, RGB}, {RGB_PLANAR, YUV444},
-       {Y, YUV444},       {YUV420, RGB},
-       {RGB, YUV420},     {RGB, YUV444},
-       {RGB, BGR},        {BGR, RGB},
-       {YUV420, BGR},     {YUV444, BGR},
-       {YUV444, RGB},     {BGR, YUV444},
-       {NV12, Y},         {RGB, RGB_32F},
-       {RGB, Y},          {RGB_32F, RGB_32F_PLANAR}});
+      {{NV12, YUV420},
+       {YUV420, NV12},
+       {P10, NV12},
+       {P12, NV12},
+       {NV12, RGB},
+       {NV12, BGR},
+       {RGB, RGB_PLANAR},
+       {RGB_PLANAR, RGB},
+       {RGB_PLANAR, YUV444},
+       {Y, YUV444},
+       {YUV420, RGB},
+       {RGB, YUV420},
+       {RGB, YUV444},
+       {RGB, BGR},
+       {BGR, RGB},
+       {YUV420, BGR},
+       {YUV444, BGR},
+       {YUV444, RGB},
+       {BGR, YUV444},
+       {NV12, Y},
+       {RGB, RGB_32F},
+       {RGB, Y},
+       {RGB_32F, RGB_32F_PLANAR}});
 
   return convs;
 }
