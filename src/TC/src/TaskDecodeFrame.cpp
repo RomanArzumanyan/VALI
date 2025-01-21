@@ -115,6 +115,9 @@ struct FfmpegDecodeFrame_Impl {
   PacketData m_packet_data;
   CUstream m_stream;
 
+  // GPU id
+  int m_gpu_id = -1;
+
   // Video stream index
   int m_stream_idx = -1;
 
@@ -157,7 +160,7 @@ struct FfmpegDecodeFrame_Impl {
 
   FfmpegDecodeFrame_Impl(
       const char* URL, const std::map<std::string, std::string>& ffmpeg_options,
-      std::optional<CUstream> stream, std::shared_ptr<AVIOContext> p_io_ctx)
+      int gpu_id, std::shared_ptr<AVIOContext> p_io_ctx)
       : m_io_ctx(p_io_ctx) {
 
     // Allocate format context first to set timeout before opening the input.
@@ -192,11 +195,10 @@ struct FfmpegDecodeFrame_Impl {
 
     // Set neccessary AVOptions for HW decoding.
     auto options = GetAvOptions(ffmpeg_options);
-    if (stream) {
-      m_stream = stream.value();
-      auto res =
-          av_dict_set(&options, "hwaccel_device",
-                      std::to_string(GetDeviceIdByStream(m_stream)).c_str(), 0);
+    if (gpu_id >= 0) {
+      m_gpu_id = gpu_id;
+      auto res = av_dict_set(&options, "hwaccel_device",
+                             std::to_string(m_gpu_id).c_str(), 0);
       ThrowOnAvError(res, "Failed to set hwaccel_device AVOption", &options);
 
       res = av_dict_set(&options, "current_ctx", "1", 0);
@@ -256,7 +258,7 @@ struct FfmpegDecodeFrame_Impl {
       throw std::runtime_error(ss.str());
     }
 
-    OpenCodec(stream.has_value());
+    OpenCodec(m_gpu_id > 0);
 
     m_frame = std::shared_ptr<AVFrame>(av_frame_alloc(), [](void* p) {
       av_frame_unref((AVFrame*)p);
@@ -358,7 +360,8 @@ struct FfmpegDecodeFrame_Impl {
 #ifndef TEGRA_BUILD
     if (is_accelerated) {
       // Push CUDA context for FFMpeg to use it
-      CudaCtxPush push_ctx(GetContextByStream(m_stream));
+      auto ctx = CudaResMgr::Instance().GetCtx(m_gpu_id);
+      CudaCtxPush push_ctx(ctx);
 
       /* Attach HW context to codec. Whithout that decoded frames will be
        * copied to RAM.
@@ -380,6 +383,11 @@ struct FfmpegDecodeFrame_Impl {
       m_hw_ctx.reset();
       m_hw_ctx = std::shared_ptr<AVBufferRef>(
           hwdevice_ctx, [](void* p) { av_buffer_unref((AVBufferRef**)&p); });
+
+      // Get stream from libavcodec
+      auto av_hw_ctx = (AVHWDeviceContext*)m_avc_ctx->hw_device_ctx->data;
+      auto av_cuda_ctx = (AVCUDADeviceContext*)av_hw_ctx->hwctx;
+      m_stream = av_cuda_ctx->stream;
     }
 #endif
 
@@ -398,6 +406,8 @@ struct FfmpegDecodeFrame_Impl {
         res, "Failed to open codec " +
                  std::string(av_get_media_type_string(AVMEDIA_TYPE_VIDEO)));
   }
+
+  CUstream GetStream() { return m_stream; }
 
   void SavePacketData() {
     m_packet_data = {};
@@ -521,6 +531,11 @@ struct FfmpegDecodeFrame_Impl {
     if (av_cuda_ctx->cuda_ctx != dst.Context()) {
       throw std::runtime_error("CUDA context mismatch between FFMpeg and VALI");
     }
+
+    if (av_cuda_ctx->stream != m_stream) {
+      throw std::runtime_error("CUDA stream mismatch between FFMpeg and VALI");
+    }
+
     CudaCtxPush push_ctx(av_cuda_ctx->cuda_ctx);
 
     for (auto i = 0U; src.data[i]; i++) {
@@ -531,10 +546,9 @@ struct FfmpegDecodeFrame_Impl {
       m.WidthInBytes = dst.Width(i) * dst.ElemSize();
       m.Height = dst.Height(i);
 
-      ThrowOnCudaError(LibCuda::cuMemcpy2DAsync(&m, av_cuda_ctx->stream),
-                       __LINE__);
+      ThrowOnCudaError(LibCuda::cuMemcpy2DAsync(&m, m_stream), __LINE__);
     }
-    CudaStrSync sync(av_cuda_ctx->stream);
+    CudaStrSync sync(m_stream);
   }
 
   bool UpdGetResChange() {
@@ -992,22 +1006,21 @@ TaskExecDetails DecodeFrame::GetSideData(AVFrameSideDataType data_type) {
 }
 
 DecodeFrame* DecodeFrame::Make(const char* URL, NvDecoderClInterface& cli_iface,
-                               std::optional<CUstream> stream,
+                               int gpu_id,
                                std::shared_ptr<AVIOContext> p_io_ctx) {
-  return new DecodeFrame(URL, cli_iface, stream, p_io_ctx);
+  return new DecodeFrame(URL, cli_iface, gpu_id, p_io_ctx);
 }
 
 /* Don't mention any sync call in parent class constructor because GPU
  * acceleration is optional. Sync in decode method(s) instead.
  */
 DecodeFrame::DecodeFrame(const char* URL, NvDecoderClInterface& cli_iface,
-                         std::optional<CUstream> stream,
-                         std::shared_ptr<AVIOContext> p_io_ctx)
+                         int gpu_id, std::shared_ptr<AVIOContext> p_io_ctx)
     : Task("DecodeFrame", DecodeFrame::num_inputs, DecodeFrame::num_outputs) {
   std::map<std::string, std::string> ffmpeg_options;
   cli_iface.GetOptions(ffmpeg_options);
 
-  pImpl = new FfmpegDecodeFrame_Impl(URL, ffmpeg_options, stream, p_io_ctx);
+  pImpl = new FfmpegDecodeFrame_Impl(URL, ffmpeg_options, gpu_id, p_io_ctx);
 }
 
 DecodeFrame::~DecodeFrame() { delete pImpl; }
@@ -1019,3 +1032,5 @@ bool DecodeFrame::IsVFR() const { return pImpl->IsVFR(); }
 const PacketData& DecodeFrame::GetLastPacketData() const {
   return pImpl->m_packet_data;
 }
+
+CUstream DecodeFrame::GetStream() const { return pImpl->GetStream(); }

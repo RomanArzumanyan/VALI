@@ -116,10 +116,11 @@ public:
   uint32_t GetHostFrameSize() const;
   bool IsAccelerated() const;
   bool IsVFR() const;
+  CUstream GetStream() const;
 
   ~DecodeFrame() final;
   static DecodeFrame* Make(const char* URL, NvDecoderClInterface& cli_iface,
-                           std::optional<CUstream> stream,
+                           int gpu_id,
                            std::shared_ptr<AVIOContext> p_io_ctx = nullptr);
   const PacketData& GetLastPacketData() const;
 
@@ -135,8 +136,7 @@ private:
   static const uint32_t num_outputs = 2U;
   struct FfmpegDecodeFrame_Impl* pImpl = nullptr;
 
-  DecodeFrame(const char* URL, NvDecoderClInterface& cli_iface,
-              std::optional<CUstream> stream,
+  DecodeFrame(const char* URL, NvDecoderClInterface& cli_iface, int gpu_id,
               std::shared_ptr<AVIOContext> p_io_ctx = nullptr);
 };
 

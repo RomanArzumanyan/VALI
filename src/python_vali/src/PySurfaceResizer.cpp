@@ -25,14 +25,13 @@ namespace py = pybind11;
 constexpr auto TASK_EXEC_SUCCESS = TaskExecStatus::TASK_EXEC_SUCCESS;
 constexpr auto TASK_EXEC_FAIL = TaskExecStatus::TASK_EXEC_FAIL;
 
+PySurfaceResizer::PySurfaceResizer(Pixel_Format format, uint32_t gpuID)
+    : PySurfaceResizer(format, CudaResMgr::Instance().GetStream(gpuID)) {}
+
 PySurfaceResizer::PySurfaceResizer(Pixel_Format format, CUstream str) {
   m_stream = str;
   upResizer = std::make_unique<ResizeSurface>(format, m_stream);
-}
-
-PySurfaceResizer::PySurfaceResizer(Pixel_Format format, uint32_t gpuID) {
-  m_stream = CudaResMgr::Instance().GetStream(gpuID);
-  upResizer = std::make_unique<ResizeSurface>(format, m_stream);
+  m_event = std::make_shared<CudaStreamEvent>(m_stream);
 }
 
 bool PySurfaceResizer::Run(Surface& src, Surface& dst,
@@ -67,9 +66,9 @@ void Init_PySurfaceResizer(py::module& m) {
           "Run",
           [](PySurfaceResizer& self, Surface& src, Surface& dst) {
             TaskExecDetails details;
-            bool res = self.Run(src, dst, details);
-            CudaStreamEvent event(self.m_stream);
-            event.Wait();
+            auto res = self.Run(src, dst, details);
+            self.m_event->Record();
+            self.m_event->Wait();
             return std::make_tuple(res, details.m_info);
           },
           py::arg("src"), py::arg("dst"),
@@ -89,11 +88,10 @@ void Init_PySurfaceResizer(py::module& m) {
           [](PySurfaceResizer& self, Surface& src, Surface& dst,
              bool record_event) {
             TaskExecDetails details;
-            bool res = self.Run(src, dst, details);
-            return std::make_tuple(
-                res, details.m_info,
-                record_event ? std::make_shared<CudaStreamEvent>(self.m_stream)
-                             : nullptr);
+            auto res = self.Run(src, dst, details);
+            self.m_event->Record();
+            return std::make_tuple(res, details.m_info,
+                                   record_event ? self.m_event : nullptr);
           },
           py::arg("src"), py::arg("dst"), py::arg("record_event") = true,
           py::call_guard<py::gil_scoped_release>(),

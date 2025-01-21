@@ -24,17 +24,15 @@ constexpr auto TASK_EXEC_SUCCESS = TaskExecStatus::TASK_EXEC_SUCCESS;
 constexpr auto TASK_EXEC_FAIL = TaskExecStatus::TASK_EXEC_FAIL;
 
 PySurfaceConverter::PySurfaceConverter(Pixel_Format src, Pixel_Format dst,
-                                       uint32_t gpuID) {
-  m_stream = CudaResMgr::Instance().GetStream(gpuID);
-  upConverter = std::make_unique<ConvertSurface>(src, dst, m_stream);
-  upCtxBuffer.reset(Buffer::MakeOwnMem(sizeof(ColorspaceConversionContext)));
-}
+                                       uint32_t gpuID)
+    : PySurfaceConverter(src, dst, CudaResMgr::Instance().GetStream(gpuID)) {}
 
 PySurfaceConverter::PySurfaceConverter(Pixel_Format src, Pixel_Format dst,
                                        CUstream str) {
   m_stream = str;
   upConverter = std::make_unique<ConvertSurface>(src, dst, m_stream);
   upCtxBuffer.reset(Buffer::MakeOwnMem(sizeof(ColorspaceConversionContext)));
+  m_event = std::make_shared<CudaStreamEvent>(m_stream);
 }
 
 bool PySurfaceConverter::Run(Surface& src, Surface& dst,
@@ -86,9 +84,9 @@ void Init_PySurfaceConverter(py::module& m) {
           [](PySurfaceConverter& self, Surface& src, Surface& dst,
              std::optional<ColorspaceConversionContext> cc_ctx) {
             TaskExecDetails details;
-            bool res = self.Run(src, dst, cc_ctx, details);
-            CudaStreamEvent event(self.m_stream);
-            event.Wait();
+            auto res = self.Run(src, dst, cc_ctx, details);
+            self.m_event->Record();
+            self.m_event->Wait();
             return std::make_tuple(res, details.m_info);
           },
           py::arg("src"), py::arg("dst"), py::arg("cc_ctx") = std::nullopt,
@@ -110,10 +108,10 @@ void Init_PySurfaceConverter(py::module& m) {
              std::optional<ColorspaceConversionContext> cc_ctx,
              bool record_event) {
             TaskExecDetails details;
-            return std::make_tuple(
-                self.Run(src, dst, cc_ctx, details), details.m_info,
-                record_event ? std::make_shared<CudaStreamEvent>(self.m_stream)
-                             : nullptr);
+            auto res = self.Run(src, dst, cc_ctx, details);
+            self.m_event->Record();
+            return std::make_tuple(res, details.m_info,
+                                   record_event ? self.m_event : nullptr);
           },
           py::arg("src"), py::arg("dst"), py::arg("cc_ctx") = std::nullopt,
           py::arg("record_event") = true,
@@ -132,7 +130,7 @@ void Init_PySurfaceConverter(py::module& m) {
         :rtype: tuple
     )pbdoc")
       .def_static("Conversions", &PySurfaceConverter::GetConversions,
-                             R"pbdoc(
+                  R"pbdoc(
         Return list of supported color conversions.
     )pbdoc");
 }

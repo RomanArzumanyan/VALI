@@ -29,26 +29,18 @@ PyDecoder::PyDecoder(const string& pathToFile,
                      const map<string, string>& ffmpeg_options, int gpuID) {
   gpu_id = gpuID;
   NvDecoderClInterface cli_iface(ffmpeg_options);
-  auto stream =
-      gpu_id >= 0
-          ? std::optional<CUstream>(CudaResMgr::Instance().GetStream(gpu_id))
-          : std::nullopt;
 
-  upDecoder.reset(DecodeFrame::Make(pathToFile.c_str(), cli_iface, stream));
+  upDecoder.reset(DecodeFrame::Make(pathToFile.c_str(), cli_iface, gpu_id));
 }
 
 PyDecoder::PyDecoder(py::object buffered_reader,
                      const map<string, string>& ffmpeg_options, int gpuID) {
   gpu_id = gpuID;
   NvDecoderClInterface cli_iface(ffmpeg_options);
-  auto stream =
-      gpu_id >= 0
-          ? std::optional<CUstream>(CudaResMgr::Instance().GetStream(gpu_id))
-          : std::nullopt;
 
   upBuff.reset(new BufferedReader(buffered_reader));
   upDecoder.reset(
-      DecodeFrame::Make("", cli_iface, stream, upBuff->GetAVIOContext()));
+      DecodeFrame::Make("", cli_iface, gpu_id, upBuff->GetAVIOContext()));
 }
 
 bool PyDecoder::DecodeImpl(TaskExecDetails& details, PacketData& pkt_data,

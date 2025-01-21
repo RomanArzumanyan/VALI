@@ -92,6 +92,7 @@ public:
 class TC_EXPORT CudaStreamEvent final {
   CUevent m_event;
   CUcontext m_ctx;
+  CUstream m_str;
 
 public:
   CudaStreamEvent() = delete;
@@ -99,6 +100,7 @@ public:
   CudaStreamEvent(CUstream stream);
   ~CudaStreamEvent();
 
+  void Record();
   void Wait();
   inline CUevent Get() noexcept { return m_event; }
 };
