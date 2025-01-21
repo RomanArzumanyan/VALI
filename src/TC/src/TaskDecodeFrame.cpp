@@ -258,7 +258,7 @@ struct FfmpegDecodeFrame_Impl {
       throw std::runtime_error(ss.str());
     }
 
-    OpenCodec(m_gpu_id > 0);
+    OpenCodec(m_gpu_id >= 0);
 
     m_frame = std::shared_ptr<AVFrame>(av_frame_alloc(), [](void* p) {
       av_frame_unref((AVFrame*)p);
@@ -548,7 +548,6 @@ struct FfmpegDecodeFrame_Impl {
 
       ThrowOnCudaError(LibCuda::cuMemcpy2DAsync(&m, m_stream), __LINE__);
     }
-    CudaStrSync sync(m_stream);
   }
 
   bool UpdGetResChange() {

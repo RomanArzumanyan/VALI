@@ -243,7 +243,10 @@ public:
   bool IsAccelerated() const;
   bool IsVFR() const;
 
+  CUstream GetStream() const;
+
   std::map<std::string, std::string> Metadata();
+  std::shared_ptr<CudaStreamEvent> m_event;
 
 private:
   bool DecodeImpl(TaskExecDetails& details, PacketData& pkt_data, Token& dst,

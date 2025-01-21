@@ -32,9 +32,16 @@ CudaCtxPush::CudaCtxPush(CUstream str) {
 
 CudaCtxPush::~CudaCtxPush() { LibCuda::cuCtxPopCurrent(nullptr); }
 
-CudaStreamEvent::CudaStreamEvent(CUstream stream) {
+CudaStreamEvent::CudaStreamEvent(CUstream stream, int primary_ctx_gpu_id) {
   m_str = stream;
-  m_ctx = GetContextByStream(m_str);
+  if (m_str && primary_ctx_gpu_id < 0) {
+    m_ctx = GetContextByStream(m_str);
+  } else if (!m_str && primary_ctx_gpu_id >= 0) {
+    m_ctx = CudaResMgr::Instance().GetCtx(primary_ctx_gpu_id);
+  } else {
+    std::runtime_error("Invalid arguments combination: non default CUDA stream "
+                       "and non-negative primary CUDA context GPU ID");
+  }
   CudaCtxPush push(m_ctx);
   ThrowOnCudaError(LibCuda::cuEventCreate(&m_event, 0U), __LINE__);
 }

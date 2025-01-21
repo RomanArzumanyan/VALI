@@ -89,7 +89,9 @@ void Init_PySurfaceResizer(py::module& m) {
              bool record_event) {
             TaskExecDetails details;
             auto res = self.Run(src, dst, details);
-            self.m_event->Record();
+            if (record_event) {
+              self.m_event->Record();
+            }
             return std::make_tuple(res, details.m_info,
                                    record_event ? self.m_event : nullptr);
           },

@@ -109,7 +109,9 @@ void Init_PySurfaceConverter(py::module& m) {
              bool record_event) {
             TaskExecDetails details;
             auto res = self.Run(src, dst, cc_ctx, details);
-            self.m_event->Record();
+            if (record_event) {
+              self.m_event->Record();
+            }
             return std::make_tuple(res, details.m_info,
                                    record_event ? self.m_event : nullptr);
           },
