@@ -88,7 +88,10 @@ public:
            std::optional<ColorspaceConversionContext> context,
            TaskExecDetails& details);
 
+  static std::list<std::pair<Pixel_Format, Pixel_Format>> GetConversions();
+
   CUstream m_stream;
+  std::shared_ptr<CudaStreamEvent> m_event;
 };
 
 class PyFrameConverter {
@@ -122,6 +125,7 @@ public:
   bool Run(Surface& src, Surface& dst, TaskExecDetails& details);
 
   CUstream m_stream;
+  std::shared_ptr<CudaStreamEvent> m_event;
 };
 
 class DecodeContext {
@@ -239,7 +243,10 @@ public:
   bool IsAccelerated() const;
   bool IsVFR() const;
 
+  CUstream GetStream() const;
+
   std::map<std::string, std::string> Metadata();
+  std::shared_ptr<CudaStreamEvent> m_event;
 
 private:
   bool DecodeImpl(TaskExecDetails& details, PacketData& pkt_data, Token& dst,

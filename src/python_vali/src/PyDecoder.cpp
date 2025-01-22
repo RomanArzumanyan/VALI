@@ -29,26 +29,42 @@ PyDecoder::PyDecoder(const string& pathToFile,
                      const map<string, string>& ffmpeg_options, int gpuID) {
   gpu_id = gpuID;
   NvDecoderClInterface cli_iface(ffmpeg_options);
-  auto stream =
-      gpu_id >= 0
-          ? std::optional<CUstream>(CudaResMgr::Instance().GetStream(gpu_id))
-          : std::nullopt;
 
-  upDecoder.reset(DecodeFrame::Make(pathToFile.c_str(), cli_iface, stream));
+  upDecoder.reset(DecodeFrame::Make(pathToFile.c_str(), cli_iface, gpu_id));
+  if (gpu_id >= 0) {
+    /* Libavcodec will use primary CUDA context for given GPU.
+     * In case it prefers default CUDA tream (0x0) we shall not query context by
+     * stream.
+     */
+    auto stream = upDecoder->GetStream();
+    if (!stream) {
+      m_event.reset(new CudaStreamEvent(upDecoder->GetStream(), gpu_id));
+    } else {
+      m_event.reset(new CudaStreamEvent(upDecoder->GetStream()));
+    }
+  }
 }
 
 PyDecoder::PyDecoder(py::object buffered_reader,
                      const map<string, string>& ffmpeg_options, int gpuID) {
   gpu_id = gpuID;
   NvDecoderClInterface cli_iface(ffmpeg_options);
-  auto stream =
-      gpu_id >= 0
-          ? std::optional<CUstream>(CudaResMgr::Instance().GetStream(gpu_id))
-          : std::nullopt;
 
   upBuff.reset(new BufferedReader(buffered_reader));
   upDecoder.reset(
-      DecodeFrame::Make("", cli_iface, stream, upBuff->GetAVIOContext()));
+      DecodeFrame::Make("", cli_iface, gpu_id, upBuff->GetAVIOContext()));
+  if (gpu_id >= 0) {
+    /* Libavcodec will use primary CUDA context for given GPU.
+     * In case it prefers default CUDA tream (0x0) we shall not query context by
+     * stream.
+     */
+    auto stream = upDecoder->GetStream();
+    if (!stream) {
+      m_event.reset(new CudaStreamEvent(upDecoder->GetStream(), gpu_id));
+    } else {
+      m_event.reset(new CudaStreamEvent(upDecoder->GetStream()));
+    }
+  }
 }
 
 bool PyDecoder::DecodeImpl(TaskExecDetails& details, PacketData& pkt_data,
@@ -285,6 +301,8 @@ bool PyDecoder::IsVFR() const {
   return params.videoContext.is_vfr;
 }
 
+CUstream PyDecoder::GetStream() const { return upDecoder->GetStream(); }
+
 std::map<std::string, std::string> PyDecoder::Metadata() {
   MuxingParams params;
   upDecoder->GetParams(params);
@@ -319,9 +337,9 @@ void Init_PyDecoder(py::module& m) {
             TaskExecDetails details;
             PacketData pkt_data;
 
-            return std::make_tuple(
-                self.DecodeSingleFrame(frame, details, pkt_data, seek_ctx),
-                details.m_info);
+            auto res =
+                self.DecodeSingleFrame(frame, details, pkt_data, seek_ctx);
+            return std::make_tuple(res, details.m_info);
           },
           py::arg("frame"), py::arg("seek_ctx") = std::nullopt,
           py::call_guard<py::gil_scoped_release>(),
@@ -340,9 +358,9 @@ void Init_PyDecoder(py::module& m) {
              std::optional<SeekContext>& seek_ctx) {
             TaskExecDetails details;
 
-            return std::make_tuple(
-                self.DecodeSingleFrame(frame, details, pkt_data, seek_ctx),
-                details.m_info);
+            auto res =
+                self.DecodeSingleFrame(frame, details, pkt_data, seek_ctx);
+            return std::make_tuple(res, details.m_info);
           },
           py::arg("frame"), py::arg("pkt_data"),
           py::arg("seek_ctx") = std::nullopt,
@@ -363,9 +381,11 @@ void Init_PyDecoder(py::module& m) {
             TaskExecDetails details;
             PacketData pkt_data;
 
-            return std::make_tuple(
-                self.DecodeSingleSurface(surf, details, pkt_data, seek_ctx),
-                details.m_info);
+            auto res =
+                self.DecodeSingleSurface(surf, details, pkt_data, seek_ctx);
+            self.m_event->Record();
+            self.m_event->Wait();
+            return std::make_tuple(res, details.m_info);
           },
           py::arg("surf"), py::arg("seek_ctx") = std::nullopt,
           py::call_guard<py::gil_scoped_release>(),
@@ -379,14 +399,49 @@ void Init_PyDecoder(py::module& m) {
         :return: tuple, first element is True in case of success, False otherwise. Second elements is TaskExecInfo.
     )pbdoc")
       .def(
+          "DecodeSingleSurfaceAsync",
+          [](PyDecoder& self, Surface& surf, bool record_event,
+             std::optional<SeekContext>& seek_ctx) {
+            TaskExecDetails details;
+            PacketData pkt_data;
+
+            auto res =
+                self.DecodeSingleSurface(surf, details, pkt_data, seek_ctx);
+            if (record_event) {
+              self.m_event->Record();
+            }
+            return std::make_tuple(res, details.m_info,
+                                   record_event ? self.m_event : nullptr);
+          },
+          py::arg("surf"), py::arg("record_event") = true,
+          py::arg("seek_ctx") = std::nullopt,
+          py::call_guard<py::gil_scoped_release>(),
+          R"pbdoc(
+        Decode single video surface from input file.
+        Only call this method for HW-accelerated decoder.
+
+        :param surf: decoded video surface
+        :param record_event: If False, no event will be recorded. Useful for chain calls.
+        :param pkt_data: decoded video surface packet data, may be None
+        :param seek_ctx: seek context, may be None
+        :param record_event: If False, no event will be recorded. Useful for chain calls.
+        :return: tuple:
+          success (Bool) True in case of success, False otherwise.
+          info (TaskExecInfo) task execution information.
+          event (CudaStreamEvent) CUDA stream event
+        :rtype: tuple
+    )pbdoc")
+      .def(
           "DecodeSingleSurface",
           [](PyDecoder& self, Surface& surf, PacketData& pkt_data,
              std::optional<SeekContext>& seek_ctx) {
             TaskExecDetails details;
 
-            return std::make_tuple(
-                self.DecodeSingleSurface(surf, details, pkt_data, seek_ctx),
-                details.m_info);
+            auto res =
+                self.DecodeSingleSurface(surf, details, pkt_data, seek_ctx);
+            self.m_event->Record();
+            self.m_event->Wait();
+            return std::make_tuple(res, details.m_info);
           },
           py::arg("surf"), py::arg("pkt_data"),
           py::arg("seek_ctx") = std::nullopt,
@@ -399,6 +454,41 @@ void Init_PyDecoder(py::module& m) {
         :param pkt_data: decoded video surface packet data, may be None
         :param seek_ctx: seek context, may be None
         :return: tuple, first element is True in case of success, False otherwise. Second elements is TaskExecInfo.
+    )pbdoc")
+      .def(
+          "DecodeSingleSurfaceAsync",
+          [](PyDecoder& self, Surface& surf, PacketData& pkt_data,
+             bool record_event, std::optional<SeekContext>& seek_ctx) {
+            TaskExecDetails details;
+
+            auto res =
+                self.DecodeSingleSurface(surf, details, pkt_data, seek_ctx);
+            if (record_event) {
+              self.m_event->Record();
+            }
+            return std::make_tuple(res, details.m_info);
+          },
+          py::arg("surf"), py::arg("pkt_data"), py::arg("record_event") = true,
+          py::arg("seek_ctx") = std::nullopt,
+          py::call_guard<py::gil_scoped_release>(),
+          R"pbdoc(
+        Decode single video surface from input file.
+        Only call this method for HW-accelerated decoder.
+
+        :param surf: decoded video surface
+        :param pkt_data: decoded video surface packet data, may be None
+        :param seek_ctx: seek context, may be None
+        :param record_event: If False, no event will be recorded. Useful for chain calls.
+        :return: tuple:
+          success (Bool) True in case of success, False otherwise.
+          info (TaskExecInfo) task execution information.
+          event (CudaStreamEvent) CUDA stream event
+        :rtype: tuple
+    )pbdoc")
+      .def_property_readonly(
+          "Stream", [](PyDecoder& self) { return (size_t)self.GetStream(); },
+          R"pbdoc(
+        Return CUDA stream used by decoder.
     )pbdoc")
       .def_property_readonly("Width", &PyDecoder::Width,
                              R"pbdoc(

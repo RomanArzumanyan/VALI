@@ -136,17 +136,14 @@ struct nv12_bgr final : public NppConvertSurface_Impl {
         err = LibNpp::nppiNV12ToBGR_8u_P2C3R_Ctx(
             pSrc, pInput->Pitch(), pDst, pOutput->Pitch(), oSizeRoi, nppCtx);
       } else {
-        return s_unsupp_cc_ctx;
-        break;
-      default:
-        return s_unsupp_cc_ctx;
+        err = NPP_ERROR;
       }
+      break;
+    default:
+      err = NPP_ERROR;
+      break;
 
-      if (NPP_NO_ERROR != err) {
-        return s_fail;
-      }
-
-      return s_success;
+      return NPP_NO_ERROR != err ? s_success : s_fail;
     }
   }
 };
@@ -1165,6 +1162,36 @@ auto const cuda_stream_sync = [](void* stream) {
   LibCuda::cuStreamSynchronize((CUstream)stream);
 };
 
+std::list<std::pair<Pixel_Format, Pixel_Format>> const&
+ConvertSurface::GetSupportedConversions() {
+  static const std::list<std::pair<Pixel_Format, Pixel_Format>> convs(
+      {{NV12, YUV420},
+       {YUV420, NV12},
+       {P10, NV12},
+       {P12, NV12},
+       {NV12, RGB},
+       {NV12, BGR},
+       {RGB, RGB_PLANAR},
+       {RGB_PLANAR, RGB},
+       {RGB_PLANAR, YUV444},
+       {Y, YUV444},
+       {YUV420, RGB},
+       {RGB, YUV420},
+       {RGB, YUV444},
+       {RGB, BGR},
+       {BGR, RGB},
+       {YUV420, BGR},
+       {YUV444, BGR},
+       {YUV444, RGB},
+       {BGR, YUV444},
+       {NV12, Y},
+       {RGB, RGB_32F},
+       {RGB, Y},
+       {RGB_32F, RGB_32F_PLANAR}});
+
+  return convs;
+}
+
 ConvertSurface::ConvertSurface(Pixel_Format src, Pixel_Format dst, CUstream str)
     : Task("NppConvertSurface", ConvertSurface::numInputs,
            ConvertSurface::numOutputs, nullptr, (void*)str) {
@@ -1215,7 +1242,10 @@ ConvertSurface::ConvertSurface(Pixel_Format src, Pixel_Format dst, CUstream str)
   } else if (RGB_32F == src && RGB_32F_PLANAR == dst) {
     pImpl = new rgb32f_deinterleave(str);
   } else {
-    throw std::invalid_argument("Unsupported pixel format conversion");
+    std::stringstream ss;
+    ss << "Unsupported pixel format conversion: " << GetFormatName(src);
+    ss << " -> " << GetFormatName(dst) << std::endl;
+    throw std::invalid_argument(ss.str());
   }
 }
 
