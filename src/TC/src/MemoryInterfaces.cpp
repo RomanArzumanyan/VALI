@@ -456,3 +456,23 @@ bool Surface::Empty() const {
 }
 
 CUcontext Surface::Context() { return GetSurfacePlane().Context(); }
+
+std::vector<size_t> Surface::Shape() {
+  std::vector<size_t> shape;
+
+  try {
+    CudaArrayInterfaceDescriptor cai;
+    ToCAI(cai);
+
+    for (auto i = 0U; i < cai.m_num_elems; i++) {
+      auto& dim = cai.m_shape[i];
+      if (dim) {
+        shape.push_back(dim);
+      }
+    }
+  } catch (...) {
+    shape.push_back(HostMemSize());
+  }
+
+  return shape;
+}

@@ -241,6 +241,10 @@ public:
    */
   bool Empty() const;
 
+  /* Returns numpy-like shape;
+   */
+  std::vector<size_t> Shape();
+
   /* Make empty;
    */
   static Surface* Make(Pixel_Format format);
