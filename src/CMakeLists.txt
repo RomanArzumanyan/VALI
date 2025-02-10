@@ -25,7 +25,7 @@ include(FetchContent)
 if(WIN32)
 	set(
 		FFMPEG_URL 
-		"https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n7.1-latest-win64-gpl-shared-7.1.zip")
+		"https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n7.1-latest-win64-lgpl-shared-7.1.zip")
 else()
 	set(
 		FFMPEG_URL
