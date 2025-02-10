@@ -332,6 +332,7 @@ PYBIND11_MODULE(_python_vali, m) {
   py::class_<CudaStreamEvent, shared_ptr<CudaStreamEvent>>(m, "CudaStreamEvent",
                                                            "CUDA stream event")
       .def("Wait", &CudaStreamEvent::Wait,
+           py::call_guard<py::gil_scoped_release>(),
            R"pbdoc(
       Will not return until CUDA event is synchronized.
       Acts exactly like cuEventSyncronize.
@@ -483,6 +484,7 @@ PYBIND11_MODULE(_python_vali, m) {
            SeekContext
            SurfacePlane
            Surface
+           CudaStreamEvent
 
     )pbdoc";
 }

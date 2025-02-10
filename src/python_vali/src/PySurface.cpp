@@ -221,6 +221,11 @@ void Init_PySurface(py::module& m) {
         Return True if Surface owns memory, False if it only references actual
         memory allocation but doesn't own it.
     )pbdoc")
+      .def_property_readonly("Shape", &Surface::Shape,
+                             R"pbdoc(
+        Return numpy-like shape. For those formats which have multiple memory
+        allocations (like YUV420), total memory size will be returned.
+    )pbdoc")
       .def("Clone", &Surface::Clone, py::return_value_policy::take_ownership,
            R"pbdoc(
         CUDA mem alloc + deep copy.
