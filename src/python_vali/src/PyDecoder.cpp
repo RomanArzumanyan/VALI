@@ -91,6 +91,7 @@ bool PyDecoder::DecodeSingleFrame(py::array& frame, TaskExecDetails& details,
                                   PacketData& pkt_data,
                                   std::optional<SeekContext> seek_ctx) {
   if (IsAccelerated()) {
+    details.m_info = TaskExecInfo::FAIL;
     return false;
   }
 
@@ -108,6 +109,7 @@ bool PyDecoder::DecodeSingleSurface(Surface& surf, TaskExecDetails& details,
                                     PacketData& pkt_data,
                                     std::optional<SeekContext> seek_ctx) {
   if (!IsAccelerated()) {
+    details.m_info = TaskExecInfo::FAIL;
     return false;
   }
 
@@ -383,8 +385,10 @@ void Init_PyDecoder(py::module& m) {
 
             auto res =
                 self.DecodeSingleSurface(surf, details, pkt_data, seek_ctx);
-            self.m_event->Record();
-            self.m_event->Wait();
+            if (res) {
+              self.m_event->Record();
+              self.m_event->Wait();
+            }
             return std::make_tuple(res, details.m_info);
           },
           py::arg("surf"), py::arg("seek_ctx") = std::nullopt,
@@ -407,7 +411,7 @@ void Init_PyDecoder(py::module& m) {
 
             auto res =
                 self.DecodeSingleSurface(surf, details, pkt_data, seek_ctx);
-            if (record_event) {
+            if (res && record_event) {
               self.m_event->Record();
             }
             return std::make_tuple(res, details.m_info,
@@ -439,8 +443,10 @@ void Init_PyDecoder(py::module& m) {
 
             auto res =
                 self.DecodeSingleSurface(surf, details, pkt_data, seek_ctx);
-            self.m_event->Record();
-            self.m_event->Wait();
+            if (res) {
+              self.m_event->Record();
+              self.m_event->Wait();
+            }
             return std::make_tuple(res, details.m_info);
           },
           py::arg("surf"), py::arg("pkt_data"),
@@ -463,10 +469,11 @@ void Init_PyDecoder(py::module& m) {
 
             auto res =
                 self.DecodeSingleSurface(surf, details, pkt_data, seek_ctx);
-            if (record_event) {
+            if (res && record_event) {
               self.m_event->Record();
             }
-            return std::make_tuple(res, details.m_info);
+            return std::make_tuple(res, details.m_info,
+                                   record_event ? self.m_event : nullptr);
           },
           py::arg("surf"), py::arg("pkt_data"), py::arg("record_event") = true,
           py::arg("seek_ctx") = std::nullopt,

@@ -189,6 +189,54 @@ class TestDecoder(unittest.TestCase):
         self.assertLessEqual(
             np.abs(self.gtInfo.timebase - pyDec.Timebase), epsilon)
 
+    def test_dec_frame_cpu(self):
+        """
+        This test checks that `DecodeSingleFrame` methods don't 
+        work on GPU and return proper result.
+        """
+        pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=0)
+
+        pkt_data = vali.PacketData()
+        frame = np.ndarray(dtype=np.uint8, shape=())
+
+        res, info = pyDec.DecodeSingleFrame(frame)
+        self.assertFalse(res)
+        self.assertEqual(info, vali.TaskExecInfo.FAIL)
+
+        res, info = pyDec.DecodeSingleFrame(frame, pkt_data)
+        self.assertFalse(res)
+        self.assertEqual(info, vali.TaskExecInfo.FAIL)
+
+    def test_dec_surface_cpu(self):
+        """
+        This test checks that `DecodeSingleSurface` methods don't
+        work on CPU and return proper result and event.
+        """
+
+        pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=-1)
+
+        pkt_data = vali.PacketData()
+        surf = vali.Surface.Make(
+            pyDec.Format, pyDec.Width, pyDec.Height, gpu_id=0)
+
+        res, info = pyDec.DecodeSingleSurface(surf)
+        self.assertFalse(res)
+        self.assertEqual(info, vali.TaskExecInfo.FAIL)
+
+        res, info = pyDec.DecodeSingleSurface(surf, pkt_data)
+        self.assertFalse(res)
+        self.assertEqual(info, vali.TaskExecInfo.FAIL)
+
+        res, info, evt = pyDec.DecodeSingleSurfaceAsync(surf)
+        self.assertFalse(res)
+        self.assertEqual(info, vali.TaskExecInfo.FAIL)
+        self.assertIsNone(evt)
+
+        res, info, evt = pyDec.DecodeSingleSurfaceAsync(surf, pkt_data)
+        self.assertFalse(res)
+        self.assertEqual(info, vali.TaskExecInfo.FAIL)
+        self.assertIsNone(evt)
+
     @parameterized.expand([
         ["from_url"],
         ["from_buf"]
@@ -308,7 +356,7 @@ class TestDecoder(unittest.TestCase):
                 dec_frames += 1
 
         self.assertEqual(self.yuvInfo.num_frames, dec_frames)
-        
+
         if buf is not None:
             buf.close()
 
