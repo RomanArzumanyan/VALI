@@ -400,11 +400,26 @@ class TestDecoder(unittest.TestCase):
             lastPts = pktData.pts
 
     @parameterized.expand([
-        ["avc_8bit", "basic", "basic_nv12"],
-        ["hevc_10bit", "hevc10", "hevc10_p10"],
+        [True, "avc_8bit", "basic", "basic_nv12"],
+        [False, "avc_8bit", "basic", "basic_nv12"],
+        [True, "hevc_10bit", "hevc10", "hevc10_p10"],
+        [False, "hevc_10bit", "hevc10", "hevc10_p10"],
     ])
-    def test_check_all_surfaces_gpu(self, case_name: str, gt_comp_name: str,
-                                    gt_raw_name: str):
+    def test_check_all_surfaces_gpu(
+            self,
+            is_async: bool,
+            case_name: str,
+            gt_comp_name: str,
+            gt_raw_name: str):
+        """
+        This test checks decoded surfaces pixel-by-pixel.
+
+        Args:
+            is_async (bool): if True, will run async non-blocking api, otherwise sync blocking api
+            case_name (str): test case name
+            gt_comp_name (str): ground truth information about compressed file
+            gt_raw_name (str): ground truth information about raw file
+        """
 
         gt_comp = self.gtByName(gt_comp_name)
         gt_raw = self.gtByName(gt_raw_name)
@@ -419,8 +434,13 @@ class TestDecoder(unittest.TestCase):
                     pyDec.Format, pyDec.Width, pyDec.Height, gpu_id=0)
                 frame = np.ndarray(dtype=np.uint8, shape=surf.HostSize)
 
-                # Decode single surface from file
-                success, details = pyDec.DecodeSingleSurface(surf)
+                # Decode single surface
+                if is_async:
+                    success, details, _ = pyDec.DecodeSingleSurfaceAsync(
+                        surf, False)
+                else:
+                    success, details = pyDec.DecodeSingleSurface(surf)
+
                 if not success:
                     self.log.info('decode: ' + str(details))
                     break
