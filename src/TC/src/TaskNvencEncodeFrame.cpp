@@ -37,14 +37,16 @@ static inline bool operator!=(const GUID& guid1, const GUID& guid2) {
 #include <map>
 #include <queue>
 
-NvEncoderCuda::NvEncoderCuda(CUstream stream, uint32_t nWidth, uint32_t nHeight,
+NvEncoderCuda::NvEncoderCuda(int gpu_id, CUstream stream, uint32_t nWidth,
+                             uint32_t nHeight,
                              NV_ENC_BUFFER_FORMAT eBufferFormat,
                              uint32_t nExtraOutputDelay,
                              bool bMotionEstimationOnly,
                              bool bOutputInVideoMemory)
-    : NvEncoder(NV_ENC_DEVICE_TYPE_CUDA, stream, nWidth, nHeight, eBufferFormat,
-                nExtraOutputDelay, bMotionEstimationOnly, bOutputInVideoMemory),
-      m_cuda_stream(stream)
+    : NvEncoder(NV_ENC_DEVICE_TYPE_CUDA, gpu_id, stream, nWidth, nHeight,
+                eBufferFormat, nExtraOutputDelay, bMotionEstimationOnly,
+                bOutputInVideoMemory),
+      m_cuda_stream(stream), m_gpu_id(gpu_id)
 
 {
   if (!m_hEncoder) {
@@ -113,7 +115,8 @@ void NvEncoderCuda::ReleaseCudaResources() {
 
   for (auto referenceFrame : m_vReferenceFrames) {
     if (referenceFrame.inputPtr) {
-      LibCuda::cuMemFree(reinterpret_cast<CUdeviceptr>(referenceFrame.inputPtr));
+      LibCuda::cuMemFree(
+          reinterpret_cast<CUdeviceptr>(referenceFrame.inputPtr));
     }
   }
   m_vReferenceFrames.clear();
@@ -204,8 +207,8 @@ void* NvEncoder::GetCompletionEvent(uint32_t eventIdx) {
 NV_ENC_BUFFER_FORMAT
 NvEncoder::GetPixelFormat() const { return m_eBufferFormat; }
 
-NvEncoder::NvEncoder(NV_ENC_DEVICE_TYPE eDeviceType, CUstream cuda_stream,
-                     uint32_t nWidth, uint32_t nHeight,
+NvEncoder::NvEncoder(NV_ENC_DEVICE_TYPE eDeviceType, int gpu_id,
+                     CUstream cuda_stream, uint32_t nWidth, uint32_t nHeight,
                      NV_ENC_BUFFER_FORMAT eBufferFormat,
                      uint32_t nExtraOutputDelay, bool bMotionEstimationOnly,
                      bool bOutputInVideoMemory)
@@ -227,7 +230,7 @@ NvEncoder::NvEncoder(NV_ENC_DEVICE_TYPE eDeviceType, CUstream cuda_stream,
 
   NV_ENC_OPEN_ENCODE_SESSION_EX_PARAMS encodeSessionExParams = {
       NV_ENC_OPEN_ENCODE_SESSION_EX_PARAMS_VER};
-  encodeSessionExParams.device = (void*)GetContextByStream(cuda_stream);
+  encodeSessionExParams.device = (void*)GetContextByStream(gpu_id, cuda_stream);
   encodeSessionExParams.deviceType = m_eDeviceType;
   encodeSessionExParams.apiVersion = NVENCAPI_VERSION;
   void* hEncoder = nullptr;
@@ -1026,6 +1029,7 @@ struct NvencEncodeFrame_Impl {
   Buffer* pElementaryVideo;
   NvEncoderCuda* pEncoderCuda = nullptr;
   CUstream stream = 0;
+  int m_gpu_id;
   bool didEncode = false;
   bool didFlush = false;
   NV_ENC_RECONFIGURE_PARAMS recfg_params;
@@ -1049,13 +1053,14 @@ struct NvencEncodeFrame_Impl {
   }
 
   NvencEncodeFrame_Impl(NV_ENC_BUFFER_FORMAT format,
-                        NvEncoderClInterface& cli_iface, CUstream str,
-                        int32_t width, int32_t height, bool verbose)
+                        NvEncoderClInterface& cli_iface, int gpu_id,
+                        CUstream str, int32_t width, int32_t height,
+                        bool verbose)
       : init_params(recfg_params.reInitEncodeParams) {
     pElementaryVideo = Buffer::Make(0U);
 
     stream = str;
-    pEncoderCuda = new NvEncoderCuda(str, width, height, format);
+    pEncoderCuda = new NvEncoderCuda(gpu_id, str, width, height, format);
     enc_buffer_format = format;
 
     init_params = {NV_ENC_INITIALIZE_PARAMS_VER};
@@ -1093,13 +1098,13 @@ struct NvencEncodeFrame_Impl {
 };
 } // namespace VPF
 
-NvencEncodeFrame* NvencEncodeFrame::Make(CUstream cuStream,
+NvencEncodeFrame* NvencEncodeFrame::Make(int gpu_id, CUstream cuStream,
                                          NvEncoderClInterface& cli_iface,
                                          NV_ENC_BUFFER_FORMAT format,
                                          uint32_t width, uint32_t height,
                                          bool verbose) {
-  return new NvencEncodeFrame(cuStream, cli_iface, format, width, height,
-                              verbose);
+  return new NvencEncodeFrame(gpu_id, cuStream, cli_iface, format, width,
+                              height, verbose);
 }
 
 bool VPF::NvencEncodeFrame::Reconfigure(NvEncoderClInterface& cli_iface,
@@ -1112,7 +1117,7 @@ auto const cuda_stream_sync = [](void* stream) {
   LibCuda::cuStreamSynchronize((CUstream)stream);
 };
 
-NvencEncodeFrame::NvencEncodeFrame(CUstream cuStream,
+NvencEncodeFrame::NvencEncodeFrame(int gpu_id, CUstream cuStream,
                                    NvEncoderClInterface& cli_iface,
                                    NV_ENC_BUFFER_FORMAT format, uint32_t width,
                                    uint32_t height, bool verbose)
@@ -1120,8 +1125,8 @@ NvencEncodeFrame::NvencEncodeFrame(CUstream cuStream,
 
       Task("NvencEncodeFrame", NvencEncodeFrame::numInputs,
            NvencEncodeFrame::numOutputs, cuda_stream_sync, (void*)cuStream) {
-  pImpl = new NvencEncodeFrame_Impl(format, cli_iface, cuStream, width, height,
-                                    verbose);
+  pImpl = new NvencEncodeFrame_Impl(format, cli_iface, gpu_id, cuStream, width,
+                                    height, verbose);
 }
 
 NvencEncodeFrame::~NvencEncodeFrame() { delete pImpl; };

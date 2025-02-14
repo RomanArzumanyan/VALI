@@ -425,7 +425,9 @@ class TestDecoder(unittest.TestCase):
         gt_raw = self.gtByName(gt_raw_name)
 
         pyDec = vali.PyDecoder(input=gt_comp.uri, opts={}, gpu_id=0)
-        pyDwn = vali.PySurfaceDownloader(gpu_id=0)
+
+        pyDwn = vali.PySurfaceDownloader(
+            gpu_id=0) if not is_async else vali.PySurfaceDownloader(gpu_id=0, stream=pyDec.Stream)
 
         dec_frames = 0
         with open(gt_raw.uri, "rb") as f_in:

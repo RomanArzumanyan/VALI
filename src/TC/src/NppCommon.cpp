@@ -9,11 +9,11 @@ using namespace VPF;
 
 static mutex gNppMutex;
 
-void SetupNppContext(CUstream stream, NppStreamContext& nppCtx) {
+void SetupNppContext(int gpu_id, CUstream stream, NppStreamContext& nppCtx) {
   memset(&nppCtx, 0, sizeof(nppCtx));
 
   lock_guard<mutex> lock(gNppMutex);
-  CudaCtxPush push(stream);
+  CudaCtxPush push(GetContextByStream(gpu_id, stream));
 
   CUdevice device;
   auto res = LibCuda::cuCtxGetDevice(&device);

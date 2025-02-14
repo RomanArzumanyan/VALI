@@ -146,6 +146,24 @@ CUdeviceptr GetDevicePointer(CUdeviceptr dptr) {
 }
 
 CUcontext GetContextByStream(CUstream str) {
+  if (!str) {
+    throw std::runtime_error("Can't get CUDA context for default CUDA stream");
+  }
+
+  CUcontext ctx;
+  ThrowOnCudaError(LibCuda::cuStreamGetCtx(str, &ctx), __LINE__);
+  return ctx;
+}
+
+CUcontext GetContextByStream(int gpu_id, CUstream str) {
+  if (!str) {
+    if (gpu_id < 0) {
+      throw std::runtime_error("Default CUDA stream without valid GPU id.");
+    }
+
+    return CudaResMgr::Instance().GetCtx(gpu_id);
+  }
+
   CUcontext ctx;
   ThrowOnCudaError(LibCuda::cuStreamGetCtx(str, &ctx), __LINE__);
   return ctx;

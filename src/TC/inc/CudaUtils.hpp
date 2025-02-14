@@ -43,6 +43,7 @@ CUcontext GetContextByDptr(CUdeviceptr dptr);
  * May throw exception with reason in message;
  */
 CUcontext GetContextByStream(CUstream str);
+CUcontext GetContextByStream(int gpu_id, CUstream str);
 
 /* Get CUDA device id for given CUdeviceptr;
  * May throw exception with reason in message;

@@ -56,9 +56,10 @@ class PyFrameUploader {
   std::unique_ptr<CudaUploadFrame> m_uploader = nullptr;
 
 public:
-  PyFrameUploader(uint32_t gpu_id);
-  PyFrameUploader(CUstream str);
-  PyFrameUploader(size_t str) : PyFrameUploader((CUstream)str) {}
+  PyFrameUploader(int gpu_id);
+  PyFrameUploader(int gpu_id, CUstream str);
+  PyFrameUploader(int gpu_id, size_t str)
+      : PyFrameUploader(gpu_id, (CUstream)str) {}
 
   bool Run(py::array& src, Surface& dst, TaskExecDetails details);
 };
@@ -67,9 +68,10 @@ class PySurfaceDownloader {
   std::unique_ptr<CudaDownloadSurface> upDownloader = nullptr;
 
 public:
-  PySurfaceDownloader(uint32_t gpu_id);
-  PySurfaceDownloader(CUstream str);
-  PySurfaceDownloader(size_t str) : PySurfaceDownloader((CUstream)str) {}
+  PySurfaceDownloader(int gpu_id);
+  PySurfaceDownloader(int gpu_id, CUstream str);
+  PySurfaceDownloader(int gpu_id, size_t str)
+      : PySurfaceDownloader(gpu_id, (CUstream)str) {}
 
   bool Run(Surface& src, py::array& dst, TaskExecDetails& details);
 };
@@ -79,10 +81,12 @@ class PySurfaceConverter {
   std::unique_ptr<Buffer> upCtxBuffer = nullptr;
 
 public:
-  PySurfaceConverter(Pixel_Format src, Pixel_Format dst, uint32_t gpuID);
-  PySurfaceConverter(Pixel_Format src, Pixel_Format dst, CUstream str);
-  PySurfaceConverter(Pixel_Format src, Pixel_Format dst, size_t str)
-      : PySurfaceConverter(src, dst, (CUstream)str) {}
+  PySurfaceConverter(Pixel_Format src, Pixel_Format dst, int gpu_id);
+
+  PySurfaceConverter(Pixel_Format src, Pixel_Format dst, int gpu_id,
+                     CUstream str);
+  PySurfaceConverter(Pixel_Format src, Pixel_Format dst, int gpu_id, size_t str)
+      : PySurfaceConverter(src, dst, gpu_id, (CUstream)str) {}
 
   bool Run(Surface& src, Surface& dst,
            std::optional<ColorspaceConversionContext> context,
@@ -117,10 +121,10 @@ class PySurfaceResizer {
   std::unique_ptr<ResizeSurface> upResizer = nullptr;
 
 public:
-  PySurfaceResizer(Pixel_Format format, uint32_t gpuID);
-  PySurfaceResizer(Pixel_Format format, CUstream str);
-  PySurfaceResizer(Pixel_Format format, size_t str)
-      : PySurfaceResizer(format, (CUstream)str) {}
+  PySurfaceResizer(Pixel_Format format, int gpu_id);
+  PySurfaceResizer(Pixel_Format format, int gpu_id, CUstream str);
+  PySurfaceResizer(Pixel_Format format, int gpu_id, size_t str)
+      : PySurfaceResizer(format, gpu_id, (CUstream)str) {}
 
   bool Run(Surface& src, Surface& dst, TaskExecDetails& details);
 
@@ -201,11 +205,11 @@ class PyDecoder {
 public:
   PyDecoder(const std::string& pathToFile,
             const std::map<std::string, std::string>& ffmpeg_options,
-            int gpuID);
+            int gpu_id);
 
   PyDecoder(py::object buffered_reader,
             const std::map<std::string, std::string>& ffmpeg_options,
-            int gpuID);
+            int gpu_id);
 
   bool DecodeSingleFrame(py::array& frame, TaskExecDetails& details,
                          PacketData& pkt_data,
@@ -259,7 +263,8 @@ class PyNvEncoder {
   Pixel_Format eFormat;
   std::map<std::string, std::string> options;
   bool verbose_ctor;
-  CUstream cuda_str;
+  CUstream m_stream;
+  int m_gpu_id;
 
 public:
   uint32_t Width() const;
@@ -275,11 +280,13 @@ public:
               int gpu_id, Pixel_Format format = NV12, bool verbose = false);
 
   PyNvEncoder(const std::map<std::string, std::string>& encodeOptions,
-              CUstream str, Pixel_Format format = NV12, bool verbose = false);
+              int gpu_id, CUstream str, Pixel_Format format = NV12,
+              bool verbose = false);
 
   PyNvEncoder(const std::map<std::string, std::string>& encodeOptions,
-              size_t str, Pixel_Format format = NV12, bool verbose = false)
-      : PyNvEncoder(encodeOptions, (CUstream)str, format, verbose) {}
+              int gpu_id, size_t str, Pixel_Format format = NV12,
+              bool verbose = false)
+      : PyNvEncoder(encodeOptions, gpu_id, (CUstream)str, format, verbose) {}
 
   bool EncodeSurface(std::shared_ptr<Surface> rawSurface,
                      py::array_t<uint8_t>& packet,

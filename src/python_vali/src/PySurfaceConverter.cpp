@@ -24,13 +24,14 @@ constexpr auto TASK_EXEC_SUCCESS = TaskExecStatus::TASK_EXEC_SUCCESS;
 constexpr auto TASK_EXEC_FAIL = TaskExecStatus::TASK_EXEC_FAIL;
 
 PySurfaceConverter::PySurfaceConverter(Pixel_Format src, Pixel_Format dst,
-                                       uint32_t gpuID)
-    : PySurfaceConverter(src, dst, CudaResMgr::Instance().GetStream(gpuID)) {}
+                                       int gpu_id)
+    : PySurfaceConverter(src, dst, gpu_id,
+                         CudaResMgr::Instance().GetStream(gpu_id)) {}
 
 PySurfaceConverter::PySurfaceConverter(Pixel_Format src, Pixel_Format dst,
-                                       CUstream str) {
+                                       int gpu_id, CUstream str) {
   m_stream = str;
-  upConverter = std::make_unique<ConvertSurface>(src, dst, m_stream);
+  upConverter = std::make_unique<ConvertSurface>(src, dst, gpu_id, m_stream);
   upCtxBuffer.reset(Buffer::MakeOwnMem(sizeof(ColorspaceConversionContext)));
   m_event = std::make_shared<CudaStreamEvent>(m_stream);
 }
@@ -61,8 +62,8 @@ void Init_PySurfaceConverter(py::module& m) {
   py::class_<PySurfaceConverter>(
       m, "PySurfaceConverter",
       "CUDA-accelerated converter between different pixel formats.")
-      .def(py::init<Pixel_Format, Pixel_Format, uint32_t>(),
-           py::arg("src_format"), py::arg("dst_format"), py::arg("gpu_id"),
+      .def(py::init<Pixel_Format, Pixel_Format, int>(), py::arg("src_format"),
+           py::arg("dst_format"), py::arg("gpu_id"),
            R"pbdoc(
         Constructor method.
 
@@ -70,13 +71,15 @@ void Init_PySurfaceConverter(py::module& m) {
         :param dst_format: output Surface pixel format
         :param gpu_id: what GPU to run conversion on
     )pbdoc")
-      .def(py::init<Pixel_Format, Pixel_Format, size_t>(),
-           py::arg("src_format"), py::arg("dst_format"), py::arg("stream"),
+      .def(py::init<Pixel_Format, Pixel_Format, int, size_t>(),
+           py::arg("src_format"), py::arg("dst_format"), py::arg("gpu_id"),
+           py::arg("stream"),
            R"pbdoc(
         Constructor method.
 
         :param src_format: input Surface pixel format
         :param dst_format: output Surface pixel format
+        :param gpu_id: what GPU to run conversion on
         :param stream: CUDA stream to use for conversion
     )pbdoc")
       .def(
