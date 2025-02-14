@@ -58,6 +58,10 @@ class TestSurfaceConverter(unittest.TestCase):
         super().__init__(methodName=methodName)
 
     def test_unsupported_params(self):
+        """
+        This test checks that color conversion with unsupported params will
+        return proper error.
+        """
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
 
@@ -92,6 +96,13 @@ class TestSurfaceConverter(unittest.TestCase):
         [False]
     ])
     def test_no_cc_ctx(self, is_async):
+        """
+        This test checks that color conversion can be run with default color
+        conversion context parameters.
+
+        Args:
+            is_async (bool): True if launched in non-blocking mode, False otherwise.
+        """
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
 
@@ -124,6 +135,12 @@ class TestSurfaceConverter(unittest.TestCase):
         [False]
     ])
     def test_rgb_deinterleave(self, is_async):
+        """
+        This test checks NV12 -> YUV420 conversion
+
+        Args:
+            is_async (bool): True if launched in non-blocking mode, False otherwise.
+        """
         with open("gt_files.json") as f:
             gt_values = json.load(f)
             dst_info = tc.GroundTruth(**gt_values["basic_rgb"])
@@ -167,9 +184,8 @@ class TestSurfaceConverter(unittest.TestCase):
                     gpu_id=0)
 
                 if is_async:
-                    success, details, event = toPLN.RunAsync(
-                        surf_rgb, surf_pln, cc_ctx)
-                    event.Wait()
+                    success, details, _ = toPLN.RunAsync(
+                        surf_rgb, surf_pln, cc_ctx, record_event=False)
                 else:
                     success, details = toPLN.Run(surf_rgb, surf_pln, cc_ctx)
                 if not success:
@@ -196,7 +212,17 @@ class TestSurfaceConverter(unittest.TestCase):
             f_in.close()
             f_gt.close()
 
-    def test_nv12_rgb(self):
+    @parameterized.expand([
+        [True],
+        [False]
+    ])
+    def test_nv12_rgb(self, is_async: bool):
+        """
+        This test checks NV12 -> RGB conversion
+
+        Args:
+            is_async (bool): True if launched in non-blocking mode, False otherwise.
+        """
         with open("gt_files.json") as f:
             gt_values = json.load(f)
             src_info = tc.GroundTruth(**gt_values["basic_nv12"])
@@ -235,8 +261,11 @@ class TestSurfaceConverter(unittest.TestCase):
             surf_dst = vali.Surface.Make(
                 vali.PixelFormat.RGB, surf_src.Width, surf_src.Height, gpu_id=0)
 
-            success, details = nvCvt.Run(
-                surf_src, surf_dst, cc_ctx)
+            if is_async:
+                success, details, _ = nvCvt.RunAsync(
+                    surf_src, surf_dst, cc_ctx, record_event=False)
+            else:
+                success, details = nvCvt.Run(surf_src, surf_dst, cc_ctx)
 
             if not success:
                 self.fail("Fail to convert surface " +
@@ -265,7 +294,17 @@ class TestSurfaceConverter(unittest.TestCase):
         src_fin.close()
         dst_fin.close()
 
-    def test_p10_nv12(self):
+    @parameterized.expand([
+        [True],
+        [False]
+    ])
+    def test_p10_nv12(self, is_async: bool):
+        """
+        This test checks HDR to SDR conversion (10 bit NV12 -> 8 bit NV12)
+
+        Args:
+            is_async (bool): True if launched in non-blocking mode, False otherwise.
+        """
         with open("gt_files.json") as f:
             gt_values = json.load(f)
             src_info = tc.GroundTruth(**gt_values["hevc10_p10"])
@@ -305,7 +344,13 @@ class TestSurfaceConverter(unittest.TestCase):
             surf_dst = vali.Surface.Make(
                 vali.PixelFormat.NV12, surf_src.Width, surf_src.Height, gpu_id=0)
 
-            success, details = nvCvt.Run(surf_src, surf_dst, cc_ctx)
+            if is_async:
+                success, details, _ = nvCvt.RunAsync(
+                    surf_src, surf_dst, cc_ctx, record_event=False)
+            else:
+                success, details = nvCvt.Run(
+                    surf_src, surf_dst, cc_ctx)
+
             if not success:
                 self.fail("Fail to convert surface " +
                           str(i) + ": " + str(details))
