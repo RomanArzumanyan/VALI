@@ -20,7 +20,11 @@ if __name__ == "__main__":
 
     skbuild.setup(
         name="python_vali",
+<<<<<<< HEAD
         version="4.2.10-0",
+=======
+        version="4.2.9-1",
+>>>>>>> origin
         description="Video Processing Library with full NVENC/NVDEC hardware acceleration",
         long_description=open('README.md').read(),
         long_description_content_type='text/markdown',
