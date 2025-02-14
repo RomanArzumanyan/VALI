@@ -20,10 +20,10 @@ auto const cuda_stream_sync = [](void* stream) {
   LibCuda::cuStreamSynchronize((CUstream)stream);
 };
 
-CudaUploadFrame::CudaUploadFrame(CUstream stream)
+CudaUploadFrame::CudaUploadFrame(int gpu_id, CUstream stream)
     : Task("CudaUploadFrame", CudaUploadFrame::numInputs,
            CudaUploadFrame::numOutputs, cuda_stream_sync, (void*)stream),
-      m_stream(stream) {}
+      m_gpu_id(gpu_id), m_stream(stream) {}
 
 TaskExecDetails CudaUploadFrame::Run() {
   NvtxMark tick(GetName());
@@ -48,7 +48,7 @@ TaskExecDetails CudaUploadFrame::Run() {
 
   ClearOutputs();
 
-  auto context = GetContextByStream(m_stream);
+  auto context = GetContextByStream(m_gpu_id, m_stream);
   auto p_src_host = src_buffer->GetDataAs<uint8_t>();
 
   CUDA_MEMCPY2D m = {0};

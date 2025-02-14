@@ -17,11 +17,13 @@ static const TaskExecDetails s_fail(TaskExecStatus::TASK_EXEC_FAIL,
                                     TaskExecInfo::FAIL);
 
 struct ResizeSurface_Impl {
-  CUstream cu_str;
-  NppStreamContext nppCtx;
+  int m_gpu_id;
+  CUstream m_stream;
+  NppStreamContext m_npp_ctx;
 
-  ResizeSurface_Impl(Pixel_Format format, CUstream str) : cu_str(str) {
-    SetupNppContext(cu_str, nppCtx);
+  ResizeSurface_Impl(Pixel_Format format, int gpu_id, CUstream str)
+      : m_gpu_id(gpu_id), m_stream(str) {
+    SetupNppContext(m_gpu_id, m_stream, m_npp_ctx);
   }
 
   virtual ~ResizeSurface_Impl() = default;
@@ -30,8 +32,8 @@ struct ResizeSurface_Impl {
 };
 
 struct NppResizeSurfacePacked3C_Impl final : ResizeSurface_Impl {
-  NppResizeSurfacePacked3C_Impl(CUstream str, Pixel_Format format)
-      : ResizeSurface_Impl(format, str) {}
+  NppResizeSurfacePacked3C_Impl(int gpu_id, CUstream str, Pixel_Format format)
+      : ResizeSurface_Impl(format, gpu_id, str) {}
 
   ~NppResizeSurfacePacked3C_Impl() = default;
 
@@ -64,10 +66,10 @@ struct NppResizeSurfacePacked3C_Impl final : ResizeSurface_Impl {
     oDstRectROI.height = oDstSize.height;
     int eInterpolation = NPPI_INTER_LANCZOS;
 
-    CudaCtxPush ctxPush(cu_str);
+    CudaCtxPush ctxPush(GetContextByStream(m_gpu_id, m_stream));
     auto ret = LibNpp::nppiResize_8u_C3R_Ctx(
         pSrc, nSrcStep, oSrcSize, oSrcRectROI, pDst, nDstStep, oDstSize,
-        oDstRectROI, eInterpolation, nppCtx);
+        oDstRectROI, eInterpolation, m_npp_ctx);
     if (NPP_NO_ERROR != ret) {
       return s_fail;
     }
@@ -78,8 +80,8 @@ struct NppResizeSurfacePacked3C_Impl final : ResizeSurface_Impl {
 
 // Resize planar 8 bit surface (YUV420, YCbCr420);
 struct NppResizeSurfacePlanar_Impl final : ResizeSurface_Impl {
-  NppResizeSurfacePlanar_Impl(CUstream str, Pixel_Format format)
-      : ResizeSurface_Impl(format, str) {}
+  NppResizeSurfacePlanar_Impl(int gpu_id, CUstream str, Pixel_Format format)
+      : ResizeSurface_Impl(format, gpu_id, str) {}
 
   ~NppResizeSurfacePlanar_Impl() = default;
 
@@ -113,10 +115,10 @@ struct NppResizeSurfacePlanar_Impl final : ResizeSurface_Impl {
       oDstRectROI.height = oDstSize.height;
       int eInterpolation = NPPI_INTER_LANCZOS;
 
-      CudaCtxPush ctxPush(cu_str);
+      CudaCtxPush ctxPush(GetContextByStream(m_gpu_id, m_stream));
       auto ret = LibNpp::nppiResize_8u_C1R_Ctx(
           pSrc, nSrcStep, oSrcSize, oSrcRectROI, pDst, nDstStep, oDstSize,
-          oDstRectROI, eInterpolation, nppCtx);
+          oDstRectROI, eInterpolation, m_npp_ctx);
       if (NPP_NO_ERROR != ret) {
         return s_fail;
       }
@@ -128,11 +130,13 @@ struct NppResizeSurfacePlanar_Impl final : ResizeSurface_Impl {
 
 // Resize semiplanar 8 bit NV12 surface;
 struct ResizeSurfaceSemiPlanar_Impl final : ResizeSurface_Impl {
-  ResizeSurfaceSemiPlanar_Impl(CUstream str, Pixel_Format format)
-      : ResizeSurface_Impl(format, str) {
-    m_cvt_nv12_yuv420 = std::make_unique<ConvertSurface>(NV12, YUV420, str);
-    m_cvt_yuv420_nv12 = std::make_unique<ConvertSurface>(YUV420, NV12, str);
-    m_resizer = std::make_unique<ResizeSurface>(YUV420, str);
+  ResizeSurfaceSemiPlanar_Impl(int gpu_id, CUstream str, Pixel_Format format)
+      : ResizeSurface_Impl(format, gpu_id, str) {
+    m_cvt_nv12_yuv420 =
+        std::make_unique<ConvertSurface>(NV12, YUV420, gpu_id, str);
+    m_cvt_yuv420_nv12 =
+        std::make_unique<ConvertSurface>(YUV420, NV12, gpu_id, str);
+    m_resizer = std::make_unique<ResizeSurface>(YUV420, gpu_id, str);
   }
 
   ~ResizeSurfaceSemiPlanar_Impl() = default;
@@ -192,8 +196,9 @@ struct ResizeSurfaceSemiPlanar_Impl final : ResizeSurface_Impl {
 };
 
 struct NppResizeSurfacePacked32F3C_Impl final : ResizeSurface_Impl {
-  NppResizeSurfacePacked32F3C_Impl(CUstream str, Pixel_Format format)
-      : ResizeSurface_Impl(format, str) {}
+  NppResizeSurfacePacked32F3C_Impl(int gpu_id, CUstream str,
+                                   Pixel_Format format)
+      : ResizeSurface_Impl(format, gpu_id, str) {}
 
   ~NppResizeSurfacePacked32F3C_Impl() = default;
 
@@ -226,10 +231,10 @@ struct NppResizeSurfacePacked32F3C_Impl final : ResizeSurface_Impl {
     oDstRectROI.height = oDstSize.height;
     int eInterpolation = NPPI_INTER_LANCZOS;
 
-    CudaCtxPush ctxPush(cu_str);
+    CudaCtxPush ctxPush(GetContextByStream(m_gpu_id, m_stream));
     auto ret = LibNpp::nppiResize_32f_C3R_Ctx(
         pSrc, nSrcStep, oSrcSize, oSrcRectROI, pDst, nDstStep, oDstSize,
-        oDstRectROI, eInterpolation, nppCtx);
+        oDstRectROI, eInterpolation, m_npp_ctx);
     if (NPP_NO_ERROR != ret) {
       return s_fail;
     }
@@ -240,8 +245,8 @@ struct NppResizeSurfacePacked32F3C_Impl final : ResizeSurface_Impl {
 
 // Resize planar 8 bit surface (YUV420, YCbCr420);
 struct NppResizeSurface32FPlanar_Impl final : ResizeSurface_Impl {
-  NppResizeSurface32FPlanar_Impl(CUstream str, Pixel_Format format)
-      : ResizeSurface_Impl(format, str) {}
+  NppResizeSurface32FPlanar_Impl(int gpu_id, CUstream str, Pixel_Format format)
+      : ResizeSurface_Impl(format, gpu_id, str) {}
 
   ~NppResizeSurface32FPlanar_Impl() = default;
 
@@ -275,10 +280,10 @@ struct NppResizeSurface32FPlanar_Impl final : ResizeSurface_Impl {
       oDstRectROI.height = oDstSize.height;
       int eInterpolation = NPPI_INTER_LANCZOS;
 
-      CudaCtxPush ctxPush(cu_str);
+      CudaCtxPush ctxPush(GetContextByStream(m_gpu_id, m_stream));
       auto ret = LibNpp::nppiResize_32f_C1R_Ctx(
           pSrc, nSrcStep, oSrcSize, oSrcRectROI, pDst, nDstStep, oDstSize,
-          oDstRectROI, eInterpolation, nppCtx);
+          oDstRectROI, eInterpolation, m_npp_ctx);
       if (NPP_NO_ERROR != ret) {
         return s_fail;
       }
@@ -293,19 +298,19 @@ auto const cuda_stream_sync = [](void* stream) {
   LibCuda::cuStreamSynchronize((CUstream)stream);
 };
 
-ResizeSurface::ResizeSurface(Pixel_Format format, CUstream str)
+ResizeSurface::ResizeSurface(Pixel_Format format, int gpu_id, CUstream str)
     : Task("NppResizeSurface", ResizeSurface::numInputs,
            ResizeSurface::numOutputs, nullptr, (void*)str) {
   if (RGB == format || BGR == format) {
-    pImpl = new NppResizeSurfacePacked3C_Impl(str, format);
+    pImpl = new NppResizeSurfacePacked3C_Impl(gpu_id, str, format);
   } else if (YUV420 == format || YUV444 == format || RGB_PLANAR == format) {
-    pImpl = new NppResizeSurfacePlanar_Impl(str, format);
+    pImpl = new NppResizeSurfacePlanar_Impl(gpu_id, str, format);
   } else if (RGB_32F == format) {
-    pImpl = new NppResizeSurfacePacked32F3C_Impl(str, format);
+    pImpl = new NppResizeSurfacePacked32F3C_Impl(gpu_id, str, format);
   } else if (RGB_32F_PLANAR == format) {
-    pImpl = new NppResizeSurface32FPlanar_Impl(str, format);
+    pImpl = new NppResizeSurface32FPlanar_Impl(gpu_id, str, format);
   } else if (NV12 == format) {
-    pImpl = new ResizeSurfaceSemiPlanar_Impl(str, format);
+    pImpl = new ResizeSurfaceSemiPlanar_Impl(gpu_id, str, format);
   } else {
     throw std::runtime_error("pixel format not supported");
   }

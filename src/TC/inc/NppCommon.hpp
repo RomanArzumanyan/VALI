@@ -11,7 +11,7 @@
  * limitations under the License.
  */
 
-#include "LibNpp.hpp"
 #include "LibCuda.hpp"
+#include "LibNpp.hpp"
 
-void SetupNppContext(CUstream stream, NppStreamContext& nppCtx);
+void SetupNppContext(int gpu_id, CUstream stream, NppStreamContext& nppCtx);

@@ -24,13 +24,13 @@ namespace py = pybind11;
 constexpr auto TASK_EXEC_SUCCESS = TaskExecStatus::TASK_EXEC_SUCCESS;
 constexpr auto TASK_EXEC_FAIL = TaskExecStatus::TASK_EXEC_FAIL;
 
-PySurfaceDownloader::PySurfaceDownloader(uint32_t gpu_id) {
+PySurfaceDownloader::PySurfaceDownloader(int gpu_id) {
   upDownloader = std::make_unique<CudaDownloadSurface>(
-      CudaResMgr::Instance().GetStream(gpu_id));
+      gpu_id, CudaResMgr::Instance().GetStream(gpu_id));
 }
 
-PySurfaceDownloader::PySurfaceDownloader(CUstream str) {
-  upDownloader = std::make_unique<CudaDownloadSurface>(str);
+PySurfaceDownloader::PySurfaceDownloader(int gpu_id, CUstream str) {
+  upDownloader = std::make_unique<CudaDownloadSurface>(gpu_id, str);
 }
 
 bool PySurfaceDownloader::Run(Surface& src, py::array& dst,
@@ -49,24 +49,24 @@ void Init_PySurfaceDownloader(py::module& m) {
   py::class_<PySurfaceDownloader>(m, "PySurfaceDownloader",
                                   "This class is used to copy Surface to numpy "
                                   "ndarray using CUDA DtoH memcpy.")
-      .def(py::init<uint32_t>(), py::arg("gpu_id"),
+      .def(py::init<int>(), py::arg("gpu_id"),
            R"pbdoc(
         Constructor method.
 
         :param gpu_id: what GPU does Surface belong to
     )pbdoc")
-      .def(py::init<uint32_t>(), py::arg("stream"),
+      .def(py::init<int, size_t>(), py::arg("gpu_id"), py::arg("stream"),
            R"pbdoc(
         Constructor method.
 
+        :param gpu_id: what GPU does Surface belong to
         :param stream: CUDA stream to use for HtoD memcopy
     )pbdoc")
       .def(
           "Run",
           [](PySurfaceDownloader& self, Surface& src, py::array& dst) {
             TaskExecDetails details;
-            return std::make_tuple(self.Run(src, dst, details),
-                                   details.m_info);
+            return std::make_tuple(self.Run(src, dst, details), details.m_info);
           },
           py::arg("src"), py::arg("dst"),
           py::call_guard<py::gil_scoped_release>(),

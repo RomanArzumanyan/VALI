@@ -69,7 +69,7 @@ public:
 
   TaskExecDetails Run() final;
   ~NvencEncodeFrame() final;
-  static NvencEncodeFrame* Make(CUstream cuStream,
+  static NvencEncodeFrame* Make(int gpu_id, CUstream cuStream,
                                 NvEncoderClInterface& cli_iface,
                                 NV_ENC_BUFFER_FORMAT format, uint32_t width,
                                 uint32_t height, bool verbose);
@@ -78,7 +78,7 @@ public:
                    bool reset_enc, bool verbose);
 
 private:
-  NvencEncodeFrame(CUstream cuStream, NvEncoderClInterface& cli_iface,
+  NvencEncodeFrame(int gpu_id, CUstream cuStream, NvEncoderClInterface& cli_iface,
                    NV_ENC_BUFFER_FORMAT format, uint32_t width, uint32_t height,
                    bool verbose);
   static const uint32_t numInputs = 3U;
@@ -148,7 +148,7 @@ public:
 
   TaskExecDetails Run();
   ~CudaUploadFrame() = default;
-  CudaUploadFrame(CUstream stream);
+  CudaUploadFrame(int gpu_id, CUstream stream);
 
 private:
   /* First input is src Buffer.
@@ -157,6 +157,7 @@ private:
   static const uint32_t numInputs = 2U;
   static const uint32_t numOutputs = 0U;
 
+  int m_gpu_id;
   CUstream m_stream;
 };
 
@@ -168,7 +169,7 @@ public:
 
   TaskExecDetails Run();
   ~CudaDownloadSurface() = default;
-  CudaDownloadSurface(CUstream cuStream);
+  CudaDownloadSurface(int gpu_id, CUstream cuStream);
 
 private:
   /* First input is src Surface.
@@ -176,6 +177,8 @@ private:
    */
   static const uint32_t numInputs = 2U;
   static const uint32_t numOutputs = 0U;
+
+  int m_gpu_id;
   CUstream m_stream;
 };
 
@@ -186,7 +189,7 @@ public:
   ConvertSurface& operator=(const ConvertSurface& other) = delete;
 
   ~ConvertSurface();
-  ConvertSurface(Pixel_Format src, Pixel_Format dst, CUstream str);
+  ConvertSurface(Pixel_Format src, Pixel_Format dst, int gpu_id, CUstream str);
 
   TaskExecDetails Run() final;
 
@@ -235,7 +238,7 @@ public:
   ResizeSurface& operator=(const ResizeSurface& other) = delete;
 
   ~ResizeSurface();
-  ResizeSurface(Pixel_Format format, CUstream str);
+  ResizeSurface(Pixel_Format format, int gpu_id, CUstream str);
 
   TaskExecDetails Run() final;
 

@@ -38,7 +38,7 @@
  */
 class NvEncoderCuda final : public NvEncoder {
 public:
-  NvEncoderCuda(CUstream stream, uint32_t nWidth, uint32_t nHeight,
+  NvEncoderCuda(int gpu_id, CUstream stream, uint32_t nWidth, uint32_t nHeight,
                 NV_ENC_BUFFER_FORMAT eBufferFormat,
                 uint32_t nExtraOutputDelay = 3,
                 bool bMotionEstimationOnly = false,
@@ -80,6 +80,7 @@ private:
   void ReleaseCudaResources();
 
   CUstream m_cuda_stream;
+  int m_gpu_id;
 
   size_t m_cudaPitch = 0;
 };

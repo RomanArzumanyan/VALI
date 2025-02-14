@@ -20,10 +20,10 @@ auto const cuda_stream_sync = [](void* stream) {
   LibCuda::cuStreamSynchronize((CUstream)stream);
 };
 
-CudaDownloadSurface::CudaDownloadSurface(CUstream stream)
+CudaDownloadSurface::CudaDownloadSurface(int gpu_id, CUstream stream)
     : Task("CudaDownloadSurface", CudaDownloadSurface::numInputs,
            CudaDownloadSurface::numOutputs, cuda_stream_sync, (void*)stream),
-      m_stream(stream) {}
+      m_gpu_id(gpu_id), m_stream(stream) {}
 
 TaskExecDetails CudaDownloadSurface::Run() {
   NvtxMark tick(GetName());
@@ -48,7 +48,7 @@ TaskExecDetails CudaDownloadSurface::Run() {
 
   ClearOutputs();
 
-  auto context = GetContextByStream(m_stream);
+  auto context = GetContextByStream(m_gpu_id, m_stream);
   auto p_dst_host = dst_buffer->GetDataAs<uint8_t>();
 
   CUDA_MEMCPY2D m = {0};

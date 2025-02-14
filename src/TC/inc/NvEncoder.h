@@ -134,7 +134,7 @@ public:
                                   uint32_t width);
 
 protected:
-  NvEncoder(NV_ENC_DEVICE_TYPE eDeviceType, CUstream cuda_stream,
+  NvEncoder(NV_ENC_DEVICE_TYPE eDeviceType, int gpu_id, CUstream cuda_stream,
             uint32_t nWidth, uint32_t nHeight,
             NV_ENC_BUFFER_FORMAT eBufferFormat, uint32_t nOutputDelay,
             bool bMotionEstimationOnly, bool bOutputInVideoMemory = false);

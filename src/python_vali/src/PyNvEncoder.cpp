@@ -53,7 +53,7 @@ std::map<NV_ENC_CAPS, int> PyNvEncoder::Capabilities() {
     NvEncoderClInterface cli_interface(options);
 
     upEncoder.reset(NvencEncodeFrame::Make(
-        cuda_str, cli_interface,
+        m_gpu_id, m_stream, cli_interface,
         NV12 == eFormat     ? NV_ENC_BUFFER_FORMAT_NV12
         : YUV444 == eFormat ? NV_ENC_BUFFER_FORMAT_YUV444
                             : NV_ENC_BUFFER_FORMAT_UNDEFINED,
@@ -104,13 +104,13 @@ bool PyNvEncoder::Reconfigure(const map<string, string>& encodeOptions,
   return true;
 }
 
-PyNvEncoder::PyNvEncoder(const map<string, string>& encodeOptions, int gpuID,
+PyNvEncoder::PyNvEncoder(const map<string, string>& encodeOptions, int gpu_id,
                          Pixel_Format format, bool verbose)
-    : PyNvEncoder(encodeOptions, CudaResMgr::Instance().GetStream(gpuID),
-                  format, verbose) {}
+    : PyNvEncoder(encodeOptions, gpu_id,
+                  CudaResMgr::Instance().GetStream(gpu_id), format, verbose) {}
 
-PyNvEncoder::PyNvEncoder(const map<string, string>& encodeOptions, CUstream str,
-                         Pixel_Format format, bool verbose)
+PyNvEncoder::PyNvEncoder(const map<string, string>& encodeOptions, int gpu_id,
+                         CUstream str, Pixel_Format format, bool verbose)
     : upEncoder(nullptr), options(encodeOptions), verbose_ctor(verbose),
       eFormat(format) {
 
@@ -168,7 +168,8 @@ PyNvEncoder::PyNvEncoder(const map<string, string>& encodeOptions, CUstream str,
     options["fmt"] = fmt_string;
   }
 
-  cuda_str = str;
+  m_stream = str;
+  m_gpu_id = gpu_id;
 
   /* Don't initialize encoder here, just prepare config params;
    */
@@ -208,7 +209,7 @@ bool PyNvEncoder::EncodeSingleSurface(EncodeContext& ctx) {
       break;
     }
 
-    upEncoder.reset(NvencEncodeFrame::Make(cuda_str, cli_interface,
+    upEncoder.reset(NvencEncodeFrame::Make(m_gpu_id, m_stream, cli_interface,
                                            encoderFormat, encWidth, encHeight,
                                            verbose_ctor));
   }
@@ -396,13 +397,15 @@ void Init_PyNvEncoder(py::module& m) {
         :param format: pixel format to use by codec
         :param verbose: output verbose information to log
     )pbdoc")
-      .def(py::init<const map<string, string>&, size_t, Pixel_Format, bool>(),
-           py::arg("settings"), py::arg("stream"), py::arg("format") = NV12,
-           py::arg("verbose") = false,
+      .def(py::init<const map<string, string>&, int, size_t, Pixel_Format,
+                    bool>(),
+           py::arg("settings"), py::arg("gpu_id"), py::arg("stream"),
+           py::arg("format") = NV12, py::arg("verbose") = false,
            R"pbdoc(
         Constructor method.
 
         :param settings: Dictionary with nvenc settings
+        :param gpu_id: what GPU to run encode on
         :param stream: CUDA stream to use
         :param format: pixel format to use by codec
         :param verbose: output verbose information to log
@@ -420,24 +423,25 @@ void Init_PyNvEncoder(py::module& m) {
         :return:
     )pbdoc")
       .def_property_readonly("Width", &PyNvEncoder::Width,
-           R"pbdoc(
+                             R"pbdoc(
         Return encoded video stream width in pixels.
     )pbdoc")
       .def_property_readonly("Height", &PyNvEncoder::Height,
-           R"pbdoc(
+                             R"pbdoc(
         Return encoded video stream height in pixels.
     )pbdoc")
       .def_property_readonly("Format", &PyNvEncoder::GetPixelFormat,
-           R"pbdoc(
+                             R"pbdoc(
         Return encoded video stream pixel format.
     )pbdoc")
-      .def_property_readonly("FrameSizeInBytes", &PyNvEncoder::GetFrameSizeInBytes,
-           R"pbdoc(
+      .def_property_readonly("FrameSizeInBytes",
+                             &PyNvEncoder::GetFrameSizeInBytes,
+                             R"pbdoc(
         This function is used to get the current frame size based on pixel format.
     )pbdoc")
       .def_property_readonly("Capabilities", &PyNvEncoder::Capabilities,
-           py::return_value_policy::move,
-           R"pbdoc(
+                             py::return_value_policy::move,
+                             R"pbdoc(
         Return dictionary with Nvenc capabilities.
     )pbdoc")
       .def("EncodeSingleSurface",

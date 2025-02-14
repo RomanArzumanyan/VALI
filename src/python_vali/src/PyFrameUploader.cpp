@@ -23,13 +23,11 @@ namespace py = pybind11;
 constexpr auto TASK_EXEC_SUCCESS = TaskExecStatus::TASK_EXEC_SUCCESS;
 constexpr auto TASK_EXEC_FAIL = TaskExecStatus::TASK_EXEC_FAIL;
 
-PyFrameUploader::PyFrameUploader(uint32_t gpu_ID) {
-  m_uploader = std::make_unique<CudaUploadFrame>(
-      CudaResMgr::Instance().GetStream(gpu_ID));
-}
+PyFrameUploader::PyFrameUploader(int gpu_id)
+    : PyFrameUploader(gpu_id, CudaResMgr::Instance().GetStream(gpu_id)) {}
 
-PyFrameUploader::PyFrameUploader(CUstream str) {
-  m_uploader = std::make_unique<CudaUploadFrame>(str);
+PyFrameUploader::PyFrameUploader(int gpu_id, CUstream str) {
+  m_uploader = std::make_unique<CudaUploadFrame>(gpu_id, str);
 }
 
 bool PyFrameUploader::Run(py::array& src, Surface& dst,
@@ -47,12 +45,13 @@ void Init_PyFrameUploader(py::module& m) {
   py::class_<PyFrameUploader>(m, "PyFrameUploader",
                               "This class is used to upload numpy array to "
                               "Surface using CUDA HtoD memcpy.")
-      .def(py::init<uint32_t>(), py::arg("gpu_id"),
+      .def(py::init<int>(), py::arg("gpu_id"),
            R"pbdoc(
         :param gpu_id: what GPU to use for upload.
     )pbdoc")
-      .def(py::init<size_t>(), py::arg("stream"),
+      .def(py::init<int, size_t>(), py::arg("gpu_id"), py::arg("stream"),
            R"pbdoc(
+        :param gpu_id: what GPU to use for upload.
         :param stream: CUDA stream to use for upload
     )pbdoc")
       .def(

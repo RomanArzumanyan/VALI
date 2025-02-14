@@ -46,6 +46,7 @@ import numpy as np
 import unittest
 import json
 import test_common as tc
+from parameterized import parameterized
 
 # We use 42 (dB) as the measure of similarity.
 # If two images have PSNR higher than 42 (dB) we consider them the same.
@@ -56,7 +57,17 @@ class TestSurfaceResizer(unittest.TestCase):
     def __init__(self, methodName):
         super().__init__(methodName=methodName)
 
-    def test_resize_nv12(self):
+    @parameterized.expand([
+        [True],
+        [False]
+    ])
+    def test_resize_nv12(self, is_async: bool):
+        """
+        This test checks NV12 Surface resize
+
+        Args:
+            is_async (bool): True if launched in non-blocking mode, False otherwise.
+        """
         with open("gt_files.json") as f:
             gt_values = json.load(f)
             nv12Info = tc.GroundTruth(**gt_values["basic_nv12"])
@@ -92,8 +103,14 @@ class TestSurfaceResizer(unittest.TestCase):
                 self.fail("Failed to upload frame")
 
             # Resize to dst
-            if not nvRes.Run(surf_src, surf_dst):
-                self.fail("Fail to resize surface ")
+            if is_async:
+                success, info, _ = nvRes.RunAsync(
+                    surf_src, surf_dst, record_event=False)
+            else:
+                success, info = nvRes.Run(surf_src, surf_dst)
+
+            if not success:
+                self.fail(f"Fail to resize surface: {info}")
 
             # Download dst to numpy array
             frame_nv12.resize(frame_gt.size)
