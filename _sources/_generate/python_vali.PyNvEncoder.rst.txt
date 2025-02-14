@@ -1,0 +1,36 @@
+﻿python\_vali.PyNvEncoder
+========================
+
+.. currentmodule:: python_vali
+
+.. autoclass:: PyNvEncoder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PyNvEncoder.EncodeSingleSurface
+      ~PyNvEncoder.Flush
+      ~PyNvEncoder.FlushSinglePacket
+      ~PyNvEncoder.Reconfigure
+      ~PyNvEncoder.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~PyNvEncoder.Capabilities
+      ~PyNvEncoder.Format
+      ~PyNvEncoder.FrameSizeInBytes
+      ~PyNvEncoder.Height
+      ~PyNvEncoder.Width
+   
+   
