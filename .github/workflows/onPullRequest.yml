@@ -48,6 +48,7 @@ jobs:
 
     - name: 'Run tests'
       run: |
+        nvidia-smi
         cd tests
         python3 -m unittest discover .
 
@@ -91,6 +92,7 @@ jobs:
     - name: 'Run tests'
       shell: cmd
       run: |
+        nvidia-smi
         cd tests
         python ./test_PyDecoder.py
         python ./test_PyFrameConverter.py
