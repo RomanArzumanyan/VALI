@@ -52,6 +52,14 @@ public:
                           NppiRect, const Npp32f*, int, const Npp32f*, int,
                           Npp8u*, int, NppiSize, int, NppStreamContext>
       nppiRemap_8u_C3R_Ctx;
+  static LoadableFunction<LoadNppIg, NppStatus, const Npp8u*, NppiSize, int,
+                          NppiRect, Npp8u*, int, NppiRect, double, double,
+                          double, int, NppStreamContext>
+      nppiRotate_8u_C1R_Ctx;
+  static LoadableFunction<LoadNppIg, NppStatus, const Npp8u*, NppiSize, int,
+                          NppiRect, Npp8u*, int, NppiRect, double, double,
+                          double, int, NppStreamContext>
+      nppiRotate_8u_C3R_Ctx;
 
   // nppi_color_conversion.h (nppicc64_11.dll):
   static LoadableFunction<LoadNppIcc, NppStatus, const Npp8u* const[2], int,

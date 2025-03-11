@@ -344,3 +344,22 @@ private:
   std::mutex m_mutex;
   CUstream m_stream;
 };
+
+class PySurfaceRotator {
+public:
+  PySurfaceRotator(int gpu_id, CUstream str);
+
+  PySurfaceRotator(int gpu_id, size_t str)
+      : PySurfaceRotator(gpu_id, (CUstream)str) {}
+
+  PySurfaceRotator(int gpu_id);
+
+  bool Run(double angle, double shift_x, double shift_y, Surface& src,
+           Surface& dst, TaskExecDetails& details);
+
+  std::shared_ptr<CudaStreamEvent> m_event;
+
+private:
+  std::shared_ptr<RotateSurface> m_rotator;
+  CUstream m_stream;
+};

@@ -59,6 +59,8 @@ DEFINE(LibNpp, nppiResize_8u_C1R_Ctx);
 DEFINE(LibNpp, nppiResize_32f_C3R_Ctx);
 DEFINE(LibNpp, nppiResize_32f_C1R_Ctx);
 DEFINE(LibNpp, nppiRemap_8u_C3R_Ctx);
+DEFINE(LibNpp, nppiRotate_8u_C1R_Ctx);
+DEFINE(LibNpp, nppiRotate_8u_C3R_Ctx);
 
 // Define function pointers for nppi_color_conversion.h (nppicc64_11.dll):
 DEFINE(LibNpp, nppiNV12ToBGR_709HDTV_8u_P2C3R_Ctx);
