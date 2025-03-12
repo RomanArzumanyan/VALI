@@ -31,6 +31,12 @@ PySurfaceRotator::PySurfaceRotator(int gpu_id, CUstream str) {
   m_event = std::make_shared<CudaStreamEvent>(m_stream);
 }
 
+std::list<Pixel_Format> PySurfaceRotator::SupportedFormats() {
+  return std::list<Pixel_Format>({Y, GRAY12, RGB, BGR, RGB_PLANAR, YUV420,
+                                  YUV422, YUV444, RGB_32F, RGB_32F_PLANAR,
+                                  YUV444_10bit, YUV420_10bit});
+}
+
 bool PySurfaceRotator::Run(double angle, double shift_x, double shift_y,
                            Surface& src, Surface& dst,
                            TaskExecDetails& details) {
@@ -39,8 +45,10 @@ bool PySurfaceRotator::Run(double angle, double shift_x, double shift_y,
   double norm_shift_y = shift_y;
 
   if ((std::fmod(angle, 90.0) == 0.0) && (shift_x == 0.0) && (shift_y == 0.0)) {
-    // Special case used to deal with display matrix
-    // Get rid of negative angles
+    /* Special case used to deal mostly with display matrix rotation.
+     * Get rid of negative angles and calculate shifts to change image
+     * orientation from portrait to lanscape and vice versa hassle-free.
+     */
     auto norm_angle = std::lround(angle);
     norm_angle = (norm_angle + 360) % 360;
 
@@ -83,6 +91,11 @@ void Init_PySurfaceRotator(py::module& m) {
  
          :param gpu_id: what GPU to run rotation on
          :param stream: CUDA stream to use for rotation
+     )pbdoc")
+      .def_property_readonly("SupportedFormats",
+                             &PySurfaceRotator::SupportedFormats,
+                             py::call_guard<py::gil_scoped_release>(), R"pbdoc(
+         Get list of supported pixel formats.
      )pbdoc")
       .def(
           "Run",

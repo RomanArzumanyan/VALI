@@ -123,16 +123,15 @@ TaskExecInfo Rot_32F_C3(double angle, double shift_x, double shift_y,
   return (NPP_SUCCESS == ret) ? TaskExecInfo::SUCCESS : TaskExecInfo::FAIL;
 }
 
-typedef TaskExecInfo (*RotateImpl)(double angle, double shift_x, double shift_y,
-                                   uint32_t src_w, uint32_t src_h,
-                                   uint32_t dst_w, uint32_t dst_h,
-                                   SurfacePlane& src, SurfacePlane& dst,
-                                   NppStreamContext& ctx);
+typedef TaskExecInfo (*RotImpl)(double angle, double shift_x, double shift_y,
+                                uint32_t src_w, uint32_t src_h, uint32_t dst_w,
+                                uint32_t dst_h, SurfacePlane& src,
+                                SurfacePlane& dst, NppStreamContext& ctx);
 
 /// @brief Rotate planar Surface implementation
 TaskExecInfo RotPlanar(double angle, double shift_x, double shift_y,
                        Surface& src, Surface& dst, NppStreamContext& ctx,
-                       RotateImpl impl_func) {
+                       RotImpl impl_func) {
   if (src.NumComponents() != src.NumPlanes())
     return TaskExecInfo::INVALID_INPUT;
 
@@ -150,7 +149,7 @@ TaskExecInfo RotPlanar(double angle, double shift_x, double shift_y,
 /// @brief Rotate packed Surface implementation
 TaskExecInfo RotPacked(double angle, double shift_x, double shift_y,
                        Surface& src, Surface& dst, NppStreamContext& ctx,
-                       RotateImpl impl_func) {
+                       RotImpl impl_func) {
   if (1U != src.NumPlanes())
     return TaskExecInfo::INVALID_INPUT;
 

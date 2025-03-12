@@ -357,6 +357,8 @@ public:
   bool Run(double angle, double shift_x, double shift_y, Surface& src,
            Surface& dst, TaskExecDetails& details);
 
+  std::list<Pixel_Format> SupportedFormats();
+
   std::shared_ptr<CudaStreamEvent> m_event;
 
 private:
