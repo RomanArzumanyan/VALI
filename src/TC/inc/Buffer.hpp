@@ -15,38 +15,6 @@
 #pragma once
 #include <memory>
 
-namespace VPF {
-/**
- * PyArrayInterface structure is defined in numpy header which isn't
- * available outside the whole numpy repo.
- *
- * So this structure stores values to be parsed from dictionary with
- * Python specification of PyArrayInterface.
- */
-struct PyArrayInterfaceDescriptor {
-  /** We are only interested in using arrays as Host-side Surface
-   * representation. Hence no need for more then 3 dimensions.
-   **/
-  static constexpr size_t m_num_elems = 3U;
-
-  // A string providing the basic type of the homogeneous array.
-  std::string m_typestr = "V";
-
-  // Pointer to the first element of data and read-only flag.
-  void* m_ptr = nullptr;
-  bool m_read_only = false;
-
-  // Size of each dimension.
-  unsigned int m_shape[m_num_elems] = {};
-
-  // Strides (distance between 2 vertically adjacent pixels in bytes).
-  unsigned int m_strides[m_num_elems] = {};
-
-  // Spec version, 3 for now.
-  int const m_version = 3;
-};
-}; // namespace VPF
-
 /* Represents CPU-side memory.
  * May own the memory or be a wrapper around existing ponter;
  */
@@ -64,7 +32,7 @@ public:
 
   /// @brief Get Python Array Interface descriptor.
   /// @return const reference to descriptor.
-  const PyArrayInterfaceDescriptor& GetPAIDescr () const;
+  const PyArrayInterfaceDescriptor& GetPAIDescr() const;
 
   /// @brief Get raw data pointer
   /// @return pointer to first byte
@@ -153,12 +121,4 @@ private:
 #ifdef TRACK_TOKEN_ALLOCATIONS
   uint32_t id;
 #endif
-
-  struct PyArrayInterfaceContext {
-    /// @brief true if Buffer is created over array interface, false otherwise.
-    bool m_present;
-
-    /// @brief Descriptor.
-    VPF::PyArrayInterfaceDescriptor m_descr;
-  } m_pai_ctx;
 };
