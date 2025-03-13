@@ -58,16 +58,16 @@ bool PySurfaceRotator::Run(double angle, double shift_x, double shift_y,
       break;
     case 90U:
       angle_norm = 90.0;
-      norm_shift_y = src.Width();
+      norm_shift_y = src.Width() - 1;
       break;
     case 180U:
       angle_norm = 180.0;
-      norm_shift_x = src.Width();
-      norm_shift_y = src.Height();
+      norm_shift_x = src.Width() - 1;
+      norm_shift_y = src.Height() - 1;
       break;
     case 270U:
       angle_norm = 270.0;
-      norm_shift_x = src.Height();
+      norm_shift_x = src.Height() - 1;
       break;
     }
   }
@@ -83,14 +83,14 @@ void Init_PySurfaceRotator(py::module& m) {
            R"pbdoc(
          Constructor method.
  
-         :param gpu_id: what GPU to run rotation on
+         :param gpu_id: what GPU to run rotation on.
      )pbdoc")
       .def(py::init<int, size_t>(), py::arg("gpu_id"), py::arg("stream"),
            R"pbdoc(
          Constructor method.
  
-         :param gpu_id: what GPU to run rotation on
-         :param stream: CUDA stream to use for rotation
+         :param gpu_id: what GPU to run rotation on.
+         :param stream: CUDA stream to use for rotation.
      )pbdoc")
       .def_property_readonly("SupportedFormats",
                              &PySurfaceRotator::SupportedFormats,
@@ -99,25 +99,26 @@ void Init_PySurfaceRotator(py::module& m) {
      )pbdoc")
       .def(
           "Run",
-          [](PySurfaceRotator& self, double angle, double shift_x,
-             double shift_y, Surface& src, Surface& dst) {
+          [](PySurfaceRotator& self, Surface& src, Surface& dst, double angle,
+             double shift_x, double shift_y) {
             TaskExecDetails details;
             auto res = self.Run(angle, shift_x, shift_y, src, dst, details);
             self.m_event->Record();
             self.m_event->Wait();
             return std::make_tuple(res, details.m_info);
           },
-          py::arg("angle"), py::arg("shift_x") = 0.0, py::arg("shift_y") = 0.0,
-          py::arg("src"), py::arg("dst"),
+          py::arg("src"), py::arg("dst"), py::arg("angle"),
+          py::arg("shift_x") = 0.0, py::arg("shift_y") = 0.0,
+
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
          Rotate input Surface.
  
-         :param angle: rotation angle
-         :param shift_x: shift alongside X axis in pixels
-         :param shift_y: shift alongside Y axis in pixels
          :param src: input Surface.
          :param dst: output Surface.
+         :param angle: rotation angle.
+         :param shift_x: shift alongside X axis in pixels.
+         :param shift_y: shift alongside Y axis in pixels.
          :return: tuple containing:
            success (Bool) True in case of success, False otherwise.
            info (TaskExecInfo) task execution information.
@@ -125,8 +126,8 @@ void Init_PySurfaceRotator(py::module& m) {
      )pbdoc")
       .def(
           "RunAsync",
-          [](PySurfaceRotator& self, double angle, double shift_x,
-             double shift_y, Surface& src, Surface& dst, bool record_event) {
+          [](PySurfaceRotator& self, Surface& src, Surface& dst, double angle,
+             double shift_x, double shift_y, bool record_event) {
             TaskExecDetails details;
             auto res = self.Run(angle, shift_x, shift_y, src, dst, details);
             if (record_event) {
@@ -135,22 +136,23 @@ void Init_PySurfaceRotator(py::module& m) {
             return std::make_tuple(res, details.m_info,
                                    record_event ? self.m_event : nullptr);
           },
-          py::arg("angle"), py::arg("shift_x") = 0.0, py::arg("shift_y") = 0.0,
-          py::arg("src"), py::arg("dst"), py::arg("record_event") = true,
+          py::arg("src"), py::arg("dst"), py::arg("angle"),
+          py::arg("shift_x") = 0.0, py::arg("shift_y") = 0.0,
+          py::arg("record_event") = true,
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
          Rotate input Surface.
- 
-         :param angle: rotation angle
-         :param shift_x: shift alongside X axis in pixels
-         :param shift_y: shift alongside Y axis in pixels
+
          :param src: input Surface.
          :param dst: output Surface.
+         :param angle: rotation angle.
+         :param shift_x: shift alongside X axis in pixels.
+         :param shift_y: shift alongside Y axis in pixels.
          :param record_event: If False, no event will be recorded. Useful for chain calls.
          :return: tuple containing:
            success (Bool) True in case of success, False otherwise.
            info (TaskExecInfo) task execution information.
-           event (CudaStreamEvent) CUDA stream event
+           event (CudaStreamEvent) CUDA stream event.
          :rtype: tuple
      )pbdoc");
 }
