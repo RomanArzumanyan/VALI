@@ -112,7 +112,8 @@ class TestSurfaceConverter(unittest.TestCase):
         nvCvt = vali.PySurfaceConverter(
             vali.PixelFormat.NV12,
             vali.PixelFormat.RGB,
-            gpu_id=0)
+            gpu_id=0,
+            stream=pyDec.Stream)
 
         surf_src = vali.Surface.Make(
             pyDec.Format, pyDec.Width, pyDec.Height, gpu_id=0)

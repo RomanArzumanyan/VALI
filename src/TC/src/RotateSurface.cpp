@@ -30,7 +30,7 @@ TaskExecInfo Rot_8U_C1(double angle, double shift_x, double shift_y,
   auto ret = LibNpp::nppiRotate_8u_C1R_Ctx(
       (const Npp8u*)src.GpuMem(), oSrcSize, src.Pitch(), oSrcROI,
       (Npp8u*)dst.GpuMem(), dst.Pitch(), oDstROI, angle, shift_x, shift_y,
-      NPPI_INTER_LANCZOS, ctx);
+      NPPI_INTER_LINEAR, ctx);
 
   return (NPP_SUCCESS == ret) ? TaskExecInfo::SUCCESS : TaskExecInfo::FAIL;
 }
@@ -47,7 +47,7 @@ TaskExecInfo Rot_16U_C1(double angle, double shift_x, double shift_y,
   auto ret = LibNpp::nppiRotate_16u_C1R_Ctx(
       (const Npp16u*)src.GpuMem(), oSrcSize, src.Pitch(), oSrcROI,
       (Npp16u*)dst.GpuMem(), dst.Pitch(), oDstROI, angle, shift_x, shift_y,
-      NPPI_INTER_LANCZOS, ctx);
+      NPPI_INTER_LINEAR, ctx);
 
   return (NPP_SUCCESS == ret) ? TaskExecInfo::SUCCESS : TaskExecInfo::FAIL;
 }
@@ -64,7 +64,7 @@ TaskExecInfo Rot_32F_C1(double angle, double shift_x, double shift_y,
   auto ret = LibNpp::nppiRotate_32f_C1R_Ctx(
       (const Npp32f*)src.GpuMem(), oSrcSize, src.Pitch(), oSrcROI,
       (Npp32f*)dst.GpuMem(), dst.Pitch(), oDstROI, angle, shift_x, shift_y,
-      NPPI_INTER_LANCZOS, ctx);
+      NPPI_INTER_LINEAR, ctx);
 
   return (NPP_SUCCESS == ret) ? TaskExecInfo::SUCCESS : TaskExecInfo::FAIL;
 }

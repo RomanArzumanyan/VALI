@@ -28,7 +28,7 @@ PySurfaceRotator::PySurfaceRotator(int gpu_id)
 PySurfaceRotator::PySurfaceRotator(int gpu_id, CUstream str) {
   m_stream = str;
   m_rotator = std::make_unique<RotateSurface>(gpu_id, m_stream);
-  m_event = std::make_shared<CudaStreamEvent>(m_stream);
+  m_event = std::make_shared<CudaStreamEvent>(m_stream, gpu_id);
 }
 
 std::list<Pixel_Format> PySurfaceRotator::SupportedFormats() {
