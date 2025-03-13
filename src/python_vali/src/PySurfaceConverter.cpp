@@ -33,7 +33,7 @@ PySurfaceConverter::PySurfaceConverter(Pixel_Format src, Pixel_Format dst,
   m_stream = str;
   upConverter = std::make_unique<ConvertSurface>(src, dst, gpu_id, m_stream);
   upCtxBuffer.reset(Buffer::MakeOwnMem(sizeof(ColorspaceConversionContext)));
-  m_event = std::make_shared<CudaStreamEvent>(m_stream);
+  m_event = std::make_shared<CudaStreamEvent>(m_stream, gpu_id);
 }
 
 bool PySurfaceConverter::Run(Surface& src, Surface& dst,

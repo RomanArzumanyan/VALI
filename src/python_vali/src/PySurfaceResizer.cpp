@@ -33,7 +33,7 @@ PySurfaceResizer::PySurfaceResizer(Pixel_Format format, int gpu_id,
                                    CUstream str) {
   m_stream = str;
   upResizer = std::make_unique<ResizeSurface>(format, gpu_id, m_stream);
-  m_event = std::make_shared<CudaStreamEvent>(m_stream);
+  m_event = std::make_shared<CudaStreamEvent>(m_stream, gpu_id);
 }
 
 bool PySurfaceResizer::Run(Surface& src, Surface& dst,
