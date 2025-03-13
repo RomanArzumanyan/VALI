@@ -151,6 +151,8 @@ void Init_PyFrameConverter(py::module&);
 
 void Init_PyNvJpegEncoder(py::module& m);
 
+void Init_PySurfaceRotator(py::module& m);
+
 PYBIND11_MODULE(_python_vali, m) {
 
   py::class_<MotionVector, std::shared_ptr<MotionVector>>(
@@ -243,6 +245,8 @@ PYBIND11_MODULE(_python_vali, m) {
              "Video resolution change happened")
       .value("SRC_DST_SIZE_MISMATCH", TaskExecInfo::SRC_DST_SIZE_MISMATCH,
              "Input and output size mismatch")
+      .value("SRC_DST_FMT_MISMATCH", TaskExecInfo::SRC_DST_FMT_MISMATCH,
+             "Input and output pixel format mismatch")
       .export_values();
 
   py::enum_<ColorSpace>(m, "ColorSpace")
@@ -461,6 +465,8 @@ PYBIND11_MODULE(_python_vali, m) {
 
   Init_PyNvJpegEncoder(m);
 
+  Init_PySurfaceRotator(m);
+
   av_log_set_level(AV_LOG_ERROR);
 
   m.doc() = R"pbdoc(
@@ -485,6 +491,7 @@ PYBIND11_MODULE(_python_vali, m) {
            SurfacePlane
            Surface
            CudaStreamEvent
+           PySurfaceRotator
 
     )pbdoc";
 }

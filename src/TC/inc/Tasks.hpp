@@ -286,4 +286,17 @@ private:
 
   struct NvJpegEncodeFrame_Impl* pImpl;
 };
+
+class TC_CORE_EXPORT RotateSurface {
+public:
+  RotateSurface(int gpu_id, CUstream stream);
+  ~RotateSurface() = default;
+  TaskExecDetails Run(double angle, double shift_x, double shift_y,
+                      Surface& src, Surface& dst);
+  CUstream GetStream() const { return m_stream; }
+
+private:
+  CUstream m_stream;
+  NppStreamContext m_ctx;
+};
 } // namespace VPF

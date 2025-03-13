@@ -48,6 +48,7 @@ add_library(
     src/LibNpp.cpp
     src/LibNvJpeg.cpp
     src/LibraryLoader.cpp
+    src/RotateSurface.cpp
 )
 
 if (WIN32)
