@@ -78,9 +78,9 @@ public:
                    bool reset_enc, bool verbose);
 
 private:
-  NvencEncodeFrame(int gpu_id, CUstream cuStream, NvEncoderClInterface& cli_iface,
-                   NV_ENC_BUFFER_FORMAT format, uint32_t width, uint32_t height,
-                   bool verbose);
+  NvencEncodeFrame(int gpu_id, CUstream cuStream,
+                   NvEncoderClInterface& cli_iface, NV_ENC_BUFFER_FORMAT format,
+                   uint32_t width, uint32_t height, bool verbose);
   static const uint32_t numInputs = 3U;
   static const uint32_t numOutputs = 1U;
   struct NvencEncodeFrame_Impl* pImpl = nullptr;
@@ -103,14 +103,16 @@ enum NV_DEC_CAPS {
   NV_DEC_CAPS_NUM_ENTRIES
 };
 
-class TC_CORE_EXPORT DecodeFrame final : public Task {
+class TC_CORE_EXPORT DecodeFrame {
 public:
   DecodeFrame() = delete;
   DecodeFrame(const DecodeFrame& other) = delete;
   DecodeFrame& operator=(const DecodeFrame& other) = delete;
 
-  TaskExecDetails Run() final;
-  TaskExecDetails GetSideData(AVFrameSideDataType);
+  TaskExecDetails Run(Token& dst, PacketData& pkt_data,
+                      std::optional<SeekContext> seek_ctx);
+
+  TaskExecDetails GetSideData(AVFrameSideDataType data_type, Buffer& out);
 
   void GetParams(MuxingParams& params);
   uint32_t GetHostFrameSize() const;
@@ -118,22 +120,12 @@ public:
   bool IsVFR() const;
   CUstream GetStream() const;
 
-  ~DecodeFrame() final;
+  ~DecodeFrame();
   static DecodeFrame* Make(const char* URL, NvDecoderClInterface& cli_iface,
                            int gpu_id,
                            std::shared_ptr<AVIOContext> p_io_ctx = nullptr);
-  const PacketData& GetLastPacketData() const;
 
 private:
-  /* 0) Reconstructed pixels
-   * 1) Seek context
-   */
-  static const uint32_t num_inputs = 2U;
-
-  /* 0) Side data
-   * 1) Reconstructed pixels in case of resolution change
-   */
-  static const uint32_t num_outputs = 2U;
   struct FfmpegDecodeFrame_Impl* pImpl = nullptr;
 
   DecodeFrame(const char* URL, NvDecoderClInterface& cli_iface, int gpu_id,

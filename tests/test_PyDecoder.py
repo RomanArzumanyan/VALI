@@ -604,8 +604,30 @@ class TestDecoder(unittest.TestCase):
         # Check if frames are different (issue #89)
         self.assertFalse(np.array_equal(frames[0], frames[1]))
 
-    @tc.repeat(2)
+    def test_display_rotation(self):
+        """
+        This test checks display rotation.
+        """
+        pyDec = vali.PyDecoder("/home/vlabs/Videos/video_12.mp4", {}, gpu_id=0)
+        surf = vali.Surface.Make(
+            pyDec.Format, pyDec.Width, pyDec.Height, gpu_id=0)
+
+        self.assertEqual(pyDec.GetDisplayMatrix, 361.0)
+
+        success, info = pyDec.DecodeSingleSurface(surf)
+        self.assertTrue(success)
+        self.assertEqual(info, vali.TaskExecInfo.SUCCESS)
+
+        self.assertEqual(pyDec.GetDisplayMatrix, -90.0)
+
+    @tc.repeat(3)
     def test_seek_big_timestamp_gpu(self):
+        """
+        This test checks seek accuracy.
+        Seek to random, but relatively big timestamp is done. It's expected
+        that seek frame PTS will be within 1% tolerance of that calculated
+        via frame number and duration.
+        """
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["generated"])
 
