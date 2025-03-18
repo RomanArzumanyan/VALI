@@ -125,7 +125,7 @@ void PyDecoder::UpdateState() {
   last_w = Width();
 }
 
-double PyDecoder::GetDisplayMatrix() const {
+double PyDecoder::GetDisplayRotation() const {
   Buffer buf(0U, false);
   auto ret = upDecoder->GetSideData(AV_FRAME_DATA_DISPLAYMATRIX, buf);
   if (ret.m_info != TaskExecInfo::SUCCESS)
@@ -586,11 +586,11 @@ void Init_PyDecoder(py::module& m) {
        :return: list of motion vectors
        :rtype: List[vali.MotionVector]
     )pbdoc")
-      .def_property_readonly("GetDisplayMatrix", &PyDecoder::GetDisplayMatrix,
+      .def_property_readonly("DisplayRotation", &PyDecoder::GetDisplayRotation,
                              py::call_guard<py::gil_scoped_release>(),
                              R"pbdoc(
-        Return display of last decoded frame.
-        If there's no display matrix side data it will 361.0 degrees.
+        Return last decoded frame display rotation info.
+        If there's no such data, 361.0 will be returned.
 
        :return: value in degrees
     )pbdoc")

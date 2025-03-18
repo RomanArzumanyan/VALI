@@ -238,7 +238,7 @@ public:
   double Timebase() const;
   double StartTime() const;
   double Duration() const;
-  double GetDisplayMatrix() const;
+  double GetDisplayRotation() const;
 
   ColorSpace Color_Space() const;
   ColorRange Color_Range() const;

@@ -65,6 +65,7 @@ class TestDecoder(unittest.TestCase):
         self.hbdInfo = tc.GroundTruth(**self.data["hevc10"])
         self.p10Info = tc.GroundTruth(**self.data["hevc10_p10"])
         self.ptsInfo = tc.GroundTruth(**self.data["pts_increase_check"])
+        self.rotInfo = tc.GroundTruth(**self.data["rotation_90_deg"])
 
         self.log = logging.getLogger(__name__)
 
@@ -606,19 +607,22 @@ class TestDecoder(unittest.TestCase):
 
     def test_display_rotation(self):
         """
-        This test checks display rotation.
+        This test checks display rotation sidedata.
         """
-        pyDec = vali.PyDecoder("/home/vlabs/Videos/video_12.mp4", {}, gpu_id=0)
+        pyDec = vali.PyDecoder(self.rotInfo.uri, {}, gpu_id=0)
         surf = vali.Surface.Make(
             pyDec.Format, pyDec.Width, pyDec.Height, gpu_id=0)
 
-        self.assertEqual(pyDec.GetDisplayMatrix, 361.0)
+        # Display rotation is bound to particular frame.
+        # Hence no information shall be available at this point.
+        self.assertEqual(pyDec.DisplayRotation, 361.0)
 
         success, info = pyDec.DecodeSingleSurface(surf)
         self.assertTrue(success)
         self.assertEqual(info, vali.TaskExecInfo.SUCCESS)
 
-        self.assertEqual(pyDec.GetDisplayMatrix, -90.0)
+        # Now we shall get rotation info after the frame is decoded.
+        self.assertEqual(pyDec.DisplayRotation, self.rotInfo.display_rotation)
 
     @tc.repeat(3)
     def test_seek_big_timestamp_gpu(self):
