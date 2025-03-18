@@ -19,6 +19,7 @@
 #include <sstream>
 #include <string>
 #include <utility>
+#include <functional>
 
 #include "MemoryInterfaces.hpp"
 
@@ -71,6 +72,16 @@ public:
   static int Check(void* self);
   static void SetDefaultTimeout(unsigned long new_default_timeout);
   static unsigned long GetDefaultTimeout();
+};
+
+class AtScopeExit {
+public:
+  using F = std::function<void()>;
+  AtScopeExit(F f) : f_(f){};
+  ~AtScopeExit() { f_(); }
+
+private:
+  F f_;
 };
 
 std::string AvErrorToString(int av_error_code);

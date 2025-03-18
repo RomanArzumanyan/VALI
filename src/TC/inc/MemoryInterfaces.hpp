@@ -100,10 +100,11 @@ public:
   static Buffer* MakeOwnMem(size_t bufferSize);
   static Buffer* MakeOwnMem(size_t bufferSize, const void* pCopyFrom);
 
-private:
   explicit Buffer(size_t bufferSize, bool ownMemory = true);
   Buffer(size_t bufferSize, void* pCopyFrom, bool ownMemory);
   Buffer(size_t bufferSize, const void* pCopyFrom);
+
+private:
   bool Allocate();
   void Deallocate();
 

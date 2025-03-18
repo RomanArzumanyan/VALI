@@ -65,6 +65,7 @@ class TestDecoder(unittest.TestCase):
         self.hbdInfo = tc.GroundTruth(**self.data["hevc10"])
         self.p10Info = tc.GroundTruth(**self.data["hevc10_p10"])
         self.ptsInfo = tc.GroundTruth(**self.data["pts_increase_check"])
+        self.rotInfo = tc.GroundTruth(**self.data["rotation_90_deg"])
 
         self.log = logging.getLogger(__name__)
 
@@ -604,8 +605,33 @@ class TestDecoder(unittest.TestCase):
         # Check if frames are different (issue #89)
         self.assertFalse(np.array_equal(frames[0], frames[1]))
 
-    @tc.repeat(2)
+    def test_display_rotation(self):
+        """
+        This test checks display rotation sidedata.
+        """
+        pyDec = vali.PyDecoder(self.rotInfo.uri, {}, gpu_id=0)
+        surf = vali.Surface.Make(
+            pyDec.Format, pyDec.Width, pyDec.Height, gpu_id=0)
+
+        # Display rotation is bound to particular frame.
+        # Hence no information shall be available at this point.
+        self.assertEqual(pyDec.DisplayRotation, 361.0)
+
+        success, info = pyDec.DecodeSingleSurface(surf)
+        self.assertTrue(success)
+        self.assertEqual(info, vali.TaskExecInfo.SUCCESS)
+
+        # Now we shall get rotation info after the frame is decoded.
+        self.assertEqual(pyDec.DisplayRotation, self.rotInfo.display_rotation)
+
+    @tc.repeat(3)
     def test_seek_big_timestamp_gpu(self):
+        """
+        This test checks seek accuracy.
+        Seek to random, but relatively big timestamp is done. It's expected
+        that seek frame PTS will be within 1% tolerance of that calculated
+        via frame number and duration.
+        """
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["generated"])
 

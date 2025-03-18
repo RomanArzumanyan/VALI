@@ -28,6 +28,7 @@ class GroundTruth(BaseModel):
     num_streams: Optional[int] = None,
     video_stream_idx: Optional[int] = None,
     start_time: Optional[float] = None
+    display_rotation: Optional[float] = None
 
 
 def repeat(times):

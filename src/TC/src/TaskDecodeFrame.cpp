@@ -28,6 +28,7 @@
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
+#include <libavutil/display.h>
 #include <libavutil/error.h>
 #include <libavutil/hwcontext_cuda.h>
 #include <libavutil/imgutils.h>
@@ -487,26 +488,43 @@ struct FfmpegDecodeFrame_Impl {
   }
 
   void SaveMotionVectors() {
-    AVFrameSideData* sd =
-        av_frame_get_side_data(m_frame.get(), AV_FRAME_DATA_MOTION_VECTORS);
+    AVFrameSideDataType type = AV_FRAME_DATA_MOTION_VECTORS;
+    AVFrameSideData* sd = av_frame_get_side_data(m_frame.get(), type);
 
     if (sd) {
-      auto it = m_side_data.find(AV_FRAME_DATA_MOTION_VECTORS);
+      auto it = m_side_data.find(type);
       if (it == m_side_data.end()) {
-        // Add entry if not found (usually upon first call);
-        m_side_data[AV_FRAME_DATA_MOTION_VECTORS] =
-            Buffer::MakeOwnMem(sd->size);
-        it = m_side_data.find(AV_FRAME_DATA_MOTION_VECTORS);
+        m_side_data[type] = Buffer::MakeOwnMem(sd->size);
+        it = m_side_data.find(type);
         memcpy(it->second->GetRawMemPtr(), sd->data, sd->size);
       } else if (it->second->GetRawMemSize() != sd->size) {
-        // Update entry size if changed (e. g. on video resolution change);
         it->second->Update(sd->size, sd->data);
       }
     }
   }
 
+  void SaveDisplayMatrix() {
+    AVFrameSideDataType type = AV_FRAME_DATA_DISPLAYMATRIX;
+    AVFrameSideData* sd = av_frame_get_side_data(m_frame.get(), type);
+
+    if (!sd)
+      return;
+
+    auto angle = av_display_rotation_get((int32_t*)sd->data);
+    auto it = m_side_data.find(type);
+
+    if (it == m_side_data.end()) {
+      m_side_data[type] = Buffer::MakeOwnMem(sizeof(angle));
+      it = m_side_data.find(type);
+      memcpy(it->second->GetRawMemPtr(), (void*)&angle, sizeof(angle));
+    } else if (it->second->GetRawMemSize() != sd->size) {
+      it->second->Update(sizeof(angle), (void*)&angle);
+    }
+  }
+
   bool SaveSideData() {
     SaveMotionVectors();
+    SaveDisplayMatrix();
     return true;
   }
 
@@ -910,20 +928,12 @@ struct FfmpegDecodeFrame_Impl {
 }; // namespace VPF
 } // namespace VPF
 
-TaskExecDetails DecodeFrame::Run() {
-  ClearOutputs();
+TaskExecDetails DecodeFrame::Run(Token& dst, PacketData& pkt_data,
+                                 std::optional<SeekContext> seek_ctx) {
+  AtScopeExit set_pkt_data([&]() { pkt_data = pImpl->m_packet_data; });
 
-  auto dst = GetInput(0U);
-  if (!dst) {
-    return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL,
-                           TaskExecInfo::INVALID_INPUT, "empty dst");
-  }
-
-  auto seek_ctx_buf = static_cast<Buffer*>(GetInput(1U));
-  if (seek_ctx_buf) {
-    auto seek_ctx = seek_ctx_buf->GetDataAs<SeekContext>();
-    return pImpl->SeekDecode(*dst, *seek_ctx);
-  }
+  if (seek_ctx.has_value())
+    return pImpl->SeekDecode(dst, seek_ctx.value());
 
   /* In case of resolution change decoder will reconstruct a frame but will not
    * return it to user because of inplace API. Amount of given memory
@@ -933,7 +943,7 @@ TaskExecDetails DecodeFrame::Run() {
    * Next decode call will return stashed frame.
    */
   if (pImpl->FlipGetResChange()) {
-    if (DEC_SUCCESS == pImpl->GetLastFrame(*dst)) {
+    if (DEC_SUCCESS == pImpl->GetLastFrame(dst)) {
       return TaskExecDetails(TaskExecStatus::TASK_EXEC_SUCCESS,
                              TaskExecInfo::SUCCESS);
     }
@@ -941,7 +951,7 @@ TaskExecDetails DecodeFrame::Run() {
                            "decoder error upon resolution change");
   }
 
-  return pImpl->DecodeSingleFrame(*dst);
+  return pImpl->DecodeSingleFrame(dst);
 }
 
 uint32_t DecodeFrame::GetHostFrameSize() const {
@@ -991,11 +1001,11 @@ void DecodeFrame::GetParams(MuxingParams& params) {
   params.videoContext.metadata = pImpl->GetMetaData();
 }
 
-TaskExecDetails DecodeFrame::GetSideData(AVFrameSideDataType data_type) {
-  SetOutput(nullptr, 0U);
+TaskExecDetails DecodeFrame::GetSideData(AVFrameSideDataType data_type,
+                                         Buffer& out) {
   auto it = pImpl->m_side_data.find(data_type);
   if (it != pImpl->m_side_data.end()) {
-    SetOutput((Token*)it->second, 0U);
+    out.Update(it->second->GetRawMemSize(), it->second->GetRawMemPtr());
     return TaskExecDetails(TaskExecStatus::TASK_EXEC_SUCCESS,
                            TaskExecInfo::SUCCESS);
   }
@@ -1014,8 +1024,7 @@ DecodeFrame* DecodeFrame::Make(const char* URL, NvDecoderClInterface& cli_iface,
  * acceleration is optional. Sync in decode method(s) instead.
  */
 DecodeFrame::DecodeFrame(const char* URL, NvDecoderClInterface& cli_iface,
-                         int gpu_id, std::shared_ptr<AVIOContext> p_io_ctx)
-    : Task("DecodeFrame", DecodeFrame::num_inputs, DecodeFrame::num_outputs) {
+                         int gpu_id, std::shared_ptr<AVIOContext> p_io_ctx) {
   std::map<std::string, std::string> ffmpeg_options;
   cli_iface.GetOptions(ffmpeg_options);
 
@@ -1027,9 +1036,5 @@ DecodeFrame::~DecodeFrame() { delete pImpl; }
 bool DecodeFrame::IsAccelerated() const { return pImpl->IsAccelerated(); }
 
 bool DecodeFrame::IsVFR() const { return pImpl->IsVFR(); }
-
-const PacketData& DecodeFrame::GetLastPacketData() const {
-  return pImpl->m_packet_data;
-}
 
 CUstream DecodeFrame::GetStream() const { return pImpl->GetStream(); }

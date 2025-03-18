@@ -69,20 +69,7 @@ PyDecoder::PyDecoder(py::object buffered_reader,
 
 bool PyDecoder::DecodeImpl(TaskExecDetails& details, PacketData& pkt_data,
                            Token& dst, std::optional<SeekContext> seek_ctx) {
-  upDecoder->ClearInputs();
-  upDecoder->ClearOutputs();
-  upDecoder->SetInput(&dst, 0U);
-
-  std::shared_ptr<Buffer> seek_ctx_buf = nullptr;
-  if (seek_ctx) {
-    seek_ctx_buf.reset(Buffer::Make(sizeof(SeekContext),
-                                    static_cast<void*>(&seek_ctx.value())));
-    upDecoder->SetInput(seek_ctx_buf.get(), 1U);
-  }
-
-  details = upDecoder->Execute();
-  pkt_data = upDecoder->GetLastPacketData();
-
+  details = upDecoder->Run(dst, pkt_data, seek_ctx);
   UpdateState();
   return (TASK_EXEC_SUCCESS == details.m_status);
 }
@@ -133,27 +120,28 @@ bool PyDecoder::DecodeSingleSurface(Surface& surf, TaskExecDetails& details,
   return DecodeImpl(details, pkt_data, surf, seek_ctx);
 }
 
-void* PyDecoder::GetSideData(AVFrameSideDataType data_type, size_t& raw_size) {
-  if (TASK_EXEC_SUCCESS == upDecoder->GetSideData(data_type).m_status) {
-    auto pSideData = (Buffer*)upDecoder->GetOutput(0U);
-    if (pSideData) {
-      raw_size = pSideData->GetRawMemSize();
-      return pSideData->GetDataAs<void>();
-    }
-  }
-  return nullptr;
-}
-
 void PyDecoder::UpdateState() {
   last_h = Height();
   last_w = Width();
 }
 
+double PyDecoder::GetDisplayRotation() const {
+  Buffer buf(0U, false);
+  auto ret = upDecoder->GetSideData(AV_FRAME_DATA_DISPLAYMATRIX, buf);
+  if (ret.m_info != TaskExecInfo::SUCCESS)
+    return 361.f;
+
+  return *(buf.GetDataAs<double>());
+}
+
 std::vector<MotionVector> PyDecoder::GetMotionVectors() {
-  size_t num_elems = 0U;
-  auto ptr =
-      (AVMotionVector*)GetSideData(AV_FRAME_DATA_MOTION_VECTORS, num_elems);
-  num_elems /= sizeof(*ptr);
+  Buffer buf(0U, false);
+  auto ret = upDecoder->GetSideData(AV_FRAME_DATA_MOTION_VECTORS, buf);
+  if (ret.m_info != TaskExecInfo::SUCCESS)
+    return std::vector<MotionVector>();
+
+  size_t num_elems = buf.GetRawMemSize() / sizeof(AVMotionVector);
+  auto ptr = buf.GetDataAs<AVMotionVector>();
 
   if (ptr && num_elems) {
     try {
@@ -597,6 +585,14 @@ void Init_PyDecoder(py::module& m) {
 
        :return: list of motion vectors
        :rtype: List[vali.MotionVector]
+    )pbdoc")
+      .def_property_readonly("DisplayRotation", &PyDecoder::GetDisplayRotation,
+                             py::call_guard<py::gil_scoped_release>(),
+                             R"pbdoc(
+        Return last decoded frame display rotation info.
+        If there's no such data, 361.0 will be returned.
+
+       :return: value in degrees
     )pbdoc")
       .def_property_readonly("Metadata", &PyDecoder::Metadata,
                              R"pbdoc(
