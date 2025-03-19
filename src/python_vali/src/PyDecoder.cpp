@@ -293,7 +293,7 @@ bool PyDecoder::IsVFR() const {
 
 CUstream PyDecoder::GetStream() const { return upDecoder->GetStream(); }
 
-std::map<std::string, std::string> PyDecoder::Metadata() {
+metadata_dict PyDecoder::Metadata() {
   MuxingParams params;
   upDecoder->GetParams(params);
   return params.videoContext.metadata;

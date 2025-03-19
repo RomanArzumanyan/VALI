@@ -250,7 +250,7 @@ public:
 
   CUstream GetStream() const;
 
-  std::map<std::string, std::string> Metadata();
+  metadata_dict Metadata();
   std::shared_ptr<CudaStreamEvent> m_event;
 
 private:

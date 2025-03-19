@@ -160,8 +160,23 @@ class TestDecoder(unittest.TestCase):
 
     @parameterized.expand(tc.getDevices())
     def test_metadata(self, device_name: str, device_id: int):
-        pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
-        self.assertGreater(len(pyDec.Metadata), 0)
+        pyDec = vali.PyDecoder(self.rotInfo.uri, {}, gpu_id=device_id)
+        expected_metadata = {
+            'context': {
+                'compatible_brands': 'isomiso2avc1mp41',
+                'creation_time': '2024-12-31T21:00:00.000000Z',
+                'encoder': 'Lavf60.16.100',
+                'major_brand': 'isom',
+                'minor_version': '512'
+            },
+            'video_stream': {
+                'creation_time': '2024-12-31T21:00:00.000000Z',
+                'handler_name': 'Core Media Video',
+                'language': 'und',
+                'vendor_id': '[0][0][0][0]'
+            }
+        }
+        self.assertEqual(expected_metadata, pyDec.Metadata)
 
     @parameterized.expand(tc.getDevices())
     def test_color_space(self, device_name: str, device_id: int):

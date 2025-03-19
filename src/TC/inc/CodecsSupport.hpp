@@ -17,6 +17,25 @@
 #include <stdint.h>
 #include <string>
 
+/**
+ * Dictionary of dictionaries used to store metadata.
+ * First level key is metadata source: format context, stream, etc.
+ * Second level is an ordinary dictionary with tag names and values.
+ * Example:
+ * {
+ *    "context": {
+ *        "major_brand": "isom",
+ *        "creation_time": "2024-12-31T21:00:00.000000Z",
+ *    },
+ *    "video_stream" : {
+ *        "handler_name": "Core Media Video",
+ *        "vendor_id" : "[0][0][0][0]"
+ *    }
+ * }
+ **/
+using dict = std::map<std::string, std::string>;
+using metadata_dict = std::map<std::string, dict>;
+
 struct PacketData {
   int32_t key;
   int64_t pts;
@@ -51,7 +70,7 @@ struct VideoContext {
   ColorSpace color_space = UNSPEC;
   ColorRange color_range = UDEF;
 
-  std::map<std::string, std::string> metadata = {};
+  metadata_dict metadata = {};
 };
 
 struct AudioContext {
