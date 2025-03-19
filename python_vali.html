@@ -1,0 +1,1600 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>python_vali &#8212; VALI  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/haiku.css?v=e491ac2d" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="python_vali.GetNumGpus" href="_generate/python_vali.GetNumGpus.html" />
+    <link rel="prev" title="&lt;no title&gt;" href="index.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="index.html">
+          <span>VALI  documentation</span></a></h1>
+        <h2 class="heading"><span>python_vali</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="index.html">&lt;no title&gt;</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="_generate/python_vali.GetNumGpus.html">python_vali.GetNumGpus</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content" role="main">
+        
+        
+  <section id="python-vali">
+<h1>python_vali<a class="headerlink" href="#python-vali" title="Link to this heading">¶</a></h1>
+<section id="module-python_vali._python_vali">
+<span id="id1"></span><h2>python_vali<a class="headerlink" href="#module-python_vali._python_vali" title="Link to this heading">¶</a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="_generate/python_vali.GetNumGpus.html#python_vali.GetNumGpus" title="python_vali.GetNumGpus"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GetNumGpus</span></code></a>()</p></td>
+<td><p>Get number of available GPUs.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_generate/python_vali.GetNvencParams.html#python_vali.GetNvencParams" title="python_vali.GetNvencParams"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GetNvencParams</span></code></a>()</p></td>
+<td><p>Get list of params PyNvEncoder can be initialized with.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="_generate/python_vali.SetFFMpegLogLevel.html#python_vali.SetFFMpegLogLevel" title="python_vali.SetFFMpegLogLevel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetFFMpegLogLevel</span></code></a>(arg0)</p></td>
+<td><p>Set FFMpeg log level.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_generate/python_vali.PySurfaceResizer.html#python_vali.PySurfaceResizer" title="python_vali.PySurfaceResizer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PySurfaceResizer</span></code></a></p></td>
+<td><p>CUDA-accelerated Surface resizer.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="_generate/python_vali.PySurfaceDownloader.html#python_vali.PySurfaceDownloader" title="python_vali.PySurfaceDownloader"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PySurfaceDownloader</span></code></a></p></td>
+<td><p>This class is used to copy Surface to numpy ndarray using CUDA DtoH memcpy.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_generate/python_vali.PySurfaceConverter.html#python_vali.PySurfaceConverter" title="python_vali.PySurfaceConverter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PySurfaceConverter</span></code></a></p></td>
+<td><p>CUDA-accelerated converter between different pixel formats.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="_generate/python_vali.PyNvEncoder.html#python_vali.PyNvEncoder" title="python_vali.PyNvEncoder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PyNvEncoder</span></code></a></p></td>
+<td><p>HW-accelerated video encoder which uses Nvenc.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_generate/python_vali.PyDecoder.html#python_vali.PyDecoder" title="python_vali.PyDecoder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PyDecoder</span></code></a></p></td>
+<td><p>Video decoder class.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="_generate/python_vali.PyFrameUploader.html#python_vali.PyFrameUploader" title="python_vali.PyFrameUploader"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PyFrameUploader</span></code></a></p></td>
+<td><p>This class is used to upload numpy array to Surface using CUDA HtoD memcpy.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_generate/python_vali.PyNvJpegEncoder.html#python_vali.PyNvJpegEncoder" title="python_vali.PyNvJpegEncoder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PyNvJpegEncoder</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="_generate/python_vali.SeekContext.html#python_vali.SeekContext" title="python_vali.SeekContext"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SeekContext</span></code></a></p></td>
+<td><p>Incapsulates information required by decoder to seek for a particular video frame.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_generate/python_vali.SurfacePlane.html#python_vali.SurfacePlane" title="python_vali.SurfacePlane"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SurfacePlane</span></code></a></p></td>
+<td><p>Continious 2D chunk of memory stored in vRAM which represents single plane / channel of video frame.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="_generate/python_vali.Surface.html#python_vali.Surface" title="python_vali.Surface"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Surface</span></code></a></p></td>
+<td><p>Image stored in vRAM.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_generate/python_vali.CudaStreamEvent.html#python_vali.CudaStreamEvent" title="python_vali.CudaStreamEvent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CudaStreamEvent</span></code></a></p></td>
+<td><p>CUDA stream event</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="_generate/python_vali.PySurfaceRotator.html#python_vali.PySurfaceRotator" title="python_vali.PySurfaceRotator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PySurfaceRotator</span></code></a></p></td>
+<td><p>CUDA-accelerated Surface rotator.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali._python_vali.ColorRange">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali._python_vali.</span></span><span class="sig-name descname"><span class="pre">ColorRange</span></span><a class="headerlink" href="#python_vali._python_vali.ColorRange" title="Link to this definition">¶</a></dt>
+<dd><p>Members:</p>
+<p>MPEG : Narrow or MPEG color range. Doesn’t use full [0;255] range.</p>
+<p>JPEG : Full of JPEG color range. Uses full [0;255] range.</p>
+<p>UDEF : Undefined color range.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.ColorRange.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#python_vali._python_vali.ColorRange.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali._python_vali.ColorSpace">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali._python_vali.</span></span><span class="sig-name descname"><span class="pre">ColorSpace</span></span><a class="headerlink" href="#python_vali._python_vali.ColorSpace" title="Link to this definition">¶</a></dt>
+<dd><p>Members:</p>
+<p>BT_601 : BT.601 color space.</p>
+<p>BT_709 : BT.709 color space.</p>
+<p>UNSPEC : Unspecified color space.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.ColorSpace.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#python_vali._python_vali.ColorSpace.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali._python_vali.ColorspaceConversionContext">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali._python_vali.</span></span><span class="sig-name descname"><span class="pre">ColorspaceConversionContext</span></span><a class="headerlink" href="#python_vali._python_vali.ColorspaceConversionContext" title="Link to this definition">¶</a></dt>
+<dd><p>Stores information required for accurate color conversion.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali._python_vali.CudaBuffer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali._python_vali.</span></span><span class="sig-name descname"><span class="pre">CudaBuffer</span></span><a class="headerlink" href="#python_vali._python_vali.CudaBuffer" title="Link to this definition">¶</a></dt>
+<dd><p>General purpose data storage class in GPU memory.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali._python_vali.CudaBuffer.Clone">
+<span class="sig-name descname"><span class="pre">Clone</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#python_vali._python_vali.CudaBuffer" title="python_vali._python_vali.CudaBuffer"><span class="pre">python_vali._python_vali.CudaBuffer</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#python_vali._python_vali.CudaBuffer" title="python_vali._python_vali.CudaBuffer"><span class="pre">python_vali._python_vali.CudaBuffer</span></a></span></span><a class="headerlink" href="#python_vali._python_vali.CudaBuffer.Clone" title="Link to this definition">¶</a></dt>
+<dd><p>Deep copy = CUDA mem alloc + CUDA mem copy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>python_vali.CudaBuffer</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali._python_vali.CudaBuffer.CopyFrom">
+<span class="sig-name descname"><span class="pre">CopyFrom</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#python_vali._python_vali.CudaBuffer.CopyFrom" title="Link to this definition">¶</a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic">
+<li><p>CopyFrom(self: python_vali._python_vali.CudaBuffer, other: python_vali._python_vali.CudaBuffer, stream: int) -&gt; None</p>
+<blockquote>
+<div><p>Copy content of another CudaBuffer into this CudaBuffer</p>
+<dl class="field-list simple">
+<dt class="field-odd">param other<span class="colon">:</span></dt>
+<dd class="field-odd"><p>other CudaBuffer</p>
+</dd>
+<dt class="field-even">param stream<span class="colon">:</span></dt>
+<dd class="field-even"><p>CUDA stream to use</p>
+</dd>
+<dt class="field-odd">rtype<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>CopyFrom(self: python_vali._python_vali.CudaBuffer, other: python_vali._python_vali.CudaBuffer, gpu_id: int) -&gt; None</p>
+<blockquote>
+<div><p>Copy content of another CudaBuffer into this CudaBuffer</p>
+<dl class="field-list simple">
+<dt class="field-odd">param other<span class="colon">:</span></dt>
+<dd class="field-odd"><p>other CudaBuffer</p>
+</dd>
+<dt class="field-even">param gpu_id<span class="colon">:</span></dt>
+<dd class="field-even"><p>GPU to use for memcopy</p>
+</dd>
+<dt class="field-odd">rtype<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+</ol>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.CudaBuffer.ElemSize">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ElemSize</span></span><a class="headerlink" href="#python_vali._python_vali.CudaBuffer.ElemSize" title="Link to this definition">¶</a></dt>
+<dd><p>Get size of single element in bytes</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.CudaBuffer.GpuMem">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GpuMem</span></span><a class="headerlink" href="#python_vali._python_vali.CudaBuffer.GpuMem" title="Link to this definition">¶</a></dt>
+<dd><p>Get CUdeviceptr of memory allocation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali._python_vali.CudaBuffer.Make">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Make</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_elems</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gpu_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#python_vali._python_vali.CudaBuffer" title="python_vali._python_vali.CudaBuffer"><span class="pre">python_vali._python_vali.CudaBuffer</span></a></span></span><a class="headerlink" href="#python_vali._python_vali.CudaBuffer.Make" title="Link to this definition">¶</a></dt>
+<dd><p>Constructor method</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>elem_size</strong> – single buffer element size in bytes</p></li>
+<li><p><strong>num_elems</strong> – number of elements in buffer</p></li>
+<li><p><strong>gpu_id</strong> – GPU to use for memcopy</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>python_vali.CudaBuffer</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.CudaBuffer.NumElems">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NumElems</span></span><a class="headerlink" href="#python_vali._python_vali.CudaBuffer.NumElems" title="Link to this definition">¶</a></dt>
+<dd><p>Get number of elements in buffer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.CudaBuffer.RawMemSize">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RawMemSize</span></span><a class="headerlink" href="#python_vali._python_vali.CudaBuffer.RawMemSize" title="Link to this definition">¶</a></dt>
+<dd><p>Get size of buffer in bytes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Int</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali._python_vali.CudaStreamEvent">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali._python_vali.</span></span><span class="sig-name descname"><span class="pre">CudaStreamEvent</span></span><a class="headerlink" href="#python_vali._python_vali.CudaStreamEvent" title="Link to this definition">¶</a></dt>
+<dd><p>CUDA stream event</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali._python_vali.CudaStreamEvent.Wait">
+<span class="sig-name descname"><span class="pre">Wait</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#python_vali._python_vali.CudaStreamEvent" title="python_vali._python_vali.CudaStreamEvent"><span class="pre">python_vali._python_vali.CudaStreamEvent</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#python_vali._python_vali.CudaStreamEvent.Wait" title="Link to this definition">¶</a></dt>
+<dd><p>Will not return until CUDA event is synchronized.
+Acts exactly like cuEventSyncronize.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali._python_vali.DLDeviceType">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali._python_vali.</span></span><span class="sig-name descname"><span class="pre">DLDeviceType</span></span><a class="headerlink" href="#python_vali._python_vali.DLDeviceType" title="Link to this definition">¶</a></dt>
+<dd><p>Members:</p>
+<p>kDLCPU : CPU device.</p>
+<p>kDLCUDA : CUDA GPU device.</p>
+<p>kDLCUDAHost : Pinned CUDA CPU memory by cudaMallocHost.</p>
+<p>kDLCUDAManaged : CUDA managed/unified memory allocated by cudaMallocManaged.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.DLDeviceType.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#python_vali._python_vali.DLDeviceType.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali._python_vali.FfmpegLogLevel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali._python_vali.</span></span><span class="sig-name descname"><span class="pre">FfmpegLogLevel</span></span><a class="headerlink" href="#python_vali._python_vali.FfmpegLogLevel" title="Link to this definition">¶</a></dt>
+<dd><p>Members:</p>
+<p>PANIC : AV_LOG_PANIC</p>
+<p>FATAL : AV_LOG_FATAL</p>
+<p>ERROR : AV_LOG_ERROR</p>
+<p>WARNING : AV_LOG_WARNING</p>
+<p>INFO : AV_LOG_INFO</p>
+<p>VERBOSE : AV_LOG_VERBOSE</p>
+<p>DEBUG : AV_LOG_DEBUG</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.FfmpegLogLevel.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#python_vali._python_vali.FfmpegLogLevel.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="python_vali._python_vali.GetNumGpus">
+<span class="sig-prename descclassname"><span class="pre">python_vali._python_vali.</span></span><span class="sig-name descname"><span class="pre">GetNumGpus</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#python_vali._python_vali.GetNumGpus" title="Link to this definition">¶</a></dt>
+<dd><p>Get number of available GPUs.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="python_vali._python_vali.GetNvencParams">
+<span class="sig-prename descclassname"><span class="pre">python_vali._python_vali.</span></span><span class="sig-name descname"><span class="pre">GetNvencParams</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#python_vali._python_vali.GetNvencParams" title="Link to this definition">¶</a></dt>
+<dd><p>Get list of params PyNvEncoder can be initialized with.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali._python_vali.MotionVector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali._python_vali.</span></span><span class="sig-name descname"><span class="pre">MotionVector</span></span><a class="headerlink" href="#python_vali._python_vali.MotionVector" title="Link to this definition">¶</a></dt>
+<dd><p>This class stores iformation about motion vector.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.MotionVector.dst_x">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dst_x</span></span><a class="headerlink" href="#python_vali._python_vali.MotionVector.dst_x" title="Link to this definition">¶</a></dt>
+<dd><p>Absolute detination X position. Can be outside frame area.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.MotionVector.dst_y">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dst_y</span></span><a class="headerlink" href="#python_vali._python_vali.MotionVector.dst_y" title="Link to this definition">¶</a></dt>
+<dd><p>Absolute detination Y position. Can be outside frame area.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.MotionVector.h">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">h</span></span><a class="headerlink" href="#python_vali._python_vali.MotionVector.h" title="Link to this definition">¶</a></dt>
+<dd><p>Macroblock height</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.MotionVector.motion_scale">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">motion_scale</span></span><a class="headerlink" href="#python_vali._python_vali.MotionVector.motion_scale" title="Link to this definition">¶</a></dt>
+<dd><p>Motion prediction precision. E. g. 4 for quarter-pixel precision.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.MotionVector.motion_x">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">motion_x</span></span><a class="headerlink" href="#python_vali._python_vali.MotionVector.motion_x" title="Link to this definition">¶</a></dt>
+<dd><p>Motion vector X component.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.MotionVector.motion_y">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">motion_y</span></span><a class="headerlink" href="#python_vali._python_vali.MotionVector.motion_y" title="Link to this definition">¶</a></dt>
+<dd><p>Motion vector Y component.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.MotionVector.source">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">source</span></span><a class="headerlink" href="#python_vali._python_vali.MotionVector.source" title="Link to this definition">¶</a></dt>
+<dd><p>Where the current macroblock comes from; negative value when it comes from the past, positive value when it comes from the future.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.MotionVector.src_x">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">src_x</span></span><a class="headerlink" href="#python_vali._python_vali.MotionVector.src_x" title="Link to this definition">¶</a></dt>
+<dd><p>Absolute source X position. Can be outside frame area.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.MotionVector.src_y">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">src_y</span></span><a class="headerlink" href="#python_vali._python_vali.MotionVector.src_y" title="Link to this definition">¶</a></dt>
+<dd><p>Absolute source Y position. Can be outside frame area.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.MotionVector.w">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">w</span></span><a class="headerlink" href="#python_vali._python_vali.MotionVector.w" title="Link to this definition">¶</a></dt>
+<dd><p>Macroblock width.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali._python_vali.NV_ENC_CAPS">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali._python_vali.</span></span><span class="sig-name descname"><span class="pre">NV_ENC_CAPS</span></span><a class="headerlink" href="#python_vali._python_vali.NV_ENC_CAPS" title="Link to this definition">¶</a></dt>
+<dd><p>Members:</p>
+<p>NUM_MAX_BFRAMES</p>
+<p>SUPPORTED_RATECONTROL_MODES</p>
+<p>SUPPORT_FIELD_ENCODING</p>
+<p>SUPPORT_MONOCHROME</p>
+<p>SUPPORT_FMO</p>
+<p>SUPPORT_QPELMV</p>
+<p>SUPPORT_BDIRECT_MODE</p>
+<p>SUPPORT_CABAC</p>
+<p>SUPPORT_ADAPTIVE_TRANSFORM</p>
+<p>SUPPORT_STEREO_MVC</p>
+<p>NUM_MAX_TEMPORAL_LAYERS</p>
+<p>SUPPORT_HIERARCHICAL_PFRAMES</p>
+<p>SUPPORT_HIERARCHICAL_BFRAMES</p>
+<p>LEVEL_MAX</p>
+<p>LEVEL_MIN</p>
+<p>SEPARATE_COLOUR_PLANE</p>
+<p>WIDTH_MAX</p>
+<p>HEIGHT_MAX</p>
+<p>SUPPORT_TEMPORAL_SVC</p>
+<p>SUPPORT_DYN_RES_CHANGE</p>
+<p>SUPPORT_DYN_BITRATE_CHANGE</p>
+<p>SUPPORT_DYN_FORCE_CONSTQP</p>
+<p>SUPPORT_DYN_RCMODE_CHANGE</p>
+<p>SUPPORT_SUBFRAME_READBACK</p>
+<p>SUPPORT_CONSTRAINED_ENCODING</p>
+<p>SUPPORT_INTRA_REFRESH</p>
+<p>SUPPORT_CUSTOM_VBV_BUF_SIZE</p>
+<p>SUPPORT_DYNAMIC_SLICE_MODE</p>
+<p>SUPPORT_REF_PIC_INVALIDATION</p>
+<p>PREPROC_SUPPORT</p>
+<p>ASYNC_ENCODE_SUPPORT</p>
+<p>MB_NUM_MAX</p>
+<p>MB_PER_SEC_MAX</p>
+<p>SUPPORT_YUV444_ENCODE</p>
+<p>SUPPORT_LOSSLESS_ENCODE</p>
+<p>SUPPORT_SAO</p>
+<p>SUPPORT_MEONLY_MODE</p>
+<p>SUPPORT_LOOKAHEAD</p>
+<p>SUPPORT_TEMPORAL_AQ</p>
+<p>SUPPORT_10BIT_ENCODE</p>
+<p>NUM_MAX_LTR_FRAMES</p>
+<p>SUPPORT_WEIGHTED_PREDICTION</p>
+<p>DYNAMIC_QUERY_ENCODER_CAPACITY</p>
+<p>SUPPORT_BFRAME_REF_MODE</p>
+<p>SUPPORT_EMPHASIS_LEVEL_MAP</p>
+<p>WIDTH_MIN</p>
+<p>HEIGHT_MIN</p>
+<p>SUPPORT_MULTIPLE_REF_FRAMES</p>
+<p>SUPPORT_ALPHA_LAYER_ENCODING</p>
+<p>EXPOSED_COUNT</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.NV_ENC_CAPS.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#python_vali._python_vali.NV_ENC_CAPS.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali._python_vali.PacketData">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali._python_vali.</span></span><span class="sig-name descname"><span class="pre">PacketData</span></span><a class="headerlink" href="#python_vali._python_vali.PacketData" title="Link to this definition">¶</a></dt>
+<dd><p>Video frame attributes</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PacketData.bsl">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bsl</span></span><a class="headerlink" href="#python_vali._python_vali.PacketData.bsl" title="Link to this definition">¶</a></dt>
+<dd><p>Amount of bytes decoder had to consume to decode corresp. packet. Useful to see when seeking for a previous key frame.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PacketData.dts">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dts</span></span><a class="headerlink" href="#python_vali._python_vali.PacketData.dts" title="Link to this definition">¶</a></dt>
+<dd><p>Decode timestamp.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PacketData.duration">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">duration</span></span><a class="headerlink" href="#python_vali._python_vali.PacketData.duration" title="Link to this definition">¶</a></dt>
+<dd><p>Duration of a packet.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PacketData.key">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">key</span></span><a class="headerlink" href="#python_vali._python_vali.PacketData.key" title="Link to this definition">¶</a></dt>
+<dd><p>1 if frame is I frame, 0 otherwise.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PacketData.pos">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pos</span></span><a class="headerlink" href="#python_vali._python_vali.PacketData.pos" title="Link to this definition">¶</a></dt>
+<dd><p>Position of compressed packet in input bitstream.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PacketData.pts">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pts</span></span><a class="headerlink" href="#python_vali._python_vali.PacketData.pts" title="Link to this definition">¶</a></dt>
+<dd><p>Presentation timestamp.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali._python_vali.PixelFormat">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali._python_vali.</span></span><span class="sig-name descname"><span class="pre">PixelFormat</span></span><a class="headerlink" href="#python_vali._python_vali.PixelFormat" title="Link to this definition">¶</a></dt>
+<dd><p>Members:</p>
+<p>Y : Grayscale.</p>
+<p>RGB : Interleaved 8 bit RGB.</p>
+<p>NV12 : Semi planar 8 bit: full resolution Y + quarter resolution interleaved UV.</p>
+<p>YUV420 : Planar 8 bit: full resolution Y + quarter resolution U + quarter resolution V.</p>
+<p>RGB_PLANAR : Planar 8 bit R+G+B.</p>
+<p>BGR : Planar 8 bit R+G+B.</p>
+<p>YUV444 : Planar 8 bit Y+U+V.</p>
+<p>YUV444_10bit : 10 bit YUV444.</p>
+<p>YUV420_10bit : 10 bit YUV420</p>
+<p>UNDEFINED : Undefined pixel format, use to signal unsupported formats</p>
+<p>RGB_32F : 32 bit float RGB.</p>
+<p>RGB_32F_PLANAR : 32 bit float planar RGB</p>
+<p>YUV422 : 8 bit planar: full resolution Y + half resolution U + half resolution V.</p>
+<p>P10 : 10 bit NV12.</p>
+<p>P12 : 12 bit NV12.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PixelFormat.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#python_vali._python_vali.PixelFormat.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali._python_vali.</span></span><span class="sig-name descname"><span class="pre">PyDecoder</span></span><a class="headerlink" href="#python_vali._python_vali.PyDecoder" title="Link to this definition">¶</a></dt>
+<dd><p>Video decoder class.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.AvgFramerate">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AvgFramerate</span></span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.AvgFramerate" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video file average framerate.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.Bitrate">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Bitrate</span></span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.Bitrate" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video bitrate in bits per second.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.ColorRange">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ColorRange</span></span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.ColorRange" title="Link to this definition">¶</a></dt>
+<dd><p>Get color range information stored in video file.
+Please not that some video containers may not store this information.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>color range information</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.ColorSpace">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ColorSpace</span></span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.ColorSpace" title="Link to this definition">¶</a></dt>
+<dd><p>Get color space information stored in video file.
+Please not that some video containers may not store this information.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>color space information</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.DecodeSingleFrame">
+<span class="sig-name descname"><span class="pre">DecodeSingleFrame</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.DecodeSingleFrame" title="Link to this definition">¶</a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic">
+<li><p>DecodeSingleFrame(self: python_vali._python_vali.PyDecoder, frame: numpy.ndarray, seek_ctx: Optional[python_vali._python_vali.SeekContext] = None) -&gt; Tuple[bool, python_vali._python_vali.TaskExecInfo]</p>
+<blockquote>
+<div><p>Decode single video frame from input file.
+Only call this method for decoder without HW acceleration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param frame<span class="colon">:</span></dt>
+<dd class="field-odd"><p>decoded video frame</p>
+</dd>
+<dt class="field-even">param pkt_data<span class="colon">:</span></dt>
+<dd class="field-even"><p>decoded video frame packet data, may be None</p>
+</dd>
+<dt class="field-odd">param seek_ctx<span class="colon">:</span></dt>
+<dd class="field-odd"><p>seek context, may be None</p>
+</dd>
+<dt class="field-even">return<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple, first element is True in case of success, False otherwise. Second elements is TaskExecInfo.</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>DecodeSingleFrame(self: python_vali._python_vali.PyDecoder, frame: numpy.ndarray, pkt_data: python_vali._python_vali.PacketData, seek_ctx: Optional[python_vali._python_vali.SeekContext] = None) -&gt; Tuple[bool, python_vali._python_vali.TaskExecInfo]</p>
+<blockquote>
+<div><p>Decode single video frame from input file.
+Only call this method for decoder without HW acceleration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param frame<span class="colon">:</span></dt>
+<dd class="field-odd"><p>decoded video frame</p>
+</dd>
+<dt class="field-even">param pkt_data<span class="colon">:</span></dt>
+<dd class="field-even"><p>decoded video frame packet data, may be None</p>
+</dd>
+<dt class="field-odd">param seek_ctx<span class="colon">:</span></dt>
+<dd class="field-odd"><p>seek context, may be None</p>
+</dd>
+<dt class="field-even">return<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple, first element is True in case of success, False otherwise. Second elements is TaskExecInfo.</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.DecodeSingleSurface">
+<span class="sig-name descname"><span class="pre">DecodeSingleSurface</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.DecodeSingleSurface" title="Link to this definition">¶</a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic">
+<li><p>DecodeSingleSurface(self: python_vali._python_vali.PyDecoder, surf: VPF::Surface, seek_ctx: Optional[python_vali._python_vali.SeekContext] = None) -&gt; Tuple[bool, python_vali._python_vali.TaskExecInfo]</p>
+<blockquote>
+<div><p>Decode single video surface from input file.
+Only call this method for HW-accelerated decoder.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param surf<span class="colon">:</span></dt>
+<dd class="field-odd"><p>decoded video surface</p>
+</dd>
+<dt class="field-even">param pkt_data<span class="colon">:</span></dt>
+<dd class="field-even"><p>decoded video surface packet data, may be None</p>
+</dd>
+<dt class="field-odd">param seek_ctx<span class="colon">:</span></dt>
+<dd class="field-odd"><p>seek context, may be None</p>
+</dd>
+<dt class="field-even">return<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple, first element is True in case of success, False otherwise. Second elements is TaskExecInfo.</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>DecodeSingleSurface(self: python_vali._python_vali.PyDecoder, surf: VPF::Surface, pkt_data: python_vali._python_vali.PacketData, seek_ctx: Optional[python_vali._python_vali.SeekContext] = None) -&gt; Tuple[bool, python_vali._python_vali.TaskExecInfo]</p>
+<blockquote>
+<div><p>Decode single video surface from input file.
+Only call this method for HW-accelerated decoder.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param surf<span class="colon">:</span></dt>
+<dd class="field-odd"><p>decoded video surface</p>
+</dd>
+<dt class="field-even">param pkt_data<span class="colon">:</span></dt>
+<dd class="field-even"><p>decoded video surface packet data, may be None</p>
+</dd>
+<dt class="field-odd">param seek_ctx<span class="colon">:</span></dt>
+<dd class="field-odd"><p>seek context, may be None</p>
+</dd>
+<dt class="field-even">return<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple, first element is True in case of success, False otherwise. Second elements is TaskExecInfo.</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.DecodeSingleSurfaceAsync">
+<span class="sig-name descname"><span class="pre">DecodeSingleSurfaceAsync</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.DecodeSingleSurfaceAsync" title="Link to this definition">¶</a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic">
+<li><p>DecodeSingleSurfaceAsync(self: python_vali._python_vali.PyDecoder, surf: VPF::Surface, record_event: bool = True, seek_ctx: Optional[python_vali._python_vali.SeekContext] = None) -&gt; Tuple[bool, python_vali._python_vali.TaskExecInfo, python_vali._python_vali.CudaStreamEvent]</p>
+<blockquote>
+<div><p>Decode single video surface from input file.
+Only call this method for HW-accelerated decoder.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param surf<span class="colon">:</span></dt>
+<dd class="field-odd"><p>decoded video surface</p>
+</dd>
+<dt class="field-even">param record_event<span class="colon">:</span></dt>
+<dd class="field-even"><p>If False, no event will be recorded. Useful for chain calls.</p>
+</dd>
+<dt class="field-odd">param pkt_data<span class="colon">:</span></dt>
+<dd class="field-odd"><p>decoded video surface packet data, may be None</p>
+</dd>
+<dt class="field-even">param seek_ctx<span class="colon">:</span></dt>
+<dd class="field-even"><p>seek context, may be None</p>
+</dd>
+<dt class="field-odd">param record_event<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If False, no event will be recorded. Useful for chain calls.</p>
+</dd>
+<dt class="field-even">return<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple:
+success (Bool) True in case of success, False otherwise.
+info (TaskExecInfo) task execution information.
+event (CudaStreamEvent) CUDA stream event</p>
+</dd>
+<dt class="field-odd">rtype<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>DecodeSingleSurfaceAsync(self: python_vali._python_vali.PyDecoder, surf: VPF::Surface, pkt_data: python_vali._python_vali.PacketData, record_event: bool = True, seek_ctx: Optional[python_vali._python_vali.SeekContext] = None) -&gt; Tuple[bool, python_vali._python_vali.TaskExecInfo, python_vali._python_vali.CudaStreamEvent]</p>
+<blockquote>
+<div><p>Decode single video surface from input file.
+Only call this method for HW-accelerated decoder.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param surf<span class="colon">:</span></dt>
+<dd class="field-odd"><p>decoded video surface</p>
+</dd>
+<dt class="field-even">param pkt_data<span class="colon">:</span></dt>
+<dd class="field-even"><p>decoded video surface packet data, may be None</p>
+</dd>
+<dt class="field-odd">param seek_ctx<span class="colon">:</span></dt>
+<dd class="field-odd"><p>seek context, may be None</p>
+</dd>
+<dt class="field-even">param record_event<span class="colon">:</span></dt>
+<dd class="field-even"><p>If False, no event will be recorded. Useful for chain calls.</p>
+</dd>
+<dt class="field-odd">return<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple:
+success (Bool) True in case of success, False otherwise.
+info (TaskExecInfo) task execution information.
+event (CudaStreamEvent) CUDA stream event</p>
+</dd>
+<dt class="field-even">rtype<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+</ol>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.Delay">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Delay</span></span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.Delay" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video delay.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.DisplayRotation">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DisplayRotation</span></span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.DisplayRotation" title="Link to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Return last decoded frame display rotation info.</dt><dd><p>If there’s no such data, 361.0 will be returned.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>value in degrees</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.Duration">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Duration</span></span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.Duration" title="Link to this definition">¶</a></dt>
+<dd><p>Return video duration time in seconds. May not be present.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.Format">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Format</span></span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.Format" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video file pixel format.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.Framerate">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Framerate</span></span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.Framerate" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video file framerate.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.GopSize">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GopSize</span></span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.GopSize" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video GOP size.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.Height">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Height</span></span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.Height" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video file height in pixels.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.HostFrameSize">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HostFrameSize</span></span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.HostFrameSize" title="Link to this definition">¶</a></dt>
+<dd><p>Return amount of bytes needed to store decoded frame.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.IsAccelerated">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsAccelerated</span></span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.IsAccelerated" title="Link to this definition">¶</a></dt>
+<dd><p>Return true if decoder has HW acceleration support, false otherwise.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.IsVFR">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsVFR</span></span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.IsVFR" title="Link to this definition">¶</a></dt>
+<dd><p>Return true if video has variable framerate, false otherwise.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.Level">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Level</span></span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.Level" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video level coding parameter.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.Metadata">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Metadata</span></span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.Metadata" title="Link to this definition">¶</a></dt>
+<dd><p>Return dictionary with video file metadata.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.MotionVectors">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MotionVectors</span></span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.MotionVectors" title="Link to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Return motion vectors of last decoded frame.</dt><dd><p>If there are no movion vectors it will return empty list.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of motion vectors</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>List[vali.MotionVector]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.NumFrames">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NumFrames</span></span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.NumFrames" title="Link to this definition">¶</a></dt>
+<dd><p>Return number of video frames in encoded video file.
+Please note that some video containers doesn’t store this infomation.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.NumStreams">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NumStreams</span></span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.NumStreams" title="Link to this definition">¶</a></dt>
+<dd><p>audio and video.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Return number of streams in video file. E. g. 2 streams</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.Profile">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Profile</span></span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.Profile" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video profile coding parameter.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.StartTime">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">StartTime</span></span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.StartTime" title="Link to this definition">¶</a></dt>
+<dd><p>Return video start time in seconds.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.Stream">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Stream</span></span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.Stream" title="Link to this definition">¶</a></dt>
+<dd><p>Return CUDA stream used by decoder.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.StreamIndex">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">StreamIndex</span></span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.StreamIndex" title="Link to this definition">¶</a></dt>
+<dd><p>Return number of current video stream in file. E. g. video stream has
+index 0, and audio stream has index 1. This method will return 0 then.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.Timebase">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Timebase</span></span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.Timebase" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video file time base.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyDecoder.Width">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Width</span></span><a class="headerlink" href="#python_vali._python_vali.PyDecoder.Width" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video file width in pixels.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyFrameConverter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali._python_vali.</span></span><span class="sig-name descname"><span class="pre">PyFrameConverter</span></span><a class="headerlink" href="#python_vali._python_vali.PyFrameConverter" title="Link to this definition">¶</a></dt>
+<dd><p>libswscale converter between different pixel formats.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyFrameConverter.Format">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Format</span></span><a class="headerlink" href="#python_vali._python_vali.PyFrameConverter.Format" title="Link to this definition">¶</a></dt>
+<dd><p>Get pixel format.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyFrameConverter.Run">
+<span class="sig-name descname"><span class="pre">Run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#python_vali._python_vali.PyFrameConverter" title="python_vali._python_vali.PyFrameConverter"><span class="pre">python_vali._python_vali.PyFrameConverter</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">src</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dst</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cc_ctx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#python_vali._python_vali.ColorspaceConversionContext" title="python_vali._python_vali.ColorspaceConversionContext"><span class="pre">python_vali._python_vali.ColorspaceConversionContext</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#python_vali._python_vali.TaskExecInfo" title="python_vali._python_vali.TaskExecInfo"><span class="pre">python_vali._python_vali.TaskExecInfo</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#python_vali._python_vali.PyFrameConverter.Run" title="Link to this definition">¶</a></dt>
+<dd><p>Perform pixel format conversion.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src</strong> – input numpy ndarray, it must be of proper size for given format and resolution.</p></li>
+<li><p><strong>dst</strong> – output numpy ndarray, it may be resized to fit the converted frame.</p></li>
+<li><p><strong>cc_ctx</strong> – colorspace conversion context. Describes color space and color range used for conversion.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple containing:
+success (Bool) True in case of success, False otherwise.
+info (TaskExecInfo) task execution information.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyFrameUploader">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali._python_vali.</span></span><span class="sig-name descname"><span class="pre">PyFrameUploader</span></span><a class="headerlink" href="#python_vali._python_vali.PyFrameUploader" title="Link to this definition">¶</a></dt>
+<dd><p>This class is used to upload numpy array to Surface using CUDA HtoD memcpy.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyFrameUploader.Run">
+<span class="sig-name descname"><span class="pre">Run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self:</span> <span class="pre">python_vali._python_vali.PyFrameUploader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src:</span> <span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dst:</span> <span class="pre">VPF::Surface</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#python_vali._python_vali.TaskExecInfo" title="python_vali._python_vali.TaskExecInfo"><span class="pre">python_vali._python_vali.TaskExecInfo</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#python_vali._python_vali.PyFrameUploader.Run" title="Link to this definition">¶</a></dt>
+<dd><p>Blocking HtoD CUDA memcpy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src</strong> (<em>numpy.ndarray</em>) – input numpy array</p></li>
+<li><p><strong>dst</strong> (<a class="reference internal" href="#python_vali._python_vali.Surface" title="python_vali._python_vali.Surface"><em>Surface</em></a>) – output surface</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple containing:
+success (Bool) True in case of success, False otherwise.
+info (TaskExecInfo) task execution information.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyNvEncoder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali._python_vali.</span></span><span class="sig-name descname"><span class="pre">PyNvEncoder</span></span><a class="headerlink" href="#python_vali._python_vali.PyNvEncoder" title="Link to this definition">¶</a></dt>
+<dd><p>HW-accelerated video encoder which uses Nvenc.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyNvEncoder.Capabilities">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Capabilities</span></span><a class="headerlink" href="#python_vali._python_vali.PyNvEncoder.Capabilities" title="Link to this definition">¶</a></dt>
+<dd><p>Return dictionary with Nvenc capabilities.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyNvEncoder.EncodeSingleSurface">
+<span class="sig-name descname"><span class="pre">EncodeSingleSurface</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#python_vali._python_vali.PyNvEncoder.EncodeSingleSurface" title="Link to this definition">¶</a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic">
+<li><p>EncodeSingleSurface(self: python_vali._python_vali.PyNvEncoder, surface: VPF::Surface, packet: numpy.ndarray[numpy.uint8], sei: numpy.ndarray[numpy.uint8], sync: bool, append: bool) -&gt; bool</p>
+<blockquote>
+<div><p>Encode single Surface. Please not that this function may not return
+compressed video packet.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param surface<span class="colon">:</span></dt>
+<dd class="field-odd"><p>raw input Surface</p>
+</dd>
+<dt class="field-even">param packet<span class="colon">:</span></dt>
+<dd class="field-even"><p>output compressed packet</p>
+</dd>
+<dt class="field-odd">param sei<span class="colon">:</span></dt>
+<dd class="field-odd"><p>unregistered user data SEI information to be attached to encoded bitstream</p>
+</dd>
+<dt class="field-even">param sync<span class="colon">:</span></dt>
+<dd class="field-even"><p>run function in sync mode, will ensure encoded packet is returned when function returns</p>
+</dd>
+<dt class="field-odd">param append<span class="colon">:</span></dt>
+<dd class="field-odd"><p>append encoded packet to input packet</p>
+</dd>
+<dt class="field-even">return<span class="colon">:</span></dt>
+<dd class="field-even"><p>True in case of success, False otherwise.</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>EncodeSingleSurface(self: python_vali._python_vali.PyNvEncoder, surface: VPF::Surface, packet: numpy.ndarray[numpy.uint8], sei: numpy.ndarray[numpy.uint8], sync: bool) -&gt; bool</p>
+<blockquote>
+<div><p>Encode single Surface. Please not that this function may not return
+compressed video packet.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param surface<span class="colon">:</span></dt>
+<dd class="field-odd"><p>raw input Surface</p>
+</dd>
+<dt class="field-even">param packet<span class="colon">:</span></dt>
+<dd class="field-even"><p>output compressed packet</p>
+</dd>
+<dt class="field-odd">param sei<span class="colon">:</span></dt>
+<dd class="field-odd"><p>unregistered user data SEI information to be attached to encoded bitstream</p>
+</dd>
+<dt class="field-even">param sync<span class="colon">:</span></dt>
+<dd class="field-even"><p>run function in sync mode, will ensure encoded packet is returned when function returns</p>
+</dd>
+<dt class="field-odd">return<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True in case of success, False otherwise.</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>EncodeSingleSurface(self: python_vali._python_vali.PyNvEncoder, surface: VPF::Surface, packet: numpy.ndarray[numpy.uint8], sync: bool) -&gt; bool</p>
+<blockquote>
+<div><p>Encode single Surface. Please not that this function may not return
+compressed video packet.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param surface<span class="colon">:</span></dt>
+<dd class="field-odd"><p>raw input Surface</p>
+</dd>
+<dt class="field-even">param packet<span class="colon">:</span></dt>
+<dd class="field-even"><p>output compressed packet</p>
+</dd>
+<dt class="field-odd">param sync<span class="colon">:</span></dt>
+<dd class="field-odd"><p>run function in sync mode, will ensure encoded packet is returned when function returns</p>
+</dd>
+<dt class="field-even">return<span class="colon">:</span></dt>
+<dd class="field-even"><p>True in case of success, False otherwise.</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>EncodeSingleSurface(self: python_vali._python_vali.PyNvEncoder, surface: VPF::Surface, packet: numpy.ndarray[numpy.uint8], sei: numpy.ndarray[numpy.uint8]) -&gt; bool</p>
+<blockquote>
+<div><p>Encode single Surface. Please not that this function may not return
+compressed video packet.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param surface<span class="colon">:</span></dt>
+<dd class="field-odd"><p>raw input Surface</p>
+</dd>
+<dt class="field-even">param packet<span class="colon">:</span></dt>
+<dd class="field-even"><p>output compressed packet</p>
+</dd>
+<dt class="field-odd">param sei<span class="colon">:</span></dt>
+<dd class="field-odd"><p>unregistered user data SEI information to be attached to encoded bitstream</p>
+</dd>
+<dt class="field-even">return<span class="colon">:</span></dt>
+<dd class="field-even"><p>True in case of success, False otherwise.</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>EncodeSingleSurface(self: python_vali._python_vali.PyNvEncoder, surface: VPF::Surface, packet: numpy.ndarray[numpy.uint8]) -&gt; bool</p>
+<blockquote>
+<div><p>Encode single Surface. Please not that this function may not return
+compressed video packet.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param surface<span class="colon">:</span></dt>
+<dd class="field-odd"><p>raw input Surface</p>
+</dd>
+<dt class="field-even">param packet<span class="colon">:</span></dt>
+<dd class="field-even"><p>output compressed packet</p>
+</dd>
+<dt class="field-odd">return<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True in case of success, False otherwise.</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyNvEncoder.Flush">
+<span class="sig-name descname"><span class="pre">Flush</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#python_vali._python_vali.PyNvEncoder" title="python_vali._python_vali.PyNvEncoder"><span class="pre">python_vali._python_vali.PyNvEncoder</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">packets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.uint8</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#python_vali._python_vali.PyNvEncoder.Flush" title="Link to this definition">¶</a></dt>
+<dd><p>Flush encoder.
+Use this method in the end of encoding session to obtain all remaining
+compressed frames.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>packets</strong> – one or multiple compressed packets squashed together.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True in case of success, False otherwise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyNvEncoder.FlushSinglePacket">
+<span class="sig-name descname"><span class="pre">FlushSinglePacket</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#python_vali._python_vali.PyNvEncoder" title="python_vali._python_vali.PyNvEncoder"><span class="pre">python_vali._python_vali.PyNvEncoder</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">packets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.uint8</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#python_vali._python_vali.PyNvEncoder.FlushSinglePacket" title="Link to this definition">¶</a></dt>
+<dd><p>Flush encoder.
+Use this method in the end of encoding session to obtain single remaining
+compressed frame. TO flush encoder completely you need to call this
+method multiple times.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>packets</strong> – single compressed packet.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True in case of success, False otherwise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyNvEncoder.Format">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Format</span></span><a class="headerlink" href="#python_vali._python_vali.PyNvEncoder.Format" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video stream pixel format.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyNvEncoder.FrameSizeInBytes">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FrameSizeInBytes</span></span><a class="headerlink" href="#python_vali._python_vali.PyNvEncoder.FrameSizeInBytes" title="Link to this definition">¶</a></dt>
+<dd><p>This function is used to get the current frame size based on pixel format.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyNvEncoder.Height">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Height</span></span><a class="headerlink" href="#python_vali._python_vali.PyNvEncoder.Height" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video stream height in pixels.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyNvEncoder.Reconfigure">
+<span class="sig-name descname"><span class="pre">Reconfigure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#python_vali._python_vali.PyNvEncoder" title="python_vali._python_vali.PyNvEncoder"><span class="pre">python_vali._python_vali.PyNvEncoder</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">settings</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_idr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_encoder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#python_vali._python_vali.PyNvEncoder.Reconfigure" title="Link to this definition">¶</a></dt>
+<dd><p>DESC.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>settings</strong> – Dictionary with nvenc settings</p></li>
+<li><p><strong>force_idr</strong> – force next encoded frame to be IDR key frame</p></li>
+<li><p><strong>reset_encoder</strong> – force encoder reset</p></li>
+<li><p><strong>verbose</strong> – output verbose information to log</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PyNvEncoder.Width">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Width</span></span><a class="headerlink" href="#python_vali._python_vali.PyNvEncoder.Width" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video stream width in pixels.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali._python_vali.PySurfaceConverter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali._python_vali.</span></span><span class="sig-name descname"><span class="pre">PySurfaceConverter</span></span><a class="headerlink" href="#python_vali._python_vali.PySurfaceConverter" title="Link to this definition">¶</a></dt>
+<dd><p>CUDA-accelerated converter between different pixel formats.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali._python_vali.PySurfaceConverter.Conversions">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Conversions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#python_vali._python_vali.PixelFormat" title="python_vali._python_vali.PixelFormat"><span class="pre">python_vali._python_vali.PixelFormat</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#python_vali._python_vali.PixelFormat" title="python_vali._python_vali.PixelFormat"><span class="pre">python_vali._python_vali.PixelFormat</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#python_vali._python_vali.PySurfaceConverter.Conversions" title="Link to this definition">¶</a></dt>
+<dd><p>Return list of supported color conversions.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali._python_vali.PySurfaceConverter.Run">
+<span class="sig-name descname"><span class="pre">Run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self:</span> <span class="pre">python_vali._python_vali.PySurfaceConverter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src:</span> <span class="pre">VPF::Surface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dst:</span> <span class="pre">VPF::Surface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cc_ctx:</span> <span class="pre">Optional[python_vali._python_vali.ColorspaceConversionContext]</span> <span class="pre">=</span> <span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#python_vali._python_vali.TaskExecInfo" title="python_vali._python_vali.TaskExecInfo"><span class="pre">python_vali._python_vali.TaskExecInfo</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#python_vali._python_vali.PySurfaceConverter.Run" title="Link to this definition">¶</a></dt>
+<dd><p>Perform pixel format conversion.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src</strong> – input Surface. Must be of same format class instance was created with.</p></li>
+<li><p><strong>dst</strong> – output Surface. Must be of suitable format.</p></li>
+<li><p><strong>cc_ctx</strong> – colorspace conversion context. Describes color space and color range used for conversion. Optional parameter. If not given, VALI will automatically pick supported color conversion parameters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple:
+success (Bool) True in case of success, False otherwise.
+info (TaskExecInfo) task execution information.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali._python_vali.PySurfaceConverter.RunAsync">
+<span class="sig-name descname"><span class="pre">RunAsync</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self:</span> <span class="pre">python_vali._python_vali.PySurfaceConverter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src:</span> <span class="pre">VPF::Surface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dst:</span> <span class="pre">VPF::Surface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cc_ctx:</span> <span class="pre">Optional[python_vali._python_vali.ColorspaceConversionContext]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">record_event:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#python_vali._python_vali.TaskExecInfo" title="python_vali._python_vali.TaskExecInfo"><span class="pre">python_vali._python_vali.TaskExecInfo</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#python_vali._python_vali.CudaStreamEvent" title="python_vali._python_vali.CudaStreamEvent"><span class="pre">python_vali._python_vali.CudaStreamEvent</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#python_vali._python_vali.PySurfaceConverter.RunAsync" title="Link to this definition">¶</a></dt>
+<dd><p>Perform pixel format conversion.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src</strong> – input Surface. Must be of same format class instance was created with.</p></li>
+<li><p><strong>dst</strong> – output Surface. Must be of suitable format.</p></li>
+<li><p><strong>cc_ctx</strong> – colorspace conversion context. Describes color space and color range used for conversion. Optional parameter. If not given, VALI will automatically pick supported color conversion parameters.</p></li>
+<li><p><strong>record_event</strong> – If False, no event will be recorded. Useful for chain calls.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple:
+success (Bool) True in case of success, False otherwise.
+info (TaskExecInfo) task execution information.
+event (CudaStreamEvent) CUDA stream event</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali._python_vali.PySurfaceDownloader">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali._python_vali.</span></span><span class="sig-name descname"><span class="pre">PySurfaceDownloader</span></span><a class="headerlink" href="#python_vali._python_vali.PySurfaceDownloader" title="Link to this definition">¶</a></dt>
+<dd><p>This class is used to copy Surface to numpy ndarray using CUDA DtoH memcpy.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali._python_vali.PySurfaceDownloader.Run">
+<span class="sig-name descname"><span class="pre">Run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self:</span> <span class="pre">python_vali._python_vali.PySurfaceDownloader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src:</span> <span class="pre">VPF::Surface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dst:</span> <span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#python_vali._python_vali.TaskExecInfo" title="python_vali._python_vali.TaskExecInfo"><span class="pre">python_vali._python_vali.TaskExecInfo</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#python_vali._python_vali.PySurfaceDownloader.Run" title="Link to this definition">¶</a></dt>
+<dd><p>Perform DtoH memcpy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src</strong> (<a class="reference internal" href="#python_vali._python_vali.Surface" title="python_vali._python_vali.Surface"><em>Surface</em></a>) – input Surface</p></li>
+<li><p><strong>dst</strong> (<em>numpy.ndarray</em>) – output numpy array</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple containing:
+success (Bool) True in case of success, False otherwise.
+info (TaskExecInfo) task execution information.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali._python_vali.PySurfaceResizer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali._python_vali.</span></span><span class="sig-name descname"><span class="pre">PySurfaceResizer</span></span><a class="headerlink" href="#python_vali._python_vali.PySurfaceResizer" title="Link to this definition">¶</a></dt>
+<dd><p>CUDA-accelerated Surface resizer.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali._python_vali.PySurfaceResizer.Run">
+<span class="sig-name descname"><span class="pre">Run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self:</span> <span class="pre">python_vali._python_vali.PySurfaceResizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src:</span> <span class="pre">VPF::Surface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dst:</span> <span class="pre">VPF::Surface</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#python_vali._python_vali.TaskExecInfo" title="python_vali._python_vali.TaskExecInfo"><span class="pre">python_vali._python_vali.TaskExecInfo</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#python_vali._python_vali.PySurfaceResizer.Run" title="Link to this definition">¶</a></dt>
+<dd><p>Resize input Surface.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src</strong> – input Surface. Must be of same format class instance was created with.</p></li>
+<li><p><strong>dst</strong> – output Surface. Must be of same format class instance was created with.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple containing:
+success (Bool) True in case of success, False otherwise.
+info (TaskExecInfo) task execution information.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali._python_vali.PySurfaceResizer.RunAsync">
+<span class="sig-name descname"><span class="pre">RunAsync</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self:</span> <span class="pre">python_vali._python_vali.PySurfaceResizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src:</span> <span class="pre">VPF::Surface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dst:</span> <span class="pre">VPF::Surface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">record_event:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#python_vali._python_vali.TaskExecInfo" title="python_vali._python_vali.TaskExecInfo"><span class="pre">python_vali._python_vali.TaskExecInfo</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#python_vali._python_vali.CudaStreamEvent" title="python_vali._python_vali.CudaStreamEvent"><span class="pre">python_vali._python_vali.CudaStreamEvent</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#python_vali._python_vali.PySurfaceResizer.RunAsync" title="Link to this definition">¶</a></dt>
+<dd><p>Resize input Surface.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src</strong> – input Surface. Must be of same format class instance was created with.</p></li>
+<li><p><strong>dst</strong> – output Surface. Must be of same format class instance was created with.</p></li>
+<li><p><strong>record_event</strong> – If False, no event will be recorded. Useful for chain calls.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple containing:
+success (Bool) True in case of success, False otherwise.
+info (TaskExecInfo) task execution information.
+event (CudaStreamEvent) CUDA stream event</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali._python_vali.PySurfaceRotator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali._python_vali.</span></span><span class="sig-name descname"><span class="pre">PySurfaceRotator</span></span><a class="headerlink" href="#python_vali._python_vali.PySurfaceRotator" title="Link to this definition">¶</a></dt>
+<dd><p>CUDA-accelerated Surface rotator.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali._python_vali.PySurfaceRotator.Run">
+<span class="sig-name descname"><span class="pre">Run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#python_vali._python_vali.PySurfaceRotator" title="python_vali._python_vali.PySurfaceRotator"><span class="pre">python_vali._python_vali.PySurfaceRotator</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">src</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#python_vali._python_vali.Surface" title="python_vali._python_vali.Surface"><span class="pre">python_vali._python_vali.Surface</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">dst</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#python_vali._python_vali.Surface" title="python_vali._python_vali.Surface"><span class="pre">python_vali._python_vali.Surface</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shift_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shift_y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#python_vali._python_vali.TaskExecInfo" title="python_vali._python_vali.TaskExecInfo"><span class="pre">python_vali._python_vali.TaskExecInfo</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#python_vali._python_vali.PySurfaceRotator.Run" title="Link to this definition">¶</a></dt>
+<dd><p>Rotate input Surface.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src</strong> – input Surface.</p></li>
+<li><p><strong>dst</strong> – output Surface.</p></li>
+<li><p><strong>angle</strong> – rotation angle.</p></li>
+<li><p><strong>shift_x</strong> – shift alongside X axis in pixels.</p></li>
+<li><p><strong>shift_y</strong> – shift alongside Y axis in pixels.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple containing:
+success (Bool) True in case of success, False otherwise.
+info (TaskExecInfo) task execution information.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali._python_vali.PySurfaceRotator.RunAsync">
+<span class="sig-name descname"><span class="pre">RunAsync</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#python_vali._python_vali.PySurfaceRotator" title="python_vali._python_vali.PySurfaceRotator"><span class="pre">python_vali._python_vali.PySurfaceRotator</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">src</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#python_vali._python_vali.Surface" title="python_vali._python_vali.Surface"><span class="pre">python_vali._python_vali.Surface</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">dst</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#python_vali._python_vali.Surface" title="python_vali._python_vali.Surface"><span class="pre">python_vali._python_vali.Surface</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shift_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shift_y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">record_event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#python_vali._python_vali.TaskExecInfo" title="python_vali._python_vali.TaskExecInfo"><span class="pre">python_vali._python_vali.TaskExecInfo</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#python_vali._python_vali.CudaStreamEvent" title="python_vali._python_vali.CudaStreamEvent"><span class="pre">python_vali._python_vali.CudaStreamEvent</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#python_vali._python_vali.PySurfaceRotator.RunAsync" title="Link to this definition">¶</a></dt>
+<dd><p>Rotate input Surface.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src</strong> – input Surface.</p></li>
+<li><p><strong>dst</strong> – output Surface.</p></li>
+<li><p><strong>angle</strong> – rotation angle.</p></li>
+<li><p><strong>shift_x</strong> – shift alongside X axis in pixels.</p></li>
+<li><p><strong>shift_y</strong> – shift alongside Y axis in pixels.</p></li>
+<li><p><strong>record_event</strong> – If False, no event will be recorded. Useful for chain calls.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple containing:
+success (Bool) True in case of success, False otherwise.
+info (TaskExecInfo) task execution information.
+event (CudaStreamEvent) CUDA stream event.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.PySurfaceRotator.SupportedFormats">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SupportedFormats</span></span><a class="headerlink" href="#python_vali._python_vali.PySurfaceRotator.SupportedFormats" title="Link to this definition">¶</a></dt>
+<dd><p>Get list of supported pixel formats.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali._python_vali.SeekContext">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali._python_vali.</span></span><span class="sig-name descname"><span class="pre">SeekContext</span></span><a class="headerlink" href="#python_vali._python_vali.SeekContext" title="Link to this definition">¶</a></dt>
+<dd><p>Incapsulates information required by decoder to seek for a particular video frame.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.SeekContext.seek_frame">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">seek_frame</span></span><a class="headerlink" href="#python_vali._python_vali.SeekContext.seek_frame" title="Link to this definition">¶</a></dt>
+<dd><p>Number of frame we want to seek.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.SeekContext.seek_tssec">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">seek_tssec</span></span><a class="headerlink" href="#python_vali._python_vali.SeekContext.seek_tssec" title="Link to this definition">¶</a></dt>
+<dd><p>Timestamp we want to seek.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="python_vali._python_vali.SetFFMpegLogLevel">
+<span class="sig-prename descclassname"><span class="pre">python_vali._python_vali.</span></span><span class="sig-name descname"><span class="pre">SetFFMpegLogLevel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arg0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#python_vali._python_vali.FfmpegLogLevel" title="python_vali._python_vali.FfmpegLogLevel"><span class="pre">python_vali._python_vali.FfmpegLogLevel</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#python_vali._python_vali.SetFFMpegLogLevel" title="Link to this definition">¶</a></dt>
+<dd><p>Set FFMpeg log level.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali._python_vali.Surface">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali._python_vali.</span></span><span class="sig-name descname"><span class="pre">Surface</span></span><a class="headerlink" href="#python_vali._python_vali.Surface" title="Link to this definition">¶</a></dt>
+<dd><p>Image stored in vRAM. Consists of 1+ SurfacePlane(s).</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali._python_vali.Surface.Clone">
+<span class="sig-name descname"><span class="pre">Clone</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#python_vali._python_vali.Surface" title="python_vali._python_vali.Surface"><span class="pre">python_vali._python_vali.Surface</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#python_vali._python_vali.Surface" title="python_vali._python_vali.Surface"><span class="pre">python_vali._python_vali.Surface</span></a></span></span><a class="headerlink" href="#python_vali._python_vali.Surface.Clone" title="Link to this definition">¶</a></dt>
+<dd><p>CUDA mem alloc + deep copy.
+Object returned is manager by Python interpreter.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.Surface.Format">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Format</span></span><a class="headerlink" href="#python_vali._python_vali.Surface.Format" title="Link to this definition">¶</a></dt>
+<dd><p>Get pixel format</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.Surface.Height">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Height</span></span><a class="headerlink" href="#python_vali._python_vali.Surface.Height" title="Link to this definition">¶</a></dt>
+<dd><p>Height in pixels of plane 0.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.Surface.HostSize">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HostSize</span></span><a class="headerlink" href="#python_vali._python_vali.Surface.HostSize" title="Link to this definition">¶</a></dt>
+<dd><p>Amount of memory in bytes which is needed for DtoH memcopy.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.Surface.IsEmpty">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsEmpty</span></span><a class="headerlink" href="#python_vali._python_vali.Surface.IsEmpty" title="Link to this definition">¶</a></dt>
+<dd><p>Tell if Surface plane has memory allocated or it’s empty inside.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.Surface.IsOwnMemory">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsOwnMemory</span></span><a class="headerlink" href="#python_vali._python_vali.Surface.IsOwnMemory" title="Link to this definition">¶</a></dt>
+<dd><p>Return True if Surface owns memory, False if it only references actual
+memory allocation but doesn’t own it.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali._python_vali.Surface.Make">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Make</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#python_vali._python_vali.Surface.Make" title="Link to this definition">¶</a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic">
+<li><p>Make(format: python_vali._python_vali.PixelFormat, width: int, height: int, gpu_id: int) -&gt; python_vali._python_vali.Surface</p>
+<blockquote>
+<div><p>Constructor method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param format<span class="colon">:</span></dt>
+<dd class="field-odd"><p>target pixel format</p>
+</dd>
+<dt class="field-even">param width<span class="colon">:</span></dt>
+<dd class="field-even"><p>width in pixels</p>
+</dd>
+<dt class="field-odd">param height<span class="colon">:</span></dt>
+<dd class="field-odd"><p>height in pixels</p>
+</dd>
+<dt class="field-even">param gpu_id<span class="colon">:</span></dt>
+<dd class="field-even"><p>GPU to use</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>Make(format: python_vali._python_vali.PixelFormat, width: int, height: int, context: int) -&gt; python_vali._python_vali.Surface</p>
+<blockquote>
+<div><p>Constructor method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param format<span class="colon">:</span></dt>
+<dd class="field-odd"><p>target pixel format</p>
+</dd>
+<dt class="field-even">param width<span class="colon">:</span></dt>
+<dd class="field-even"><p>width in pixels</p>
+</dd>
+<dt class="field-odd">param height<span class="colon">:</span></dt>
+<dd class="field-odd"><p>height in pixels</p>
+</dd>
+<dt class="field-even">param context<span class="colon">:</span></dt>
+<dd class="field-even"><p>CUDA contet to use</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+</ol>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.Surface.NumPlanes">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NumPlanes</span></span><a class="headerlink" href="#python_vali._python_vali.Surface.NumPlanes" title="Link to this definition">¶</a></dt>
+<dd><p>Number of SurfacePlanes</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.Surface.Pitch">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Pitch</span></span><a class="headerlink" href="#python_vali._python_vali.Surface.Pitch" title="Link to this definition">¶</a></dt>
+<dd><p>Pitch in bytes of plane 0.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.Surface.Planes">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Planes</span></span><a class="headerlink" href="#python_vali._python_vali.Surface.Planes" title="Link to this definition">¶</a></dt>
+<dd><p>Get SurfacePlane reference</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>plane</strong> – SurfacePlane index</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.Surface.Shape">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Shape</span></span><a class="headerlink" href="#python_vali._python_vali.Surface.Shape" title="Link to this definition">¶</a></dt>
+<dd><p>Return numpy-like shape. For those formats which have multiple memory
+allocations (like YUV420), total memory size will be returned.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.Surface.Width">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Width</span></span><a class="headerlink" href="#python_vali._python_vali.Surface.Width" title="Link to this definition">¶</a></dt>
+<dd><p>Width in pixels of plane 0.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali._python_vali.Surface.from_cai">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_cai</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dict:</span> <span class="pre">object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format:</span> <span class="pre">python_vali._python_vali.PixelFormat</span> <span class="pre">=</span> <span class="pre">&lt;PixelFormat.RGB:</span> <span class="pre">2&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#python_vali._python_vali.Surface" title="python_vali._python_vali.Surface"><span class="pre">python_vali._python_vali.Surface</span></a></span></span><a class="headerlink" href="#python_vali._python_vali.Surface.from_cai" title="Link to this definition">¶</a></dt>
+<dd><p>DLPack: Make Surface from CAI, don not own memory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dict</strong> – dictionary which corresponds to CUDA Array Interface specs.</p></li>
+<li><p><strong>fmt</strong> – pixel format, by default python_vali.PixelFormat.RGB</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Surface</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="_generate/python_vali.Surface.html#python_vali.Surface" title="python_vali.Surface">python_vali.Surface</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali._python_vali.Surface.from_dlpack">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dlpack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">capsule:</span> <span class="pre">capsule</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format:</span> <span class="pre">python_vali._python_vali.PixelFormat</span> <span class="pre">=</span> <span class="pre">&lt;PixelFormat.RGB:</span> <span class="pre">2&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#python_vali._python_vali.Surface" title="python_vali._python_vali.Surface"><span class="pre">python_vali._python_vali.Surface</span></a></span></span><a class="headerlink" href="#python_vali._python_vali.Surface.from_dlpack" title="Link to this definition">¶</a></dt>
+<dd><p>DLPack: Make Surface from dlpack, don not own memory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>capsule</strong> – capsule object with manager dltensor inside</p></li>
+<li><p><strong>fmt</strong> – pixel format, by default python_vali.PixelFormat.RGB</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Surface</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="_generate/python_vali.Surface.html#python_vali.Surface" title="python_vali.Surface">python_vali.Surface</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali._python_vali.SurfacePlane">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali._python_vali.</span></span><span class="sig-name descname"><span class="pre">SurfacePlane</span></span><a class="headerlink" href="#python_vali._python_vali.SurfacePlane" title="Link to this definition">¶</a></dt>
+<dd><p>Continious 2D chunk of memory stored in vRAM which represents single plane / channel of video frame. It supports DLPack specification.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.SurfacePlane.ElemSize">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ElemSize</span></span><a class="headerlink" href="#python_vali._python_vali.SurfacePlane.ElemSize" title="Link to this definition">¶</a></dt>
+<dd><p>Get element size in bytes</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.SurfacePlane.GpuMem">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GpuMem</span></span><a class="headerlink" href="#python_vali._python_vali.SurfacePlane.GpuMem" title="Link to this definition">¶</a></dt>
+<dd><p>Get pointer to SurfacePlane data</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.SurfacePlane.Height">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Height</span></span><a class="headerlink" href="#python_vali._python_vali.SurfacePlane.Height" title="Link to this definition">¶</a></dt>
+<dd><p>Get height in pixels</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.SurfacePlane.HostFrameSize">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HostFrameSize</span></span><a class="headerlink" href="#python_vali._python_vali.SurfacePlane.HostFrameSize" title="Link to this definition">¶</a></dt>
+<dd><p>Get amount of host memory needed to store this SurfacePlane</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.SurfacePlane.Pitch">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Pitch</span></span><a class="headerlink" href="#python_vali._python_vali.SurfacePlane.Pitch" title="Link to this definition">¶</a></dt>
+<dd><p>Get pitch in bytes</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.SurfacePlane.Width">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Width</span></span><a class="headerlink" href="#python_vali._python_vali.SurfacePlane.Width" title="Link to this definition">¶</a></dt>
+<dd><p>Get width in pixels</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali._python_vali.TaskExecInfo">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali._python_vali.</span></span><span class="sig-name descname"><span class="pre">TaskExecInfo</span></span><a class="headerlink" href="#python_vali._python_vali.TaskExecInfo" title="Link to this definition">¶</a></dt>
+<dd><p>Members:</p>
+<p>SUCCESS : Success</p>
+<p>FAIL : Fail</p>
+<p>END_OF_STREAM : End of file</p>
+<p>MORE_DATA_NEEDED : More data needed to complete</p>
+<p>BIT_DEPTH_NOT_SUPPORTED : Bit depth isn’t supported</p>
+<p>INVALID_INPUT : Invalid input</p>
+<p>UNSUPPORTED_FMT_CONV_PARAMS : Unsupported color conversion parameters</p>
+<p>NOT_SUPPORTED : Unsupported feature</p>
+<p>RES_CHANGE : Video resolution change happened</p>
+<p>SRC_DST_SIZE_MISMATCH : Input and output size mismatch</p>
+<p>SRC_DST_FMT_MISMATCH : Input and output pixel format mismatch</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali._python_vali.TaskExecInfo.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#python_vali._python_vali.TaskExecInfo.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="index.html">&lt;no title&gt;</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="_generate/python_vali.GetNumGpus.html">python_vali.GetNumGpus</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023 Roman Arzumanyan.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>
