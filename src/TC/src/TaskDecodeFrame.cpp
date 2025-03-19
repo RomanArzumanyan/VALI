@@ -809,21 +809,30 @@ struct FfmpegDecodeFrame_Impl {
     return m_fmt_ctx->streams[GetVideoStrIdx()]->codecpar->color_range;
   }
 
-  std::map<std::string, std::string> GetMetaData() const {
-    std::map<std::string, std::string> tags;
+  metadata_dict GetMetaData() const {
+    metadata_dict metadata;
+    std::map<std::string, AVDictionary*> sources = {
+        {"context", m_fmt_ctx->metadata},
+        {"video_stream", m_fmt_ctx->streams[GetVideoStrIdx()]->metadata}};
 
-    const auto dict = m_fmt_ctx->metadata;
-    auto tag = av_dict_iterate(dict, nullptr);
-    while (tag) {
-      tags[tag->key] = tag->value;
-      const auto prev_tag = tag;
-      tag = av_dict_iterate(dict, prev_tag);
+    for (auto &source : sources) {
+      auto &name = source.first;
+      auto &dict = source.second;
+
+      auto tag = av_dict_iterate(dict, nullptr);
+      while (tag) {
+        metadata[name][tag->key] = tag->value;
+        const auto prev_tag = tag;
+        tag = av_dict_iterate(dict, prev_tag);
+      }
     }
 
-    return tags;
+    return metadata;
   }
 
-  bool IsVFR() const { return GetFrameRate() != GetAvgFrameRate(); }
+  bool IsVFR() const {
+  return GetFrameRate() != GetAvgFrameRate();
+}
 
   bool IsAccelerated() const { return m_avc_ctx->hw_frames_ctx != nullptr; }
 
