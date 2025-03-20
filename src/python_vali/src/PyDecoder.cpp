@@ -308,7 +308,10 @@ void Init_PyDecoder(py::module& m) {
         Constructor method.
 
         :param input: path to input file
-        :param opts: AVDictionary options that will be passed to AVFormat context.
+        :param opts: Options that will be passed to libavcodec API.
+        Also include special 'preferred_width' option to select a 
+        stream with desired width from multiple video streams.
+        This option won't be passed down to libavcodec API.
         :param gpu_id: GPU ID. Default value is 0. Pass negative value to use CPU decoder.
     )pbdoc")
       .def(py::init<py::object, const map<string, string>&, int>(),
@@ -317,7 +320,10 @@ void Init_PyDecoder(py::module& m) {
         Constructor method.
 
         :param buffered_reader: io.BufferedReader object
-        :param opts: AVDictionary options that will be passed to AVFormat context.
+        :param opts: Options that will be passed to libavcodec API.
+        Also include special 'preferred_width' option to select a 
+        stream with desired width from multiple video streams.
+        This option won't be passed down to libavcodec API.
         :param gpu_id: GPU ID. Default value is 0. Pass negative value to use CPU decoder.
     )pbdoc")
       .def(
