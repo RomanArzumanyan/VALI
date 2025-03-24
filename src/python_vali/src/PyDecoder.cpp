@@ -299,6 +299,10 @@ metadata_dict PyDecoder::Metadata() {
   return params.videoContext.metadata;
 }
 
+void PyDecoder::SetMode(DecodeMode new_mode) { upDecoder->SetMode(new_mode); }
+
+DecodeMode PyDecoder::GetMode() const { return upDecoder->GetMode(); }
+
 void Init_PyDecoder(py::module& m) {
   py::class_<PyDecoder, shared_ptr<PyDecoder>>(m, "PyDecoder",
                                                "Video decoder class.")
@@ -325,6 +329,18 @@ void Init_PyDecoder(py::module& m) {
         stream with desired width from multiple video streams.
         This option won't be passed down to libavcodec API.
         :param gpu_id: GPU ID. Default value is 0. Pass negative value to use CPU decoder.
+    )pbdoc")
+      .def_property_readonly("Mode", &PyDecoder::GetMode,
+           py::call_guard<py::gil_scoped_release>(),
+           R"pbdoc(
+          Get decoder operation mode
+    )pbdoc")
+      .def("SetMode", &PyDecoder::SetMode,
+           py::call_guard<py::gil_scoped_release>(),
+           R"pbdoc(
+     Set decoder operation mode, flush codec internal buffers.
+     It also influences the seek behavior. When seeking in DecodeMode.KEY_FRAMES
+     mode, decoder will return closest previous key frame.
     )pbdoc")
       .def(
           "DecodeSingleFrame",

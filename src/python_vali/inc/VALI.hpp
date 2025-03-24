@@ -251,6 +251,10 @@ public:
   CUstream GetStream() const;
 
   metadata_dict Metadata();
+
+  void SetMode(DecodeMode new_mode);
+  DecodeMode GetMode() const;
+
   std::shared_ptr<CudaStreamEvent> m_event;
 
 private:

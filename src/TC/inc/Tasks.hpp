@@ -125,6 +125,9 @@ public:
                            int gpu_id,
                            std::shared_ptr<AVIOContext> p_io_ctx = nullptr);
 
+  void SetMode(DecodeMode new_mode);
+  DecodeMode GetMode() const;
+
 private:
   struct FfmpegDecodeFrame_Impl* pImpl = nullptr;
 

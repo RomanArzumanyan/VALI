@@ -118,3 +118,8 @@ struct SeekContext {
   bool IsByNumber() const { return 0 <= seek_frame; }
   bool IsByTimestamp() const { return 0.0 <= seek_tssec; }
 };
+
+/// @brief Decoder operation mode.
+/// KEY_FRAMES - only key frames will be decoded
+/// ALL_FRAMES - usual mode (decode all frames)
+enum class DecodeMode { KEY_FRAMES = 0, ALL_FRAMES = 1 };

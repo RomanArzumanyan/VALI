@@ -162,6 +162,16 @@ struct FfmpegDecodeFrame_Impl {
   uint32_t m_num_pkt_sent = 0U;
   uint32_t m_num_frm_recv = 0U;
 
+  // Decoder operation mode
+  DecodeMode m_mode = DecodeMode::ALL_FRAMES;
+
+  void SetMode(DecodeMode new_mode) {
+    m_mode = new_mode;
+    avcodec_flush_buffers(m_avc_ctx.get());
+  }
+
+  DecodeMode GetMode() const { return m_mode; }
+
   /// @brief Find stream with desired width
   /// @return Stream id which has the desired width, -1 if not found
   int FindStreamByWidth() {
@@ -480,6 +490,15 @@ struct FfmpegDecodeFrame_Impl {
           m_num_pkt_read++;
         }
       } while (m_pkt->stream_index != GetVideoStrIdx());
+
+      /* Skip all packets which don't contain key frame(s).
+       * Also need to check m_eof flag to make sure we didn't accidentally
+       * reach EOF while skipping.
+       */
+      if (DecodeMode::KEY_FRAMES == GetMode() && !m_eof &&
+          !(m_pkt->flags & AV_PKT_FLAG_KEY)) {
+        continue;
+      }
 
       auto status = DecodeSinglePacket(m_eof ? nullptr : m_pkt.get(), dst);
 
@@ -951,6 +970,12 @@ struct FfmpegDecodeFrame_Impl {
       if (details.m_status != TaskExecStatus::TASK_EXEC_SUCCESS) {
         return details;
       }
+
+      // If in key frames decode mode, do just 1 loop iteration because
+      // seek jumps to key frame.
+      if (DecodeMode::KEY_FRAMES == GetMode()) {
+        return details;
+      }
     }
 
     return TaskExecDetails(TaskExecStatus::TASK_EXEC_SUCCESS,
@@ -1069,3 +1094,7 @@ bool DecodeFrame::IsAccelerated() const { return pImpl->IsAccelerated(); }
 bool DecodeFrame::IsVFR() const { return pImpl->IsVFR(); }
 
 CUstream DecodeFrame::GetStream() const { return pImpl->GetStream(); }
+
+void DecodeFrame::SetMode(DecodeMode new_mode) { pImpl->SetMode(new_mode); }
+
+DecodeMode DecodeFrame::GetMode() const { return pImpl->GetMode(); }

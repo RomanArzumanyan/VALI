@@ -255,6 +255,11 @@ PYBIND11_MODULE(_python_vali, m) {
       .value("UNSPEC", ColorSpace::UNSPEC, "Unspecified color space.")
       .export_values();
 
+  py::enum_<DecodeMode>(m, "DecodeMode")
+      .value("KEY_FRAMES", DecodeMode::KEY_FRAMES, "Decode key frames only.")
+      .value("ALL_FRAMES", DecodeMode::ALL_FRAMES, "Decode everything.")
+      .export_values();
+
   py::enum_<ColorRange>(m, "ColorRange")
       .value("MPEG", ColorRange::MPEG,
              "Narrow or MPEG color range. Doesn't use full [0;255] range.")
