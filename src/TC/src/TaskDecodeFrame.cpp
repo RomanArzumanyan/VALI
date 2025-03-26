@@ -128,6 +128,9 @@ struct FfmpegDecodeFrame_Impl {
   // Last known height
   int m_last_h = -1;
 
+  // User prefferred stream width. Mostly useful for HLS ABR streams.
+  int m_preferred_width = -1;
+
   // Flag which signals that decode is done
   bool m_end_decode = false;
 
@@ -159,10 +162,39 @@ struct FfmpegDecodeFrame_Impl {
   uint32_t m_num_pkt_sent = 0U;
   uint32_t m_num_frm_recv = 0U;
 
-  FfmpegDecodeFrame_Impl(
-      const char* URL, const std::map<std::string, std::string>& ffmpeg_options,
-      int gpu_id, std::shared_ptr<AVIOContext> p_io_ctx)
+  // Decoder operation mode
+  DecodeMode m_mode = DecodeMode::ALL_FRAMES;
+
+  void SetMode(DecodeMode new_mode) {
+    m_mode = new_mode;
+  }
+
+  DecodeMode GetMode() const { return m_mode; }
+
+  /// @brief Find stream with desired width
+  /// @return Stream id which has the desired width, -1 if not found
+  int FindStreamByWidth() {
+    if (m_preferred_width == -1)
+      return -1;
+
+    for (int i = 0; m_fmt_ctx->streams[i]; i++)
+      if (m_fmt_ctx->streams[i]->codecpar->width == m_preferred_width)
+        return i;
+
+    return -1;
+  }
+
+  FfmpegDecodeFrame_Impl(const char* URL,
+                         std::map<std::string, std::string>& ffmpeg_options,
+                         int gpu_id, std::shared_ptr<AVIOContext> p_io_ctx)
       : m_io_ctx(p_io_ctx) {
+
+    // Extract preferred width from options because it's not ffmpeg option.
+    auto it = ffmpeg_options.find("preferred_width");
+    if (ffmpeg_options.end() != it) {
+      m_preferred_width = std::stoi(it->second);
+      ffmpeg_options.erase(it);
+    }
 
     // Allocate format context first to set timeout before opening the input.
     AVFormatContext* fmt_ctx = avformat_alloc_context();
@@ -249,8 +281,9 @@ struct FfmpegDecodeFrame_Impl {
     ThrowOnAvError(res, "Can't find stream information", nullptr);
 
     m_timeout_handler->Reset();
-    m_stream_idx = av_find_best_stream(m_fmt_ctx.get(), AVMEDIA_TYPE_VIDEO, -1,
-                                       -1, NULL, 0);
+    m_stream_idx = av_find_best_stream(m_fmt_ctx.get(), AVMEDIA_TYPE_VIDEO,
+                                       FindStreamByWidth(), -1, NULL, 0);
+
     if (GetVideoStrIdx() < 0) {
       std::stringstream ss;
       ss << "Could not find " << av_get_media_type_string(AVMEDIA_TYPE_VIDEO)
@@ -456,6 +489,15 @@ struct FfmpegDecodeFrame_Impl {
           m_num_pkt_read++;
         }
       } while (m_pkt->stream_index != GetVideoStrIdx());
+
+      /* Skip all packets which don't contain key frame(s).
+       * Also need to check m_eof flag to make sure we didn't accidentally
+       * reach EOF while skipping.
+       */
+      if (DecodeMode::KEY_FRAMES == GetMode() && !m_eof &&
+          !(m_pkt->flags & AV_PKT_FLAG_KEY)) {
+        continue;
+      }
 
       auto status = DecodeSinglePacket(m_eof ? nullptr : m_pkt.get(), dst);
 
@@ -815,9 +857,9 @@ struct FfmpegDecodeFrame_Impl {
         {"context", m_fmt_ctx->metadata},
         {"video_stream", m_fmt_ctx->streams[GetVideoStrIdx()]->metadata}};
 
-    for (auto &source : sources) {
-      auto &name = source.first;
-      auto &dict = source.second;
+    for (auto& source : sources) {
+      auto& name = source.first;
+      auto& dict = source.second;
 
       auto tag = av_dict_iterate(dict, nullptr);
       while (tag) {
@@ -830,9 +872,7 @@ struct FfmpegDecodeFrame_Impl {
     return metadata;
   }
 
-  bool IsVFR() const {
-  return GetFrameRate() != GetAvgFrameRate();
-}
+  bool IsVFR() const { return GetFrameRate() != GetAvgFrameRate(); }
 
   bool IsAccelerated() const { return m_avc_ctx->hw_frames_ctx != nullptr; }
 
@@ -927,6 +967,12 @@ struct FfmpegDecodeFrame_Impl {
     while (m_frame->pts + start_time < timestamp) {
       auto details = DecodeSingleFrame(dst);
       if (details.m_status != TaskExecStatus::TASK_EXEC_SUCCESS) {
+        return details;
+      }
+
+      // If in key frames decode mode, do just 1 loop iteration because
+      // seek jumps to key frame.
+      if (DecodeMode::KEY_FRAMES == GetMode()) {
         return details;
       }
     }
@@ -1047,3 +1093,7 @@ bool DecodeFrame::IsAccelerated() const { return pImpl->IsAccelerated(); }
 bool DecodeFrame::IsVFR() const { return pImpl->IsVFR(); }
 
 CUstream DecodeFrame::GetStream() const { return pImpl->GetStream(); }
+
+void DecodeFrame::SetMode(DecodeMode new_mode) { pImpl->SetMode(new_mode); }
+
+DecodeMode DecodeFrame::GetMode() const { return pImpl->GetMode(); }

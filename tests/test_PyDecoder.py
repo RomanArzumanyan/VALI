@@ -845,6 +845,84 @@ class TestDecoder(unittest.TestCase):
 
         self.fail("Test is expected to raise exception")
 
+    @parameterized.expand(tc.getDevices())
+    def test_decode_key_frames_only(self, device_name: str, device_id: int):
+        """
+        This test checks that only key frames are decoded in corresp.
+        decode mode.
+
+        Args:
+            device_name (str): GPU / CPU name
+            device_id (int): GPU id or -1 when on CPU
+        """
+        with open("gt_files.json") as f:
+            gtInfo = tc.GroundTruth(**json.load(f)["generated"])
+
+        pyDec = vali.PyDecoder(gtInfo.uri, {}, gpu_id=device_id)
+        pyDec.SetMode(vali.DecodeMode.KEY_FRAMES)
+
+        num_key_frames = gtInfo.num_frames // gtInfo.gop_size
+        dec_frames = 0
+
+        if pyDec.IsAccelerated:
+            surf = vali.Surface.Make(
+                pyDec.Format, pyDec.Width, pyDec.Height, device_id)
+        else:
+            frame = np.ndarray(dtype=np.uint8, shape=pyDec.HostFrameSize)
+
+        while True:
+            success, info = pyDec.DecodeSingleSurface(
+                surf) if pyDec.IsAccelerated else pyDec.DecodeSingleFrame(frame)
+            if not success:
+                break
+            dec_frames += 1
+
+        self.assertEqual(dec_frames, num_key_frames)
+
+    @parameterized.expand(tc.getDevices())
+    def test_seek_key_frames_only(self, device_name: str, device_id: int):
+        """
+        This test checks that in key frames mode decoder only jumps to actual
+        key frames and doesn't decode anything else.
+
+        Args:
+            device_name (str): GPU / CPU name
+            device_id (int): GPU id or -1 when on CPU
+        """
+        with open("gt_files.json") as f:
+            gtInfo = tc.GroundTruth(**json.load(f)["generated"])
+
+        pyDec = vali.PyDecoder(gtInfo.uri, {}, gpu_id=device_id)
+        pyDec.SetMode(vali.DecodeMode.KEY_FRAMES)
+
+        if pyDec.IsAccelerated:
+            surf = vali.Surface.Make(
+                pyDec.Format, pyDec.Width, pyDec.Height, device_id)
+        else:
+            frame = np.ndarray(dtype=np.uint8, shape=pyDec.HostFrameSize)
+
+        num_key_frames = gtInfo.num_frames // gtInfo.gop_size
+
+        # Key frame we want to seek to
+        rnd_key_frame = random.randint(1, num_key_frames - 2) * gtInfo.gop_size
+
+        # Now generate some random frame number between it and next key frame
+        seek_frame = random.randint(
+            rnd_key_frame, rnd_key_frame+gtInfo.gop_size-1)
+
+        # And make sure that when we seek in key frame mode, decoder
+        # won't jump just to any frame number
+        pkt_data = vali.PacketData()
+        seek_ctx = vali.SeekContext(seek_frame)
+        success, _ = pyDec.DecodeSingleSurface(
+            surf, pkt_data, seek_ctx) if pyDec.IsAccelerated else pyDec.DecodeSingleFrame(frame, pkt_data, seek_ctx)
+
+        # Decoded frame PTS shall be equal to that of our desired key frame.
+        # This video has duration of 512 units per every frame.
+        self.assertTrue(success)
+        self.assertEqual(pkt_data.key, 1)
+        self.assertEqual(pkt_data.pts, rnd_key_frame * 512)
+
 
 if __name__ == "__main__":
     unittest.main()

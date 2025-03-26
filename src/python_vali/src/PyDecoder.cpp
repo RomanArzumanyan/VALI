@@ -299,6 +299,10 @@ metadata_dict PyDecoder::Metadata() {
   return params.videoContext.metadata;
 }
 
+void PyDecoder::SetMode(DecodeMode new_mode) { upDecoder->SetMode(new_mode); }
+
+DecodeMode PyDecoder::GetMode() const { return upDecoder->GetMode(); }
+
 void Init_PyDecoder(py::module& m) {
   py::class_<PyDecoder, shared_ptr<PyDecoder>>(m, "PyDecoder",
                                                "Video decoder class.")
@@ -308,7 +312,10 @@ void Init_PyDecoder(py::module& m) {
         Constructor method.
 
         :param input: path to input file
-        :param opts: AVDictionary options that will be passed to AVFormat context.
+        :param opts: Options that will be passed to libavcodec API.
+        Also include special 'preferred_width' option to select a 
+        stream with desired width from multiple video streams.
+        This option won't be passed down to libavcodec API.
         :param gpu_id: GPU ID. Default value is 0. Pass negative value to use CPU decoder.
     )pbdoc")
       .def(py::init<py::object, const map<string, string>&, int>(),
@@ -317,8 +324,30 @@ void Init_PyDecoder(py::module& m) {
         Constructor method.
 
         :param buffered_reader: io.BufferedReader object
-        :param opts: AVDictionary options that will be passed to AVFormat context.
+        :param opts: Options that will be passed to libavcodec API.
+        Also include special 'preferred_width' option to select a 
+        stream with desired width from multiple video streams.
+        This option won't be passed down to libavcodec API.
         :param gpu_id: GPU ID. Default value is 0. Pass negative value to use CPU decoder.
+    )pbdoc")
+      .def_property_readonly("Mode", &PyDecoder::GetMode,
+           py::call_guard<py::gil_scoped_release>(),
+           R"pbdoc(
+          Get decoder operation mode
+    )pbdoc")
+      .def("SetMode", &PyDecoder::SetMode,
+           py::call_guard<py::gil_scoped_release>(),
+           R"pbdoc(
+     Set decoder operation mode.
+
+     It also influences the seek behavior. When seeking in DecodeMode.KEY_FRAMES
+     mode, decoder will return closest previous key frame.
+
+     When changing mode, internal frame queue is not flushed, hence user may
+     receive decoded frames from the past for some time. It's done for reason.
+     Otherwise, when swithing from key frames only to all frames, multiple
+     decoded key frames will be discarded. Which may correspong to 
+     seconds / minutes worth of footage if your GOP size is big.
     )pbdoc")
       .def(
           "DecodeSingleFrame",

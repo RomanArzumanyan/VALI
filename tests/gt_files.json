@@ -146,7 +146,9 @@
         "width": 640,
         "height": 480,
         "pix_fmt": "PixelFormat.NV12",
-        "num_frames": 900
+        "framerate": 30,
+        "gop_size": 250,
+        "num_frames": 9000
     },
     "rotation_90_deg": {
         "uri": "data/test_rot_90_deg.mp4",
