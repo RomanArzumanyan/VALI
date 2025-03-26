@@ -918,7 +918,9 @@ class TestDecoder(unittest.TestCase):
             surf, pkt_data, seek_ctx) if pyDec.IsAccelerated else pyDec.DecodeSingleFrame(frame, pkt_data, seek_ctx)
 
         # Decoded frame PTS shall be equal to that of our desired key frame.
+        # This video has duration of 512 units per every frame.
         self.assertTrue(success)
+        self.assertEqual(pkt_data.key, 1)
         self.assertEqual(pkt_data.pts, rnd_key_frame * 512)
 
 
