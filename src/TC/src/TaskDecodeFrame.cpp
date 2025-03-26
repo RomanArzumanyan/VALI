@@ -167,7 +167,6 @@ struct FfmpegDecodeFrame_Impl {
 
   void SetMode(DecodeMode new_mode) {
     m_mode = new_mode;
-    avcodec_flush_buffers(m_avc_ctx.get());
   }
 
   DecodeMode GetMode() const { return m_mode; }

@@ -338,9 +338,16 @@ void Init_PyDecoder(py::module& m) {
       .def("SetMode", &PyDecoder::SetMode,
            py::call_guard<py::gil_scoped_release>(),
            R"pbdoc(
-     Set decoder operation mode, flush codec internal buffers.
+     Set decoder operation mode.
+
      It also influences the seek behavior. When seeking in DecodeMode.KEY_FRAMES
      mode, decoder will return closest previous key frame.
+
+     When changing mode, internal frame queue is not flushed, hence user may
+     receive decoded frames from the past for some time. It's done for reason.
+     Otherwise, when swithing from key frames only to all frames, multiple
+     decoded key frames will be discarded. Which may correspong to 
+     seconds / minutes worth of footage if your GOP size is big.
     )pbdoc")
       .def(
           "DecodeSingleFrame",
