@@ -1,0 +1,25 @@
+﻿python\_vali.PySurfaceConverter
+===============================
+
+.. currentmodule:: python_vali
+
+.. autoclass:: PySurfaceConverter
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PySurfaceConverter.Conversions
+      ~PySurfaceConverter.Run
+      ~PySurfaceConverter.RunAsync
+      ~PySurfaceConverter.__init__
+   
+   
+
+   
+   
+   
