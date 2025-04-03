@@ -132,10 +132,7 @@ struct NppResizeSurfacePlanar_Impl final : ResizeSurface_Impl {
 struct ResizeSurfaceSemiPlanar_Impl final : ResizeSurface_Impl {
   ResizeSurfaceSemiPlanar_Impl(int gpu_id, CUstream str, Pixel_Format format)
       : ResizeSurface_Impl(format, gpu_id, str) {
-    m_cvt_nv12_yuv420 =
-        std::make_unique<ConvertSurface>(NV12, YUV420, gpu_id, str);
-    m_cvt_yuv420_nv12 =
-        std::make_unique<ConvertSurface>(YUV420, NV12, gpu_id, str);
+    m_converter = std::make_unique<ConvertSurface>(gpu_id, str);
     m_resizer = std::make_unique<ResizeSurface>(YUV420, gpu_id, str);
   }
 
@@ -158,10 +155,8 @@ struct ResizeSurfaceSemiPlanar_Impl final : ResizeSurface_Impl {
     }
 
     // Convert from NV12 to YUV420;
-    m_cvt_nv12_yuv420->SetInput((Token*)&src, 0U);
-    m_cvt_nv12_yuv420->SetInput((Token*)m_src_yuv420.get(), 1U);
     if (TaskExecStatus::TASK_EXEC_SUCCESS !=
-        m_cvt_nv12_yuv420->Execute().m_status) {
+        m_converter->Run(src, *m_src_yuv420.get()).m_status) {
       return s_fail;
     }
 
@@ -173,10 +168,8 @@ struct ResizeSurfaceSemiPlanar_Impl final : ResizeSurface_Impl {
     }
 
     // Convert back to NV12;
-    m_cvt_yuv420_nv12->SetInput((Token*)m_dst_yuv420.get(), 0U);
-    m_cvt_yuv420_nv12->SetInput((Token*)&dst, 1U);
     if (TaskExecStatus::TASK_EXEC_SUCCESS !=
-        m_cvt_yuv420_nv12->Execute().m_status) {
+        m_converter->Run(*m_dst_yuv420.get(), dst).m_status) {
       return s_fail;
     }
 
@@ -191,8 +184,7 @@ struct ResizeSurfaceSemiPlanar_Impl final : ResizeSurface_Impl {
   std::unique_ptr<Surface> m_src_yuv420;
   std::unique_ptr<Surface> m_dst_yuv420;
 
-  std::unique_ptr<ConvertSurface> m_cvt_nv12_yuv420;
-  std::unique_ptr<ConvertSurface> m_cvt_yuv420_nv12;
+  std::unique_ptr<ConvertSurface> m_converter;
 };
 
 struct NppResizeSurfacePacked32F3C_Impl final : ResizeSurface_Impl {

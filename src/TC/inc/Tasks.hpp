@@ -177,30 +177,27 @@ private:
   CUstream m_stream;
 };
 
-class TC_CORE_EXPORT ConvertSurface final : public Task {
+class TC_CORE_EXPORT ConvertSurface {
 public:
   ConvertSurface() = delete;
   ConvertSurface(const ConvertSurface& other) = delete;
   ConvertSurface& operator=(const ConvertSurface& other) = delete;
 
-  ~ConvertSurface();
-  ConvertSurface(Pixel_Format src, Pixel_Format dst, int gpu_id, CUstream str);
+  ~ConvertSurface() = default;
+  ConvertSurface(int gpu_id, CUstream str);
 
-  TaskExecDetails Run() final;
+  TaskExecDetails
+  Run(Surface& src, Surface& dst,
+      std::optional<ColorspaceConversionContext> cc_ctx = std::nullopt);
 
   static std::list<std::pair<Pixel_Format, Pixel_Format>> const&
   GetSupportedConversions();
 
 private:
-  /* 0) Source Surface.
-   * 1) Destination Surface.
-   * 2) Colorspace conversion context.
-   */
-  static const uint32_t numInputs = 3U;
-  /* 0) Task exec details.
-   */
-  static const uint32_t numOutputs = 1U;
-  struct NppConvertSurface_Impl* pImpl;
+  int m_gpu_id;
+  CUstream m_stream;
+  NppStreamContext m_npp_ctx;
+  std::unique_ptr<SurfacePlane> m_scratch;
 };
 
 class TC_CORE_EXPORT ConvertFrame final : public Task {

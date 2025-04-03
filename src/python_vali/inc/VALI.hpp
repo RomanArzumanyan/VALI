@@ -78,15 +78,13 @@ public:
 
 class PySurfaceConverter {
   std::unique_ptr<ConvertSurface> upConverter = nullptr;
-  std::unique_ptr<Buffer> upCtxBuffer = nullptr;
 
 public:
-  PySurfaceConverter(Pixel_Format src, Pixel_Format dst, int gpu_id);
+  PySurfaceConverter(int gpu_id);
 
-  PySurfaceConverter(Pixel_Format src, Pixel_Format dst, int gpu_id,
-                     CUstream str);
-  PySurfaceConverter(Pixel_Format src, Pixel_Format dst, int gpu_id, size_t str)
-      : PySurfaceConverter(src, dst, gpu_id, (CUstream)str) {}
+  PySurfaceConverter(int gpu_id, CUstream str);
+  PySurfaceConverter(int gpu_id, size_t str)
+      : PySurfaceConverter(gpu_id, (CUstream)str) {}
 
   bool Run(Surface& src, Surface& dst,
            std::optional<ColorspaceConversionContext> context,
