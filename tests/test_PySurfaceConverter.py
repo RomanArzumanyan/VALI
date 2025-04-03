@@ -68,10 +68,7 @@ class TestSurfaceConverter(unittest.TestCase):
         pyDec = vali.PyDecoder(
             input=gtInfo.uri, opts={}, gpu_id=0)
 
-        nvCvt = vali.PySurfaceConverter(
-            vali.PixelFormat.NV12,
-            vali.PixelFormat.RGB,
-            gpu_id=0)
+        nvCvt = vali.PySurfaceConverter(gpu_id=0)
 
         # NV12 > RGB NPP conversion doesn't support BT601 + MPEG params.
         cc_ctx = vali.ColorspaceConversionContext(
@@ -110,8 +107,6 @@ class TestSurfaceConverter(unittest.TestCase):
             input=gtInfo.uri, opts={}, gpu_id=0)
 
         nvCvt = vali.PySurfaceConverter(
-            vali.PixelFormat.NV12,
-            vali.PixelFormat.RGB,
             gpu_id=0,
             stream=pyDec.Stream)
 
@@ -150,10 +145,7 @@ class TestSurfaceConverter(unittest.TestCase):
             nvUpl = vali.PyFrameUploader(
                 gpu_id=0)
 
-            toPLN = vali.PySurfaceConverter(
-                vali.PixelFormat.RGB,
-                vali.PixelFormat.RGB_PLANAR,
-                gpu_id=0)
+            toPLN = vali.PySurfaceConverter(gpu_id=0)
 
             nvDwn = vali.PySurfaceDownloader(gpu_id=0)
 
@@ -231,10 +223,7 @@ class TestSurfaceConverter(unittest.TestCase):
 
         nvUpl = vali.PyFrameUploader(gpu_id=0)
 
-        nvCvt = vali.PySurfaceConverter(
-            vali.PixelFormat.NV12,
-            vali.PixelFormat.RGB,
-            gpu_id=0)
+        nvCvt = vali.PySurfaceConverter(gpu_id=0)
 
         nvDwn = vali.PySurfaceDownloader(gpu_id=0)
 
@@ -314,10 +303,7 @@ class TestSurfaceConverter(unittest.TestCase):
         nvUpl = vali.PyFrameUploader(
             gpu_id=0)
 
-        nvCvt = vali.PySurfaceConverter(
-            vali.PixelFormat.P10,
-            vali.PixelFormat.NV12,
-            gpu_id=0)
+        nvCvt = vali.PySurfaceConverter(gpu_id=0)
 
         nvDwn = vali.PySurfaceDownloader(gpu_id=0)
 

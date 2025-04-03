@@ -79,10 +79,7 @@ class TestJpegEncoder(unittest.TestCase):
             opts={},
             gpu_id=0)
 
-        nvCvt = vali.PySurfaceConverter(
-            src_format=vali.PixelFormat.NV12,
-            dst_format=vali.PixelFormat.RGB,
-            gpu_id=0)
+        nvCvt = vali.PySurfaceConverter(gpu_id=0)
 
         nvJpg = vali.PyNvJpegEncoder(gpu_id=0)
         nvJpgCtx = nvJpg.Context(
@@ -169,8 +166,7 @@ class TestJpegEncoder(unittest.TestCase):
 
         nvUpl = vali.PyFrameUploader(gpu_id=0)
         nvDwn = vali.PySurfaceDownloader(gpu_id=0)
-        nvCvt = vali.PySurfaceConverter(
-            vali.PixelFormat.NV12, dst_fmt, gpu_id=0)
+        nvCvt = vali.PySurfaceConverter(gpu_id=0)
         nvJpg = vali.PyNvJpegEncoder(gpu_id=0)
         nvJpgCtx = nvJpg.Context(
             compression=100,

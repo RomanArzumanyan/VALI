@@ -195,22 +195,7 @@ class TestTorchSegmentation(unittest.TestCase):
                 gpu_id=0)
         ]
 
-        pyCvt = [
-            vali.PySurfaceConverter(
-                pyDec.Format,
-                vali.PixelFormat.RGB,
-                gpu_id=0),
-
-            vali.PySurfaceConverter(
-                vali.PixelFormat.RGB,
-                vali.PixelFormat.RGB_32F,
-                gpu_id=0),
-
-            vali.PySurfaceConverter(
-                vali.PixelFormat.RGB_32F,
-                vali.PixelFormat.RGB_32F_PLANAR,
-                gpu_id=0)
-        ]
+        pyCvt = vali.PySurfaceConverter(gpu_id=0)
 
         # Decoding cycle + inference on video frames.
         detections = []
@@ -223,9 +208,9 @@ class TestTorchSegmentation(unittest.TestCase):
 
             # Go through color conversion chain
             event = None
-            for i in range(0, len(pyCvt)):
-                is_last_conv = i == len(pyCvt) - 1
-                success, details, event = pyCvt[i].RunAsync(
+            for i in range(0, len(surfaces) - 1):
+                is_last_conv = (i == len(surfaces) - 2)
+                success, _, event = pyCvt.RunAsync(
                     src=surfaces[i], dst=surfaces[i+1], record_event=is_last_conv)
                 if not success:
                     break

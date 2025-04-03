@@ -70,10 +70,7 @@ class TestSurface(unittest.TestCase):
             pyDec = vali.PyDecoder(
                 input=gtInfo.uri, opts={}, gpu_id=0)
 
-            nvCvt = vali.PySurfaceConverter(
-                vali.PixelFormat.NV12,
-                vali.PixelFormat.RGB,
-                gpu_id=0)
+            nvCvt = vali.PySurfaceConverter(gpu_id=0)
 
             nvDwn = vali.PySurfaceDownloader(gpu_id=0)
 
@@ -134,10 +131,7 @@ class TestSurface(unittest.TestCase):
                 opts={},
                 gpu_id=0)
 
-            nvCvt = vali.PySurfaceConverter(
-                vali.PixelFormat.NV12,
-                vali.PixelFormat.RGB,
-                gpu_id=0)
+            nvCvt = vali.PySurfaceConverter(gpu_id=0)
 
             nvDwn = vali.PySurfaceDownloader(gpu_id=0)
 
