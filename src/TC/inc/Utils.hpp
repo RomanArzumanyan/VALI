@@ -27,6 +27,7 @@ extern "C" {
 #include <libavutil/dict.h>
 #include <libavutil/error.h>
 #include <libavutil/pixfmt.h>
+#include <libavutil/rational.h>
 
 struct AVFrame;
 }
@@ -130,3 +131,5 @@ size_t getBufferSize(int width, int height, AVPixelFormat format,
 void ThrowOnAvError(int res, const std::string& msg);
 
 void ThrowOnAvError(int res, const std::string& msg, AVDictionary** options);
+
+double FromAVRational(AVRational &val);

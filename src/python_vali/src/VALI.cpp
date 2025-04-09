@@ -437,6 +437,46 @@ PYBIND11_MODULE(_python_vali, m) {
         :rtype: python_vali.CudaBuffer
     )pbdoc");
 
+  py::class_<StreamParams, shared_ptr<StreamParams>>(m, "StreamParams",
+                                                     "Stream parameters")
+      .def(py::init<>())
+      .def_readwrite("width", &StreamParams::width)
+      .def_readwrite("height", &StreamParams::height)
+      .def_readwrite("fourcc", &StreamParams::fourcc)
+      .def_readwrite("num_frames", &StreamParams::num_frames)
+      .def_readwrite("start_time", &StreamParams::start_time)
+      .def_readwrite("bit_rate", &StreamParams::bit_rate)
+      .def_readwrite("profile", &StreamParams::profile)
+      .def_readwrite("level", &StreamParams::level)
+      .def_readwrite("codec_id", &StreamParams::codec_id)
+      .def_readwrite("color_space", &StreamParams::color_space)
+      .def_readwrite("color_range", &StreamParams::color_range)
+      .def_readwrite("fps", &StreamParams::fps)
+      .def_readwrite("avg_fps", &StreamParams::avg_fps)
+      .def_readwrite("time_base", &StreamParams::time_base)
+      .def_readwrite("start_time_sec", &StreamParams::start_time_sec)
+      .def_readwrite("duration_sec", &StreamParams::duration_sec)
+      .def("__repr__", [](StreamParams& self) {
+        stringstream ss;
+        ss << "width:           " << self.width << "\n";
+        ss << "height:          " << self.height << "\n";
+        ss << "fourcc:          " << self.fourcc << "\n";
+        ss << "num_frames:      " << self.num_frames << "\n";
+        ss << "start_time:      " << self.start_time << "\n";
+        ss << "bit_rate:        " << self.bit_rate << "\n";
+        ss << "profile:         " << self.profile << "\n";
+        ss << "profile:         " << self.level << "\n";
+        ss << "codec_id:        " << self.codec_id << "\n";
+        ss << "color_space:     " << self.color_space << "\n";
+        ss << "color_range:     " << self.color_range << "\n";
+        ss << "fps:             " << self.fps << "\n";
+        ss << "avg_fps:         " << self.avg_fps << "\n";
+        ss << "time_base:       " << self.time_base << "\n";
+        ss << "start_time_sec:  " << self.start_time_sec << "\n";
+        ss << "duration_sec:    " << self.duration_sec << "\n";
+        return ss.str();
+      });
+
   m.def("GetNumGpus", &CudaResMgr::GetNumGpus, R"pbdoc(
         Get number of available GPUs.
     )pbdoc");

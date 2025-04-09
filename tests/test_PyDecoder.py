@@ -84,6 +84,16 @@ class TestDecoder(unittest.TestCase):
             return self.ptsInfo
         else:
             return None
+        
+    def test_probe(self):
+        gt = self.gtByName("basic")
+        info = vali.PyDecoder.Probe(gt.uri)
+        self.assertEqual(len(info), 1)
+
+        str_info = info[0]
+        self.assertEqual(gt.width, str_info.width)
+        self.assertEqual(gt.height, str_info.height)
+        self.assertEqual(gt.bitrate, str_info.bit_rate)
 
     @parameterized.expand([
         ["avc_8bit", "basic",],

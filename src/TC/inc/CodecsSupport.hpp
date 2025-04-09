@@ -45,30 +45,53 @@ struct PacketData {
   uint64_t duration;
 };
 
-struct VideoContext {
-  int64_t width = 0;
-  int64_t height = 0;
-  int64_t profile = 0;
-  int64_t level = 0;
-  int64_t delay = 0;
-  int64_t gop_size = 0;
-  int64_t num_frames = 0;
-  int64_t is_vfr = 0;
-  int64_t num_streams = 0;
-  int64_t stream_index = 0;
-  int64_t host_frame_size = 0;
-  int64_t bit_rate = 0;
+/// @brief Video stream level parameters
+struct StreamParams {
+  int width;
+  int height;
 
-  double frame_rate = .0;
-  double avg_frame_rate = .0;
-  double time_base = .0;
-  double start_time = .0;
-  double duration = .0;
+  uint32_t fourcc;
 
-  Pixel_Format format = UNDEFINED;
+  int64_t num_frames;
+  int64_t start_time;
+  int64_t bit_rate;
+  int64_t profile;
+  int64_t level;
+  int64_t codec_id;
 
   ColorSpace color_space = UNSPEC;
   ColorRange color_range = UDEF;
+
+  double fps;
+  double avg_fps;
+  double time_base;
+  double start_time_sec;
+  double duration_sec;
+};
+
+/// @brief Parameters of video codec after it's open
+struct VideoCodecParams {
+  int width;
+  int height;
+
+  int64_t start_time;
+  int64_t gop_size;
+  int64_t delay;
+  int64_t codec_id;
+
+  Pixel_Format format = UNDEFINED;
+};
+
+/// @brief Parameters of PyDecoder class instance
+struct VideoContext {
+  /// @brief selected video stream index
+  int64_t stream_index = 0;
+
+  /// @brief total number of streams
+  int64_t num_streams = 0;
+
+  StreamParams stream_params;
+  VideoCodecParams codec_params;
 
   metadata_dict metadata = {};
 };
@@ -77,7 +100,7 @@ struct AudioContext {
   // Reserved for future use;
 };
 
-struct MuxingParams {
+struct Params {
   VideoContext videoContext;
   AudioContext audioContext;
 };
