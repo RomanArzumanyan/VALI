@@ -114,7 +114,10 @@ public:
 
   TaskExecDetails GetSideData(AVFrameSideDataType data_type, Buffer& out);
 
-  void GetParams(MuxingParams& params);
+  void GetParams(Params& params);
+  static void Probe(const char* URL, NvDecoderClInterface& cli_iface,
+                    std::list<StreamParams>& info,
+                    std::shared_ptr<AVIOContext> p_io_ctx = nullptr);
   uint32_t GetHostFrameSize() const;
   bool IsAccelerated() const;
   bool IsVFR() const;

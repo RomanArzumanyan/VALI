@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     skbuild.setup(
         name="python_vali",
-        version="4.4.0",
+        version="4.5.0",
         description="Video Processing Library with full NVENC/NVDEC hardware acceleration",
         long_description=open('README.md').read(),
         long_description_content_type='text/markdown',
@@ -67,7 +67,8 @@ if __name__ == "__main__":
         package_data={"python_vali": ["__init__.pyi"]},
         package_dir={"": "src"},
         cmake_install_dir="src",
-        # cmake_args=["-DTRACK_TOKEN_ALLOCATIONS=ON"],
-        cmake_args=["-DCMAKE_POLICY_VERSION_MINIMUM=3.5"]
-        # cmake_args=["-DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_BUILD_TYPE=Debug"]
+        cmake_args=[
+            f"-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
+            # f"-DCMAKE_BUILD_TYPE=Debug"
+        ]
     )

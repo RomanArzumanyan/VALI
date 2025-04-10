@@ -170,131 +170,130 @@ std::vector<MotionVector> PyDecoder::GetMotionVectors() {
 }
 
 uint32_t PyDecoder::Width() const {
-  MuxingParams params;
+  Params params;
   upDecoder->GetParams(params);
-  return params.videoContext.width;
+  return params.videoContext.codec_params.width;
 };
 
 uint32_t PyDecoder::Height() const {
-  MuxingParams params;
+  Params params;
   upDecoder->GetParams(params);
-  return params.videoContext.height;
+  return params.videoContext.codec_params.height;
 };
 
 uint32_t PyDecoder::Level() const {
-  MuxingParams params;
+  Params params;
   upDecoder->GetParams(params);
-  return params.videoContext.level;
+  return params.videoContext.stream_params.level;
 };
 
 uint32_t PyDecoder::Profile() const {
-  MuxingParams params;
+  Params params;
   upDecoder->GetParams(params);
-  return params.videoContext.profile;
+  return params.videoContext.stream_params.profile;
 };
 
 uint32_t PyDecoder::Delay() const {
-  MuxingParams params;
+  Params params;
   upDecoder->GetParams(params);
-  return params.videoContext.delay;
+  return params.videoContext.codec_params.delay;
 };
 
 uint32_t PyDecoder::GopSize() const {
-  MuxingParams params;
+  Params params;
   upDecoder->GetParams(params);
-  return params.videoContext.gop_size;
+  return params.videoContext.codec_params.gop_size;
 };
 
 uint32_t PyDecoder::Bitrate() const {
-  MuxingParams params;
+  Params params;
   upDecoder->GetParams(params);
-  return params.videoContext.bit_rate;
+  return params.videoContext.stream_params.bit_rate;
 };
 
 uint32_t PyDecoder::NumFrames() const {
-  MuxingParams params;
+  Params params;
   upDecoder->GetParams(params);
-  return params.videoContext.num_frames;
+  return params.videoContext.stream_params.num_frames;
 };
 
 uint32_t PyDecoder::NumStreams() const {
-  MuxingParams params;
+  Params params;
   upDecoder->GetParams(params);
   return params.videoContext.num_streams;
 };
 
 uint32_t PyDecoder::StreamIndex() const {
-  MuxingParams params;
+  Params params;
   upDecoder->GetParams(params);
   return params.videoContext.stream_index;
 };
 
 uint32_t PyDecoder::HostFrameSize() const {
-  MuxingParams params;
-  upDecoder->GetParams(params);
-  return params.videoContext.host_frame_size;
+  return upDecoder->GetHostFrameSize();
 };
 
 double PyDecoder::Framerate() const {
-  MuxingParams params;
+  Params params;
   upDecoder->GetParams(params);
-  return params.videoContext.frame_rate;
+  return params.videoContext.stream_params.fps;
 };
 
 ColorSpace PyDecoder::Color_Space() const {
-  MuxingParams params;
+  Params params;
   upDecoder->GetParams(params);
-  return params.videoContext.color_space;
+  return params.videoContext.stream_params.color_space;
 };
 
 ColorRange PyDecoder::Color_Range() const {
-  MuxingParams params;
+  Params params;
   upDecoder->GetParams(params);
-  return params.videoContext.color_range;
+  return params.videoContext.stream_params.color_range;
 };
 
 double PyDecoder::AvgFramerate() const {
-  MuxingParams params;
+  Params params;
   upDecoder->GetParams(params);
-  return params.videoContext.avg_frame_rate;
+  return params.videoContext.stream_params.avg_fps;
 };
 
 double PyDecoder::Timebase() const {
-  MuxingParams params;
+  Params params;
   upDecoder->GetParams(params);
-  return params.videoContext.time_base;
+  return params.videoContext.stream_params.time_base;
 };
 
 double PyDecoder::StartTime() const {
-  MuxingParams params;
+  Params params;
   upDecoder->GetParams(params);
-  return params.videoContext.start_time;
+  return params.videoContext.stream_params.start_time_sec;
 };
 
 double PyDecoder::Duration() const {
-  MuxingParams params;
+  Params params;
   upDecoder->GetParams(params);
-  return params.videoContext.duration;
+  return params.videoContext.stream_params.duration_sec;
 };
 
 Pixel_Format PyDecoder::PixelFormat() const {
-  MuxingParams params;
+  Params params;
   upDecoder->GetParams(params);
-  return params.videoContext.format;
+  return params.videoContext.codec_params.format;
 };
 
 bool PyDecoder::IsAccelerated() const { return upDecoder->IsAccelerated(); }
 
 bool PyDecoder::IsVFR() const {
-  MuxingParams params;
+  Params params;
   upDecoder->GetParams(params);
-  return params.videoContext.is_vfr;
+  return params.videoContext.stream_params.fps !=
+         params.videoContext.stream_params.avg_fps;
 }
 
 CUstream PyDecoder::GetStream() const { return upDecoder->GetStream(); }
 
 metadata_dict PyDecoder::Metadata() {
-  MuxingParams params;
+  Params params;
   upDecoder->GetParams(params);
   return params.videoContext.metadata;
 }
@@ -323,7 +322,7 @@ void Init_PyDecoder(py::module& m) {
            R"pbdoc(
         Constructor method.
 
-        :param buffered_reader: io.BufferedReader object
+        :param buffered_reader: io.BufferedReader-like object that has 'read' attribute.
         :param opts: Options that will be passed to libavcodec API.
         Also include special 'preferred_width' option to select a 
         stream with desired width from multiple video streams.
@@ -331,8 +330,8 @@ void Init_PyDecoder(py::module& m) {
         :param gpu_id: GPU ID. Default value is 0. Pass negative value to use CPU decoder.
     )pbdoc")
       .def_property_readonly("Mode", &PyDecoder::GetMode,
-           py::call_guard<py::gil_scoped_release>(),
-           R"pbdoc(
+                             py::call_guard<py::gil_scoped_release>(),
+                             R"pbdoc(
           Get decoder operation mode
     )pbdoc")
       .def("SetMode", &PyDecoder::SetMode,
@@ -626,6 +625,21 @@ void Init_PyDecoder(py::module& m) {
       .def_property_readonly("Metadata", &PyDecoder::Metadata,
                              R"pbdoc(
         Return dictionary with video file metadata.
+    )pbdoc")
+      .def_static(
+          "Probe",
+          [](const string& input) {
+            std::list<StreamParams> info;
+            NvDecoderClInterface cli_iface({});
+            DecodeFrame::Probe(input.c_str(), cli_iface, info);
+            return info;
+          },
+          py::arg("input"), R"pbdoc(
+        Probe input without decoding.
+        Information about streams will be returned without codec initialization.
+
+        :param input: path to input file
+        :return: list of structures with stream parameters
     )pbdoc");
 
   m.attr("NO_PTS") = py::int_(AV_NOPTS_VALUE);

@@ -315,5 +315,12 @@ unsigned long TimeoutHandler::GetDefaultTimeout() {
 
 void TimeoutHandler::Reset() { m_last_time = std::chrono::steady_clock::now(); }
 
+double FromAVRational(AVRational& val) {
+  if (val.den == 0)
+    return -1.0;
+
+  return av_q2d(val);
+}
+
 unsigned long TimeoutHandler::s_default_timeout = 3000U;
 std::mutex TimeoutHandler::s_lock;

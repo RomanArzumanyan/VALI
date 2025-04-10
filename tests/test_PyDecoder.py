@@ -66,6 +66,7 @@ class TestDecoder(unittest.TestCase):
         self.p10Info = tc.GroundTruth(**self.data["hevc10_p10"])
         self.ptsInfo = tc.GroundTruth(**self.data["pts_increase_check"])
         self.rotInfo = tc.GroundTruth(**self.data["rotation_90_deg"])
+        self.multiresInfo = tc.GroundTruth(**self.data["multires"])
 
         self.log = logging.getLogger(__name__)
 
@@ -82,8 +83,64 @@ class TestDecoder(unittest.TestCase):
             return self.p10Info
         elif name == "pts_increase_check":
             return self.ptsInfo
+        elif name == "multires":
+            return self.multiresInfo
         else:
             return None
+        
+    def test_probe(self):
+        """
+        This test checks PyDecoder probe functionality.
+        Input with 2 video tracks is used for that.
+        """
+        gt = self.gtByName("multires")
+        info = vali.PyDecoder.Probe(gt.uri)
+
+        # GT file has 1 audio stream which is ignored by PyDecoder
+        self.assertEqual(len(info), gt.num_streams - 1)
+
+        # Check first video stream, must be full resolution
+        str_info = info[0]
+        self.assertEqual(gt.width, str_info.width)
+        self.assertEqual(gt.height, str_info.height)
+
+        # Second video stream, must be 2x smaller
+        str_info = info[1]
+        self.assertEqual(gt.width * gt.res_change_factor, 1.0 * str_info.width)
+        self.assertEqual(gt.height * gt.res_change_factor,
+                         1.0 * str_info.height)
+
+
+    @parameterized.expand(tc.getDevices())    
+    def test_preferred_width(self, device_name: str, device_id: int):
+        """
+        This test checks stream selection by preferred width.
+        It's done by choosing a video track and decoding a single video frame
+        from it.
+
+        Args:
+            device_name (str): device name
+            device_id (int): gpu ID or -1 if run on CPU
+        """
+
+        gt = self.gtByName("multires")
+        for info in vali.PyDecoder.Probe(gt.uri):
+            py_dec = vali.PyDecoder(
+                gt.uri, {"preferred_width": str(info.width)}, gpu_id=device_id)
+
+            self.assertEqual(py_dec.Width, info.width)
+            self.assertEqual(py_dec.Height, info.height)
+
+            if py_dec.IsAccelerated:
+                surf = vali.Surface.Make(
+                    py_dec.Format, py_dec.Width, py_dec.Height, gpu_id=0)
+                success, _ = py_dec.DecodeSingleSurface(surf)
+                self.assertTrue(success)
+            else:
+                frame = np.ndarray(
+                    dtype=np.uint8, shape=(py_dec.HostFrameSize))
+                success, _ = py_dec.DecodeSingleFrame(frame)
+                self.assertTrue(success)
 
     @parameterized.expand([
         ["avc_8bit", "basic",],

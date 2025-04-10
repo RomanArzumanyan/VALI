@@ -157,5 +157,14 @@
         "pix_fmt": "PixelFormat.NV12",
         "num_frames": 30,
         "display_rotation": 90.0
+    },
+    "multires": {
+        "uri": "data/test_multires.mkv",
+        "width": 848,
+        "height": 464,
+        "res_change_factor": 0.5,
+        "num_streams" : 3,
+        "pix_fmt": "PixelFormat.NV12",
+        "num_frames": 96
     }
 }

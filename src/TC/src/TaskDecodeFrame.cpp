@@ -146,6 +146,9 @@ struct FfmpegDecodeFrame_Impl {
   // Flag which signals resolution change
   bool m_res_change = false;
 
+  // True if codec is opened, false otherwise
+  bool m_codec_open = false;
+
   /* These are handy counters for debug:
    *
    * Packets read.
@@ -165,9 +168,7 @@ struct FfmpegDecodeFrame_Impl {
   // Decoder operation mode
   DecodeMode m_mode = DecodeMode::ALL_FRAMES;
 
-  void SetMode(DecodeMode new_mode) {
-    m_mode = new_mode;
-  }
+  void SetMode(DecodeMode new_mode) { m_mode = new_mode; }
 
   DecodeMode GetMode() const { return m_mode; }
 
@@ -184,9 +185,16 @@ struct FfmpegDecodeFrame_Impl {
     return -1;
   }
 
+  /// @brief Constructor
+  /// @param URL input url
+  /// @param ffmpeg_options list of options you would pass to ffmpeg cli
+  /// @param gpu_id gpu id, -1 for cpu
+  /// @param p_io_ctx custom IO context
+  /// @param probe if true, only video streams information will be collected
   FfmpegDecodeFrame_Impl(const char* URL,
                          std::map<std::string, std::string>& ffmpeg_options,
-                         int gpu_id, std::shared_ptr<AVIOContext> p_io_ctx)
+                         int gpu_id, std::shared_ptr<AVIOContext> p_io_ctx,
+                         bool probe = false)
       : m_io_ctx(p_io_ctx) {
 
     // Extract preferred width from options because it's not ffmpeg option.
@@ -292,6 +300,10 @@ struct FfmpegDecodeFrame_Impl {
       throw std::runtime_error(ss.str());
     }
 
+    if (probe) {
+      return;
+    }
+
     OpenCodec(m_gpu_id >= 0);
 
     m_frame = std::shared_ptr<AVFrame>(av_frame_alloc(), [](void* p) {
@@ -303,6 +315,22 @@ struct FfmpegDecodeFrame_Impl {
       av_packet_unref((AVPacket*)p);
       av_packet_free((AVPacket**)&p);
     });
+  }
+
+  int GetWidth() const {
+    if (m_frame && m_frame->width > 0) {
+      return m_frame->width;
+    }
+
+    return m_avc_ctx->width;
+  }
+
+  int GetHeight() const {
+    if (m_frame && m_frame->height > 0) {
+      return m_frame->height;
+    }
+
+    return m_avc_ctx->height;
   }
 
   // Saves current resolution
@@ -324,6 +352,7 @@ struct FfmpegDecodeFrame_Impl {
     }
 
     m_avc_ctx.reset();
+    m_codec_open = false;
   }
 
   /* Allocates video codec contet and opens it.
@@ -439,6 +468,7 @@ struct FfmpegDecodeFrame_Impl {
     ThrowOnAvError(
         res, "Failed to open codec " +
                  std::string(av_get_media_type_string(AVMEDIA_TYPE_VIDEO)));
+    m_codec_open = true;
   }
 
   CUstream GetStream() { return m_stream; }
@@ -733,79 +763,92 @@ struct FfmpegDecodeFrame_Impl {
     }
   }
 
-  int GetVideoStrIdx() const { return m_stream_idx; }
+  /// @brief Get video stream parameters. This method can be called without
+  /// any codec being opened.
+  ///
+  /// @param idx video stream index
+  /// @param params structure to put parameters to
+  /// @return true in case of success, false otherwise
+  bool GetStreamParams(int idx, StreamParams& params) const {
+    if (idx >= GetNumStreams())
+      return false;
 
-  double GetFrameRate() const {
-    return (double)m_fmt_ctx->streams[GetVideoStrIdx()]->r_frame_rate.num /
-           (double)m_fmt_ctx->streams[GetVideoStrIdx()]->r_frame_rate.den;
+    auto stream = m_fmt_ctx->streams[idx];
+    if (!stream)
+      return false;
+
+    auto codecpar = stream->codecpar;
+    if (!codecpar)
+      return false;
+
+    if (AVMEDIA_TYPE_VIDEO != codecpar->codec_type)
+      return false;
+
+    params.width = codecpar->width;
+    params.height = codecpar->height;
+
+    params.fourcc = codecpar->codec_tag;
+
+    params.codec_id = codecpar->codec_id;
+
+    params.color_space = fromFfmpegColorSpace(codecpar->color_space);
+    params.color_range = fromFfmpegColorRange(codecpar->color_range);
+
+    params.num_frames = stream->nb_frames;
+    params.start_time = stream->start_time;
+    params.bit_rate = codecpar->bit_rate;
+    params.profile = codecpar->profile;
+    params.level = codecpar->level;
+
+    params.fps = FromAVRational(stream->r_frame_rate);
+    params.avg_fps = FromAVRational(stream->avg_frame_rate);
+    params.time_base = FromAVRational(stream->time_base);
+    params.start_time_sec = double(stream->start_time) / double(AV_TIME_BASE);
+    params.duration_sec = double(stream->duration) / double(AV_TIME_BASE);
+
+    return true;
   }
 
-  double GetAvgFrameRate() const {
-    return (double)m_fmt_ctx->streams[GetVideoStrIdx()]->avg_frame_rate.num /
-           (double)m_fmt_ctx->streams[GetVideoStrIdx()]->avg_frame_rate.den;
+  /// @brief Get parameters of open video codec
+  /// @param params structure to put parameters to
+  /// @return true in case of success, false otherwise
+  bool GetCodecParams(VideoCodecParams& params) const {
+    if (!m_codec_open)
+      return false;
+
+    params.width = GetWidth();
+    params.height = GetHeight();
+
+    params.start_time = m_fmt_ctx->start_time;
+    params.gop_size = m_avc_ctx->gop_size;
+    params.delay = m_avc_ctx->delay;
+
+    params.codec_id = m_avc_ctx->codec_id;
+    params.format = GetPixelFormat();
+
+    return true;
   }
 
-  double GetTimeBase() const {
-    return (double)m_fmt_ctx->streams[GetVideoStrIdx()]->time_base.num /
-           (double)m_fmt_ctx->streams[GetVideoStrIdx()]->time_base.den;
-  }
+  metadata_dict GetMetaData() const {
+    metadata_dict metadata;
+    std::map<std::string, AVDictionary*> sources = {
+        {"context", m_fmt_ctx->metadata},
+        {"video_stream", m_fmt_ctx->streams[GetVideoStrIdx()]->metadata}};
 
-  int GetWidth() const {
-    if (m_frame && m_frame->width > 0) {
-      return m_frame->width;
+    for (auto& source : sources) {
+      auto& name = source.first;
+      auto& dict = source.second;
+
+      auto tag = av_dict_iterate(dict, nullptr);
+      while (tag) {
+        metadata[name][tag->key] = tag->value;
+        const auto prev_tag = tag;
+        tag = av_dict_iterate(dict, prev_tag);
+      }
     }
 
-    return m_avc_ctx->width;
+    return metadata;
   }
-
-  int GetHeight() const {
-    if (m_frame && m_frame->height > 0) {
-      return m_frame->height;
-    }
-
-    return m_avc_ctx->height;
-  }
-
-  AVCodecID GetCodecId() const { return m_avc_ctx->codec_id; }
-
-  int64_t GetNumFrames() const {
-    return m_fmt_ctx->streams[GetVideoStrIdx()]->nb_frames;
-  }
-
-  int64_t GetStartTime() const { return m_fmt_ctx->start_time; }
-
-  int64_t GetStreamStartTime() const {
-    return m_fmt_ctx->streams[GetVideoStrIdx()]->start_time;
-  }
-
-  double GetStartTimeS() const {
-    return double(GetStreamStartTime()) / double(AV_TIME_BASE);
-  }
-
-  double GetDuration() const {
-    return double(m_fmt_ctx->streams[GetVideoStrIdx()]->duration) /
-           double(AV_TIME_BASE);
-  }
-
-  int64_t GetBitRate() const {
-    return m_fmt_ctx->streams[GetVideoStrIdx()]->codecpar->bit_rate;
-  }
-
-  int64_t GetProfile() const {
-    return m_fmt_ctx->streams[GetVideoStrIdx()]->codecpar->profile;
-  }
-
-  int64_t GetLevel() const {
-    return m_fmt_ctx->streams[GetVideoStrIdx()]->codecpar->level;
-  }
-
-  int64_t GetDelay() const { return m_avc_ctx->delay; }
-
-  int64_t GetNumStreams() const { return m_fmt_ctx->nb_streams; }
-
-  int64_t GetGopSize() const { return m_avc_ctx->gop_size; }
-
-  int64_t GetStreamIndex() const { return m_stream_idx; }
 
   Pixel_Format GetPixelFormat() const {
     auto const format =
@@ -843,33 +886,22 @@ struct FfmpegDecodeFrame_Impl {
     }
   }
 
-  AVColorSpace GetColorSpace() const {
-    return m_fmt_ctx->streams[GetVideoStrIdx()]->codecpar->color_space;
+  int GetVideoStrIdx() const { return m_stream_idx; }
+
+  int64_t GetNumStreams() const { return m_fmt_ctx->nb_streams; }
+
+  double GetFrameRate() const {
+    return FromAVRational(m_fmt_ctx->streams[GetVideoStrIdx()]->r_frame_rate);
   }
 
-  AVColorRange GetColorRange() const {
-    return m_fmt_ctx->streams[GetVideoStrIdx()]->codecpar->color_range;
+  double GetAvgFrameRate() const {
+    return FromAVRational(m_fmt_ctx->streams[GetVideoStrIdx()]->avg_frame_rate);
   }
 
-  metadata_dict GetMetaData() const {
-    metadata_dict metadata;
-    std::map<std::string, AVDictionary*> sources = {
-        {"context", m_fmt_ctx->metadata},
-        {"video_stream", m_fmt_ctx->streams[GetVideoStrIdx()]->metadata}};
+  int64_t GetGopSize() const { return m_avc_ctx->gop_size; }
 
-    for (auto& source : sources) {
-      auto& name = source.first;
-      auto& dict = source.second;
-
-      auto tag = av_dict_iterate(dict, nullptr);
-      while (tag) {
-        metadata[name][tag->key] = tag->value;
-        const auto prev_tag = tag;
-        tag = av_dict_iterate(dict, prev_tag);
-      }
-    }
-
-    return metadata;
+  int64_t GetStreamStartTime() const {
+    return m_fmt_ctx->streams[GetVideoStrIdx()]->start_time;
   }
 
   bool IsVFR() const { return GetFrameRate() != GetAvgFrameRate(); }
@@ -1013,47 +1045,13 @@ uint32_t DecodeFrame::GetHostFrameSize() const {
   return pImpl->GetHostFrameSize();
 }
 
-void DecodeFrame::GetParams(MuxingParams& params) {
-  params = MuxingParams();
-
-  params.videoContext.width = pImpl->GetWidth();
-  params.videoContext.height = pImpl->GetHeight();
-  params.videoContext.profile = pImpl->GetProfile();
-  params.videoContext.level = pImpl->GetLevel();
-  params.videoContext.delay = pImpl->GetDelay();
-  params.videoContext.gop_size = pImpl->GetGopSize();
-  params.videoContext.num_frames = pImpl->GetNumFrames();
-  params.videoContext.is_vfr = pImpl->IsVFR();
+void DecodeFrame::GetParams(Params& params) {
   params.videoContext.num_streams = pImpl->GetNumStreams();
-  params.videoContext.duration = pImpl->GetDuration();
-  params.videoContext.stream_index = pImpl->GetStreamIndex();
-  params.videoContext.host_frame_size = pImpl->GetHostFrameSize();
-  params.videoContext.bit_rate = pImpl->GetBitRate();
-
-  params.videoContext.frame_rate = pImpl->GetFrameRate();
-  params.videoContext.avg_frame_rate = pImpl->GetAvgFrameRate();
-  params.videoContext.time_base = pImpl->GetTimeBase();
-  params.videoContext.start_time = pImpl->GetStartTimeS();
-
-  params.videoContext.format = pImpl->GetPixelFormat();
-
-  params.videoContext.color_range =
-      fromFfmpegColorRange(pImpl->GetColorRange());
-
-  switch (pImpl->GetColorSpace()) {
-  case AVCOL_SPC_BT709:
-    params.videoContext.color_space = BT_709;
-    break;
-  case AVCOL_SPC_BT470BG:
-  case AVCOL_SPC_SMPTE170M:
-    params.videoContext.color_space = BT_601;
-    break;
-  default:
-    params.videoContext.color_space = UNSPEC;
-    break;
-  }
-
+  params.videoContext.stream_index = pImpl->GetVideoStrIdx();
   params.videoContext.metadata = pImpl->GetMetaData();
+  pImpl->GetStreamParams(params.videoContext.stream_index,
+                         params.videoContext.stream_params);
+  pImpl->GetCodecParams(params.videoContext.codec_params);
 }
 
 TaskExecDetails DecodeFrame::GetSideData(AVFrameSideDataType data_type,
@@ -1097,3 +1095,20 @@ CUstream DecodeFrame::GetStream() const { return pImpl->GetStream(); }
 void DecodeFrame::SetMode(DecodeMode new_mode) { pImpl->SetMode(new_mode); }
 
 DecodeMode DecodeFrame::GetMode() const { return pImpl->GetMode(); }
+
+void DecodeFrame::Probe(const char* URL, NvDecoderClInterface& cli_iface,
+                        std::list<StreamParams>& info,
+                        std::shared_ptr<AVIOContext> p_io_ctx) {
+
+  std::map<std::string, std::string> ffmpeg_options;
+  cli_iface.GetOptions(ffmpeg_options);
+  FfmpegDecodeFrame_Impl dummy(URL, ffmpeg_options, -1, p_io_ctx, true);
+
+  for (auto i = 0; i < dummy.GetNumStreams(); i++) {
+    StreamParams params = {};
+    // Skip non-video streams
+    if (!dummy.GetStreamParams(i, params))
+      continue;
+    info.push_back(params);
+  }
+}
