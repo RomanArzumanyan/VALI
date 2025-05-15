@@ -69,6 +69,6 @@ if __name__ == "__main__":
         cmake_install_dir="src",
         cmake_args=[
             f"-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
-            # f"-DCMAKE_BUILD_TYPE=Debug"
+            f"-DCMAKE_BUILD_TYPE=Debug"
         ]
     )

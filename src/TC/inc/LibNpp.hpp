@@ -40,6 +40,10 @@ public:
                           NppiRect, Npp8u*, int, NppiSize, NppiRect, int,
                           NppStreamContext>
       nppiResize_8u_C1R_Ctx;
+  static LoadableFunction<LoadNppIg, NppStatus, const Npp16u*, int, NppiSize,
+                          NppiRect, Npp16u*, int, NppiSize, NppiRect, int,
+                          NppStreamContext>
+      nppiResize_16u_C1R_Ctx;
   static LoadableFunction<LoadNppIg, NppStatus, const Npp32f*, int, NppiSize,
                           NppiRect, Npp32f*, int, NppiSize, NppiRect, int,
                           NppStreamContext>

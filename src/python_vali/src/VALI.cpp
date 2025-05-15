@@ -153,6 +153,8 @@ void Init_PyNvJpegEncoder(py::module& m);
 
 void Init_PySurfaceRotator(py::module& m);
 
+void Init_PySurfaceUD(py::module& m);
+
 PYBIND11_MODULE(_python_vali, m) {
 
   py::class_<MotionVector, std::shared_ptr<MotionVector>>(
@@ -511,6 +513,8 @@ PYBIND11_MODULE(_python_vali, m) {
   Init_PyNvJpegEncoder(m);
 
   Init_PySurfaceRotator(m);
+  
+  Init_PySurfaceUD(m);
 
   av_log_set_level(AV_LOG_ERROR);
 
@@ -537,6 +541,7 @@ PYBIND11_MODULE(_python_vali, m) {
            Surface
            CudaStreamEvent
            PySurfaceRotator
+           PySurfaceUD
 
     )pbdoc";
 }

@@ -56,6 +56,7 @@ std::shared_ptr<LibraryLoader> LibNpp::LoadNppIal() {
 // Define function pointers for nppi_geometry_transforms.h (nppig64_11.dll):
 DEFINE(LibNpp, nppiResize_8u_C3R_Ctx);
 DEFINE(LibNpp, nppiResize_8u_C1R_Ctx);
+DEFINE(LibNpp, nppiResize_16u_C1R_Ctx);
 DEFINE(LibNpp, nppiResize_32f_C3R_Ctx);
 DEFINE(LibNpp, nppiResize_32f_C1R_Ctx);
 DEFINE(LibNpp, nppiRemap_8u_C3R_Ctx);

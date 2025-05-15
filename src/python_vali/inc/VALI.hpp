@@ -368,3 +368,22 @@ private:
   std::shared_ptr<RotateSurface> m_rotator;
   CUstream m_stream;
 };
+
+class PySurfaceUD {
+public:
+  PySurfaceUD(int gpu_id, CUstream str);
+
+  PySurfaceUD(int gpu_id, size_t str) : PySurfaceUD(gpu_id, (CUstream)str) {}
+
+  PySurfaceUD(int gpu_id);
+
+  bool Run(Surface& src, Surface& dst, TaskExecDetails& details);
+
+  std::list<Pixel_Format> SupportedFormats();
+
+  std::shared_ptr<CudaStreamEvent> m_event;
+
+private:
+  std::shared_ptr<UDSurface> m_ud;
+  CUstream m_stream;
+};
