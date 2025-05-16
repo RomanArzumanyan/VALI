@@ -74,7 +74,8 @@ target_link_libraries(
 	_python_vali PRIVATE 
 	TC_CORE 
 	TC
-	${FFMPEG_LIBRARIES})
+	${FFMPEG_LIBRARIES}
+)
 
 include_directories(
 	${FFMPEG_INCLUDE_DIRS}

@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(VALI)
-
 option(TRACK_TOKEN_ALLOCATIONS "Debug memory allocations within VALI" FALSE )
 
 if(TRACK_TOKEN_ALLOCATIONS)

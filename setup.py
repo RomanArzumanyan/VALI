@@ -68,6 +68,8 @@ if __name__ == "__main__":
         package_dir={"": "src"},
         cmake_install_dir="src",
         cmake_args=[
+            f"-DCMAKE_PREFIX_PATH=/usr/local/cuda",
+            f"-DCMAKE_CUDA_ARCHITECTURES=native",
             f"-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
             f"-DCMAKE_BUILD_TYPE=Debug"
         ]
