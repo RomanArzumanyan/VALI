@@ -100,11 +100,9 @@ TaskExecInfo UDPlanar(Surface& src, Surface& dst, NppStreamContext& ctx,
 TaskExecInfo UDSemiPlanar(Surface& src, Surface& dst, NppStreamContext& ctx,
                           Resize Resize_func) {
 
-  UD_NV12((unsigned char*)dst.GetSurfacePlane(0U).GpuMem(),
-          (unsigned char*)dst.GetSurfacePlane(1U).GpuMem(),
-          (unsigned char*)dst.GetSurfacePlane(2U).GpuMem(), dst.Pitch(),
-          dst.Width(), dst.Height(),
-          (unsigned char*)src.GetSurfacePlane(0).GpuMem(), src.Pitch(),
+  UD_NV12(dst.GetSurfacePlane(0U).GpuMem(), dst.GetSurfacePlane(1U).GpuMem(),
+          dst.GetSurfacePlane(2U).GpuMem(), dst.Pitch(), dst.Width(),
+          dst.Height(), src.GetSurfacePlane(0).GpuMem(), src.Pitch(),
           src.Width(), src.Height(), ctx.hStream);
 
   return TaskExecInfo::SUCCESS;

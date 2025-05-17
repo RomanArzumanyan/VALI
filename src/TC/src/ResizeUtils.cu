@@ -11,6 +11,7 @@
  * limitations under the License.
  */
 
+#include <cuda.h>
 #include <cuda_runtime.h>
 #include <stdint.h>
 
@@ -74,12 +75,13 @@ static void ResizeImpl(unsigned char* dpDstY, unsigned char* dpDstU,
   cudaDestroyTextureObject(texUv);
 }
 
-void UD_NV12(unsigned char* dpDstY, unsigned char* dpDstU,
-             unsigned char* dpDstV, int nDstPitch, int nDstWidth,
-             int nDstHeight, unsigned char* dpSrcNv12, int nSrcPitch,
-             int nSrcWidth, int nSrcHeight, cudaStream_t S) {
+void UD_NV12(CUdeviceptr dpDstY, CUdeviceptr dpDstU, CUdeviceptr dpDstV,
+             int nDstPitch, int nDstWidth, int nDstHeight,
+             CUdeviceptr dpSrcNv12, int nSrcPitch, int nSrcWidth,
+             int nSrcHeight, cudaStream_t S) {
 
-  return ResizeImpl<uchar2>(dpDstY, dpDstU, dpDstV, nDstPitch, nDstWidth,
-                            nDstHeight, dpSrcNv12, nSrcPitch, nSrcWidth,
+  return ResizeImpl<uchar2>((uint8_t*)dpDstY, (uint8_t*)dpDstU,
+                            (uint8_t*)dpDstV, nDstPitch, nDstWidth, nDstHeight,
+                            (uint8_t*)dpSrcNv12, nSrcPitch, nSrcWidth,
                             nSrcHeight, S);
 }
