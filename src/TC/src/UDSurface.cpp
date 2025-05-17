@@ -80,12 +80,6 @@ TaskExecInfo Resize_16U_C1(SurfacePlane& src, SurfacePlane& dst,
   return TaskExecInfo::SUCCESS;
 }
 
-/// @brief Planar implementation
-/// @param src input surface
-/// @param dst output surface
-/// @param ctx NPP stream context
-/// @param Resize_func resize function pointer
-/// @return SUCCESS in case of success, FAIL otherwise
 TaskExecInfo UDPlanar(Surface& src, Surface& dst, NppStreamContext& ctx,
                       Resize Resize_func) {
   for (auto i = 0U; i < src.NumPlanes(); i++) {
@@ -109,12 +103,13 @@ TaskExecInfo UDSemiPlanar(Surface& src, Surface& dst, NppStreamContext& ctx,
 }
 
 TaskExecInfo UDSemiPlanarHBD(Surface& src, Surface& dst, NppStreamContext& ctx,
-                          Resize Resize_func) {
+                             Resize Resize_func) {
 
-  UD_NV12_HBD(dst.GetSurfacePlane(0U).GpuMem(), dst.GetSurfacePlane(1U).GpuMem(),
-          dst.GetSurfacePlane(2U).GpuMem(), dst.Pitch(), dst.Width(),
-          dst.Height(), src.GetSurfacePlane(0).GpuMem(), src.Pitch(),
-          src.Width(), src.Height(), ctx.hStream);
+  UD_NV12_HBD(dst.GetSurfacePlane(0U).GpuMem(),
+              dst.GetSurfacePlane(1U).GpuMem(),
+              dst.GetSurfacePlane(2U).GpuMem(), dst.Pitch(), dst.Width(),
+              dst.Height(), src.GetSurfacePlane(0).GpuMem(), src.Pitch(),
+              src.Width(), src.Height(), ctx.hStream);
 
   return TaskExecInfo::SUCCESS;
 }
@@ -140,7 +135,7 @@ TaskExecDetails UDSurface::Run(Surface& src, Surface& dst) {
     info = UDSemiPlanar(src, dst, m_ctx, nullptr);
     break;
   case P10:
-  case P12:
+    // P12 isn't supported yet because of lack of YUV444_12bit support
     info = UDSemiPlanarHBD(src, dst, m_ctx, nullptr);
     break;
   case YUV420:

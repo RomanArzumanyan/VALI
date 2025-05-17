@@ -46,10 +46,6 @@ import numpy as np
 import unittest
 import json
 import test_common as tc
-from parameterized import parameterized
-from nvidia import nvimgcodec
-from PIL import Image
-from io import BytesIO
 
 # We use 42 (dB) as the measure of similarity.
 # If two images have PSNR higher than 42 (dB) we consider them the same.
@@ -60,9 +56,14 @@ class TestSurfaceConverter(unittest.TestCase):
     def __init__(self, methodName):
         super().__init__(methodName=methodName)
 
-    def test_yuv420(self):
+        with open("gt_files.json") as f:
+            gt_values = json.load(f)
+            self.nv12_basic = tc.GroundTruth(**gt_values["basic"])
+            self.yuv444_small = tc.GroundTruth(**gt_values["small_yuv444"])
+
+    def test_nv12(self):
         """
-        This test checks UD transform on YUV420 frame.
+        This test checks UD transform from NV12 to YUV444.
         """
         py_dec = vali.PyDecoder(input="data/test.mp4", opts={}, gpu_id=0)
         py_ud = vali.PySurfaceUD(gpu_id=0)
@@ -71,14 +72,14 @@ class TestSurfaceConverter(unittest.TestCase):
         surf = [
             vali.Surface.Make(
                 vali.PixelFormat.NV12,
-                py_dec.Width, 
-                py_dec.Height, 
+                py_dec.Width,
+                py_dec.Height,
                 0),
-            
+
             vali.Surface.Make(
-                vali.PixelFormat.YUV444, 
-                640, 
-                360, 
+                vali.PixelFormat.YUV444,
+                self.yuv444_small.width,
+                self.yuv444_small.height,
                 0)
         ]
 
@@ -90,15 +91,14 @@ class TestSurfaceConverter(unittest.TestCase):
         if not success:
             self.fail(info)
 
-        for surface in surf:
-            frame = np.ndarray(dtype=np.uint8, shape=(surface.HostSize))
-            success, info = py_dwn.Run(surface, frame)
-            if not success:
-                self.fail(info)
+        frame = np.ndarray(dtype=np.uint8, shape=(surf[1].HostSize))
+        success, info = py_dwn.Run(surf[1], frame)
+        if not success:
+            self.fail(info)
 
-            fname = str(surface.Width) + "x" + str(surface.Height) + ".yuv"
-            with open(fname, "wb") as f_out:
-                f_out.write(frame)
+        gt_frame = np.fromfile(self.yuv444_small.uri, dtype=np.uint8)
+        score = tc.measurePSNR(gt_frame, frame)
+        self.assertGreaterEqual(score, psnr_threshold)
 
 
 if __name__ == "__main__":
