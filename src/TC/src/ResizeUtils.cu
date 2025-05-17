@@ -15,73 +15,89 @@
 #include <cuda_runtime.h>
 #include <stdint.h>
 
-template <typename YuvUnitx2>
-static __global__ void
-Resize(cudaTextureObject_t texY, cudaTextureObject_t texUv, uint8_t* pDstY,
-       uint8_t* pDstU, uint8_t* pDstV, int nPitch, int nWidth, int nHeight,
-       float fxScale, float fyScale) {
+template <typename T>
+static __global__ void Resize(cudaTextureObject_t tex_y,
+                              cudaTextureObject_t tex_uv, void* dst_y,
+                              void* dst_u, void* dst_v, int pitch, int width,
+                              int height, float scale_x, float scale_y) {
+
   int x = blockIdx.x * blockDim.x + threadIdx.x,
       y = blockIdx.y * blockDim.y + threadIdx.y;
 
-  if (x >= nWidth || y >= nHeight)
+  if (x >= width || y >= height)
     return;
 
-  typedef decltype(YuvUnitx2::x) YuvUnit;
-  const int MAX = 1 << (sizeof(YuvUnit) * 8);
+  typedef decltype(T::x) channel;
+  const int MAX = 1 << (sizeof(channel) * 8);
 
-  float luma = tex2D<float>(texY, x / fxScale, y / fyScale);
-  float2 chroma = tex2D<float2>(texUv, x / (fxScale * 2), y / (fyScale * 2));
+  float luma = tex2D<float>(tex_y, x / scale_x, y / scale_y);
+  float2 chroma = tex2D<float2>(tex_uv, x / (scale_x * 2), y / (scale_y * 2));
 
-  pDstY[y * nPitch + x * sizeof(YuvUnit)] = (YuvUnit)(luma * MAX);
-  pDstU[y * nPitch + x * sizeof(YuvUnit)] = (YuvUnit)(chroma.x * MAX);
-  pDstV[y * nPitch + x * sizeof(YuvUnit)] = (YuvUnit)(chroma.y * MAX);
+  auto y_dst = (channel*)dst_y, u_dst = (channel*)dst_u,
+       v_dst = (channel*)dst_v;
+
+  y_dst[y * pitch + x * sizeof(channel)] = (channel)(luma * MAX);
+  u_dst[y * pitch + x * sizeof(channel)] = (channel)(chroma.x * MAX);
+  v_dst[y * pitch + x * sizeof(channel)] = (channel)(chroma.y * MAX);
 }
 
-template <typename YuvUnitx2>
-static void ResizeImpl(unsigned char* dpDstY, unsigned char* dpDstU,
-                       unsigned char* dpDstV, int nDstPitch, int nDstWidth,
-                       int nDstHeight, unsigned char* dpSrc, int nSrcPitch,
-                       int nSrcWidth, int nSrcHeight, cudaStream_t S) {
-  cudaResourceDesc resDesc = {};
-  resDesc.resType = cudaResourceTypePitch2D;
-  resDesc.res.pitch2D.devPtr = dpSrc;
-  resDesc.res.pitch2D.desc = cudaCreateChannelDesc<decltype(YuvUnitx2::x)>();
-  resDesc.res.pitch2D.width = nSrcWidth;
-  resDesc.res.pitch2D.height = nSrcHeight;
-  resDesc.res.pitch2D.pitchInBytes = nSrcPitch;
+template <typename T>
+static void ResizeImpl(CUdeviceptr dst_y, CUdeviceptr dst_u, CUdeviceptr dst_v,
+                       int dst_picth, int dst_width, int dst_height,
+                       CUdeviceptr src_nv12, int src_pitch, int src_width,
+                       int src_height, cudaStream_t stream) {
 
-  cudaTextureDesc texDesc = {};
-  texDesc.filterMode = cudaFilterModeLinear;
-  texDesc.readMode = cudaReadModeNormalizedFloat;
+  cudaResourceDesc res_desc = {};
+  res_desc.resType = cudaResourceTypePitch2D;
+  res_desc.res.pitch2D.devPtr = (uint8_t*)src_nv12;
+  res_desc.res.pitch2D.desc = cudaCreateChannelDesc<decltype(T::x)>();
+  res_desc.res.pitch2D.width = src_width;
+  res_desc.res.pitch2D.height = src_height;
+  res_desc.res.pitch2D.pitchInBytes = src_pitch;
 
-  cudaTextureObject_t texY = 0;
-  cudaCreateTextureObject(&texY, &resDesc, &texDesc, NULL);
+  cudaTextureDesc tex_desc = {};
+  tex_desc.filterMode = cudaFilterModeLinear;
+  tex_desc.readMode = cudaReadModeNormalizedFloat;
 
-  resDesc.res.pitch2D.desc = cudaCreateChannelDesc<YuvUnitx2>();
-  resDesc.res.pitch2D.devPtr = dpSrc + nSrcPitch * nSrcHeight;
-  resDesc.res.pitch2D.width = nSrcWidth / 2;
-  resDesc.res.pitch2D.height = nSrcHeight / 2;
+  cudaTextureObject_t tex_y = 0;
+  cudaCreateTextureObject(&tex_y, &res_desc, &tex_desc, NULL);
 
-  cudaTextureObject_t texUv = 0;
-  cudaCreateTextureObject(&texUv, &resDesc, &texDesc, NULL);
+  res_desc.res.pitch2D.desc = cudaCreateChannelDesc<T>();
+  res_desc.res.pitch2D.devPtr = (uint8_t*)src_nv12 + src_pitch * src_height;
+  res_desc.res.pitch2D.width = src_width / 2;
+  res_desc.res.pitch2D.height = src_height / 2;
 
-  dim3 Dg = dim3((nDstWidth + 15) / 16, (nDstHeight + 15) / 16);
+  cudaTextureObject_t tex_uv = 0;
+  cudaCreateTextureObject(&tex_uv, &res_desc, &tex_desc, NULL);
+
+  dim3 Dg = dim3((dst_width + 15) / 16, (dst_height + 15) / 16);
   dim3 Db = dim3(16, 16);
-  Resize<YuvUnitx2><<<Dg, Db, 0, S>>>(
-      texY, texUv, dpDstY, dpDstU, dpDstV, nDstPitch, nDstWidth, nDstHeight,
-      1.0f * nDstWidth / nSrcWidth, 1.0f * nDstHeight / nSrcHeight);
 
-  cudaDestroyTextureObject(texY);
-  cudaDestroyTextureObject(texUv);
+  Resize<T><<<Dg, Db, 0, stream>>>(tex_y, tex_uv, (void*)dst_y, (void*)dst_u,
+                                   (void*)dst_v, dst_picth, dst_width,
+                                   dst_height, 1.0f * dst_width / src_width,
+                                   1.0f * dst_height / src_height);
+
+  cudaDestroyTextureObject(tex_y);
+  cudaDestroyTextureObject(tex_uv);
 }
 
-void UD_NV12(CUdeviceptr dpDstY, CUdeviceptr dpDstU, CUdeviceptr dpDstV,
-             int nDstPitch, int nDstWidth, int nDstHeight,
-             CUdeviceptr dpSrcNv12, int nSrcPitch, int nSrcWidth,
-             int nSrcHeight, cudaStream_t S) {
+void UD_NV12(CUdeviceptr dst_y, CUdeviceptr dst_u, CUdeviceptr dst_v,
+             int dst_picth, int dst_width, int dst_height, CUdeviceptr src_nv12,
+             int src_pitch, int src_width, int src_height,
+             cudaStream_t stream) {
 
-  return ResizeImpl<uchar2>((uint8_t*)dpDstY, (uint8_t*)dpDstU,
-                            (uint8_t*)dpDstV, nDstPitch, nDstWidth, nDstHeight,
-                            (uint8_t*)dpSrcNv12, nSrcPitch, nSrcWidth,
-                            nSrcHeight, S);
+  return ResizeImpl<uchar2>(dst_y, dst_u, dst_v, dst_picth, dst_width,
+                            dst_height, src_nv12, src_pitch, src_width,
+                            src_height, stream);
+}
+
+void UD_NV12_HBD(CUdeviceptr dst_y, CUdeviceptr dst_u, CUdeviceptr dst_v,
+                 int dst_picth, int dst_width, int dst_height,
+                 CUdeviceptr src_nv12, int src_pitch, int src_width,
+                 int src_height, cudaStream_t stream) {
+
+  return ResizeImpl<ushort2>(dst_y, dst_u, dst_v, dst_picth, dst_width,
+                             dst_height, src_nv12, src_pitch, src_width,
+                             src_height, stream);
 }
