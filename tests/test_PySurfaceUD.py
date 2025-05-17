@@ -65,37 +65,40 @@ class TestSurfaceConverter(unittest.TestCase):
         This test checks UD transform on YUV420 frame.
         """
         py_dec = vali.PyDecoder(input="data/test.mp4", opts={}, gpu_id=0)
-        py_cvt = vali.PySurfaceConverter(gpu_id=0)
         py_ud = vali.PySurfaceUD(gpu_id=0)
         py_dwn = vali.PySurfaceDownloader(gpu_id=0)
 
         surf = [
-            vali.Surface.Make(vali.PixelFormat.NV12,
-                              py_dec.Width, py_dec.Height, 0),
-            vali.Surface.Make(vali.PixelFormat.YUV420,
-                              py_dec.Width, py_dec.Height, 0),
-            vali.Surface.Make(vali.PixelFormat.YUV444, 640, 360, 0)
+            vali.Surface.Make(
+                vali.PixelFormat.NV12,
+                py_dec.Width, 
+                py_dec.Height, 
+                0),
+            
+            vali.Surface.Make(
+                vali.PixelFormat.YUV444, 
+                640, 
+                360, 
+                0)
         ]
 
         success, info = py_dec.DecodeSingleSurface(surf[0])
         if not success:
             self.fail(info)
 
-        success, info = py_cvt.Run(surf[0], surf[1])
+        success, info = py_ud.Run(surf[0], surf[1])
         if not success:
             self.fail(info)
 
-        success, info = py_ud.Run(surf[1], surf[2])
-        if not success:
-            self.fail(info)
+        for surface in surf:
+            frame = np.ndarray(dtype=np.uint8, shape=(surface.HostSize))
+            success, info = py_dwn.Run(surface, frame)
+            if not success:
+                self.fail(info)
 
-        frame = np.ndarray(dtype=np.uint8, shape=surf[-1].Shape)
-        success, info = py_dwn.Run(surf[-1], frame)
-        if not success:
-            self.fail(info)
-
-        with open("output.yuv", "wb") as f_out:
-            f_out.write(frame)
+            fname = str(surface.Width) + "x" + str(surface.Height) + ".yuv"
+            with open(fname, "wb") as f_out:
+                f_out.write(frame)
 
 
 if __name__ == "__main__":

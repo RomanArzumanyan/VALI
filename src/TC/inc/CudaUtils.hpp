@@ -134,6 +134,7 @@ public:
 };
 } // namespace VPF
 
-void ResizeNv12(unsigned char* dpDstNv12, int nDstPitch, int nDstWidth,
-                int nDstHeight, unsigned char* dpSrcNv12, int nSrcPitch,
-                int nSrcWidth, int nSrcHeight, cudaStream_t S);
+void UD_NV12(unsigned char* dpDstY, unsigned char* dpDstU,
+             unsigned char* dpDstV, int nDstPitch, int nDstWidth,
+             int nDstHeight, unsigned char* dpSrcNv12, int nSrcPitch,
+             int nSrcWidth, int nSrcHeight, cudaStream_t stream);

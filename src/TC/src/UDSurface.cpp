@@ -97,6 +97,19 @@ TaskExecInfo UDPlanar(Surface& src, Surface& dst, NppStreamContext& ctx,
   return TaskExecInfo::SUCCESS;
 }
 
+TaskExecInfo UDSemiPlanar(Surface& src, Surface& dst, NppStreamContext& ctx,
+                          Resize Resize_func) {
+
+  UD_NV12((unsigned char*)dst.GetSurfacePlane(0U).GpuMem(),
+          (unsigned char*)dst.GetSurfacePlane(1U).GpuMem(),
+          (unsigned char*)dst.GetSurfacePlane(2U).GpuMem(), dst.Pitch(),
+          dst.Width(), dst.Height(),
+          (unsigned char*)src.GetSurfacePlane(0).GpuMem(), src.Pitch(),
+          src.Width(), src.Height(), ctx.hStream);
+
+  return TaskExecInfo::SUCCESS;
+}
+
 TaskExecDetails UDSurface::Run(Surface& src, Surface& dst) {
 
   // Can only output to YUV444 of various bit depths
@@ -114,6 +127,10 @@ TaskExecDetails UDSurface::Run(Surface& src, Surface& dst) {
 
   TaskExecInfo info = TaskExecInfo::SUCCESS;
   switch (src.PixelFormat()) {
+  case NV12:
+    // Uses CUDA kernel, not need to pass implementation function pointer
+    info = UDSemiPlanar(src, dst, m_ctx, nullptr);
+    break;
   case YUV420:
   case YUV422:
     info = UDPlanar(src, dst, m_ctx, Resize_8U_C1);
