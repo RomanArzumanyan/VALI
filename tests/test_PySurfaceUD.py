@@ -52,7 +52,7 @@ import test_common as tc
 psnr_threshold = 42.0
 
 
-class TestSurfaceConverter(unittest.TestCase):
+class TestSurfaceUD(unittest.TestCase):
     def __init__(self, methodName):
         super().__init__(methodName=methodName)
 
