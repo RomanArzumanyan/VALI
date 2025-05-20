@@ -133,3 +133,13 @@ public:
   static std::mutex gStrMutex;
 };
 } // namespace VPF
+
+void UD_NV12(CUdeviceptr dpDstY, CUdeviceptr dpDstU, CUdeviceptr dpDstV,
+             int nDstPitch, int nDstWidth, int nDstHeight,
+             CUdeviceptr dpSrcNv12, int nSrcPitch, int nSrcWidth,
+             int nSrcHeight, cudaStream_t stream);
+
+void UD_NV12_HBD(CUdeviceptr dpDstY, CUdeviceptr dpDstU, CUdeviceptr dpDstV,
+             int nDstPitch, int nDstWidth, int nDstHeight,
+             CUdeviceptr dpSrcNv12, int nSrcPitch, int nSrcWidth,
+             int nSrcHeight, cudaStream_t stream);

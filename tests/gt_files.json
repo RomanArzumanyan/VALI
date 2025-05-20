@@ -116,6 +116,15 @@
         "color_space": "ColorSpace.BT_709",
         "color_range": "ColorRange.MPEG"
     },
+    "small_yuv444": {
+        "uri": "data/test_small.yuv444",
+        "width": 640,
+        "height": 360,
+        "pix_fmt": "PixelFormat.YUV444",
+        "num_frames": 1,
+        "color_space": "ColorSpace.BT_709",
+        "color_range": "ColorRange.MPEG"
+    },
     "hevc10_p10": {
         "uri": "data/test_hevc10.p10",
         "width": 848,

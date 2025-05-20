@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     skbuild.setup(
         name="python_vali",
-        version="4.5.0",
+        version="4.6.0",
         description="Video Processing Library with full NVENC/NVDEC hardware acceleration",
         long_description=open('README.md').read(),
         long_description_content_type='text/markdown',
@@ -68,6 +68,8 @@ if __name__ == "__main__":
         package_dir={"": "src"},
         cmake_install_dir="src",
         cmake_args=[
+            f"-DCMAKE_PREFIX_PATH=/usr/local/cuda",
+            f"-DCMAKE_CUDA_ARCHITECTURES=native",
             f"-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
             # f"-DCMAKE_BUILD_TYPE=Debug"
         ]

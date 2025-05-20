@@ -16,6 +16,7 @@
 
 cmake_minimum_required(VERSION 3.21)
 
+project(TC LANGUAGES CXX CUDA)
 add_subdirectory(TC_CORE)
 
 find_package(CUDAToolkit 11.2 REQUIRED)
@@ -49,7 +50,15 @@ add_library(
     src/LibNvJpeg.cpp
     src/LibraryLoader.cpp
     src/RotateSurface.cpp
+    src/UDSurface.cpp
+    src/ResizeUtils.cu
 )
+
+set_target_properties(
+    TC 
+    PROPERTIES 
+        CUDA_SEPARABLE_COMPILATION ON
+        CUDA_RESOLVE_DEVICE_SYMBOLS ON)
 
 if (WIN32)
     target_sources(TC PRIVATE
@@ -69,8 +78,6 @@ configure_file(inc/Version.hpp.in tc_version.h)
 option(USE_NVTX "Use NVTX for profiling" FALSE)
 if(USE_NVTX)
     add_definitions(-DUSE_NVTX)
-    ## Replace when requiring CMAKE 3.25:
-    # target_link_libraries(TC PUBLIC CUDA::nvtx3)
     target_link_libraries(TC PUBLIC ${CMAKE_DL_LIBRARIES})
 endif()
 
@@ -80,8 +87,12 @@ target_link_libraries(
     TC
     PUBLIC
     ${FFMPEG_LIBRARIES}
-    TC_CORE    
+    TC_CORE
+    CUDA::cudart
 )
+
+set_target_properties(TC PROPERTIES
+                            CUDA_SEPARABLE_COMPILATION ON)
 
 target_compile_features(TC PRIVATE cxx_std_17)
 set_property(

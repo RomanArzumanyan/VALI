@@ -184,6 +184,14 @@ public:
    */
   ~SurfacePlane();
 
+  /* Returns true if memory allocation params for both planes are same.
+   * False otherwise.
+   */
+  bool IsSimilar(const SurfacePlane& other) const noexcept {
+    return (other.m_width == m_width && other.m_height == m_height &&
+            other.m_pitch == m_pitch && other.m_elem_size == m_elem_size);
+  }
+
   /* Returns true if memory (own or borrowed) isn't destroyed, false otherwise;
    * If created from DLPack will always return true;
    */

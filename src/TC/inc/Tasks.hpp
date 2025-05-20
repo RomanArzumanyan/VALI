@@ -294,4 +294,26 @@ private:
   CUstream m_stream;
   NppStreamContext m_ctx;
 };
+
+class TC_CORE_EXPORT UDSurface {
+  /**
+   * Upsample + downscale.
+   * Converts YUV Surfaces of different chroma subsampling into YUV444.
+   */
+public:
+  UDSurface(int gpu_id, CUstream stream);
+  ~UDSurface() = default;
+  TaskExecDetails Run(Surface& src, Surface& dst);
+  CUstream GetStream() const { return m_stream; }
+
+private:
+  /// @brief  GPU ID
+  int m_gpu_id;
+
+  /// @brief CUDA stream
+  CUstream m_stream;
+
+  /// @brief NPP stream context
+  NppStreamContext m_ctx;
+};
 } // namespace VPF

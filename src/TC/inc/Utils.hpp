@@ -22,6 +22,7 @@
 #include <functional>
 
 #include "MemoryInterfaces.hpp"
+#include <cuda_runtime.h>
 
 extern "C" {
 #include <libavutil/dict.h>
