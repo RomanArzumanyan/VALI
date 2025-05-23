@@ -31,8 +31,10 @@ PySurfaceUD::PySurfaceUD(int gpu_id, CUstream str) {
   m_event = std::make_shared<CudaStreamEvent>(m_stream, gpu_id);
 }
 
-std::list<Pixel_Format> PySurfaceUD::SupportedFormats() {
-  return std::list<Pixel_Format>({YUV420, YUV422, YUV420_10bit});
+std::list<std::pair<Pixel_Format, Pixel_Format>>
+PySurfaceUD::SupportedFormats() {
+  return std::list<std::pair<Pixel_Format, Pixel_Format>>(
+      m_ud->SupportedConversions());
 }
 
 bool PySurfaceUD::Run(Surface& src, Surface& dst, TaskExecDetails& details) {

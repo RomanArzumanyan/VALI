@@ -94,18 +94,22 @@ TaskExecInfo UDPlanar(Surface& src, Surface& dst, NppStreamContext& ctx,
 
 TaskExecInfo UDSemiPlanar(Surface& src, Surface& dst, NppStreamContext& ctx,
                           Pixel_Format fmt) {
-  UD_NV12(dst.PixelPtr(0U), dst.PixelPtr(1U), dst.PixelPtr(2U), dst.Pitch(),
-          dst.Width(), dst.Height(), src.PixelPtr(0U), src.Pitch(), src.Width(),
-          src.Height(), ctx.hStream, fmt);
+  UD_NV12(dst.PixelPtr(0U),
+          dst.NumComponents() == 3 ? dst.PixelPtr(1U) : (CUdeviceptr)0x0,
+          dst.NumComponents() == 3 ? dst.PixelPtr(2U) : (CUdeviceptr)0x0,
+          dst.Pitch(), dst.Width(), dst.Height(), src.PixelPtr(0U), src.Pitch(),
+          src.Width(), src.Height(), ctx.hStream, fmt);
 
   return TaskExecInfo::SUCCESS;
 }
 
 TaskExecInfo UDSemiPlanarHBD(Surface& src, Surface& dst, NppStreamContext& ctx,
                              Pixel_Format fmt) {
-  UD_NV12_HBD(dst.PixelPtr(0U), dst.PixelPtr(1U), dst.PixelPtr(2U), dst.Pitch(),
-              dst.Width(), dst.Height(), src.PixelPtr(0U), src.Pitch(),
-              src.Width(), src.Height(), ctx.hStream, fmt);
+  UD_NV12_HBD(dst.PixelPtr(0U),
+              dst.NumComponents() == 3 ? dst.PixelPtr(1U) : (CUdeviceptr)0x0,
+              dst.NumComponents() == 3 ? dst.PixelPtr(2U) : (CUdeviceptr)0x0,
+              dst.Pitch(), dst.Width(), dst.Height(), src.PixelPtr(0U),
+              src.Pitch(), src.Width(), src.Height(), ctx.hStream, fmt);
 
   return TaskExecInfo::SUCCESS;
 }
@@ -114,10 +118,14 @@ const std::list<std::pair<Pixel_Format, Pixel_Format>>&
 UDSurface::SupportedConversions() const {
   static const std::list<std::pair<Pixel_Format, Pixel_Format>> convs({
       {NV12, YUV444},
+      {NV12, RGB},
+      {NV12, RGB_32F},
       {NV12, RGB_PLANAR},
       {NV12, RGB_32F_PLANAR},
       {P10, YUV444_10bit},
+      {P10, RGB_32F},
       {P10, RGB_32F_PLANAR},
+      {P12, RGB_32F},
       {P12, RGB_32F_PLANAR},
       {YUV420, YUV444},
       {YUV420_10bit, YUV444_10bit},

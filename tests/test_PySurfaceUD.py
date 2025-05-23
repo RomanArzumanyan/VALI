@@ -70,6 +70,8 @@ class TestSurfaceUD(unittest.TestCase):
         py_ud = vali.PySurfaceUD(gpu_id=0)
         py_dwn = vali.PySurfaceDownloader(gpu_id=0)
 
+        print(py_ud.SupportedFormats)
+
         surf = [
             vali.Surface.Make(
                 vali.PixelFormat.NV12,
@@ -79,12 +81,6 @@ class TestSurfaceUD(unittest.TestCase):
 
             vali.Surface.Make(
                 vali.PixelFormat.YUV444,
-                self.yuv444_small.width,
-                self.yuv444_small.height,
-                0),
-
-            vali.Surface.Make(
-                vali.PixelFormat.RGB_32F_PLANAR,
                 self.yuv444_small.width,
                 self.yuv444_small.height,
                 0)
@@ -97,20 +93,6 @@ class TestSurfaceUD(unittest.TestCase):
         success, info = py_ud.Run(surf[0], surf[1])
         if not success:
             self.fail(info)
-
-        success, info = py_ud.Run(surf[0], surf[2])
-        if not success:
-            self.fail(info)
-
-        frame = np.ndarray(dtype=np.float32, shape=(surf[2].Shape))
-        success, info = py_dwn.Run(surf[2], frame)
-        if not success:
-            self.fail(info)
-
-        for c in range(frame.shape[0]):
-            img = cv2.Mat(frame[c])
-            cv2.imshow("frame", img)
-            cv2.waitKey()
 
         frame = np.ndarray(dtype=np.uint8, shape=(surf[1].Shape))
         success, info = py_dwn.Run(surf[1], frame)

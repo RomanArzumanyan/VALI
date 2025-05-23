@@ -379,7 +379,7 @@ public:
 
   bool Run(Surface& src, Surface& dst, TaskExecDetails& details);
 
-  std::list<Pixel_Format> SupportedFormats();
+  std::list<std::pair<Pixel_Format, Pixel_Format>> SupportedFormats();
 
   std::shared_ptr<CudaStreamEvent> m_event;
 

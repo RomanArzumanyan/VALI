@@ -21,8 +21,8 @@ using namespace VPF;
 template <typename T>
 static __global__ void
 RescaleConvertYUV(cudaTextureObject_t tex_y, cudaTextureObject_t tex_uv,
-                  void* dst_x, void* dst_y, void* dst_z, int pitch, int width,
-                  int height, float scale_x, float scale_y) {
+                  uint8_t* dst_y, uint8_t* dst_u, uint8_t* dst_v, int pitch,
+                  int width, int height, float scale_x, float scale_y) {
 
   int x = blockIdx.x * blockDim.x + threadIdx.x,
       y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -36,12 +36,10 @@ RescaleConvertYUV(cudaTextureObject_t tex_y, cudaTextureObject_t tex_uv,
   float luma = tex2D<float>(tex_y, x / scale_x, y / scale_y);
   float2 chroma = tex2D<float2>(tex_uv, x / (scale_x * 2), y / (scale_y * 2));
 
-  auto y_dst = (channel*)dst_x, u_dst = (channel*)dst_y,
-       v_dst = (channel*)dst_z;
-
-  y_dst[y * pitch + x * sizeof(channel)] = (channel)(luma * MAX);
-  u_dst[y * pitch + x * sizeof(channel)] = (channel)(chroma.x * MAX);
-  v_dst[y * pitch + x * sizeof(channel)] = (channel)(chroma.y * MAX);
+  auto const pos_bytes = y * pitch + x * sizeof(T);
+  *(channel*)(dst_y + pos_bytes) = (channel)(luma * MAX);
+  *(channel*)(dst_u + pos_bytes) = (channel)(chroma.x * MAX);
+  *(channel*)(dst_v + pos_bytes) = (channel)(chroma.y * MAX);
 }
 
 template <typename T>
@@ -80,10 +78,21 @@ RescaleConvertRGB(cudaTextureObject_t tex_y, cudaTextureObject_t tex_uv,
 
   Denormalize<T>(n_r, n_g, n_b);
 
-  auto const pos_bytes = y * pitch + x * sizeof(T);
-  *(T*)(dst_r + pos_bytes) = (T)n_r;
-  *(T*)(dst_g + pos_bytes) = (T)n_g;
-  *(T*)(dst_b + pos_bytes) = (T)n_b;
+  if (dst_g && dst_b) {
+    // Planar RGB
+    auto const pos_bytes = y * pitch + x * sizeof(T);
+    *(T*)(dst_r + pos_bytes) = (T)n_r;
+    *(T*)(dst_g + pos_bytes) = (T)n_g;
+    *(T*)(dst_b + pos_bytes) = (T)n_b;
+  } else {
+    // Packed RGB
+    auto pos_bytes = y * pitch + x * sizeof(T) * 3;
+    *(T*)(dst_r + pos_bytes) = (T)n_r;
+    pos_bytes += sizeof(T);
+    *(T*)(dst_r + pos_bytes) = (T)n_g;
+    pos_bytes += sizeof(T);
+    *(T*)(dst_r + pos_bytes) = (T)n_b;
+  }
 }
 
 template <typename T>
@@ -119,23 +128,25 @@ static void Impl(CUdeviceptr dst_x, CUdeviceptr dst_y, CUdeviceptr dst_z,
   dim3 Db = dim3(16, 16);
 
   switch (fmt) {
+  case RGB:
   case RGB_PLANAR:
     RescaleConvertRGB<uint8_t><<<Dg, Db, 0, stream>>>(
         tex_y, tex_uv, (uint8_t*)dst_x, (uint8_t*)dst_y, (uint8_t*)dst_z,
         dst_pitch, dst_width, dst_height, 1.0f * dst_width / src_width,
         1.0f * dst_height / src_height);
     break;
+  case RGB_32F:
   case RGB_32F_PLANAR:
     RescaleConvertRGB<float><<<Dg, Db, 0, stream>>>(
-        tex_y, tex_uv, (uint8_t*)dst_x, (uint8_t*)dst_y, (uint8_t*)dst_z, dst_pitch,
-        dst_width, dst_height, 1.0f * dst_width / src_width,
+        tex_y, tex_uv, (uint8_t*)dst_x, (uint8_t*)dst_y, (uint8_t*)dst_z,
+        dst_pitch, dst_width, dst_height, 1.0f * dst_width / src_width,
         1.0f * dst_height / src_height);
     break;
   case YUV444:
   case YUV444_10bit:
     RescaleConvertYUV<T><<<Dg, Db, 0, stream>>>(
-        tex_y, tex_uv, (void*)dst_x, (void*)dst_y, (void*)dst_z, dst_pitch,
-        dst_width, dst_height, 1.0f * dst_width / src_width,
+        tex_y, tex_uv, (uint8_t*)dst_x, (uint8_t*)dst_y, (uint8_t*)dst_z,
+        dst_pitch, dst_width, dst_height, 1.0f * dst_width / src_width,
         1.0f * dst_height / src_height);
     break;
   default:
