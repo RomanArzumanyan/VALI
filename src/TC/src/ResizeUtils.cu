@@ -12,15 +12,17 @@
  * limitations under the License.
  */
 
-#include <cuda.h>
+#include "ResizeUtils.hpp"
 #include <cuda_runtime.h>
 #include <stdint.h>
 
+using namespace VPF;
+
 template <typename T>
-static __global__ void Resize(cudaTextureObject_t tex_y,
-                              cudaTextureObject_t tex_uv, void* dst_y,
-                              void* dst_u, void* dst_v, int pitch, int width,
-                              int height, float scale_x, float scale_y) {
+static __global__ void
+RescaleConvertYUV(cudaTextureObject_t tex_y, cudaTextureObject_t tex_uv,
+                  void* dst_x, void* dst_y, void* dst_z, int pitch, int width,
+                  int height, float scale_x, float scale_y) {
 
   int x = blockIdx.x * blockDim.x + threadIdx.x,
       y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -34,8 +36,8 @@ static __global__ void Resize(cudaTextureObject_t tex_y,
   float luma = tex2D<float>(tex_y, x / scale_x, y / scale_y);
   float2 chroma = tex2D<float2>(tex_uv, x / (scale_x * 2), y / (scale_y * 2));
 
-  auto y_dst = (channel*)dst_y, u_dst = (channel*)dst_u,
-       v_dst = (channel*)dst_v;
+  auto y_dst = (channel*)dst_x, u_dst = (channel*)dst_y,
+       v_dst = (channel*)dst_z;
 
   y_dst[y * pitch + x * sizeof(channel)] = (channel)(luma * MAX);
   u_dst[y * pitch + x * sizeof(channel)] = (channel)(chroma.x * MAX);
@@ -43,10 +45,52 @@ static __global__ void Resize(cudaTextureObject_t tex_y,
 }
 
 template <typename T>
-static void ResizeImpl(CUdeviceptr dst_y, CUdeviceptr dst_u, CUdeviceptr dst_v,
-                       int dst_picth, int dst_width, int dst_height,
-                       CUdeviceptr src_nv12, int src_pitch, int src_width,
-                       int src_height, cudaStream_t stream) {
+__device__ void Denormalize(float& x, float& y, float& z) {
+  const int MAX = 1 << (sizeof(T) * 8);
+
+  x *= MAX;
+  y *= MAX;
+  z *= MAX;
+}
+
+template <> __device__ void Denormalize<float>(float& x, float& y, float& z) {}
+
+template <typename T>
+static __global__ void
+RescaleConvertRGB(cudaTextureObject_t tex_y, cudaTextureObject_t tex_uv,
+                  uint8_t* dst_r, uint8_t* dst_g, uint8_t* dst_b, int pitch,
+                  int width, int height, float scale_x, float scale_y) {
+
+  int x = blockIdx.x * blockDim.x + threadIdx.x,
+      y = blockIdx.y * blockDim.y + threadIdx.y;
+
+  if (x >= width || y >= height)
+    return;
+
+  float luma = tex2D<float>(tex_y, x / scale_x, y / scale_y);
+  float2 chroma = tex2D<float2>(tex_uv, x / (scale_x * 2), y / (scale_y * 2));
+
+  float n_y = luma;
+  float n_u = chroma.x - .5f;
+  float n_v = chroma.y - .5f;
+
+  float n_r = n_y + 1.140f * n_v;
+  float n_g = n_y - 0.394f * n_u - 0.581f * n_v;
+  float n_b = n_y + 2.032f * n_u;
+
+  Denormalize<T>(n_r, n_g, n_b);
+
+  auto const pos_bytes = y * pitch + x * sizeof(T);
+  *(T*)(dst_r + pos_bytes) = (T)n_r;
+  *(T*)(dst_g + pos_bytes) = (T)n_g;
+  *(T*)(dst_b + pos_bytes) = (T)n_b;
+}
+
+template <typename T>
+static void Impl(CUdeviceptr dst_x, CUdeviceptr dst_y, CUdeviceptr dst_z,
+                 int dst_pitch, int dst_width, int dst_height,
+                 CUdeviceptr src_nv12, int src_pitch, int src_width,
+                 int src_height, cudaStream_t stream, Pixel_Format fmt) {
 
   cudaResourceDesc res_desc = {};
   res_desc.resType = cudaResourceTypePitch2D;
@@ -74,31 +118,48 @@ static void ResizeImpl(CUdeviceptr dst_y, CUdeviceptr dst_u, CUdeviceptr dst_v,
   dim3 Dg = dim3((dst_width + 15) / 16, (dst_height + 15) / 16);
   dim3 Db = dim3(16, 16);
 
-  Resize<T><<<Dg, Db, 0, stream>>>(tex_y, tex_uv, (void*)dst_y, (void*)dst_u,
-                                   (void*)dst_v, dst_picth, dst_width,
-                                   dst_height, 1.0f * dst_width / src_width,
-                                   1.0f * dst_height / src_height);
+  switch (fmt) {
+  case RGB_PLANAR:
+    RescaleConvertRGB<uint8_t><<<Dg, Db, 0, stream>>>(
+        tex_y, tex_uv, (uint8_t*)dst_x, (uint8_t*)dst_y, (uint8_t*)dst_z,
+        dst_pitch, dst_width, dst_height, 1.0f * dst_width / src_width,
+        1.0f * dst_height / src_height);
+    break;
+  case RGB_32F_PLANAR:
+    RescaleConvertRGB<float><<<Dg, Db, 0, stream>>>(
+        tex_y, tex_uv, (uint8_t*)dst_x, (uint8_t*)dst_y, (uint8_t*)dst_z, dst_pitch,
+        dst_width, dst_height, 1.0f * dst_width / src_width,
+        1.0f * dst_height / src_height);
+    break;
+  case YUV444:
+  case YUV444_10bit:
+    RescaleConvertYUV<T><<<Dg, Db, 0, stream>>>(
+        tex_y, tex_uv, (void*)dst_x, (void*)dst_y, (void*)dst_z, dst_pitch,
+        dst_width, dst_height, 1.0f * dst_width / src_width,
+        1.0f * dst_height / src_height);
+    break;
+  default:
+    break;
+  }
 
   cudaDestroyTextureObject(tex_y);
   cudaDestroyTextureObject(tex_uv);
 }
 
-void UD_NV12(CUdeviceptr dst_y, CUdeviceptr dst_u, CUdeviceptr dst_v,
-             int dst_picth, int dst_width, int dst_height, CUdeviceptr src_nv12,
-             int src_pitch, int src_width, int src_height,
-             cudaStream_t stream) {
+void UD_NV12(CUdeviceptr dst_x, CUdeviceptr dst_y, CUdeviceptr dst_z,
+             int dst_pitch, int dst_width, int dst_height, CUdeviceptr src_nv12,
+             int src_pitch, int src_width, int src_height, cudaStream_t stream,
+             Pixel_Format fmt) {
 
-  return ResizeImpl<uchar2>(dst_y, dst_u, dst_v, dst_picth, dst_width,
-                            dst_height, src_nv12, src_pitch, src_width,
-                            src_height, stream);
+  return Impl<uchar2>(dst_x, dst_y, dst_z, dst_pitch, dst_width, dst_height,
+                      src_nv12, src_pitch, src_width, src_height, stream, fmt);
 }
 
-void UD_NV12_HBD(CUdeviceptr dst_y, CUdeviceptr dst_u, CUdeviceptr dst_v,
-                 int dst_picth, int dst_width, int dst_height,
+void UD_NV12_HBD(CUdeviceptr dst_x, CUdeviceptr dst_y, CUdeviceptr dst_z,
+                 int dst_pitch, int dst_width, int dst_height,
                  CUdeviceptr src_nv12, int src_pitch, int src_width,
-                 int src_height, cudaStream_t stream) {
+                 int src_height, cudaStream_t stream, Pixel_Format fmt) {
 
-  return ResizeImpl<ushort2>(dst_y, dst_u, dst_v, dst_picth, dst_width,
-                             dst_height, src_nv12, src_pitch, src_width,
-                             src_height, stream);
+  return Impl<ushort2>(dst_x, dst_y, dst_z, dst_pitch, dst_width, dst_height,
+                       src_nv12, src_pitch, src_width, src_height, stream, fmt);
 }

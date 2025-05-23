@@ -302,9 +302,15 @@ class TC_CORE_EXPORT UDSurface {
    */
 public:
   UDSurface(int gpu_id, CUstream stream);
+
   ~UDSurface() = default;
+
   TaskExecDetails Run(Surface& src, Surface& dst);
+
   CUstream GetStream() const { return m_stream; }
+
+  const std::list<std::pair<Pixel_Format, Pixel_Format>>&
+  SupportedConversions() const;
 
 private:
   /// @brief  GPU ID

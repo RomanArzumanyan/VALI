@@ -46,6 +46,7 @@ import numpy as np
 import unittest
 import json
 import test_common as tc
+import cv2
 
 # We use 42 (dB) as the measure of similarity.
 # If two images have PSNR higher than 42 (dB) we consider them the same.
@@ -80,6 +81,12 @@ class TestSurfaceUD(unittest.TestCase):
                 vali.PixelFormat.YUV444,
                 self.yuv444_small.width,
                 self.yuv444_small.height,
+                0),
+
+            vali.Surface.Make(
+                vali.PixelFormat.RGB_32F_PLANAR,
+                self.yuv444_small.width,
+                self.yuv444_small.height,
                 0)
         ]
 
@@ -91,7 +98,21 @@ class TestSurfaceUD(unittest.TestCase):
         if not success:
             self.fail(info)
 
-        frame = np.ndarray(dtype=np.uint8, shape=(surf[1].HostSize))
+        success, info = py_ud.Run(surf[0], surf[2])
+        if not success:
+            self.fail(info)
+
+        frame = np.ndarray(dtype=np.float32, shape=(surf[2].Shape))
+        success, info = py_dwn.Run(surf[2], frame)
+        if not success:
+            self.fail(info)
+
+        for c in range(frame.shape[0]):
+            img = cv2.Mat(frame[c])
+            cv2.imshow("frame", img)
+            cv2.waitKey()
+
+        frame = np.ndarray(dtype=np.uint8, shape=(surf[1].Shape))
         success, info = py_dwn.Run(surf[1], frame)
         if not success:
             self.fail(info)

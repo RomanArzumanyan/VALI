@@ -13,6 +13,7 @@
 
 #include "MemoryInterfaces.hpp"
 #include "NppCommon.hpp"
+#include "ResizeUtils.hpp"
 #include "Surfaces.hpp"
 #include "Tasks.hpp"
 
@@ -92,51 +93,65 @@ TaskExecInfo UDPlanar(Surface& src, Surface& dst, NppStreamContext& ctx,
 }
 
 TaskExecInfo UDSemiPlanar(Surface& src, Surface& dst, NppStreamContext& ctx,
-                          Resize Resize_func) {
-
-  UD_NV12(dst.GetSurfacePlane(0U).GpuMem(), dst.GetSurfacePlane(1U).GpuMem(),
-          dst.GetSurfacePlane(2U).GpuMem(), dst.Pitch(), dst.Width(),
-          dst.Height(), src.GetSurfacePlane(0).GpuMem(), src.Pitch(),
-          src.Width(), src.Height(), ctx.hStream);
+                          Pixel_Format fmt) {
+  UD_NV12(dst.PixelPtr(0U), dst.PixelPtr(1U), dst.PixelPtr(2U), dst.Pitch(),
+          dst.Width(), dst.Height(), src.PixelPtr(0U), src.Pitch(), src.Width(),
+          src.Height(), ctx.hStream, fmt);
 
   return TaskExecInfo::SUCCESS;
 }
 
 TaskExecInfo UDSemiPlanarHBD(Surface& src, Surface& dst, NppStreamContext& ctx,
-                             Resize Resize_func) {
-
-  UD_NV12_HBD(dst.GetSurfacePlane(0U).GpuMem(),
-              dst.GetSurfacePlane(1U).GpuMem(),
-              dst.GetSurfacePlane(2U).GpuMem(), dst.Pitch(), dst.Width(),
-              dst.Height(), src.GetSurfacePlane(0).GpuMem(), src.Pitch(),
-              src.Width(), src.Height(), ctx.hStream);
+                             Pixel_Format fmt) {
+  UD_NV12_HBD(dst.PixelPtr(0U), dst.PixelPtr(1U), dst.PixelPtr(2U), dst.Pitch(),
+              dst.Width(), dst.Height(), src.PixelPtr(0U), src.Pitch(),
+              src.Width(), src.Height(), ctx.hStream, fmt);
 
   return TaskExecInfo::SUCCESS;
 }
 
+const std::list<std::pair<Pixel_Format, Pixel_Format>>&
+UDSurface::SupportedConversions() const {
+  static const std::list<std::pair<Pixel_Format, Pixel_Format>> convs({
+      {NV12, YUV444},
+      {NV12, RGB_PLANAR},
+      {NV12, RGB_32F_PLANAR},
+      {P10, YUV444_10bit},
+      {P10, RGB_32F_PLANAR},
+      {P12, RGB_32F_PLANAR},
+      {YUV420, YUV444},
+      {YUV420_10bit, YUV444_10bit},
+      {YUV422, YUV444},
+  });
+
+  return convs;
+}
+
 TaskExecDetails UDSurface::Run(Surface& src, Surface& dst) {
 
-  // Can only output to YUV444 of various bit depths
-  if (YUV444 != dst.PixelFormat() && YUV444_10bit != dst.PixelFormat())
+  auto& convs = SupportedConversions();
+  bool found = false;
+  for (auto& conv : convs) {
+    if (conv.first == src.PixelFormat() && conv.second == dst.PixelFormat()) {
+      found = true;
+      break;
+    }
+  }
+
+  if (!found) {
     return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL,
                            TaskExecInfo::NOT_SUPPORTED);
+  }
 
-  // No bit depth conversion
-  if (src.ElemSize() != dst.ElemSize())
-    return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL,
-                           TaskExecInfo::SRC_DST_FMT_MISMATCH);
-
-  // Can push the context just once
   CudaCtxPush ctxPush(GetContextByStream(m_gpu_id, m_stream));
 
   TaskExecInfo info = TaskExecInfo::SUCCESS;
   switch (src.PixelFormat()) {
   case NV12:
-    info = UDSemiPlanar(src, dst, m_ctx, nullptr);
+    info = UDSemiPlanar(src, dst, m_ctx, dst.PixelFormat());
     break;
   case P10:
-    // P12 isn't supported yet because of lack of YUV444_12bit support
-    info = UDSemiPlanarHBD(src, dst, m_ctx, nullptr);
+    info = UDSemiPlanarHBD(src, dst, m_ctx, dst.PixelFormat());
     break;
   case YUV420:
   case YUV422:
