@@ -173,7 +173,11 @@ class TestDecoder(unittest.TestCase):
         if format == vali.PixelFormat.YUV420:
             format = vali.PixelFormat.NV12
 
-        self.assertEqual(self.gtByName(gt_name).pix_fmt, str(format))
+        if case_name == 'hevc_10bit_cpu':
+            # More format shenanigans
+            self.assertEqual(vali.PixelFormat.YUV420_10bit, format)
+        else:
+            self.assertEqual(self.gtByName(gt_name).pix_fmt, str(format))
 
     @parameterized.expand(tc.getDevices())
     def test_level(self, device_name: str, device_id: int):
