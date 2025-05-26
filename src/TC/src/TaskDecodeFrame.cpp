@@ -867,7 +867,7 @@ struct FfmpegDecodeFrame_Impl {
     case AV_PIX_FMT_YUV422P:
       return YUV422;
     case AV_PIX_FMT_YUV420P10:
-      return P10;
+      return YUV420_10bit;
     case AV_PIX_FMT_YUV420P12:
       return P12;
     case AV_PIX_FMT_GRAY12LE:
