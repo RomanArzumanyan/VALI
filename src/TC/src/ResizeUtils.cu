@@ -36,7 +36,7 @@ RescaleConvertYUV(cudaTextureObject_t tex_y, cudaTextureObject_t tex_uv,
   float luma = tex2D<float>(tex_y, x / scale_x, y / scale_y);
   float2 chroma = tex2D<float2>(tex_uv, x / (scale_x * 2), y / (scale_y * 2));
 
-  auto const pos_bytes = y * pitch + x * sizeof(T);
+  auto const pos_bytes = y * pitch + x * sizeof(channel);
   *(channel*)(dst_y + pos_bytes) = (channel)(luma * MAX);
   *(channel*)(dst_u + pos_bytes) = (channel)(chroma.x * MAX);
   *(channel*)(dst_v + pos_bytes) = (channel)(chroma.y * MAX);

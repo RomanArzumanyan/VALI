@@ -309,8 +309,8 @@ public:
 
   CUstream GetStream() const { return m_stream; }
 
-  const std::list<std::pair<Pixel_Format, Pixel_Format>>&
-  SupportedConversions() const;
+  static const std::list<std::pair<Pixel_Format, Pixel_Format>>&
+  SupportedConversions();
 
 private:
   /// @brief  GPU ID

@@ -46,7 +46,7 @@ import numpy as np
 import unittest
 import json
 import test_common as tc
-import cv2
+from parameterized import parameterized
 
 # We use 42 (dB) as the measure of similarity.
 # If two images have PSNR higher than 42 (dB) we consider them the same.
@@ -57,51 +57,135 @@ class TestSurfaceUD(unittest.TestCase):
     def __init__(self, methodName):
         super().__init__(methodName=methodName)
 
-        with open("gt_files.json") as f:
-            gt_values = json.load(f)
-            self.nv12_basic = tc.GroundTruth(**gt_values["basic"])
-            self.yuv444_small = tc.GroundTruth(**gt_values["small_yuv444"])
+        self.target_w = 640
+        self.target_h = 360
 
-    def test_nv12(self):
+    @staticmethod
+    def get_gt_name(fmt: vali.PixelFormat) -> str:
+        if fmt == vali.PixelFormat.NV12 or fmt == vali.PixelFormat.YUV420:
+            return 'basic'
+        elif fmt == vali.PixelFormat.P10 or fmt == vali.PixelFormat.YUV420_10bit:
+            return 'hevc10'
+
+    @parameterized.expand(vali.PySurfaceUD.SupportedFormats())
+    def test_cpu_decode(self, src_fmt, dst_fmt):
         """
-        This test checks UD transform from NV12 to YUV444.
+        This test checks UD transform.
+        It takes source frame from CPU-accelerated decoder.
         """
-        py_dec = vali.PyDecoder(input="data/test.mp4", opts={}, gpu_id=0)
+        supported_formats = [
+            vali.PixelFormat.YUV420,
+            vali.PixelFormat.YUV420_10bit,
+        ]
+
+        if not src_fmt in supported_formats:
+            return
+
+        gt = tc.gt_by_name(self.get_gt_name(src_fmt))
+
+        py_dec = vali.PyDecoder(input=gt.uri, opts={}, gpu_id=-1)
+        py_up = vali.PyFrameUploader(gpu_id=0)
         py_ud = vali.PySurfaceUD(gpu_id=0)
         py_dwn = vali.PySurfaceDownloader(gpu_id=0)
 
-        print(py_ud.SupportedFormats)
+        surf_src = vali.Surface.Make(
+            src_fmt,
+            py_dec.Width,
+            py_dec.Height,
+            0)
 
-        surf = [
-            vali.Surface.Make(
-                vali.PixelFormat.NV12,
-                py_dec.Width,
-                py_dec.Height,
-                0),
+        frame_src = np.ndarray(shape=surf_src.Shape,
+                               dtype=tc.to_numpy_dtype(surf_src))
 
-            vali.Surface.Make(
-                vali.PixelFormat.YUV444,
-                self.yuv444_small.width,
-                self.yuv444_small.height,
-                0)
+        success, info = py_dec.DecodeSingleFrame(frame_src)
+        if not success:
+            self.fail(info)
+
+        success, info = py_up.Run(frame_src, surf_src)
+        if not success:
+            self.fail(info)
+
+        surf_dst = vali.Surface.Make(
+            dst_fmt,
+            self.target_w,
+            self.target_h,
+            gpu_id=0
+        )
+
+        success, info = py_ud.Run(surf_src, surf_dst)
+        if not success:
+            self.fail(info)
+
+        frame = np.ndarray(shape=surf_dst.Shape,
+                           dtype=tc.to_numpy_dtype(surf_dst))
+        success, info = py_dwn.Run(surf_dst, frame)
+        if not success:
+            self.fail(info)
+
+        fname = str(self.target_w) + 'x' + str(self.target_h) + \
+            '_' + str(src_fmt) + '_' + str(dst_fmt) + '.raw'
+        fname = 'data/' + fname
+
+        with open(fname, 'rb') as f_in:
+            gt = np.fromfile(fname, dtype=frame.dtype)
+            gt = np.reshape(gt, frame.shape)
+            self.assertGreaterEqual(tc.measurePSNR(gt, frame), psnr_threshold)
+
+    @parameterized.expand(vali.PySurfaceUD.SupportedFormats())
+    def test_gpu_decode(self, src_fmt, dst_fmt):
+        """
+        This test checks UD transform.
+        It takes source frame from GPU-accelerated decoder.
+        """
+        supported_formats = [
+            vali.PixelFormat.NV12,
+            vali.PixelFormat.P10,
         ]
 
-        success, info = py_dec.DecodeSingleSurface(surf[0])
+        if not src_fmt in supported_formats:
+            return
+
+        gt = tc.gt_by_name(self.get_gt_name(src_fmt))
+
+        py_dec = vali.PyDecoder(input=gt.uri, opts={}, gpu_id=0)
+        py_ud = vali.PySurfaceUD(gpu_id=0)
+        py_dwn = vali.PySurfaceDownloader(gpu_id=0)
+
+        surf_src = vali.Surface.Make(
+            py_dec.Format,
+            py_dec.Width,
+            py_dec.Height,
+            0)
+
+        success, info = py_dec.DecodeSingleSurface(surf_src)
         if not success:
             self.fail(info)
 
-        success, info = py_ud.Run(surf[0], surf[1])
+        surf_dst = vali.Surface.Make(
+            dst_fmt,
+            self.target_w,
+            self.target_h,
+            gpu_id=0
+        )
+
+        success, info = py_ud.Run(surf_src, surf_dst)
         if not success:
             self.fail(info)
 
-        frame = np.ndarray(dtype=np.uint8, shape=(surf[1].Shape))
-        success, info = py_dwn.Run(surf[1], frame)
+        frame = np.ndarray(shape=surf_dst.Shape,
+                           dtype=tc.to_numpy_dtype(surf_dst))
+        success, info = py_dwn.Run(surf_dst, frame)
         if not success:
             self.fail(info)
 
-        gt_frame = np.fromfile(self.yuv444_small.uri, dtype=np.uint8)
-        score = tc.measurePSNR(gt_frame, frame)
-        self.assertGreaterEqual(score, psnr_threshold)
+        fname = str(self.target_w) + 'x' + str(self.target_h) + \
+            '_' + str(src_fmt) + '_' + str(dst_fmt) + '.raw'
+        fname = 'data/' + fname
+
+        with open(fname, 'rb') as f_in:
+            gt = np.fromfile(fname, dtype=frame.dtype)
+            gt = np.reshape(gt, frame.shape)
+            self.assertGreaterEqual(tc.measurePSNR(gt, frame), psnr_threshold)
 
 
 if __name__ == "__main__":

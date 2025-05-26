@@ -115,21 +115,18 @@ TaskExecInfo UDSemiPlanarHBD(Surface& src, Surface& dst, NppStreamContext& ctx,
 }
 
 const std::list<std::pair<Pixel_Format, Pixel_Format>>&
-UDSurface::SupportedConversions() const {
+UDSurface::SupportedConversions() {
   static const std::list<std::pair<Pixel_Format, Pixel_Format>> convs({
       {NV12, YUV444},
       {NV12, RGB},
       {NV12, RGB_32F},
       {NV12, RGB_PLANAR},
       {NV12, RGB_32F_PLANAR},
+      {YUV420, YUV444},
       {P10, YUV444_10bit},
       {P10, RGB_32F},
       {P10, RGB_32F_PLANAR},
-      {P12, RGB_32F},
-      {P12, RGB_32F_PLANAR},
-      {YUV420, YUV444},
       {YUV420_10bit, YUV444_10bit},
-      {YUV422, YUV444},
   });
 
   return convs;

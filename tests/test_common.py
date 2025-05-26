@@ -3,6 +3,8 @@ from typing import Optional
 import numpy as np
 from math import log10, sqrt
 from pynvml import *
+import python_vali as vali
+import json
 
 
 class GroundTruth(BaseModel):
@@ -123,3 +125,43 @@ def getDevices() -> list:
         pass
 
     return g_devices
+
+
+def to_numpy_dtype(surf: vali.Surface) -> np.dtype:
+    """
+    Returns numpy data type corresponding to surface
+
+    Args:
+        surf (vali.Surface): surface
+
+    Raises:
+        RuntimeError: if surface data type isn't supported
+
+    Returns:
+        np.dtype: numpy data type
+    """
+    elem_size = surf.Planes[0].ElemSize
+    if elem_size == 1:
+        return np.uint8
+    elif elem_size == 2:
+        return np.uint16
+    elif elem_size == 4:
+        return np.float32
+    else:
+        raise RuntimeError("Unsupported surface data type")
+
+
+def gt_by_name(name: str) -> GroundTruth:
+    """
+    Get ground truth dataclass by name
+
+    Args:
+        name (str): dataclass name
+
+    Returns:
+        GroundTruth: ground truth dataclass
+    """
+    with open("gt_files.json") as f:
+        data = json.load(f)
+
+    return GroundTruth(**data[name])

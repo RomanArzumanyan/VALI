@@ -34,7 +34,7 @@ PySurfaceUD::PySurfaceUD(int gpu_id, CUstream str) {
 std::list<std::pair<Pixel_Format, Pixel_Format>>
 PySurfaceUD::SupportedFormats() {
   return std::list<std::pair<Pixel_Format, Pixel_Format>>(
-      m_ud->SupportedConversions());
+      UDSurface::SupportedConversions());
 }
 
 bool PySurfaceUD::Run(Surface& src, Surface& dst, TaskExecDetails& details) {
@@ -44,23 +44,22 @@ bool PySurfaceUD::Run(Surface& src, Surface& dst, TaskExecDetails& details) {
 
 void Init_PySurfaceUD(py::module& m) {
   py::class_<PySurfaceUD>(m, "PySurfaceUD",
-                          "CUDA-accelerated Surface Updampler-Downscaler. "
-                          "Converts different YUV formats to YUV444.")
+                          "CUDA-accelerated Surface Upsampler-Downscaler")
       .def(py::init<int>(), py::arg("gpu_id"),
            R"pbdoc(
          Constructor method.
  
-         :param gpu_id: what GPU to run rotation on.
+         :param gpu_id: what GPU to run on.
      )pbdoc")
       .def(py::init<int, size_t>(), py::arg("gpu_id"), py::arg("stream"),
            R"pbdoc(
          Constructor method.
  
-         :param gpu_id: what GPU to run rotation on.
-         :param stream: CUDA stream to use for rotation.
+         :param gpu_id: what GPU to run on.
+         :param stream: CUDA stream to use.
      )pbdoc")
-      .def_property_readonly("SupportedFormats", &PySurfaceUD::SupportedFormats,
-                             py::call_guard<py::gil_scoped_release>(), R"pbdoc(
+      .def_static("SupportedFormats", &PySurfaceUD::SupportedFormats,
+                  py::call_guard<py::gil_scoped_release>(), R"pbdoc(
          Get list of supported pixel formats.
      )pbdoc")
       .def(
@@ -76,7 +75,7 @@ void Init_PySurfaceUD(py::module& m) {
 
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
-         Rotate input Surface.
+         Convert input Surface.
  
          :param src: input Surface.
          :param dst: output Surface.
@@ -99,7 +98,7 @@ void Init_PySurfaceUD(py::module& m) {
           py::arg("src"), py::arg("dst"), py::arg("record_event") = true,
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
-         Rotate input Surface.
+         Convert input Surface.
 
          :param src: input Surface.
          :param dst: output Surface.

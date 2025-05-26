@@ -394,6 +394,7 @@ Surface* Surface::Make(Pixel_Format format, uint32_t newWidth,
   case P10:
     return new SurfaceP10(newWidth, newHeight, context);
   case YUV420_10bit:
+    return new SurfaceYUV420_10bit(newWidth, newHeight, context);
   case P12:
     return new SurfaceP12(newWidth, newHeight, context);
   default:
@@ -471,7 +472,7 @@ std::vector<size_t> Surface::Shape() {
       }
     }
   } catch (...) {
-    shape.push_back(HostMemSize());
+    shape.push_back(HostMemSize() / ElemSize());
   }
 
   return shape;

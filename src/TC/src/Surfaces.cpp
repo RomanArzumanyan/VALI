@@ -288,6 +288,33 @@ SurfacePlane& SurfaceYUV420::GetSurfacePlane(uint32_t plane) {
   return m_planes.at(plane);
 }
 
+SurfaceYUV420::SurfaceYUV420(uint32_t width, uint32_t height,
+                             uint32_t hbd_elem_size, DLDataTypeCode code,
+                             CUcontext context) {
+  m_planes.clear();
+  /* Need to reserve place, otherwise vector may reallocate and SurfacePlane
+   * instances will be copied to new address loosing the memory ownership. Sic!
+   */
+  m_planes.reserve(NumPlanes());
+
+  // Y plane
+  m_planes.emplace_back(width, height, hbd_elem_size, code, TypeStr(), context);
+
+  // U and V planes, decimated size
+  m_planes.emplace_back(width / 2, height / 2, hbd_elem_size, code, TypeStr(),
+                        context);
+  m_planes.emplace_back(width / 2, height / 2, hbd_elem_size, code, TypeStr(),
+                        context);
+}
+
+SurfaceYUV420_10bit::SurfaceYUV420_10bit() : SurfaceYUV420() {}
+
+SurfaceYUV420_10bit::SurfaceYUV420_10bit(uint32_t width, uint32_t height,
+                                         CUcontext context)
+    : SurfaceYUV420(width, height, ElemSize(), DataType(), context) {}
+
+Surface* SurfaceYUV420_10bit::Create() { return new SurfaceYUV420_10bit; }
+
 SurfaceYUV422::SurfaceYUV422() {
   m_planes.clear();
   for (auto i = 0; i < NumPlanes(); i++) {
@@ -398,7 +425,7 @@ uint32_t SurfaceYUV444::Pitch(uint32_t plane) const {
 }
 
 CUdeviceptr SurfaceYUV444::PixelPtr(uint32_t component) {
-  return m_planes.at(component).GpuMem();
+  return GetSurfacePlane(component).GpuMem();
 }
 
 SurfacePlane& SurfaceYUV444::GetSurfacePlane(uint32_t plane) {

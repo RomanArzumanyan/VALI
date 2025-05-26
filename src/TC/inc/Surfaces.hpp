@@ -131,7 +131,7 @@ public:
 
 /* 8-bit YUV420P image;
  */
-class TC_EXPORT SurfaceYUV420 final : public Surface {
+class TC_EXPORT SurfaceYUV420 : public Surface {
 public:
   virtual ~SurfaceYUV420() = default;
   SurfaceYUV420(const SurfaceYUV420& other) = delete;
@@ -174,6 +174,28 @@ public:
     throw std::runtime_error("Number of CUDA memory allocations > 1, cant "
                              "seriaize into CUDA Adday Interface.");
   }
+
+protected:
+  // For high bit depth ancestors;
+  SurfaceYUV420(uint32_t width, uint32_t height, uint32_t hbd_elem_size,
+                DLDataTypeCode code, CUcontext context);
+};
+
+class TC_EXPORT SurfaceYUV420_10bit final : public SurfaceYUV420 {
+public:
+  virtual ~SurfaceYUV420_10bit() = default;
+  SurfaceYUV420_10bit(const SurfaceYUV420_10bit& other) = delete;
+  SurfaceYUV420_10bit(SurfaceYUV420_10bit&& other) = delete;
+  SurfaceYUV420_10bit& operator=(const SurfaceYUV420_10bit& other) = delete;
+  SurfaceYUV420_10bit& operator=(SurfaceYUV420_10bit&& other) = delete;
+
+  SurfaceYUV420_10bit();
+  SurfaceYUV420_10bit(uint32_t width, uint32_t height, CUcontext context);
+
+  Surface* Create();
+  Pixel_Format PixelFormat() const { return YUV420_10bit; }
+  uint32_t ElemSize() const { return sizeof(uint16_t); }
+  std::string TypeStr() const { return "<u2"; }
 };
 
 class TC_EXPORT SurfaceYUV422 final : public Surface {
