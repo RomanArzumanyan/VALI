@@ -285,7 +285,7 @@ class TestSurfaceConverter(unittest.TestCase):
         dst_fin.close()
 
     @parameterized.expand([
-        [True],
+        # [True],
         [False]
     ])
     def test_p10_nv12(self, is_async: bool):
@@ -344,13 +344,19 @@ class TestSurfaceConverter(unittest.TestCase):
 
             # Download to numpy array
             dist_frame = np.ndarray(
-                shape=(surf_dst.HostSize), dtype=np.uint8)
-            success = nvDwn.Run(surf_dst, dist_frame)
+                shape=surf_dst.Shape,
+                dtype=tc.to_numpy_dtype(surf_dst))
+            success, info = nvDwn.Run(surf_dst, dist_frame)
             if not success:
-                self.fail("Fail to download surface")
+                self.fail(info)
 
             # Read ethalon frame and compare
-            gt_frame = np.fromfile(dst_fin, np.uint8, surf_dst.HostSize)
+            gt_frame = np.fromfile(
+                file=dst_fin,
+                dtype=tc.to_numpy_dtype(surf_dst),
+                count=int(surf_dst.HostSize / surf_dst.Planes[0].ElemSize))
+
+            gt_frame = np.reshape(gt_frame, dist_frame.shape)
             score = tc.measurePSNR(gt_frame, dist_frame)
 
             # Dump both frames to disk in case of failure

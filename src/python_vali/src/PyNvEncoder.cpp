@@ -29,15 +29,13 @@ int nvcvImagePitch = 0;
 
 struct EncodeContext {
   std::shared_ptr<Surface> rawSurface;
-  py::array_t<uint8_t>* pPacket;
-  const py::array_t<uint8_t>* pMessageSEI;
+  py::array* pPacket;
+  const py::array* pMessageSEI;
   bool sync;
   bool append;
 
-  EncodeContext(std::shared_ptr<Surface> spRawSurface,
-                py::array_t<uint8_t>* packet,
-                const py::array_t<uint8_t>* messageSEI, bool is_sync,
-                bool is_append)
+  EncodeContext(std::shared_ptr<Surface> spRawSurface, py::array* packet,
+                const py::array* messageSEI, bool is_sync, bool is_append)
       : rawSurface(spRawSurface), pPacket(packet), pMessageSEI(messageSEI),
         sync(is_sync), append(is_append) {}
 };
@@ -237,8 +235,11 @@ bool PyNvEncoder::EncodeSingleSurface(EncodeContext& ctx) {
     upEncoder->SetInput(spSEI.get(), 2U);
   }
 
-  if (TASK_EXEC_FAIL == upEncoder->Execute().m_status) {
-    throw runtime_error("Error while encoding frame");
+  {
+    py::gil_scoped_release gil_release{};
+    if (TASK_EXEC_FAIL == upEncoder->Execute().m_status) {
+      throw runtime_error("Error while encoding frame");
+    }
   }
 
   auto encodedFrame = (Buffer*)upEncoder->GetOutput(0U);
@@ -259,18 +260,18 @@ bool PyNvEncoder::EncodeSingleSurface(EncodeContext& ctx) {
   return false;
 }
 
-bool PyNvEncoder::FlushSinglePacket(py::array_t<uint8_t>& packet) {
+bool PyNvEncoder::FlushSinglePacket(py::array& packet) {
   /* Keep feeding encoder with null input until it returns zero-size
    * surface; */
   shared_ptr<Surface> spRawSurface = nullptr;
-  const py::array_t<uint8_t>* messageSEI = nullptr;
+  const py::array* messageSEI = nullptr;
   auto const is_sync = true;
   auto const is_append = false;
   EncodeContext ctx(spRawSurface, &packet, messageSEI, is_sync, is_append);
   return EncodeSingleSurface(ctx);
 }
 
-bool PyNvEncoder::Flush(py::array_t<uint8_t>& packets) {
+bool PyNvEncoder::Flush(py::array& packets) {
   uint32_t num_packets = 0U;
   do {
     if (!FlushSinglePacket(packets)) {
@@ -282,36 +283,34 @@ bool PyNvEncoder::Flush(py::array_t<uint8_t>& packets) {
 }
 
 bool PyNvEncoder::EncodeSurface(shared_ptr<Surface> rawSurface,
-                                py::array_t<uint8_t>& packet,
-                                const py::array_t<uint8_t>& messageSEI,
+                                py::array& packet, const py::array& messageSEI,
                                 bool sync, bool append) {
   EncodeContext ctx(rawSurface, &packet, &messageSEI, sync, append);
   return EncodeSingleSurface(ctx);
 }
 
 bool PyNvEncoder::EncodeSurface(shared_ptr<Surface> rawSurface,
-                                py::array_t<uint8_t>& packet,
-                                const py::array_t<uint8_t>& messageSEI,
+                                py::array& packet, const py::array& messageSEI,
                                 bool sync) {
   EncodeContext ctx(rawSurface, &packet, &messageSEI, sync, false);
   return EncodeSingleSurface(ctx);
 }
 
 bool PyNvEncoder::EncodeSurface(shared_ptr<Surface> rawSurface,
-                                py::array_t<uint8_t>& packet, bool sync) {
+                                py::array& packet, bool sync) {
   EncodeContext ctx(rawSurface, &packet, nullptr, sync, false);
   return EncodeSingleSurface(ctx);
 }
 
 bool PyNvEncoder::EncodeSurface(shared_ptr<Surface> rawSurface,
-                                py::array_t<uint8_t>& packet,
-                                const py::array_t<uint8_t>& messageSEI) {
+                                py::array& packet,
+                                const py::array& messageSEI) {
   EncodeContext ctx(rawSurface, &packet, &messageSEI, false, false);
   return EncodeSingleSurface(ctx);
 }
 
 bool PyNvEncoder::EncodeSurface(shared_ptr<Surface> rawSurface,
-                                py::array_t<uint8_t>& packet) {
+                                py::array& packet) {
   EncodeContext ctx(rawSurface, &packet, nullptr, false, false);
   return EncodeSingleSurface(ctx);
 }
@@ -445,12 +444,10 @@ void Init_PyNvEncoder(py::module& m) {
         Return dictionary with Nvenc capabilities.
     )pbdoc")
       .def("EncodeSingleSurface",
-           py::overload_cast<shared_ptr<Surface>, py::array_t<uint8_t>&,
-                             const py::array_t<uint8_t>&, bool, bool>(
-               &PyNvEncoder::EncodeSurface),
+           py::overload_cast<shared_ptr<Surface>, py::array&, const py::array&,
+                             bool, bool>(&PyNvEncoder::EncodeSurface),
            py::arg("surface"), py::arg("packet"), py::arg("sei"),
            py::arg("sync"), py::arg("append"),
-           py::call_guard<py::gil_scoped_release>(),
            R"pbdoc(
         Encode single Surface. Please not that this function may not return
         compressed video packet.
@@ -463,11 +460,10 @@ void Init_PyNvEncoder(py::module& m) {
         :return: True in case of success, False otherwise.
     )pbdoc")
       .def("EncodeSingleSurface",
-           py::overload_cast<shared_ptr<Surface>, py::array_t<uint8_t>&,
-                             const py::array_t<uint8_t>&, bool>(
-               &PyNvEncoder::EncodeSurface),
+           py::overload_cast<shared_ptr<Surface>, py::array&, const py::array&,
+                             bool>(&PyNvEncoder::EncodeSurface),
            py::arg("surface"), py::arg("packet"), py::arg("sei"),
-           py::arg("sync"), py::call_guard<py::gil_scoped_release>(),
+           py::arg("sync"),
            R"pbdoc(
         Encode single Surface. Please not that this function may not return
         compressed video packet.
@@ -479,10 +475,9 @@ void Init_PyNvEncoder(py::module& m) {
         :return: True in case of success, False otherwise.
     )pbdoc")
       .def("EncodeSingleSurface",
-           py::overload_cast<shared_ptr<Surface>, py::array_t<uint8_t>&, bool>(
+           py::overload_cast<shared_ptr<Surface>, py::array&, bool>(
                &PyNvEncoder::EncodeSurface),
            py::arg("surface"), py::arg("packet"), py::arg("sync"),
-           py::call_guard<py::gil_scoped_release>(),
            R"pbdoc(
         Encode single Surface. Please not that this function may not return
         compressed video packet.
@@ -493,11 +488,9 @@ void Init_PyNvEncoder(py::module& m) {
         :return: True in case of success, False otherwise.
     )pbdoc")
       .def("EncodeSingleSurface",
-           py::overload_cast<shared_ptr<Surface>, py::array_t<uint8_t>&,
-                             const py::array_t<uint8_t>&>(
+           py::overload_cast<shared_ptr<Surface>, py::array&, const py::array&>(
                &PyNvEncoder::EncodeSurface),
            py::arg("surface"), py::arg("packet"), py::arg("sei"),
-           py::call_guard<py::gil_scoped_release>(),
            R"pbdoc(
         Encode single Surface. Please not that this function may not return
         compressed video packet.
@@ -508,10 +501,9 @@ void Init_PyNvEncoder(py::module& m) {
         :return: True in case of success, False otherwise.
     )pbdoc")
       .def("EncodeSingleSurface",
-           py::overload_cast<shared_ptr<Surface>, py::array_t<uint8_t>&>(
+           py::overload_cast<shared_ptr<Surface>, py::array&>(
                &PyNvEncoder::EncodeSurface),
            py::arg("surface"), py::arg("packet"),
-           py::call_guard<py::gil_scoped_release>(),
            R"pbdoc(
         Encode single Surface. Please not that this function may not return
         compressed video packet.
@@ -521,7 +513,6 @@ void Init_PyNvEncoder(py::module& m) {
         :return: True in case of success, False otherwise.
     )pbdoc")
       .def("Flush", &PyNvEncoder::Flush, py::arg("packets"),
-           py::call_guard<py::gil_scoped_release>(),
            R"pbdoc(
         Flush encoder.
         Use this method in the end of encoding session to obtain all remaining
@@ -531,7 +522,7 @@ void Init_PyNvEncoder(py::module& m) {
         :return: True in case of success, False otherwise.
     )pbdoc")
       .def("FlushSinglePacket", &PyNvEncoder::FlushSinglePacket,
-           py::arg("packets"), py::call_guard<py::gil_scoped_release>(),
+           py::arg("packets"),
            R"pbdoc(
         Flush encoder.
         Use this method in the end of encoding session to obtain single remaining
