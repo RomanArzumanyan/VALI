@@ -285,7 +285,7 @@ class TestSurfaceConverter(unittest.TestCase):
         dst_fin.close()
 
     @parameterized.expand([
-        # [True],
+        [True],
         [False]
     ])
     def test_p10_nv12(self, is_async: bool):
