@@ -233,13 +233,23 @@ class TestSurface(unittest.TestCase):
             rgb_frame = np.fromfile(f_in, np.uint8, frame_size)
 
         pyUpl = vali.PyFrameUploader(gpu_id=0)
+        pyRes = vali.PySurfaceResizer(vali.PixelFormat.RGB, gpu_id=0)
 
+        # At some point nvimgcodec lost support of pitched allocations
+        # So we convert image to bigger one, which width will be
+        # same as pitch. Sic !
         surf_rgb = vali.Surface.Make(
             vali.PixelFormat.RGB,
             rgbInfo.width,
             rgbInfo.height,
             gpu_id=0)
-
+        
+        surf_big = vali.Surface.Make(
+            vali.PixelFormat.RGB,
+            1024,
+            560,
+            gpu_id=0)
+        
         nvJpg = vali.PyNvJpegEncoder(gpu_id=0)
 
         nvJpgCtx = nvJpg.Context(
@@ -250,12 +260,17 @@ class TestSurface(unittest.TestCase):
         if not success:
             self.fail("Failed to upload RGB frame: " + str(info))
 
+        success, info = pyRes.Run(surf_rgb, surf_big)
+        if not success:
+            self.fail(str(info))
+
         # Share memory with nvimmgcodec and compress to jpeg
         encoder = nvimgcodec.Encoder()
-        encoder.write("frame_nvcv.jpg", nvimgcodec.as_image(surf_rgb))
+        img = nvimgcodec.as_image(surf_big)
+        encoder.write("frame_nvcv.jpg", img)
 
         # Do the same thing with PyNvJpegEncoder
-        buffers, info = nvJpg.Run(nvJpgCtx, [surf_rgb])
+        buffers, info = nvJpg.Run(nvJpgCtx, [surf_big])
         if len(buffers) != 1:
             self.fail("Failed to encode jpeg: " + str(info))
 

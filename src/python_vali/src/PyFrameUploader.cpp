@@ -34,6 +34,7 @@ bool PyFrameUploader::Run(py::array& src, Surface& dst,
                           TaskExecDetails details) {
   auto buffer =
       std::shared_ptr<Buffer>(Buffer::Make(src.nbytes(), src.mutable_data()));
+  py::gil_scoped_release gil_release{};
 
   m_uploader->SetInput(buffer.get(), 0U);
   m_uploader->SetInput(&dst, 1U);
@@ -61,7 +62,6 @@ void Init_PyFrameUploader(py::module& m) {
             return std::make_tuple(self.Run(src, dst, details), details.m_info);
           },
           py::arg("src"), py::arg("dst"),
-          py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
         Blocking HtoD CUDA memcpy.
 

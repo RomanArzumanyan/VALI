@@ -130,45 +130,6 @@ public:
   std::shared_ptr<CudaStreamEvent> m_event;
 };
 
-class DecodeContext {
-private:
-  std::shared_ptr<Surface> pSurface;
-
-  py::array_t<uint8_t>* pSei;
-  py::array_t<uint8_t>* pPacket;
-
-  PacketData* pInPktData;
-  PacketData* pOutPktData;
-
-  SeekContext* pSeekCtx;
-
-  bool flush;
-
-public:
-  DecodeContext(py::array_t<uint8_t>* sei, py::array_t<uint8_t>* packet,
-                PacketData* in_pkt_data, PacketData* out_pkt_data,
-                SeekContext* seek_ctx, bool is_flush = false);
-
-  bool IsSeek() const;
-  bool IsStandalone() const;
-  bool IsFlush() const;
-  bool HasSEI() const;
-  bool HasOutPktData() const;
-  bool HasInPktData() const;
-
-  const py::array_t<uint8_t>* GetPacket() const;
-  const PacketData* GetInPacketData() const;
-  const SeekContext* GetSeekContext() const;
-
-  SeekContext* GetSeekContextMutable();
-  std::shared_ptr<Surface> GetSurfaceMutable();
-
-  void SetOutPacketData(PacketData* out_pkt_data);
-  void SetOutPacketData(const PacketData& out_pkt_data);
-  void SetSei(Buffer* sei);
-  void SetCloneSurface(Surface* p_surface);
-};
-
 class BufferedReader {
 public:
   BufferedReader(py::object obj);
@@ -291,29 +252,24 @@ public:
               bool verbose = false)
       : PyNvEncoder(encodeOptions, gpu_id, (CUstream)str, format, verbose) {}
 
-  bool EncodeSurface(std::shared_ptr<Surface> rawSurface,
-                     py::array_t<uint8_t>& packet,
-                     const py::array_t<uint8_t>& messageSEI, bool sync,
-                     bool append);
+  bool EncodeSurface(std::shared_ptr<Surface> rawSurface, py::array& packet,
+                     const py::array& messageSEI, bool sync, bool append);
 
-  bool EncodeSurface(std::shared_ptr<Surface> rawSurface,
-                     py::array_t<uint8_t>& packet,
-                     const py::array_t<uint8_t>& messageSEI, bool sync);
+  bool EncodeSurface(std::shared_ptr<Surface> rawSurface, py::array& packet,
+                     const py::array& messageSEI, bool sync);
 
-  bool EncodeSurface(std::shared_ptr<Surface> rawSurface,
-                     py::array_t<uint8_t>& packet, bool sync);
+  bool EncodeSurface(std::shared_ptr<Surface> rawSurface, py::array& packet,
+                     bool sync);
 
-  bool EncodeSurface(std::shared_ptr<Surface> rawSurface,
-                     py::array_t<uint8_t>& packet,
-                     const py::array_t<uint8_t>& messageSEI);
+  bool EncodeSurface(std::shared_ptr<Surface> rawSurface, py::array& packet,
+                     const py::array& messageSEI);
 
-  bool EncodeSurface(std::shared_ptr<Surface> rawSurface,
-                     py::array_t<uint8_t>& packet);
+  bool EncodeSurface(std::shared_ptr<Surface> rawSurface, py::array& packet);
 
   // Flush all the encoded frames (packets)
-  bool Flush(py::array_t<uint8_t>& packets);
+  bool Flush(py::array& packets);
   // Flush only one encoded frame (packet)
-  bool FlushSinglePacket(py::array_t<uint8_t>& packet);
+  bool FlushSinglePacket(py::array& packet);
 
   static void CheckValidCUDABuffer(const void* ptr) {
     if (ptr == nullptr) {

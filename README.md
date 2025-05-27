@@ -21,7 +21,6 @@ VALI works on Linux(tested on Ubuntu 22.04) and Windows
 - Python 3.11 and above
 - Install a C++ toolchain either via Visual Studio or Tools for Visual Studio.
   - Recommended version is Visual Studio 2017 and above (Windows only)
-- Please note that for the moment numpy v.2.0 isn't supported yet. Please downgrage to v.1.26
 
 ## Licensing
 VALI sources are available under Apache 2 license.

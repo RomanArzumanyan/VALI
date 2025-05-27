@@ -87,6 +87,9 @@ def measurePSNR(gt: np.ndarray, dist: np.ndarray) -> float:
     gt:     Ground Truth picture
     dist:   Distorted picture
     """
+    if gt.dtype != dist.dtype:
+        raise RuntimeError(f"Datatype mismatch: {gt.dtype} vs {dist.dtype}")
+
     mse = np.mean((gt - dist) ** 2)
     if mse == 0:
         return 100.0

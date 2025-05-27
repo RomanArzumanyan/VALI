@@ -89,6 +89,8 @@ bool PyDecoder::DecodeSingleFrame(py::array& frame, TaskExecDetails& details,
 
   auto dst = std::shared_ptr<Buffer>(
       Buffer::Make(frame.nbytes(), frame.mutable_data()));
+
+  py::gil_scoped_release gil_release{};
   return DecodeImpl(details, pkt_data, *dst.get(), seek_ctx);
 }
 
@@ -360,7 +362,6 @@ void Init_PyDecoder(py::module& m) {
             return std::make_tuple(res, details.m_info);
           },
           py::arg("frame"), py::arg("seek_ctx") = std::nullopt,
-          py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
         Decode single video frame from input file.
         Only call this method for decoder without HW acceleration.
@@ -382,7 +383,6 @@ void Init_PyDecoder(py::module& m) {
           },
           py::arg("frame"), py::arg("pkt_data"),
           py::arg("seek_ctx") = std::nullopt,
-          py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
         Decode single video frame from input file.
         Only call this method for decoder without HW acceleration.

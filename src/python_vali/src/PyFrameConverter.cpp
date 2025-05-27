@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#include "VALI.hpp"
 #include "Utils.hpp"
+#include "VALI.hpp"
 
 using namespace VPF;
 namespace py = pybind11;
@@ -48,6 +48,8 @@ bool PyFrameConverter::Run(py::array& src, py::array& dst,
 
   auto dst_buf = std::shared_ptr<Buffer>(
       Buffer::Make(dst.nbytes(), (void*)dst.mutable_data()));
+
+  py::gil_scoped_release gil_release{};
 
   m_up_cvt->ClearInputs();
   m_up_cvt->SetInput(src_buf.get(), 0U);
@@ -89,7 +91,6 @@ void Init_PyFrameConverter(py::module& m) {
                                    details.m_info);
           },
           py::arg("src"), py::arg("dst"), py::arg("cc_ctx"),
-          py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
         Perform pixel format conversion.
 

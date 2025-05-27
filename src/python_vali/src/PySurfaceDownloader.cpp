@@ -37,6 +37,7 @@ bool PySurfaceDownloader::Run(Surface& src, py::array& dst,
                               TaskExecDetails& details) {
   auto buffer =
       std::shared_ptr<Buffer>(Buffer::Make(dst.nbytes(), dst.mutable_data()));
+  py::gil_scoped_release gil_release{};
 
   upDownloader->SetInput(&src, 0U);
   upDownloader->SetInput(buffer.get(), 1U);
@@ -69,7 +70,6 @@ void Init_PySurfaceDownloader(py::module& m) {
             return std::make_tuple(self.Run(src, dst, details), details.m_info);
           },
           py::arg("src"), py::arg("dst"),
-          py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
         Perform DtoH memcpy.
 
