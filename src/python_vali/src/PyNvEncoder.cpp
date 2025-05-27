@@ -247,7 +247,7 @@ bool PyNvEncoder::EncodeSingleSurface(EncodeContext& ctx) {
     if (ctx.append) {
       auto old_size = ctx.pPacket->size();
       ctx.pPacket->resize({old_size + encodedFrame->GetRawMemSize()}, false);
-      memcpy(ctx.pPacket->mutable_data() + old_size,
+      memcpy((uint8_t*)ctx.pPacket->mutable_data() + old_size,
              encodedFrame->GetRawMemPtr(), encodedFrame->GetRawMemSize());
     } else {
       ctx.pPacket->resize({encodedFrame->GetRawMemSize()}, false);
