@@ -14,44 +14,17 @@
 # limitations under the License.
 #
 
-# Starting from Python 3.8 DLL search policy has changed.
-# We need to add path to CUDA DLLs explicitly.
-import sys
-import os
-from os.path import join, dirname
-
-if os.name == "nt":
-    # Add CUDA_PATH env variable
-    cuda_path = os.environ["CUDA_PATH"]
-    if cuda_path:
-        os.add_dll_directory(os.path.join(cuda_path, "bin"))
-    else:
-        print("CUDA_PATH environment variable is not set.", file=sys.stderr)
-        print("Can't set CUDA DLLs search path.", file=sys.stderr)
-        exit(1)
-
-    # Add PATH as well for minor CUDA releases
-    sys_path = os.environ["PATH"]
-    if sys_path:
-        paths = sys_path.split(";")
-        for path in paths:
-            if os.path.isdir(path):
-                os.add_dll_directory(path)
-    else:
-        print("PATH environment variable is not set.", file=sys.stderr)
-        exit(1)
-
 import python_vali as vali
 import numpy as np
 import unittest
 import json
 import test_common as tc
 import torch
-import torchvision
 import logging
 from PIL import Image
 from nvidia import nvimgcodec
 from io import BytesIO
+import os
 
 # We use 42 (dB) as the measure of similarity.
 # If two images have PSNR higher than 42 (dB) we consider them the same.
@@ -316,6 +289,61 @@ class TestSurface(unittest.TestCase):
             np.asarray(Image.open("data/frame_0.jpg")),
             np.asarray(Image.open(BytesIO(np.ndarray.tobytes(buffers[0])))))
         self.assertGreaterEqual(psnr_score, psnr_threshold)
+
+    def test_surface_make_all_formats(self):
+        """Test Surface.Make with all supported pixel formats.
+        
+        This test verifies that Surface.Make can create surfaces for all
+        supported pixel formats with valid dimensions.
+        """
+        # Test dimensions
+        width = 1920
+        height = 1080
+        gpu_id = 0  # Use first GPU device
+        
+        # List of all supported pixel formats
+        formats = [
+            vali.PixelFormat.Y,
+            vali.PixelFormat.RGB,
+            vali.PixelFormat.NV12,
+            vali.PixelFormat.YUV420,
+            vali.PixelFormat.RGB_PLANAR,
+            vali.PixelFormat.BGR,
+            vali.PixelFormat.YUV444,
+            vali.PixelFormat.YUV444_10bit,
+            vali.PixelFormat.YUV420_10bit,
+            vali.PixelFormat.RGB_32F,
+            vali.PixelFormat.RGB_32F_PLANAR,
+            vali.PixelFormat.YUV422,
+            vali.PixelFormat.P10,
+            vali.PixelFormat.P12
+        ]
+        
+        for fmt in formats:
+            # Create surface with current format
+            surf = vali.Surface.Make(fmt, width, height, gpu_id)
+            
+            # Verify surface was created successfully
+            self.assertIsNotNone(surf)
+            
+            # Verify surface properties
+            self.assertEqual(surf.Width, width)
+            self.assertEqual(surf.Height, height)
+            self.assertEqual(surf.Format, fmt)
+            
+            # Verify surface has valid memory allocation
+            self.assertGreater(surf.HostSize, 0)
+            
+            # Verify surface has correct number of planes based on format
+            if fmt in [vali.PixelFormat.Y, vali.PixelFormat.RGB, vali.PixelFormat.BGR, 
+                      vali.PixelFormat.RGB_32F, vali.PixelFormat.NV12, 
+                      vali.PixelFormat.P10, vali.PixelFormat.P12, vali.PixelFormat.RGB_PLANAR,
+                        vali.PixelFormat.RGB_32F_PLANAR]:
+                self.assertEqual(surf.NumPlanes, 1)
+            elif fmt in [vali.PixelFormat.YUV420, vali.PixelFormat.YUV420_10bit,
+                        vali.PixelFormat.YUV422, vali.PixelFormat.YUV444, 
+                        vali.PixelFormat.YUV444_10bit]:
+                self.assertEqual(surf.NumPlanes, 3)
 
 
 if __name__ == "__main__":

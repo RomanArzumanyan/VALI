@@ -134,10 +134,10 @@ struct FfmpegDecodeFrame_Impl {
   // Flag which signals that decode is done
   bool m_end_decode = false;
 
-  // Flag which signals that decoder needs to be flushed
-  bool m_flush = false;
+  // Flag which signals that encoded packets aren't accepted
+  bool m_noacpt = false;
 
-  // Flag which signals that current packet needs to be resent
+  // Flag which signals that packet needs to be resent to decoder
   bool m_resend = false;
 
   // Flag which signals end of file
@@ -492,44 +492,20 @@ struct FfmpegDecodeFrame_Impl {
                              "decode finished");
     }
 
-    // Send packets to decoder until it outputs frame;
+    // Run in loop until a decoded frame is received from decoder
     do {
-      // Read packets from stream until we find a video packet;
+      auto status = DEC_SUCCESS;
       do {
-        if (m_eof || m_flush) {
+        status = ReadPacket();
+        if (status != DEC_SUCCESS)
           break;
-        }
 
-        if (m_resend) {
-          m_resend = false;
+        status = SendPacket();
+        if (status != DEC_SUCCESS)
           break;
-        }
 
-        m_timeout_handler->Reset();
-        auto ret = av_read_frame(m_fmt_ctx.get(), m_pkt.get());
-
-        if (AVERROR_EOF == ret) {
-          m_eof = true;
-          break;
-        } else if (ret < 0) {
-          m_end_decode = true;
-          return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL,
-                                 TaskExecInfo::FAIL, AvErrorToString(ret));
-        } else {
-          m_num_pkt_read++;
-        }
-      } while (m_pkt->stream_index != GetVideoStrIdx());
-
-      /* Skip all packets which don't contain key frame(s).
-       * Also need to check m_eof flag to make sure we didn't accidentally
-       * reach EOF while skipping.
-       */
-      if (DecodeMode::KEY_FRAMES == GetMode() && !m_eof &&
-          !(m_pkt->flags & AV_PKT_FLAG_KEY)) {
-        continue;
-      }
-
-      auto status = DecodeSinglePacket(m_eof ? nullptr : m_pkt.get(), dst);
+        status = ReceiveFrame(dst);
+      } while (false);
 
       switch (status) {
       case DEC_SUCCESS:
@@ -548,7 +524,7 @@ struct FfmpegDecodeFrame_Impl {
                                TaskExecInfo::RES_CHANGE, "resolution change");
       case DEC_MORE:
         // Just continue the loop to get more data;
-        break;
+        continue;
       default:
         return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL,
                                TaskExecInfo::FAIL, "unknown decode error");
@@ -683,50 +659,84 @@ struct FfmpegDecodeFrame_Impl {
     return DEC_SUCCESS;
   }
 
-  /* Decodes single video frame.
-   *
-   * Upon successful decoder copies decoded frame to dst token and returns
-   * DEC_SUCCESS.
-   *
-   * Upon resolution change doesn't copy decoded frame to dst token and
-   * returns DEC_RES_CHANGE.
-   *
-   * Upon EOF returns DEC_EOS.
-   *
-   * If packet cant be sent it will return DEC_NEED_FLUSH.
-   *
-   * Upont error returns DEC_ERROR.
-   */
-  DECODE_STATUS DecodeSinglePacket(AVPacket* pkt, Token& dst) {
-    SaveCurrentRes();
-    int res = 0;
+  DECODE_STATUS ReadPacket() {
+    auto is_desired_packet = [this](std::shared_ptr<AVPacket> pkt) {
+      auto const is_video = GetVideoStrIdx() == pkt->stream_index;
+      auto const is_key = pkt->flags & AV_PKT_FLAG_KEY;
 
-    if (!m_flush) {
-      res = avcodec_send_packet(m_avc_ctx.get(), pkt);
-      if (AVERROR_EOF == res) {
-        // Flush decoder;
-        res = 0;
-      } else if (res == AVERROR(EAGAIN)) {
-        // Need to call for avcodec_receive frame and then resend packet;
-        m_flush = true;
-      } else if (res < 0) {
-        std::cerr << "Error while sending a packet to the decoder. ";
-        std::cerr << "Error description: " << AvErrorToString(res);
-        return DEC_ERROR;
-      } else {
-        m_num_pkt_sent++;
-        if (pkt) {
-          av_packet_unref(pkt);
-        }
+      return DecodeMode::KEY_FRAMES == GetMode() ? is_video && is_key
+                                                 : is_video;
+    };
+
+    /* If EOF is set, there's no way to read more packets.
+     * Also, if packets aren't accepted by decoder, we shall not read more
+     * of them until this flag is deactivated.
+     */
+    while (!m_eof && !m_noacpt) {
+
+      if (m_resend) {
+        m_resend = false;
+        break;
       }
+
+      auto tmp_pkt = std::shared_ptr<AVPacket>(
+          av_packet_alloc(), [](void* p) { av_packet_free((AVPacket**)&p); });
+
+      m_timeout_handler->Reset();
+      auto ret = av_read_frame(m_fmt_ctx.get(), tmp_pkt.get());
+
+      if (AVERROR_EOF == ret) {
+        m_eof = true;
+        break;
+      } else if (ret < 0) {
+        m_end_decode = true;
+        return DEC_ERROR;
+      }
+
+      m_num_pkt_read++;
+      if (is_desired_packet(tmp_pkt)) {
+        av_packet_move_ref(m_pkt.get(), tmp_pkt.get());
+        break;
+      }
+    };
+
+    return DEC_SUCCESS;
+  }
+
+  DECODE_STATUS SendPacket() {
+    if (m_noacpt)
+      return DEC_SUCCESS;
+
+    auto pkt = m_eof ? nullptr : m_pkt;
+
+    auto res = avcodec_send_packet(m_avc_ctx.get(), pkt ? pkt.get() : nullptr);
+    if (AVERROR_EOF == res) {
+      return DEC_SUCCESS;
+    } else if (res == AVERROR(EAGAIN)) {
+      // Need to call for avcodec_receive frame and then resend packet;
+      m_noacpt = true;
+    } else if (res < 0) {
+      std::cerr << "Error while sending a packet to the decoder. ";
+      std::cerr << "Error description: " << AvErrorToString(res);
+      return DEC_ERROR;
+    } else {
+      m_num_pkt_sent++;
+      if (!m_noacpt && pkt && pkt.get())
+        av_packet_unref(pkt.get());
     }
 
-    res = avcodec_receive_frame(m_avc_ctx.get(), m_frame.get());
+    return DEC_SUCCESS;
+  }
+
+  DECODE_STATUS ReceiveFrame(Token& dst) {
+    SaveCurrentRes();
+
+    auto res = avcodec_receive_frame(m_avc_ctx.get(), m_frame.get());
     if (res == AVERROR_EOF) {
       return DEC_EOS;
     } else if (res == AVERROR(EAGAIN)) {
-      if (m_flush) {
-        m_flush = false;
+      if (m_noacpt) {
+        m_noacpt = false;
         m_resend = true;
       }
       return DEC_MORE;
