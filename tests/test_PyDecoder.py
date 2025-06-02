@@ -1025,15 +1025,15 @@ class TestDecoder(unittest.TestCase):
         pyDec = vali.PyDecoder(gtInfo.uri, {}, gpu_id=device_id)
         
         # Default mode should be NORMAL
-        self.assertEqual(pyDec.GetMode(), vali.DecodeMode.NORMAL)
+        self.assertEqual(pyDec.GetMode, vali.DecodeMode.NORMAL)
         
         # Test setting to KEY_FRAMES mode
         pyDec.SetMode(vali.DecodeMode.KEY_FRAMES)
-        self.assertEqual(pyDec.GetMode(), vali.DecodeMode.KEY_FRAMES)
+        self.assertEqual(pyDec.GetMode, vali.DecodeMode.KEY_FRAMES)
         
         # Test setting back to NORMAL mode
         pyDec.SetMode(vali.DecodeMode.NORMAL)
-        self.assertEqual(pyDec.GetMode(), vali.DecodeMode.NORMAL)
+        self.assertEqual(pyDec.GetMode, vali.DecodeMode.NORMAL)
 
     def test_cuda_stream(self):
         """Test CUDA stream handling.
@@ -1049,7 +1049,7 @@ class TestDecoder(unittest.TestCase):
         pyDec = vali.PyDecoder(gtInfo.uri, {}, gpu_id=gpu_id)
         
         # Get the CUDA stream
-        stream = pyDec.GetStream()
+        stream = pyDec.GetStream
         self.assertIsNotNone(stream)
         
         # Create a surface and decode a frame

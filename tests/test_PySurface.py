@@ -20,11 +20,11 @@ import unittest
 import json
 import test_common as tc
 import torch
-import torchvision
 import logging
 from PIL import Image
 from nvidia import nvimgcodec
 from io import BytesIO
+import os
 
 # We use 42 (dB) as the measure of similarity.
 # If two images have PSNR higher than 42 (dB) we consider them the same.
@@ -337,12 +337,12 @@ class TestSurface(unittest.TestCase):
             # Verify surface has correct number of planes based on format
             if fmt in [vali.PixelFormat.Y, vali.PixelFormat.RGB, vali.PixelFormat.BGR, 
                       vali.PixelFormat.RGB_32F, vali.PixelFormat.NV12, 
-                      vali.PixelFormat.P10, vali.PixelFormat.P12]:
+                      vali.PixelFormat.P10, vali.PixelFormat.P12, vali.PixelFormat.RGB_PLANAR,
+                        vali.PixelFormat.RGB_32F_PLANAR]:
                 self.assertEqual(surf.NumPlanes, 1)
             elif fmt in [vali.PixelFormat.YUV420, vali.PixelFormat.YUV420_10bit,
                         vali.PixelFormat.YUV422, vali.PixelFormat.YUV444, 
-                        vali.PixelFormat.YUV444_10bit, vali.PixelFormat.RGB_PLANAR,
-                        vali.PixelFormat.RGB_32F_PLANAR]:
+                        vali.PixelFormat.YUV444_10bit]:
                 self.assertEqual(surf.NumPlanes, 3)
 
 
