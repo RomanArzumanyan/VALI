@@ -492,6 +492,10 @@ struct FfmpegDecodeFrame_Impl {
                              "decode finished");
     }
 
+    auto is_desired_packet = [this](std::shared_ptr<AVPacket> pkt) {
+      return pkt->stream_index == GetVideoStrIdx();
+    };
+
     // Send packets to decoder until it outputs frame;
     do {
       // Read packets from stream until we find a video packet;
@@ -505,21 +509,28 @@ struct FfmpegDecodeFrame_Impl {
           break;
         }
 
+        auto tmp_pkt = std::shared_ptr<AVPacket>(
+            av_packet_alloc(), [](void* p) { av_packet_free((AVPacket**)&p); });
+
         m_timeout_handler->Reset();
-        auto ret = av_read_frame(m_fmt_ctx.get(), m_pkt.get());
+        auto ret = av_read_frame(m_fmt_ctx.get(), tmp_pkt.get());
 
         if (AVERROR_EOF == ret) {
           m_eof = true;
-          m_pkt.reset();
           break;
         } else if (ret < 0) {
           m_end_decode = true;
           return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL,
                                  TaskExecInfo::FAIL, AvErrorToString(ret));
-        } else {
-          m_num_pkt_read++;
         }
-      } while (m_pkt->stream_index != GetVideoStrIdx());
+
+        m_num_pkt_read++;
+        if (is_desired_packet(tmp_pkt)) {
+          av_packet_move_ref(m_pkt.get(), tmp_pkt.get());
+          break;
+        }
+
+      } while (true);
 
       /* Skip all packets which don't contain key frame(s).
        * Also need to check m_eof flag to make sure we didn't accidentally
@@ -528,9 +539,8 @@ struct FfmpegDecodeFrame_Impl {
       if (DecodeMode::KEY_FRAMES == GetMode() && !m_eof &&
           !(m_pkt->flags & AV_PKT_FLAG_KEY)) {
         // Unref packet because it won't be submitted to decoder
-        av_packet_unref(m_pkt.get());  
+        av_packet_unref(m_pkt.get());
         continue;
-        
       }
 
       auto status = DecodeSinglePacket(dst);
@@ -705,7 +715,7 @@ struct FfmpegDecodeFrame_Impl {
     SaveCurrentRes();
     int res = 0;
 
-    AtScopeExit unref_pkt([this]() {      
+    AtScopeExit unref_pkt([this]() {
       if (m_pkt && !m_resend) {
         av_packet_unref(m_pkt.get());
       }
