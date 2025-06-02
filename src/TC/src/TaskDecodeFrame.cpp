@@ -716,13 +716,13 @@ struct FfmpegDecodeFrame_Impl {
     int res = 0;
 
     AtScopeExit unref_pkt([this]() {
-      if (m_pkt && !m_resend) {
+      if (m_pkt && !m_resend && !m_eof) {
         av_packet_unref(m_pkt.get());
       }
     });
 
     if (!m_flush) {
-      res = avcodec_send_packet(m_avc_ctx.get(), m_pkt.get());
+      res = avcodec_send_packet(m_avc_ctx.get(), m_eof ? nullptr : m_pkt.get());
       if (AVERROR_EOF == res) {
         // Not a real error, just end of file
         res = 0;
