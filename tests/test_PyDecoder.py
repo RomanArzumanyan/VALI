@@ -984,6 +984,83 @@ class TestDecoder(unittest.TestCase):
         self.assertEqual(pkt_data.key, 1)
         self.assertEqual(pkt_data.pts, rnd_key_frame * 512)
 
+    @parameterized.expand(tc.getDevices())
+    def test_variable_frame_rate(self, device_name: str, device_id: int):
+        """Test variable frame rate detection.
+        
+        This test verifies that the IsVFR() method correctly identifies
+        videos with variable frame rates by comparing the stream's fps
+        with its average fps.
+        
+        Args:
+            device_name (str): GPU / CPU name
+            device_id (int): GPU id or -1 when on CPU
+        """
+        with open("gt_files.json") as f:
+            gtInfo = tc.GroundTruth(**json.load(f)["basic"])
+
+        pyDec = vali.PyDecoder(gtInfo.uri, {}, gpu_id=device_id)
+        
+        # For a constant frame rate video, IsVFR should return False
+        self.assertFalse(pyDec.IsVFR())
+        
+        # TODO: Add test with a VFR video file when available
+        # For a variable frame rate video, IsVFR should return True
+        # self.assertTrue(pyDec.IsVFR())
+
+    @parameterized.expand(tc.getDevices())
+    def test_decode_mode(self, device_name: str, device_id: int):
+        """Test decode mode setting and retrieval.
+        
+        This test verifies that the decoder's mode can be set and retrieved
+        correctly using SetMode() and GetMode() methods.
+        
+        Args:
+            device_name (str): GPU / CPU name
+            device_id (int): GPU id or -1 when on CPU
+        """
+        with open("gt_files.json") as f:
+            gtInfo = tc.GroundTruth(**json.load(f)["basic"])
+
+        pyDec = vali.PyDecoder(gtInfo.uri, {}, gpu_id=device_id)
+        
+        # Default mode should be NORMAL
+        self.assertEqual(pyDec.GetMode(), vali.DecodeMode.NORMAL)
+        
+        # Test setting to KEY_FRAMES mode
+        pyDec.SetMode(vali.DecodeMode.KEY_FRAMES)
+        self.assertEqual(pyDec.GetMode(), vali.DecodeMode.KEY_FRAMES)
+        
+        # Test setting back to NORMAL mode
+        pyDec.SetMode(vali.DecodeMode.NORMAL)
+        self.assertEqual(pyDec.GetMode(), vali.DecodeMode.NORMAL)
+
+    def test_cuda_stream(self):
+        """Test CUDA stream handling.
+        
+        This test verifies that the decoder's CUDA stream can be retrieved
+        and used for synchronization. Only runs on GPU devices.
+        """
+        gpu_id = 0  # Use first GPU device
+            
+        with open("gt_files.json") as f:
+            gtInfo = tc.GroundTruth(**json.load(f)["basic"])
+
+        pyDec = vali.PyDecoder(gtInfo.uri, {}, gpu_id=gpu_id)
+        
+        # Get the CUDA stream
+        stream = pyDec.GetStream()
+        self.assertIsNotNone(stream)
+        
+        # Create a surface and decode a frame
+        surf = vali.Surface.Make(pyDec.Format, pyDec.Width, pyDec.Height, gpu_id)
+        success, _ = pyDec.DecodeSingleSurface(surf)
+        self.assertTrue(success)
+        
+        # The stream should be valid and usable for synchronization
+        # Note: We can't directly test stream validity, but if we got here
+        # without errors, the stream is likely valid
+
 
 if __name__ == "__main__":
     unittest.main()

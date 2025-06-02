@@ -510,6 +510,7 @@ struct FfmpegDecodeFrame_Impl {
 
         if (AVERROR_EOF == ret) {
           m_eof = true;
+          m_pkt.reset();
           break;
         } else if (ret < 0) {
           m_end_decode = true;
@@ -526,10 +527,13 @@ struct FfmpegDecodeFrame_Impl {
        */
       if (DecodeMode::KEY_FRAMES == GetMode() && !m_eof &&
           !(m_pkt->flags & AV_PKT_FLAG_KEY)) {
+        // Unref packet because it won't be submitted to decoder
+        av_packet_unref(m_pkt.get());  
         continue;
+        
       }
 
-      auto status = DecodeSinglePacket(m_eof ? nullptr : m_pkt.get(), dst);
+      auto status = DecodeSinglePacket(dst);
 
       switch (status) {
       case DEC_SUCCESS:
@@ -697,14 +701,20 @@ struct FfmpegDecodeFrame_Impl {
    *
    * Upont error returns DEC_ERROR.
    */
-  DECODE_STATUS DecodeSinglePacket(AVPacket* pkt, Token& dst) {
+  DECODE_STATUS DecodeSinglePacket(Token& dst) {
     SaveCurrentRes();
     int res = 0;
 
+    AtScopeExit unref_pkt([this]() {      
+      if (m_pkt && !m_resend) {
+        av_packet_unref(m_pkt.get());
+      }
+    });
+
     if (!m_flush) {
-      res = avcodec_send_packet(m_avc_ctx.get(), pkt);
+      res = avcodec_send_packet(m_avc_ctx.get(), m_pkt.get());
       if (AVERROR_EOF == res) {
-        // Flush decoder;
+        // Not a real error, just end of file
         res = 0;
       } else if (res == AVERROR(EAGAIN)) {
         // Need to call for avcodec_receive frame and then resend packet;
@@ -715,9 +725,6 @@ struct FfmpegDecodeFrame_Impl {
         return DEC_ERROR;
       } else {
         m_num_pkt_sent++;
-        if (pkt) {
-          av_packet_unref(pkt);
-        }
       }
     }
 
