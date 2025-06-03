@@ -5,6 +5,7 @@ from math import log10, sqrt
 from pynvml import *
 import python_vali as vali
 import json
+from contextlib import contextmanager
 
 
 class GroundTruth(BaseModel):
@@ -42,17 +43,16 @@ def repeat(times):
     ----------
     times:  How many times to repeat the call
     """
-    def repeatHelper(f):
-        def callHelper(*args):
+    def repeat_helper(f):
+        def call_helper(*args):
             for i in range(0, times):
                 f(*args)
 
-        return callHelper
+        return call_helper
+    return repeat_helper
 
-    return repeatHelper
 
-
-def dumpFrameToDisk(
+def dump_to_disk(
         frame: np.ndarray,
         prefix: str,
         width: int,
@@ -78,7 +78,7 @@ def dumpFrameToDisk(
         fout.write(frame)
 
 
-def measurePSNR(gt: np.ndarray, dist: np.ndarray) -> float:
+def measure_psnr(gt: np.ndarray, dist: np.ndarray) -> float:
     """
     Measures the distance between frames using PSNR metric.
 
@@ -101,7 +101,7 @@ def measurePSNR(gt: np.ndarray, dist: np.ndarray) -> float:
 g_devices = []
 
 
-def getDevices() -> list:
+def get_devices() -> list:
     """
     Get list of devices (CPU and GPU) alongside their IDs.
     
@@ -128,6 +128,37 @@ def getDevices() -> list:
         pass
 
     return g_devices
+
+
+@contextmanager
+def nvml_session(gpu_id: int):
+    """Context manager style NVML init and shutdown
+
+    Args:
+        gpu_id (int): GPU ID
+
+    Yields:
+        NVML handle for given device
+    """
+    try:
+        nvmlInit()
+        yield nvmlDeviceGetHandleByIndex(gpu_id)
+    finally:
+        nvmlShutdown()
+
+
+def get_gpu_mem_stats(handle) -> tuple[int, int, int]:
+    """Get GPU memory stats.
+
+    Args:
+        handle (_type_): NVML device handle
+
+    Returns:
+        tuple[int, int, int]: total, used and free vRAM in MB.
+    """
+    mem_info = nvmlDeviceGetMemoryInfo(handle)
+    mb = 2 ** 20
+    return (mem_info.total // mb, mem_info.used // mb, mem_info.free // mb)
 
 
 def to_numpy_dtype(surf: vali.Surface) -> np.dtype:

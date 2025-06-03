@@ -193,11 +193,11 @@ class TestSurfaceConverter(unittest.TestCase):
                 # Compare against GT
                 pln_frame = np.fromfile(
                     file=f_gt, dtype=np.uint8, count=frame_size)
-                score = tc.measurePSNR(pln_frame, dst_frame)
+                score = tc.measure_psnr(pln_frame, dst_frame)
                 if score < psnr_threshold:
-                    tc.dumpFrameToDisk(dst_frame, "cc", dst_info.width,
+                    tc.dump_to_disk(dst_frame, "cc", dst_info.width,
                                        dst_info.height, "rgb_pln_dist")
-                    tc.dumpFrameToDisk(pln_frame, "cc", pln_info.width,
+                    tc.dump_to_disk(pln_frame, "cc", pln_info.width,
                                        pln_info.height, "rgb_pln_gt")
                     self.fail(
                         "PSNR score is below threshold: " + str(score))
@@ -270,13 +270,13 @@ class TestSurfaceConverter(unittest.TestCase):
             # Read ethalon RGB frame and compare
             gt_frame = np.fromfile(
                 dst_fin, np.uint8, surf_dst.HostSize)
-            score = tc.measurePSNR(gt_frame, dist_frame)
+            score = tc.measure_psnr(gt_frame, dist_frame)
 
             # Dump both frames to disk in case of failure
             if score < psnr_threshold:
-                tc.dumpFrameToDisk(dist_frame, "cc", dst_info.width,
+                tc.dump_to_disk(dist_frame, "cc", dst_info.width,
                                    dst_info.height, "rgb_dist")
-                tc.dumpFrameToDisk(gt_frame, "cc", dst_info.width,
+                tc.dump_to_disk(gt_frame, "cc", dst_info.width,
                                    dst_info.height, "rgb_gt")
                 self.fail(
                     "PSNR score is below threshold: " + str(score))
@@ -357,14 +357,14 @@ class TestSurfaceConverter(unittest.TestCase):
                 count=int(surf_dst.HostSize / surf_dst.Planes[0].ElemSize))
 
             gt_frame = np.reshape(gt_frame, dist_frame.shape)
-            score = tc.measurePSNR(gt_frame, dist_frame)
+            score = tc.measure_psnr(gt_frame, dist_frame)
 
             # Dump both frames to disk in case of failure
             if score < psnr_threshold:
-                tc.dumpFrameToDisk(dist_frame, "cc", dst_info.width,
+                tc.dump_to_disk(dist_frame, "cc", dst_info.width,
                                    dst_info.height, "dist")
 
-                tc.dumpFrameToDisk(gt_frame, "cc", dst_info.width,
+                tc.dump_to_disk(gt_frame, "cc", dst_info.width,
                                    dst_info.height, "gt")
 
                 self.fail(

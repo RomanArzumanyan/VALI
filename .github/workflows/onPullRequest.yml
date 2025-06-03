@@ -51,6 +51,8 @@ jobs:
         nvidia-smi
         cd tests
         python3 -m unittest discover .
+        python3 ./test_MemUsagePyDecoder.py 16 0
+        python3 ./test_MemUsagePyDecoder.py 16 -1
 
     - name: 'Build docs'
       run: |
@@ -100,6 +102,8 @@ jobs:
         python ./test_PyNvEncoder.py
         python ./test_PySurfaceConverter.py
         python ./test_PySurfaceResizer.py
+        python ./test_MemUsagePyDecoder.py 16 0
+        python ./test_MemUsagePyDecoder.py 16 -1
 
     - name: 'Upload Artifacts'
       uses: actions/upload-artifact@v4.4.0

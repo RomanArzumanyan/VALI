@@ -157,11 +157,11 @@ class TestSurface(unittest.TestCase):
 
                 if not np.array_equal(frame_ten, frame_surf):
                     self.log.error(
-                        "PSNR: " + str(tc.measurePSNR(frame_ten, frame_surf)))
+                        "PSNR: " + str(tc.measure_psnr(frame_ten, frame_surf)))
 
-                    tc.dumpFrameToDisk(frame_ten, "from_tensor", surf_cvt.Width,
+                    tc.dump_to_disk(frame_ten, "from_tensor", surf_cvt.Width,
                                        surf_cvt.Height, ".rgb")
-                    tc.dumpFrameToDisk(frame_surf, "from_surface", surf_cvt.Width,
+                    tc.dump_to_disk(frame_surf, "from_surface", surf_cvt.Width,
                                        surf_cvt.Height, ".rgb")
                     self.fail("Mismatch at frame " + str(i))
 
@@ -252,7 +252,7 @@ class TestSurface(unittest.TestCase):
 
         # Measure PSNR scores between them to make sure RGB Surface was
         # exported to nvcv image correctly via __cuda_array_interface__.
-        psnr_score = tc.measurePSNR(
+        psnr_score = tc.measure_psnr(
             np.asarray(Image.open("frame_nvcv.jpg")),
             np.asarray(Image.open("frame_vali.jpg")))
         self.assertGreaterEqual(psnr_score, psnr_threshold)
@@ -285,7 +285,7 @@ class TestSurface(unittest.TestCase):
         with open("frame_vali.jpg", "wb") as fout:
             fout.write(buffers[0])
 
-        psnr_score = tc.measurePSNR(
+        psnr_score = tc.measure_psnr(
             np.asarray(Image.open("data/frame_0.jpg")),
             np.asarray(Image.open(BytesIO(np.ndarray.tobytes(buffers[0])))))
         self.assertGreaterEqual(psnr_score, psnr_threshold)

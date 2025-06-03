@@ -110,7 +110,7 @@ class TestDecoder(unittest.TestCase):
         self.assertEqual(gt.height * gt.res_change_factor,
                          1.0 * str_info.height)
 
-    @parameterized.expand(tc.getDevices())
+    @parameterized.expand(tc.get_devices())
     def test_preferred_width(self, device_name: str, device_id: int):
         """
         This test checks stream selection by preferred width.
@@ -178,47 +178,47 @@ class TestDecoder(unittest.TestCase):
         else:
             self.assertEqual(self.gtByName(gt_name).pix_fmt, str(format))
 
-    @parameterized.expand(tc.getDevices())
+    @parameterized.expand(tc.get_devices())
     def test_level(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         self.assertEqual(self.gtInfo.level, pyDec.Level)
 
-    @parameterized.expand(tc.getDevices())
+    @parameterized.expand(tc.get_devices())
     def test_profile(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         self.assertEqual(self.gtInfo.profile, pyDec.Profile)
 
-    @parameterized.expand(tc.getDevices())
+    @parameterized.expand(tc.get_devices())
     def test_delay(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         self.assertEqual(self.gtInfo.delay, pyDec.Delay)
 
-    @parameterized.expand(tc.getDevices())
+    @parameterized.expand(tc.get_devices())
     def test_gop_size(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         self.assertEqual(self.gtInfo.gop_size, pyDec.GopSize)
 
-    @parameterized.expand(tc.getDevices())
+    @parameterized.expand(tc.get_devices())
     def test_bitrate(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         self.assertEqual(self.gtInfo.bitrate, pyDec.Bitrate)
 
-    @parameterized.expand(tc.getDevices())
+    @parameterized.expand(tc.get_devices())
     def test_num_streams(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         self.assertEqual(self.gtInfo.num_streams, pyDec.NumStreams)
 
-    @parameterized.expand(tc.getDevices())
+    @parameterized.expand(tc.get_devices())
     def test_video_stream_idx(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         self.assertEqual(self.gtInfo.video_stream_idx, pyDec.StreamIndex)
 
-    @parameterized.expand(tc.getDevices())
+    @parameterized.expand(tc.get_devices())
     def test_start_time(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         self.assertEqual(self.gtInfo.start_time, pyDec.StartTime)
 
-    @parameterized.expand(tc.getDevices())
+    @parameterized.expand(tc.get_devices())
     def test_metadata(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.rotInfo.uri, {}, gpu_id=device_id)
         expected_metadata = {
@@ -238,27 +238,27 @@ class TestDecoder(unittest.TestCase):
         }
         self.assertEqual(expected_metadata, pyDec.Metadata)
 
-    @parameterized.expand(tc.getDevices())
+    @parameterized.expand(tc.get_devices())
     def test_color_space(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         self.assertEqual(self.gtInfo.color_space, str(pyDec.ColorSpace))
 
-    @parameterized.expand(tc.getDevices())
+    @parameterized.expand(tc.get_devices())
     def test_color_range(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         self.assertEqual(self.gtInfo.color_range, str(pyDec.ColorRange))
 
-    @parameterized.expand(tc.getDevices())
+    @parameterized.expand(tc.get_devices())
     def test_framerate(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         self.assertEqual(self.gtInfo.framerate, pyDec.Framerate)
 
-    @parameterized.expand(tc.getDevices())
+    @parameterized.expand(tc.get_devices())
     def test_avgframerate(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         self.assertEqual(self.gtInfo.framerate, pyDec.AvgFramerate)
 
-    @parameterized.expand(tc.getDevices())
+    @parameterized.expand(tc.get_devices())
     def test_timebase(self, device_name: str, device_id: int):
         pyDec = vali.PyDecoder(self.gtInfo.uri, {}, gpu_id=device_id)
         epsilon = 1e-4
@@ -426,7 +426,7 @@ class TestDecoder(unittest.TestCase):
 
                 if not np.array_equal(frame_gt, frame):
                     self.log.error("Frames mismatch: ", dec_frames)
-                    self.log.error("PSNR: ", tc.measurePSNR(frame_gt, frame))
+                    self.log.error("PSNR: ", tc.measure_psnr(frame_gt, frame))
                     self.fail()
 
                 dec_frames += 1
@@ -540,11 +540,11 @@ class TestDecoder(unittest.TestCase):
                 if not np.array_equal(frame_gt, frame):
                     self.log.error("Mismatch at frame " + str(dec_frames))
                     self.log.error(
-                        "PSNR: " + str(tc.measurePSNR(frame_gt, frame)))
+                        "PSNR: " + str(tc.measure_psnr(frame_gt, frame)))
 
-                    tc.dumpFrameToDisk(frame_gt, "dec", surf.Width,
+                    tc.dump_to_disk(frame_gt, "dec", surf.Width,
                                        surf.Height, "yuv_gt.yuv")
-                    tc.dumpFrameToDisk(frame, "dec", surf.Width,
+                    tc.dump_to_disk(frame, "dec", surf.Width,
                                        surf.Height, "yuv_dist.yuv")
 
                     break
@@ -614,14 +614,14 @@ class TestDecoder(unittest.TestCase):
             #
             # If PSNR is higher then 40 dB we still consider frames to be the
             # same.
-            psnr_score = tc.measurePSNR(frame_gt, frame)
+            psnr_score = tc.measure_psnr(frame_gt, frame)
             self.log.warning("Mismatch at frame " + str(dec_frames))
             self.log.warning("PSNR: " + str(psnr_score))
 
             if psnr_score < 40:
-                tc.dumpFrameToDisk(frame_gt, "dec", pyDec.Width,
+                tc.dump_to_disk(frame_gt, "dec", pyDec.Width,
                                    pyDec.Height, "yuv_cont.yuv")
-                tc.dumpFrameToDisk(frame, "dec", pyDec.Width,
+                tc.dump_to_disk(frame, "dec", pyDec.Width,
                                    pyDec.Height, "yuv_seek.yuv")
                 self.fail(
                     "Seek frame isnt same as continuous decode frame")
@@ -776,14 +776,14 @@ class TestDecoder(unittest.TestCase):
             #
             # If PSNR is higher then 40 dB we still consider frames to be the
             # same.
-            psnr_score = tc.measurePSNR(frame_gt, frame)
+            psnr_score = tc.measure_psnr(frame_gt, frame)
             self.log.warning("Mismatch at frame " + str(dec_frames))
             self.log.warning("PSNR: " + str(psnr_score))
 
             if psnr_score < 40:
-                tc.dumpFrameToDisk(frame_gt, "dec", pyDec.Width,
+                tc.dump_to_disk(frame_gt, "dec", pyDec.Width,
                                    pyDec.Height, "yuv_cont.yuv")
-                tc.dumpFrameToDisk(frame, "dec", pyDec.Width,
+                tc.dump_to_disk(frame, "dec", pyDec.Width,
                                    pyDec.Height, "yuv_seek.yuv")
                 self.fail(
                     "Seek frame isnt same as continuous decode frame")
@@ -886,7 +886,7 @@ class TestDecoder(unittest.TestCase):
 
         self.assertEqual(dec_frame, gtInfo.num_frames)
 
-    @parameterized.expand(tc.getDevices())
+    @parameterized.expand(tc.get_devices())
     def test_invalid_url(self, device_name: str, device_id: int):
         """
         This test checks invalid input URL. Decoder shall raise exception.
@@ -905,7 +905,7 @@ class TestDecoder(unittest.TestCase):
 
         self.fail("Test is expected to raise exception")
 
-    @parameterized.expand(tc.getDevices())
+    @parameterized.expand(tc.get_devices())
     def test_decode_key_frames_only(self, device_name: str, device_id: int):
         """
         This test checks that only key frames are decoded in corresp.
@@ -939,7 +939,7 @@ class TestDecoder(unittest.TestCase):
 
         self.assertEqual(dec_frames, num_key_frames)
 
-    @parameterized.expand(tc.getDevices())
+    @parameterized.expand(tc.get_devices())
     def test_seek_key_frames_only(self, device_name: str, device_id: int):
         """
         This test checks that in key frames mode decoder only jumps to actual
@@ -983,7 +983,7 @@ class TestDecoder(unittest.TestCase):
         self.assertEqual(pkt_data.key, 1)
         self.assertEqual(pkt_data.pts, rnd_key_frame * 512)
 
-    @parameterized.expand(tc.getDevices())
+    @parameterized.expand(tc.get_devices())
     def test_variable_frame_rate(self, device_name: str, device_id: int):
         """Test variable frame rate detection.
         
@@ -1007,7 +1007,7 @@ class TestDecoder(unittest.TestCase):
         # For a variable frame rate video, IsVFR should return True
         # self.assertTrue(pyDec.IsVFR())
 
-    @parameterized.expand(tc.getDevices())
+    @parameterized.expand(tc.get_devices())
     def test_decode_mode(self, device_name: str, device_id: int):
         """Test decode mode setting and retrieval.
         

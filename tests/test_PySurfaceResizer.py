@@ -118,18 +118,18 @@ class TestSurfaceResizer(unittest.TestCase):
                 self.fail("Fail to download surface")
 
             # Compare resize result against GT
-            score = tc.measurePSNR(frame_gt, frame_nv12)
+            score = tc.measure_psnr(frame_gt, frame_nv12)
 
             # Dump both frames to disk in case of failure
             if score < psnr_threshold:
-                tc.dumpFrameToDisk(
+                tc.dump_to_disk(
                     frame_nv12,
                     "res",
                     nv12SmallInfo.width,
                     nv12SmallInfo.height,
                     "nv12_dist")
 
-                tc.dumpFrameToDisk(
+                tc.dump_to_disk(
                     frame_gt,
                     "res",
                     nv12SmallInfo.width,

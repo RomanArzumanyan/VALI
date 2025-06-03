@@ -415,12 +415,6 @@ struct FfmpegDecodeFrame_Impl {
       throw std::runtime_error(ss.str());
     }
 
-/* Have no idea if Tegra supports output to CUDA memory so keep it under
- * conditional compilation. Tegra has unified memory anyway, so no big
- * performance penalty shall be imposed as there's no "actual" Host <> Device IO
- * happening.
- */
-#ifndef TEGRA_BUILD
     if (is_accelerated) {
       // Push CUDA context for FFMpeg to use it
       auto ctx = CudaResMgr::Instance().GetCtx(m_gpu_id);
@@ -452,7 +446,6 @@ struct FfmpegDecodeFrame_Impl {
       auto av_cuda_ctx = (AVCUDADeviceContext*)av_hw_ctx->hwctx;
       m_stream = av_cuda_ctx->stream;
     }
-#endif
 
     /* Set packet time base here because later packet PTS values will be
      * discarded. Without that, libavcodec won't be able to reconstruct
