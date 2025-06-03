@@ -218,7 +218,7 @@ class TestJpegEncoder(unittest.TestCase):
                 if not success:
                     self.fail("Failed to download surface: " + str(info))
 
-                score = tc.measurePSNR(img_recon, frame_dst)
+                score = tc.measure_psnr(img_recon, frame_dst)
                 self.assertGreaterEqual(score, psnr_threshold)
 
         nv12_fin.close()

@@ -129,7 +129,7 @@ class TestSurfaceUD(unittest.TestCase):
         with open(fname, 'rb') as f_in:
             gt = np.fromfile(fname, dtype=frame.dtype)
             gt = np.reshape(gt, frame.shape)
-            self.assertGreaterEqual(tc.measurePSNR(gt, frame), psnr_threshold)
+            self.assertGreaterEqual(tc.measure_psnr(gt, frame), psnr_threshold)
 
     @parameterized.expand(vali.PySurfaceUD.SupportedFormats())
     def test_gpu_decode(self, src_fmt, dst_fmt):
@@ -185,7 +185,7 @@ class TestSurfaceUD(unittest.TestCase):
         with open(fname, 'rb') as f_in:
             gt = np.fromfile(fname, dtype=frame.dtype)
             gt = np.reshape(gt, frame.shape)
-            self.assertGreaterEqual(tc.measurePSNR(gt, frame), psnr_threshold)
+            self.assertGreaterEqual(tc.measure_psnr(gt, frame), psnr_threshold)
 
 
 if __name__ == "__main__":

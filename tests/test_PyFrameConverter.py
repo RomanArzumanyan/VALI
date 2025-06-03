@@ -93,10 +93,10 @@ class TestFrameConverter(unittest.TestCase):
                     self.fail("Fail to convert frame: " + str(_))
 
                 rgb_ethalon = np.fromfile(f_in, np.uint8, frame_size)
-                score = tc.measurePSNR(rgb_ethalon, rgb_frame)
+                score = tc.measure_psnr(rgb_ethalon, rgb_frame)
 
                 if score < psnr_threshold:
-                    tc.dumpFrameToDisk(rgb_frame, "cc", rgbInfo.width,
+                    tc.dump_to_disk(rgb_frame, "cc", rgbInfo.width,
                                        rgbInfo.height, "rgb")
                     self.fail(
                         "PSNR score is below threshold: " + str(score))

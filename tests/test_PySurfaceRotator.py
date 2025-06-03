@@ -133,7 +133,7 @@ class TestSurfaceConverter(unittest.TestCase):
         # Compare against etalon
         fname = "data/frame_0_" + str(int(angle)) + "_deg.jpg"
 
-        psnr_score = tc.measurePSNR(np.asarray(Image.open(fname)), frame)
+        psnr_score = tc.measure_psnr(np.asarray(Image.open(fname)), frame)
         self.assertGreaterEqual(psnr_score, psnr_threshold)
 
 

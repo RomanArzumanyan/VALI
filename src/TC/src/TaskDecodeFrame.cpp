@@ -415,12 +415,6 @@ struct FfmpegDecodeFrame_Impl {
       throw std::runtime_error(ss.str());
     }
 
-/* Have no idea if Tegra supports output to CUDA memory so keep it under
- * conditional compilation. Tegra has unified memory anyway, so no big
- * performance penalty shall be imposed as there's no "actual" Host <> Device IO
- * happening.
- */
-#ifndef TEGRA_BUILD
     if (is_accelerated) {
       // Push CUDA context for FFMpeg to use it
       auto ctx = CudaResMgr::Instance().GetCtx(m_gpu_id);
@@ -452,7 +446,6 @@ struct FfmpegDecodeFrame_Impl {
       auto av_cuda_ctx = (AVCUDADeviceContext*)av_hw_ctx->hwctx;
       m_stream = av_cuda_ctx->stream;
     }
-#endif
 
     /* Set packet time base here because later packet PTS values will be
      * discarded. Without that, libavcodec won't be able to reconstruct
@@ -707,13 +700,14 @@ struct FfmpegDecodeFrame_Impl {
     if (m_noacpt)
       return DEC_SUCCESS;
 
-    auto pkt = m_eof ? nullptr : m_pkt;
-
-    auto res = avcodec_send_packet(m_avc_ctx.get(), pkt ? pkt.get() : nullptr);
+    auto res =
+        avcodec_send_packet(m_avc_ctx.get(), m_eof ? nullptr : m_pkt.get());
     if (AVERROR_EOF == res) {
       return DEC_SUCCESS;
     } else if (res == AVERROR(EAGAIN)) {
-      // Need to call for avcodec_receive frame and then resend packet;
+      /* Decoder can't accept packet this time. Need to drain it with
+       * avcodec_receive_frame and then recent this packet.
+       */
       m_noacpt = true;
     } else if (res < 0) {
       std::cerr << "Error while sending a packet to the decoder. ";
@@ -721,8 +715,11 @@ struct FfmpegDecodeFrame_Impl {
       return DEC_ERROR;
     } else {
       m_num_pkt_sent++;
-      if (!m_noacpt && pkt && pkt.get())
-        av_packet_unref(pkt.get());
+      if (!m_noacpt && !m_eof && m_pkt && m_pkt.get())
+        /* If packet can't be accepted it shall be kept until next time.
+         * Other checks are there just for protection against nullptr.
+         */
+        av_packet_unref(m_pkt.get());
     }
 
     return DEC_SUCCESS;
