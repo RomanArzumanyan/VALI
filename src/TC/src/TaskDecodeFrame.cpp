@@ -700,14 +700,13 @@ struct FfmpegDecodeFrame_Impl {
     if (m_noacpt)
       return DEC_SUCCESS;
 
-    auto res =
-        avcodec_send_packet(m_avc_ctx.get(), m_eof ? nullptr : m_pkt.get());
+    auto pkt = m_eof ? nullptr : m_pkt;
+
+    auto res = avcodec_send_packet(m_avc_ctx.get(), pkt ? pkt.get() : nullptr);
     if (AVERROR_EOF == res) {
       return DEC_SUCCESS;
     } else if (res == AVERROR(EAGAIN)) {
-      /* Decoder can't accept packet this time. Need to drain it with
-       * avcodec_receive_frame and then recent this packet.
-       */
+      // Need to call for avcodec_receive frame and then resend packet;
       m_noacpt = true;
     } else if (res < 0) {
       std::cerr << "Error while sending a packet to the decoder. ";
@@ -715,11 +714,8 @@ struct FfmpegDecodeFrame_Impl {
       return DEC_ERROR;
     } else {
       m_num_pkt_sent++;
-      if (!m_noacpt && !m_eof && m_pkt && m_pkt.get())
-        /* If packet can't be accepted it shall be kept until next time.
-         * Other checks are there just for protection against nullptr.
-         */
-        av_packet_unref(m_pkt.get());
+      if (!m_noacpt && pkt && pkt.get())
+        av_packet_unref(pkt.get());
     }
 
     return DEC_SUCCESS;
