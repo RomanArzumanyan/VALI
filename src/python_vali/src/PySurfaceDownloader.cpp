@@ -52,17 +52,28 @@ void Init_PySurfaceDownloader(py::module& m) {
                                   "ndarray using CUDA DtoH memcpy.")
       .def(py::init<int>(), py::arg("gpu_id"),
            R"pbdoc(
-        Constructor method.
+         Constructor for PySurfaceDownloader with GPU ID.
 
-        :param gpu_id: what GPU does Surface belong to
-    )pbdoc")
+         Creates a new instance of PySurfaceDownloader that will run on the specified GPU.
+         The CUDA stream will be automatically created and managed.
+
+         :param gpu_id: The ID of the GPU that owns the Surface to be downloaded
+         :type gpu_id: int
+         :raises RuntimeError: If the specified GPU is not available
+     )pbdoc")
       .def(py::init<int, size_t>(), py::arg("gpu_id"), py::arg("stream"),
            R"pbdoc(
-        Constructor method.
+         Constructor for PySurfaceDownloader with GPU ID and CUDA stream.
 
-        :param gpu_id: what GPU does Surface belong to
-        :param stream: CUDA stream to use for HtoD memcopy
-    )pbdoc")
+         Creates a new instance of PySurfaceDownloader that will run on the specified GPU
+         using the provided CUDA stream.
+
+         :param gpu_id: The ID of the GPU that owns the Surface to be downloaded
+         :type gpu_id: int
+         :param stream: The CUDA stream to use for device-to-host memory copy
+         :type stream: int
+         :raises RuntimeError: If the specified GPU is not available
+     )pbdoc")
       .def(
           "Run",
           [](PySurfaceDownloader& self, Surface& src, py::array& dst) {
@@ -71,15 +82,20 @@ void Init_PySurfaceDownloader(py::module& m) {
           },
           py::arg("src"), py::arg("dst"),
           R"pbdoc(
-        Perform DtoH memcpy.
+         Perform device-to-host memory copy from Surface to numpy array.
 
-        :param src: input Surface
-        :type src: Surface
-        :param dst: output numpy array
-        :type dst: numpy.ndarray
-        :return: tuple containing:
-          success (Bool) True in case of success, False otherwise.
-          info (TaskExecInfo) task execution information.
-        :rtype: tuple
-    )pbdoc");
+         Copies the contents of a GPU Surface to a numpy array using CUDA DtoH memcpy.
+         The numpy array must be pre-allocated with sufficient size to hold the Surface data.
+         The GIL is released during the copy operation to allow other Python threads to run.
+
+         :param src: Input Surface to be downloaded from GPU
+         :type src: Surface
+         :param dst: Pre-allocated numpy array to store the downloaded data
+         :type dst: numpy.ndarray
+         :return: Tuple containing:
+             - success (bool): True if download was successful, False otherwise
+             - info (TaskExecInfo): Detailed execution information
+         :rtype: tuple[bool, TaskExecInfo]
+         :raises RuntimeError: If the download operation fails or if the numpy array is too small
+     )pbdoc");
 }

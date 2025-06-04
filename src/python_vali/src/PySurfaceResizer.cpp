@@ -50,20 +50,33 @@ void Init_PySurfaceResizer(py::module& m) {
                                "CUDA-accelerated Surface resizer.")
       .def(py::init<Pixel_Format, int>(), py::arg("format"), py::arg("gpu_id"),
            R"pbdoc(
-        Constructor method.
+         Constructor for PySurfaceResizer with format and GPU ID.
 
-        :param format: target Surface pixel format
-        :param gpu_id: what GPU to run resize on
-    )pbdoc")
+         Creates a new instance of PySurfaceResizer that will run on the specified GPU
+         with the given pixel format. The CUDA stream will be automatically created and managed.
+
+         :param format: The pixel format to use for resizing operations
+         :type format: Pixel_Format
+         :param gpu_id: The ID of the GPU to use for resizing
+         :type gpu_id: int
+         :raises RuntimeError: If the specified GPU is not available
+     )pbdoc")
       .def(py::init<Pixel_Format, int, size_t>(), py::arg("format"),
            py::arg("gpu_id"), py::arg("stream"),
            R"pbdoc(
-        Constructor method.
+         Constructor for PySurfaceResizer with format, GPU ID, and CUDA stream.
 
-        :param format: target Surface pixel format
-        :param gpu_id: what GPU to run resize on
-        :param stream: CUDA stream to use for resize
-    )pbdoc")
+         Creates a new instance of PySurfaceResizer that will run on the specified GPU
+         with the given pixel format using the provided CUDA stream.
+
+         :param format: The pixel format to use for resizing operations
+         :type format: Pixel_Format
+         :param gpu_id: The ID of the GPU to use for resizing
+         :type gpu_id: int
+         :param stream: The CUDA stream to use for resizing
+         :type stream: int
+         :raises RuntimeError: If the specified GPU is not available
+     )pbdoc")
       .def(
           "Run",
           [](PySurfaceResizer& self, Surface& src, Surface& dst) {
@@ -76,15 +89,23 @@ void Init_PySurfaceResizer(py::module& m) {
           py::arg("src"), py::arg("dst"),
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
-        Resize input Surface.
+         Resize input Surface synchronously.
 
-        :param src: input Surface. Must be of same format class instance was created with.
-        :param dst: output Surface. Must be of same format class instance was created with.
-        :return: tuple containing:
-          success (Bool) True in case of success, False otherwise.
-          info (TaskExecInfo) task execution information.
-        :rtype: tuple
-    )pbdoc")
+         Processes the input surface and stores the resized result in the output surface.
+         This method blocks until the resize operation is complete.
+         Both input and output surfaces must use the same pixel format that was
+         specified when creating the resizer instance.
+
+         :param src: Input surface to be resized
+         :type src: Surface
+         :param dst: Output surface to store the resized result
+         :type dst: Surface
+         :return: Tuple containing:
+             - success (bool): True if resize was successful, False otherwise
+             - info (TaskExecInfo): Detailed execution information
+         :rtype: tuple[bool, TaskExecInfo]
+         :raises RuntimeError: If the resize operation fails or if surface formats don't match
+     )pbdoc")
       .def(
           "RunAsync",
           [](PySurfaceResizer& self, Surface& src, Surface& dst) {
@@ -95,19 +116,32 @@ void Init_PySurfaceResizer(py::module& m) {
           py::arg("src"), py::arg("dst"),
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
-        Resize input Surface.
+         Resize input Surface asynchronously.
 
-        :param src: input Surface. Must be of same format class instance was created with.
-        :param dst: output Surface. Must be of same format class instance was created with.
-        :return: tuple containing:
-          success (Bool) True in case of success, False otherwise.
-          info (TaskExecInfo) task execution information.
-        :rtype: tuple
-    )pbdoc")
+         Processes the input surface and stores the resized result in the output surface.
+         This method returns immediately without waiting for the resize operation to complete.
+         Both input and output surfaces must use the same pixel format that was
+         specified when creating the resizer instance.
+
+         :param src: Input surface to be resized
+         :type src: Surface
+         :param dst: Output surface to store the resized result
+         :type dst: Surface
+         :return: Tuple containing:
+             - success (bool): True if resize was successful, False otherwise
+             - info (TaskExecInfo): Detailed execution information
+         :rtype: tuple[bool, TaskExecInfo]
+         :raises RuntimeError: If the resize operation fails or if surface formats don't match
+     )pbdoc")
       .def_property_readonly(
           "Stream",
           [](PySurfaceResizer& self) { return (size_t)self.m_stream; },
           R"pbdoc(
-        Return CUDA stream.
-    )pbdoc");
+         Get the CUDA stream associated with this instance.
+
+         Returns the handle to the CUDA stream used for resize processing.
+
+         :return: CUDA stream handle
+         :rtype: int
+     )pbdoc");
 }

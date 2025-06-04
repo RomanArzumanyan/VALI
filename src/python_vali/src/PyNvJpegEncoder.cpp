@@ -85,29 +85,52 @@ void Init_PyNvJpegEncoder(py::module& m) {
   py::class_<NvJpegEncodeContext>(m, "NvJpegEncodeContext")
       .def("Compression", &NvJpegEncodeContext::Compression,
            R"pbdoc(
-        :return: compression coefficient.
-    )pbdoc")
+         Get the compression coefficient for JPEG encoding.
+
+         The compression coefficient determines the quality of the JPEG encoding,
+         where 100 represents maximum quality and lower values indicate higher compression.
+
+         :return: Current compression coefficient (1-100)
+         :rtype: int
+     )pbdoc")
       .def("Format", &NvJpegEncodeContext::PixelFormat,
            R"pbdoc(
-        :return: pixel format.
-    )pbdoc");
+         Get the pixel format used for encoding.
+
+         :return: Current pixel format for encoding
+         :rtype: Pixel_Format
+     )pbdoc");
 
   py::class_<PyNvJpegEncoder>(m, "PyNvJpegEncoder")
       .def(py::init<int>(), py::arg("gpu_id"),
            R"pbdoc(
-        Constructor method.
+         Create a new JPEG encoder instance.
 
-        :param gpu_id: what GPU to run encode on
-    )pbdoc")
+         Initializes a hardware-accelerated JPEG encoder on the specified GPU.
+         The encoder uses NVIDIA's hardware JPEG encoding capabilities for efficient
+         image compression.
+
+         :param gpu_id: ID of the GPU to use for encoding
+         :type gpu_id: int
+         :raises RuntimeError: If GPU initialization fails
+     )pbdoc")
       .def("Context", &PyNvJpegEncoder::Context, py::arg("compression"),
            py::arg("pixel_format"),
            R"pbdoc(
-        NvJpegEncodeContext structure contains state and parameters of PyNvJpegEncoder,
-        including given compression coefficient (100 = maximum quality) and PixelFormat.
-        Using one context in multiple threads is prohibited.
+         Create a new encoding context with specified parameters.
 
-        :return: new NvJpegEncodeContext.
-    )pbdoc")
+         The context contains the state and parameters for JPEG encoding, including
+         compression quality and pixel format. Each context should be used by only
+         one thread at a time to ensure thread safety.
+
+         :param compression: Compression coefficient (1-100, where 100 is maximum quality)
+         :type compression: int
+         :param pixel_format: Pixel format for the input surfaces
+         :type pixel_format: Pixel_Format
+         :return: New encoding context with specified parameters
+         :rtype: NvJpegEncodeContext
+         :raises RuntimeError: If context creation fails
+     )pbdoc")
       .def(
           "Run",
           [](PyNvJpegEncoder& self, NvJpegEncodeContext& encoder_context,
@@ -118,10 +141,21 @@ void Init_PyNvJpegEncoder(py::module& m) {
           },
           py::arg("context"), py::arg("surfaces"),
           R"pbdoc(
-        Encode multiple Surfaces. In case of an error it returns empty list and TaskExecInfo.FAIL.
-        
-        :param context: context (NvJpegEncodeContext)
-        :param surfaces: list of input Surfaces
-        :return: tuple, the first element is the list of buffers compressed images. The second element is TaskExecInfo.
-    )pbdoc");
+         Encode multiple surfaces to JPEG format.
+
+         Compresses a list of input surfaces into JPEG format using the specified
+         encoding context. The operation is performed asynchronously on the GPU
+         for better performance. If any surface fails to encode, the entire operation
+         is considered failed and no compressed data is returned.
+
+         :param context: Encoding context containing compression parameters
+         :type context: NvJpegEncodeContext
+         :param surfaces: List of input surfaces to encode
+         :type surfaces: list[Surface]
+         :return: Tuple containing:
+             - List of compressed JPEG data as numpy arrays (empty if encoding fails)
+             - TaskExecInfo indicating success or failure
+         :rtype: tuple[list[numpy.ndarray], TaskExecInfo]
+         :raises RuntimeError: If encoding fails
+     )pbdoc");
 }

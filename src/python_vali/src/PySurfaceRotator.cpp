@@ -81,21 +81,39 @@ void Init_PySurfaceRotator(py::module& m) {
                                "CUDA-accelerated Surface rotator.")
       .def(py::init<int>(), py::arg("gpu_id"),
            R"pbdoc(
-         Constructor method.
- 
-         :param gpu_id: what GPU to run rotation on.
+         Constructor for PySurfaceRotator with GPU ID.
+
+         Creates a new instance of PySurfaceRotator that will run on the specified GPU.
+         The CUDA stream will be automatically created and managed.
+
+         :param gpu_id: The ID of the GPU to use for rotation
+         :type gpu_id: int
+         :raises RuntimeError: If the specified GPU is not available
      )pbdoc")
       .def(py::init<int, size_t>(), py::arg("gpu_id"), py::arg("stream"),
            R"pbdoc(
-         Constructor method.
- 
-         :param gpu_id: what GPU to run rotation on.
-         :param stream: CUDA stream to use for rotation.
+         Constructor for PySurfaceRotator with GPU ID and CUDA stream.
+
+         Creates a new instance of PySurfaceRotator that will run on the specified GPU
+         using the provided CUDA stream.
+
+         :param gpu_id: The ID of the GPU to use for rotation
+         :type gpu_id: int
+         :param stream: The CUDA stream to use for rotation
+         :type stream: int
+         :raises RuntimeError: If the specified GPU is not available
      )pbdoc")
       .def_property_readonly("SupportedFormats",
                              &PySurfaceRotator::SupportedFormats,
                              py::call_guard<py::gil_scoped_release>(), R"pbdoc(
-         Get list of supported pixel formats.
+         Get list of supported pixel formats for rotation.
+
+         Returns a list of pixel formats that can be processed by the rotator.
+         Supported formats include: Y, GRAY12, RGB, BGR, RGB_PLANAR, YUV420,
+         YUV422, YUV444, RGB_32F, RGB_32F_PLANAR, YUV444_10bit, YUV420_10bit.
+
+         :return: List of supported pixel formats
+         :rtype: list[Pixel_Format]
      )pbdoc")
       .def(
           "Run",
@@ -109,20 +127,30 @@ void Init_PySurfaceRotator(py::module& m) {
           },
           py::arg("src"), py::arg("dst"), py::arg("angle"),
           py::arg("shift_x") = 0.0, py::arg("shift_y") = 0.0,
-
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
-         Rotate input Surface.
- 
-         :param src: input Surface.
-         :param dst: output Surface.
-         :param angle: rotation angle.
-         :param shift_x: shift alongside X axis in pixels.
-         :param shift_y: shift alongside Y axis in pixels.
-         :return: tuple containing:
-           success (Bool) True in case of success, False otherwise.
-           info (TaskExecInfo) task execution information.
-         :rtype: tuple
+         Rotate input Surface synchronously.
+
+         Processes the input surface and stores the rotated result in the output surface.
+         This method blocks until the rotation is complete.
+         For 90-degree rotations with no shift, the method optimizes the operation
+         by handling display matrix rotation cases.
+
+         :param src: Input surface to be rotated
+         :type src: Surface
+         :param dst: Output surface to store the rotated result
+         :type dst: Surface
+         :param angle: Rotation angle in degrees
+         :type angle: float
+         :param shift_x: Shift along X axis in pixels (default: 0.0)
+         :type shift_x: float
+         :param shift_y: Shift along Y axis in pixels (default: 0.0)
+         :type shift_y: float
+         :return: Tuple containing:
+             - success (bool): True if rotation was successful, False otherwise
+             - info (TaskExecInfo): Detailed execution information
+         :rtype: tuple[bool, TaskExecInfo]
+         :raises RuntimeError: If the rotation fails
      )pbdoc")
       .def(
           "RunAsync",
@@ -136,22 +164,38 @@ void Init_PySurfaceRotator(py::module& m) {
           py::arg("shift_x") = 0.0, py::arg("shift_y") = 0.0,
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
-         Rotate input Surface.
+         Rotate input Surface asynchronously.
 
-         :param src: input Surface.
-         :param dst: output Surface.
-         :param angle: rotation angle.
-         :param shift_x: shift alongside X axis in pixels.
-         :param shift_y: shift alongside Y axis in pixels.
-         :return: tuple containing:
-           success (Bool) True in case of success, False otherwise.
-           info (TaskExecInfo) task execution information.
-         :rtype: tuple
+         Processes the input surface and stores the rotated result in the output surface.
+         This method returns immediately without waiting for the rotation to complete.
+         For 90-degree rotations with no shift, the method optimizes the operation
+         by handling display matrix rotation cases.
+
+         :param src: Input surface to be rotated
+         :type src: Surface
+         :param dst: Output surface to store the rotated result
+         :type dst: Surface
+         :param angle: Rotation angle in degrees
+         :type angle: float
+         :param shift_x: Shift along X axis in pixels (default: 0.0)
+         :type shift_x: float
+         :param shift_y: Shift along Y axis in pixels (default: 0.0)
+         :type shift_y: float
+         :return: Tuple containing:
+             - success (bool): True if rotation was successful, False otherwise
+             - info (TaskExecInfo): Detailed execution information
+         :rtype: tuple[bool, TaskExecInfo]
+         :raises RuntimeError: If the rotation fails
      )pbdoc")
       .def_property_readonly(
           "Stream",
           [](PySurfaceRotator& self) { return (size_t)self.m_stream; },
           R"pbdoc(
-        Return CUDA stream.
-    )pbdoc");
+         Get the CUDA stream associated with this instance.
+
+         Returns the handle to the CUDA stream used for rotation processing.
+
+         :return: CUDA stream handle
+         :rtype: int
+     )pbdoc");
 }

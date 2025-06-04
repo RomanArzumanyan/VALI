@@ -50,17 +50,28 @@ void Init_PySurfaceConverter(py::module& m) {
       "CUDA-accelerated converter between different pixel formats.")
       .def(py::init<int>(), py::arg("gpu_id"),
            R"pbdoc(
-        Constructor method.
+         Constructor for PySurfaceConverter with GPU ID.
 
-        :param gpu_id: what GPU to run conversion on
-    )pbdoc")
+         Creates a new instance of PySurfaceConverter that will run on the specified GPU.
+         The CUDA stream will be automatically created and managed.
+
+         :param gpu_id: The ID of the GPU to use for pixel format conversion
+         :type gpu_id: int
+         :raises RuntimeError: If the specified GPU is not available
+     )pbdoc")
       .def(py::init<int, size_t>(), py::arg("gpu_id"), py::arg("stream"),
            R"pbdoc(
-        Constructor method.
+         Constructor for PySurfaceConverter with GPU ID and CUDA stream.
 
-        :param gpu_id: what GPU to run conversion on
-        :param stream: CUDA stream to use for conversion
-    )pbdoc")
+         Creates a new instance of PySurfaceConverter that will run on the specified GPU
+         using the provided CUDA stream.
+
+         :param gpu_id: The ID of the GPU to use for pixel format conversion
+         :type gpu_id: int
+         :param stream: The CUDA stream to use for conversion
+         :type stream: int
+         :raises RuntimeError: If the specified GPU is not available
+     )pbdoc")
       .def(
           "Run",
           [](PySurfaceConverter& self, Surface& src, Surface& dst,
@@ -74,16 +85,27 @@ void Init_PySurfaceConverter(py::module& m) {
           py::arg("src"), py::arg("dst"), py::arg("cc_ctx") = std::nullopt,
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
-        Perform pixel format conversion.
+         Perform pixel format conversion synchronously.
 
-        :param src: input Surface. Must be of same format class instance was created with.
-        :param dst: output Surface. Must be of suitable format.
-        :param cc_ctx: colorspace conversion context. Describes color space and color range used for conversion. Optional parameter. If not given, VALI will automatically pick supported color conversion parameters.
-        :return: tuple:
-          success (Bool) True in case of success, False otherwise.
-          info (TaskExecInfo) task execution information.
-        :rtype: tuple
-    )pbdoc")
+         Converts the input surface to the specified output format.
+         This method blocks until the conversion is complete.
+         The input surface must be in a format supported by the converter.
+         The output surface must be in a format that can be converted to from the input format.
+
+         :param src: Input surface to be converted
+         :type src: Surface
+         :param dst: Output surface to store the converted result
+         :type dst: Surface
+         :param cc_ctx: Optional colorspace conversion context that describes the color space
+             and color range to use for conversion. If not provided, VALI will automatically
+             select supported color conversion parameters.
+         :type cc_ctx: ColorspaceConversionContext, optional
+         :return: Tuple containing:
+             - success (bool): True if conversion was successful, False otherwise
+             - info (TaskExecInfo): Detailed execution information
+         :rtype: tuple[bool, TaskExecInfo]
+         :raises RuntimeError: If the conversion fails or if the formats are not compatible
+     )pbdoc")
       .def(
           "RunAsync",
           [](PySurfaceConverter& self, Surface& src, Surface& dst,
@@ -95,24 +117,46 @@ void Init_PySurfaceConverter(py::module& m) {
           py::arg("src"), py::arg("dst"), py::arg("cc_ctx") = std::nullopt,
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
-        Perform pixel format conversion.
+         Perform pixel format conversion asynchronously.
 
-        :param src: input Surface. Must be of same format class instance was created with.
-        :param dst: output Surface. Must be of suitable format.
-        :param cc_ctx: colorspace conversion context. Describes color space and color range used for conversion. Optional parameter. If not given, VALI will automatically pick supported color conversion parameters.
-        :return: tuple:
-          success (Bool) True in case of success, False otherwise.
-          info (TaskExecInfo) task execution information.
-        :rtype: tuple
-    )pbdoc")
+         Converts the input surface to the specified output format.
+         This method returns immediately without waiting for the conversion to complete.
+         The input surface must be in a format supported by the converter.
+         The output surface must be in a format that can be converted to from the input format.
+
+         :param src: Input surface to be converted
+         :type src: Surface
+         :param dst: Output surface to store the converted result
+         :type dst: Surface
+         :param cc_ctx: Optional colorspace conversion context that describes the color space
+             and color range to use for conversion. If not provided, VALI will automatically
+             select supported color conversion parameters.
+         :type cc_ctx: ColorspaceConversionContext, optional
+         :return: Tuple containing:
+             - success (bool): True if conversion was successful, False otherwise
+             - info (TaskExecInfo): Detailed execution information
+         :rtype: tuple[bool, TaskExecInfo]
+         :raises RuntimeError: If the conversion fails or if the formats are not compatible
+     )pbdoc")
       .def_static("Conversions", &PySurfaceConverter::GetConversions,
                   R"pbdoc(
-        Return list of supported color conversions.
-    )pbdoc")
+         Get list of supported pixel format conversions.
+
+         Returns a list of tuples containing supported input and output pixel format pairs
+         that can be processed by the converter.
+
+         :return: List of tuples containing supported (input_format, output_format) pairs
+         :rtype: list[tuple[Pixel_Format, Pixel_Format]]
+     )pbdoc")
       .def_property_readonly(
           "Stream",
           [](PySurfaceConverter& self) { return (size_t)self.m_stream; },
           R"pbdoc(
-        Return CUDA stream.
-    )pbdoc");
+         Get the CUDA stream associated with this instance.
+
+         Returns the handle to the CUDA stream used for conversion processing.
+
+         :return: CUDA stream handle
+         :rtype: int
+     )pbdoc");
 }
