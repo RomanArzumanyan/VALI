@@ -310,46 +310,63 @@ void Init_PyDecoder(py::module& m) {
       .def(py::init<const string&, const map<string, string>&, int>(),
            py::arg("input"), py::arg("opts"), py::arg("gpu_id") = 0,
            R"pbdoc(
-        Constructor method.
+         Create a new video decoder instance from a file.
 
-        :param input: path to input file
-        :param opts: Options that will be passed to libavcodec API.
-        Also include special 'preferred_width' option to select a 
-        stream with desired width from multiple video streams.
-        This option won't be passed down to libavcodec API.
-        :param gpu_id: GPU ID. Default value is 0. Pass negative value to use CPU decoder.
-    )pbdoc")
+         Initializes a video decoder that can decode frames from a video file.
+         The decoder can operate in either CPU or GPU mode depending on the gpu_id parameter.
+
+         :param input: Path to the input video file
+         :type input: str
+         :param opts: Dictionary of options to pass to libavcodec API. Can include:
+             - preferred_width: Select a stream with desired width from multiple video streams
+             - Other FFmpeg options as key-value pairs
+         :type opts: dict[str, str]
+         :param gpu_id: GPU device ID to use for hardware acceleration. Default is 0.
+             Use negative value for CPU-only decoding.
+         :type gpu_id: int
+         :raises RuntimeError: If decoder initialization fails
+     )pbdoc")
       .def(py::init<py::object, const map<string, string>&, int>(),
            py::arg("buffered_reader"), py::arg("opts"), py::arg("gpu_id") = 0,
            R"pbdoc(
-        Constructor method.
+         Create a new video decoder instance from a buffered reader.
 
-        :param buffered_reader: io.BufferedReader-like object that has 'read' attribute.
-        :param opts: Options that will be passed to libavcodec API.
-        Also include special 'preferred_width' option to select a 
-        stream with desired width from multiple video streams.
-        This option won't be passed down to libavcodec API.
-        :param gpu_id: GPU ID. Default value is 0. Pass negative value to use CPU decoder.
-    )pbdoc")
+         Initializes a video decoder that can decode frames from a buffered reader object.
+         The decoder can operate in either CPU or GPU mode depending on the gpu_id parameter.
+
+         :param buffered_reader: Python object with a 'read' method (e.g., io.BufferedReader)
+         :type buffered_reader: object
+         :param opts: Dictionary of options to pass to libavcodec API. Can include:
+             - preferred_width: Select a stream with desired width from multiple video streams
+             - Other FFmpeg options as key-value pairs
+         :type opts: dict[str, str]
+         :param gpu_id: GPU device ID to use for hardware acceleration. Default is 0.
+             Use negative value for CPU-only decoding.
+         :type gpu_id: int
+         :raises RuntimeError: If decoder initialization fails
+     )pbdoc")
       .def_property_readonly("Mode", &PyDecoder::GetMode,
                              py::call_guard<py::gil_scoped_release>(),
                              R"pbdoc(
-          Get decoder operation mode
-    )pbdoc")
+         Get the current decoder operation mode.
+
+         :return: Current decode mode (e.g., KEY_FRAMES, ALL_FRAMES)
+         :rtype: DecodeMode
+     )pbdoc")
       .def("SetMode", &PyDecoder::SetMode,
            py::call_guard<py::gil_scoped_release>(),
            R"pbdoc(
-     Set decoder operation mode.
+         Set the decoder operation mode.
 
-     It also influences the seek behavior. When seeking in DecodeMode.KEY_FRAMES
-     mode, decoder will return closest previous key frame.
+         Changes how the decoder processes frames and handles seeking operations.
+         When in KEY_FRAMES mode, seeking will return the closest previous key frame.
+         When switching modes, the internal frame queue is preserved to avoid discarding
+         decoded frames that may be needed for future operations.
 
-     When changing mode, internal frame queue is not flushed, hence user may
-     receive decoded frames from the past for some time. It's done for reason.
-     Otherwise, when swithing from key frames only to all frames, multiple
-     decoded key frames will be discarded. Which may correspong to 
-     seconds / minutes worth of footage if your GOP size is big.
-    )pbdoc")
+         :param new_mode: The new decode mode to set
+         :type new_mode: DecodeMode
+         :note: Mode changes affect seek behavior and frame processing strategy
+     )pbdoc")
       .def(
           "DecodeSingleFrame",
           [](PyDecoder& self, py::array& frame,
@@ -363,14 +380,21 @@ void Init_PyDecoder(py::module& m) {
           },
           py::arg("frame"), py::arg("seek_ctx") = std::nullopt,
           R"pbdoc(
-        Decode single video frame from input file.
-        Only call this method for decoder without HW acceleration.
+         Decode a single video frame from the input source.
 
-        :param frame: decoded video frame
-        :param pkt_data: decoded video frame packet data, may be None
-        :param seek_ctx: seek context, may be None
-        :return: tuple, first element is True in case of success, False otherwise. Second elements is TaskExecInfo.
-    )pbdoc")
+         This method is for CPU-only decoding (non-accelerated decoder).
+         The frame will be decoded into the provided numpy array.
+
+         :param frame: Numpy array to store the decoded frame
+         :type frame: numpy.ndarray
+         :param seek_ctx: Optional seek context for frame positioning
+         :type seek_ctx: Optional[SeekContext]
+         :return: Tuple containing:
+             - success (bool): True if decoding was successful
+             - info (TaskExecInfo): Detailed execution information
+         :rtype: tuple[bool, TaskExecInfo]
+         :raises RuntimeError: If called with hardware acceleration enabled
+     )pbdoc")
       .def(
           "DecodeSingleFrame",
           [](PyDecoder& self, py::array& frame, PacketData& pkt_data,
@@ -384,14 +408,24 @@ void Init_PyDecoder(py::module& m) {
           py::arg("frame"), py::arg("pkt_data"),
           py::arg("seek_ctx") = std::nullopt,
           R"pbdoc(
-        Decode single video frame from input file.
-        Only call this method for decoder without HW acceleration.
+         Decode a single video frame with packet data from the input source.
 
-        :param frame: decoded video frame
-        :param pkt_data: decoded video frame packet data, may be None
-        :param seek_ctx: seek context, may be None
-        :return: tuple, first element is True in case of success, False otherwise. Second elements is TaskExecInfo.
-    )pbdoc")
+         This method is for CPU-only decoding (non-accelerated decoder).
+         The frame will be decoded into the provided numpy array, and packet
+         metadata will be stored in pkt_data.
+
+         :param frame: Numpy array to store the decoded frame
+         :type frame: numpy.ndarray
+         :param pkt_data: Object to store packet metadata
+         :type pkt_data: PacketData
+         :param seek_ctx: Optional seek context for frame positioning
+         :type seek_ctx: Optional[SeekContext]
+         :return: Tuple containing:
+             - success (bool): True if decoding was successful
+             - info (TaskExecInfo): Detailed execution information
+         :rtype: tuple[bool, TaskExecInfo]
+         :raises RuntimeError: If called with hardware acceleration enabled
+     )pbdoc")
       .def(
           "DecodeSingleSurface",
           [](PyDecoder& self, Surface& surf,
@@ -410,47 +444,52 @@ void Init_PyDecoder(py::module& m) {
           py::arg("surf"), py::arg("seek_ctx") = std::nullopt,
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
-        Decode single video surface from input file.
-        Only call this method for HW-accelerated decoder.
+         Decode a single video frame into a CUDA surface.
 
-        :param surf: decoded video surface
-        :param pkt_data: decoded video surface packet data, may be None
-        :param seek_ctx: seek context, may be None
-        :return: tuple, first element is True in case of success, False otherwise. Second elements is TaskExecInfo.
-    )pbdoc")
+         This method is for hardware-accelerated decoding.
+         The frame will be decoded directly into the provided CUDA surface.
+         The operation is synchronous and will wait for completion.
+
+         :param surf: CUDA surface to store the decoded frame
+         :type surf: Surface
+         :param seek_ctx: Optional seek context for frame positioning
+         :type seek_ctx: Optional[SeekContext]
+         :return: Tuple containing:
+             - success (bool): True if decoding was successful
+             - info (TaskExecInfo): Detailed execution information
+         :rtype: tuple[bool, TaskExecInfo]
+         :raises RuntimeError: If called without hardware acceleration
+     )pbdoc")
       .def(
           "DecodeSingleSurfaceAsync",
-          [](PyDecoder& self, Surface& surf, bool record_event,
+          [](PyDecoder& self, Surface& surf,
              std::optional<SeekContext>& seek_ctx) {
             TaskExecDetails details;
             PacketData pkt_data;
 
             auto res =
                 self.DecodeSingleSurface(surf, details, pkt_data, seek_ctx);
-            if (res && record_event) {
-              self.m_event->Record();
-            }
-            return std::make_tuple(res, details.m_info,
-                                   record_event ? self.m_event : nullptr);
+            return std::make_tuple(res, details.m_info);
           },
-          py::arg("surf"), py::arg("record_event") = true,
-          py::arg("seek_ctx") = std::nullopt,
+          py::arg("surf"), py::arg("seek_ctx") = std::nullopt,
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
-        Decode single video surface from input file.
-        Only call this method for HW-accelerated decoder.
+         Decode a single video frame into a CUDA surface asynchronously.
 
-        :param surf: decoded video surface
-        :param record_event: If False, no event will be recorded. Useful for chain calls.
-        :param pkt_data: decoded video surface packet data, may be None
-        :param seek_ctx: seek context, may be None
-        :param record_event: If False, no event will be recorded. Useful for chain calls.
-        :return: tuple:
-          success (Bool) True in case of success, False otherwise.
-          info (TaskExecInfo) task execution information.
-          event (CudaStreamEvent) CUDA stream event
-        :rtype: tuple
-    )pbdoc")
+         This method is for hardware-accelerated decoding.
+         The frame will be decoded directly into the provided CUDA surface.
+         The operation is asynchronous and returns immediately.
+
+         :param surf: CUDA surface to store the decoded frame
+         :type surf: Surface
+         :param seek_ctx: Optional seek context for frame positioning
+         :type seek_ctx: Optional[SeekContext]
+         :return: Tuple containing:
+             - success (bool): True if decoding was successful
+             - info (TaskExecInfo): Detailed execution information
+         :rtype: tuple[bool, TaskExecInfo]
+         :raises RuntimeError: If called without hardware acceleration
+     )pbdoc")
       .def(
           "DecodeSingleSurface",
           [](PyDecoder& self, Surface& surf, PacketData& pkt_data,
@@ -469,50 +508,66 @@ void Init_PyDecoder(py::module& m) {
           py::arg("seek_ctx") = std::nullopt,
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
-        Decode single video surface from input file.
-        Only call this method for HW-accelerated decoder.
+         Decode a single video frame into a CUDA surface with packet data.
 
-        :param surf: decoded video surface
-        :param pkt_data: decoded video surface packet data, may be None
-        :param seek_ctx: seek context, may be None
-        :return: tuple, first element is True in case of success, False otherwise. Second elements is TaskExecInfo.
-    )pbdoc")
+         This method is for hardware-accelerated decoding.
+         The frame will be decoded directly into the provided CUDA surface,
+         and packet metadata will be stored in pkt_data.
+         The operation is synchronous and will wait for completion.
+
+         :param surf: CUDA surface to store the decoded frame
+         :type surf: Surface
+         :param pkt_data: Object to store packet metadata
+         :type pkt_data: PacketData
+         :param seek_ctx: Optional seek context for frame positioning
+         :type seek_ctx: Optional[SeekContext]
+         :return: Tuple containing:
+             - success (bool): True if decoding was successful
+             - info (TaskExecInfo): Detailed execution information
+         :rtype: tuple[bool, TaskExecInfo]
+         :raises RuntimeError: If called without hardware acceleration
+     )pbdoc")
       .def(
           "DecodeSingleSurfaceAsync",
           [](PyDecoder& self, Surface& surf, PacketData& pkt_data,
-             bool record_event, std::optional<SeekContext>& seek_ctx) {
+             std::optional<SeekContext>& seek_ctx) {
             TaskExecDetails details;
 
             auto res =
                 self.DecodeSingleSurface(surf, details, pkt_data, seek_ctx);
-            if (res && record_event) {
-              self.m_event->Record();
-            }
-            return std::make_tuple(res, details.m_info,
-                                   record_event ? self.m_event : nullptr);
+            return std::make_tuple(res, details.m_info);
           },
-          py::arg("surf"), py::arg("pkt_data"), py::arg("record_event") = true,
+          py::arg("surf"), py::arg("pkt_data"),
           py::arg("seek_ctx") = std::nullopt,
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
-        Decode single video surface from input file.
-        Only call this method for HW-accelerated decoder.
+         Decode a single video frame into a CUDA surface with packet data asynchronously.
 
-        :param surf: decoded video surface
-        :param pkt_data: decoded video surface packet data, may be None
-        :param seek_ctx: seek context, may be None
-        :param record_event: If False, no event will be recorded. Useful for chain calls.
-        :return: tuple:
-          success (Bool) True in case of success, False otherwise.
-          info (TaskExecInfo) task execution information.
-          event (CudaStreamEvent) CUDA stream event
-        :rtype: tuple
-    )pbdoc")
+         This method is for hardware-accelerated decoding.
+         The frame will be decoded directly into the provided CUDA surface,
+         and packet metadata will be stored in pkt_data.
+         The operation is asynchronous and returns immediately.
+
+         :param surf: CUDA surface to store the decoded frame
+         :type surf: Surface
+         :param pkt_data: Object to store packet metadata
+         :type pkt_data: PacketData
+         :param seek_ctx: Optional seek context for frame positioning
+         :type seek_ctx: Optional[SeekContext]
+         :return: Tuple containing:
+             - success (bool): True if decoding was successful
+             - info (TaskExecInfo): Detailed execution information
+         :rtype: tuple[bool, TaskExecInfo]
+         :raises RuntimeError: If called without hardware acceleration
+     )pbdoc")
       .def_property_readonly(
           "Stream", [](PyDecoder& self) { return (size_t)self.GetStream(); },
           R"pbdoc(
-        Return CUDA stream used by decoder.
-    )pbdoc")
+         Get the CUDA stream used by the decoder.
+
+         :return: CUDA stream handle as an integer
+         :rtype: int
+     )pbdoc")
       .def_property_readonly("Width", &PyDecoder::Width,
                              R"pbdoc(
         Return encoded video file width in pixels.

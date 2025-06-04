@@ -164,56 +164,66 @@ class TestTorchSegmentation(unittest.TestCase):
             weights=torchvision.models.detection.SSD300_VGG16_Weights.COCO_V1)
         self.model.eval()
         self.model.to("cuda")
+        self.gpu_id = 0
 
-    def run_inference_on_video(self, gpu_id: int, input_video: str):
+    def run_inference_on_video(self, input_video: str):
         # Init HW decoder
-        pyDec = vali.PyDecoder(input=input_video, opts={}, gpu_id=gpu_id)
+        py_dec = vali.PyDecoder(
+            input=input_video,
+            opts={},
+            gpu_id=self.gpu_id)
 
         surfaces = [
             vali.Surface.Make(
-                format=pyDec.Format,
-                width=pyDec.Width,
-                height=pyDec.Height,
-                gpu_id=0),
+                format=py_dec.Format,
+                width=py_dec.Width,
+                height=py_dec.Height,
+                gpu_id=self.gpu_id),
 
             vali.Surface.Make(
                 format=vali.PixelFormat.RGB,
-                width=pyDec.Width,
-                height=pyDec.Height,
-                gpu_id=0),
+                width=py_dec.Width,
+                height=py_dec.Height,
+                gpu_id=self.gpu_id),
 
             vali.Surface.Make(
                 format=vali.PixelFormat.RGB_32F,
-                width=pyDec.Width,
-                height=pyDec.Height,
-                gpu_id=0),
+                width=py_dec.Width,
+                height=py_dec.Height,
+                gpu_id=self.gpu_id),
 
             vali.Surface.Make(
                 format=vali.PixelFormat.RGB_32F_PLANAR,
-                width=pyDec.Width,
-                height=pyDec.Height,
-                gpu_id=0)
+                width=py_dec.Width,
+                height=py_dec.Height,
+                gpu_id=self.gpu_id)
         ]
 
-        pyCvt = vali.PySurfaceConverter(gpu_id=0)
+        py_cvt = vali.PySurfaceConverter(
+            gpu_id=self.gpu_id,
+            stream=py_dec.Stream)
+
+        event = vali.CudaStreamEvent(
+            stream=py_dec.Stream,
+            gpu_id=self.gpu_id)
 
         # Decoding cycle + inference on video frames.
         detections = []
         frame_number = 0
         while True:
             # Decode
-            success, _ = pyDec.DecodeSingleSurface(surfaces[0])
+            success, _ = py_dec.DecodeSingleSurfaceAsync(surfaces[0])
             if not success:
                 break
 
             # Go through color conversion chain
-            event = None
             for i in range(0, len(surfaces) - 1):
-                is_last_conv = (i == len(surfaces) - 2)
-                success, _, event = pyCvt.RunAsync(
-                    src=surfaces[i], dst=surfaces[i+1], record_event=is_last_conv)
+                success, _ = py_cvt.RunAsync(
+                    src=surfaces[i], dst=surfaces[i+1])
                 if not success:
                     break
+
+            event.Record()
             event.Wait()
 
             # Export to PyTorch tensor.
@@ -258,7 +268,7 @@ class TestTorchSegmentation(unittest.TestCase):
     def test_inference(self):
         with open("gt_files.json") as f:
             gtInfo = tc.GroundTruth(**json.load(f)["basic"])
-            self.run_inference_on_video(gpu_id=0, input_video=gtInfo.uri)
+            self.run_inference_on_video(input_video=gtInfo.uri)
 
 
 if __name__ == "__main__":

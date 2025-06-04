@@ -72,16 +72,31 @@ void Init_PyFrameConverter(py::module& m) {
            py::arg("width"), py::arg("height"), py::arg("src_format"),
            py::arg("dst_format"),
            R"pbdoc(
-        Constructor method.
+         Create a new frame converter instance.
 
-        :param width: target frame width
-        :param height: target frame height
-        :param src_format: input frame pixel format
-        :param dst_format: output frame pixel format
-    )pbdoc")
+         Initializes a frame converter that uses libswscale to convert between
+         different pixel formats. The converter is configured for a specific
+         resolution and source/destination pixel formats.
+
+         :param width: Width of the frames to convert in pixels
+         :type width: int
+         :param height: Height of the frames to convert in pixels
+         :type height: int
+         :param src_format: Pixel format of the input frames
+         :type src_format: Pixel_Format
+         :param dst_format: Pixel format for the output frames
+         :type dst_format: Pixel_Format
+         :raises RuntimeError: If converter initialization fails
+     )pbdoc")
       .def_property_readonly("Format", &PyFrameConverter::GetFormat, R"pbdoc(
-        Get pixel format.
-    )pbdoc")
+         Get the current pixel format configuration.
+
+         Returns a tuple containing the source and destination pixel formats
+         that this converter is configured to use.
+
+         :return: Tuple of (source_format, destination_format)
+         :rtype: tuple[Pixel_Format, Pixel_Format]
+     )pbdoc")
       .def(
           "Run",
           [](PyFrameConverter& self, py::array& src, py::array& dst,
@@ -92,14 +107,24 @@ void Init_PyFrameConverter(py::module& m) {
           },
           py::arg("src"), py::arg("dst"), py::arg("cc_ctx"),
           R"pbdoc(
-        Perform pixel format conversion.
+         Convert a frame between pixel formats.
 
-        :param src: input numpy ndarray, it must be of proper size for given format and resolution.
-        :param dst: output numpy ndarray, it may be resized to fit the converted frame.
-        :param cc_ctx: colorspace conversion context. Describes color space and color range used for conversion.
-        :return: tuple containing:
-          success (Bool) True in case of success, False otherwise.
-          info (TaskExecInfo) task execution information.
-        :rtype: tuple
-    )pbdoc");
+         Performs pixel format conversion on the input frame using libswscale.
+         The input array must have the correct size for the configured resolution
+         and source format. The output array will be automatically resized if
+         needed to accommodate the converted frame.
+
+         :param src: Input numpy array containing the frame to convert
+         :type src: numpy.ndarray
+         :param dst: Output numpy array that will receive the converted frame
+         :type dst: numpy.ndarray
+         :param cc_ctx: Colorspace conversion context specifying color space and range
+         :type cc_ctx: ColorspaceConversionContext
+         :return: Tuple containing:
+             - success (bool): True if conversion was successful, False otherwise
+             - info (TaskExecInfo): Detailed information about the conversion operation
+         :rtype: tuple[bool, TaskExecInfo]
+         :raises RuntimeError: If the conversion fails
+         :raises ValueError: If the input array has incorrect dimensions
+     )pbdoc");
 }

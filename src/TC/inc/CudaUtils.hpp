@@ -97,7 +97,9 @@ class TC_EXPORT CudaStreamEvent final {
 public:
   CudaStreamEvent() = delete;
   CudaStreamEvent& operator=(const CudaStreamEvent&) = delete;
-  CudaStreamEvent(CUstream stream, int primary_ctx_gpu_id = -1);
+  CudaStreamEvent(size_t stream, int gpu_id = -1)
+      : CudaStreamEvent((CUstream)stream, gpu_id) {}
+  CudaStreamEvent(CUstream stream, int gpu_id = -1);
   ~CudaStreamEvent();
 
   void Record();

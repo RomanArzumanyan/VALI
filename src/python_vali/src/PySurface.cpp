@@ -114,28 +114,53 @@ void Init_PySurface(py::module& m) {
       "plane / channel of video frame. It supports DLPack specification.")
       .def_property_readonly("Width", &SurfacePlane::Width,
                              R"pbdoc(
-        Get width in pixels
-    )pbdoc")
+         Get the width of the surface plane in pixels.
+
+         :return: Width of the plane in pixels
+         :rtype: int
+     )pbdoc")
       .def_property_readonly("Height", &SurfacePlane::Height,
                              R"pbdoc(
-        Get height in pixels
-    )pbdoc")
+         Get the height of the surface plane in pixels.
+
+         :return: Height of the plane in pixels
+         :rtype: int
+     )pbdoc")
       .def_property_readonly("Pitch", &SurfacePlane::Pitch,
                              R"pbdoc(
-        Get pitch in bytes
-    )pbdoc")
+         Get the pitch (stride) of the surface plane in bytes.
+
+         The pitch represents the number of bytes between the start of consecutive rows
+         in the surface plane. This may be larger than the width * element size due to
+         memory alignment requirements.
+
+         :return: Pitch of the plane in bytes
+         :rtype: int
+     )pbdoc")
       .def_property_readonly("ElemSize", &SurfacePlane::ElemSize,
                              R"pbdoc(
-        Get element size in bytes
-    )pbdoc")
+         Get the size of each element in the surface plane in bytes.
+
+         :return: Size of each element in bytes
+         :rtype: int
+     )pbdoc")
       .def_property_readonly("HostFrameSize", &SurfacePlane::HostMemSize,
                              R"pbdoc(
-        Get amount of host memory needed to store this SurfacePlane
-    )pbdoc")
+         Get the amount of host memory needed to store this surface plane.
+
+         This is the total size in bytes required to store the plane's data
+         in host memory, taking into account the pitch and height.
+
+         :return: Required host memory size in bytes
+         :rtype: int
+     )pbdoc")
       .def_property_readonly("GpuMem", &SurfacePlane::GpuMem,
                              R"pbdoc(
-        Get pointer to SurfacePlane data
-    )pbdoc")
+         Get the CUDA device pointer to the surface plane data.
+
+         :return: CUDA device pointer to the plane's data
+         :rtype: int
+     )pbdoc")
       .def(
           "__dlpack_device__",
           [](shared_ptr<SurfacePlane> self) {
@@ -149,8 +174,15 @@ void Init_PySurface(py::module& m) {
                                    self->DeviceId());
           },
           R"pbdoc(
-        DLPack: get device information.
-    )pbdoc")
+         Get DLPack device information.
+
+         Returns a tuple containing the device type and device ID.
+         This method cannot be called on surfaces created from DLPack.
+
+         :return: Tuple of (device_type, device_id)
+         :rtype: tuple[int, int]
+         :raises RuntimeError: If called on a surface created from DLPack
+     )pbdoc")
       .def(
           "__dlpack__",
           [](shared_ptr<SurfacePlane> self, int stream) {
@@ -159,8 +191,16 @@ void Init_PySurface(py::module& m) {
           },
           py::arg("stream") = 0,
           R"pbdoc(
-        DLPack: get capsule.
-    )pbdoc")
+         Get DLPack capsule for the surface plane.
+
+         Creates a DLPack capsule containing the surface plane data.
+         The capsule will be automatically cleaned up when no longer needed.
+
+         :param stream: CUDA stream to use for the operation (default: 0)
+         :type stream: int
+         :return: DLPack capsule containing the surface data
+         :rtype: capsule
+     )pbdoc")
       .def_property_readonly(
           "__cuda_array_interface__",
           [](shared_ptr<SurfacePlane> self) {
@@ -178,8 +218,15 @@ void Init_PySurface(py::module& m) {
                 "stream"_a = size_t(cai.m_stream));
           },
           R"pbdoc(
-        CAI: export necessary dict.
-    )pbdoc")
+         Get CUDA Array Interface descriptor.
+
+         Returns a dictionary containing the CUDA Array Interface (CAI) descriptor
+         for the surface plane, which can be used to create numpy arrays or other
+         CUDA-compatible data structures.
+
+         :return: Dictionary containing CAI descriptor
+         :rtype: dict
+     )pbdoc")
       .def("__repr__",
            [](shared_ptr<SurfacePlane> self) { return ToString(*self.get()); });
 
@@ -188,49 +235,93 @@ void Init_PySurface(py::module& m) {
       .def_property_readonly(
           "Width", [](Surface& self) { return self.Width(0); },
           R"pbdoc(
-        Width in pixels of plane 0.
-    )pbdoc")
+         Get the width of the first plane in pixels.
+
+         :return: Width of the first plane in pixels
+         :rtype: int
+     )pbdoc")
       .def_property_readonly(
           "Height", [](Surface& self) { return self.Height(0); },
           R"pbdoc(
-        Height in pixels of plane 0.
-    )pbdoc")
+         Get the height of the first plane in pixels.
+
+         :return: Height of the first plane in pixels
+         :rtype: int
+     )pbdoc")
       .def_property_readonly(
           "Pitch", [](Surface& self) { return self.Pitch(0); },
           R"pbdoc(
-        Pitch in bytes of plane 0.
-    )pbdoc")
+         Get the pitch (stride) of the first plane in bytes.
+
+         The pitch represents the number of bytes between the start of consecutive rows
+         in the first plane. This may be larger than the width * element size due to
+         memory alignment requirements.
+
+         :return: Pitch of the first plane in bytes
+         :rtype: int
+     )pbdoc")
       .def_property_readonly("Format", &Surface::PixelFormat,
                              R"pbdoc(
-        Get pixel format
-    )pbdoc")
+         Get the pixel format of the surface.
+
+         :return: Pixel format of the surface
+         :rtype: Pixel_Format
+     )pbdoc")
       .def_property_readonly("IsEmpty", &Surface::Empty,
                              R"pbdoc(
-        Tell if Surface plane has memory allocated or it's empty inside.
-    )pbdoc")
+         Check if the surface has allocated memory.
+
+         :return: True if the surface has no allocated memory, False otherwise
+         :rtype: bool
+     )pbdoc")
       .def_property_readonly("NumPlanes", &Surface::NumPlanes,
                              R"pbdoc(
-        Number of SurfacePlanes
-    )pbdoc")
+         Get the number of planes in the surface.
+
+         Different pixel formats may have different numbers of planes.
+         For example, RGB has 1 plane while YUV420 has 3 planes.
+
+         :return: Number of planes in the surface
+         :rtype: int
+     )pbdoc")
       .def_property_readonly("HostSize", &Surface::HostMemSize,
                              R"pbdoc(
-        Amount of memory in bytes which is needed for DtoH memcopy.
-    )pbdoc")
+         Get the total amount of host memory needed for device-to-host copy.
+
+         This is the total size in bytes required to store all planes of the surface
+         in host memory, taking into account the pitch and height of each plane.
+
+         :return: Required host memory size in bytes
+         :rtype: int
+     )pbdoc")
       .def_property_readonly("IsOwnMemory", &Surface::OwnMemory,
                              R"pbdoc(
-        Return True if Surface owns memory, False if it only references actual
-        memory allocation but doesn't own it.
-    )pbdoc")
+         Check if the surface owns its memory.
+
+         :return: True if the surface owns its memory, False if it only references
+             memory owned by another object
+         :rtype: bool
+     )pbdoc")
       .def_property_readonly("Shape", &Surface::Shape,
                              R"pbdoc(
-        Return numpy-like shape. For those formats which have multiple memory
-        allocations (like YUV420), total memory size will be returned.
-    )pbdoc")
+         Get the numpy-like shape of the surface.
+
+         For multi-plane formats (like YUV420), returns the total memory size.
+         The shape represents the dimensions of the surface data.
+
+         :return: Tuple containing the dimensions of the surface
+         :rtype: tuple
+     )pbdoc")
       .def("Clone", &Surface::Clone, py::return_value_policy::take_ownership,
            R"pbdoc(
-        CUDA mem alloc + deep copy.
-        Object returned is manager by Python interpreter.
-    )pbdoc")
+         Create a deep copy of the surface.
+
+         Allocates new CUDA memory and copies all surface data.
+         The returned object is managed by the Python interpreter.
+
+         :return: A new surface containing a copy of the data
+         :rtype: Surface
+     )pbdoc")
       .def_static(
           "Make",
           [](Pixel_Format format, uint32_t newWidth, uint32_t newHeight,
@@ -243,13 +334,23 @@ void Init_PySurface(py::module& m) {
           py::arg("format"), py::arg("width"), py::arg("height"),
           py::arg("gpu_id"), py::return_value_policy::take_ownership,
           R"pbdoc(
-        Constructor method.
+         Create a new surface with the specified parameters.
 
-        :param format: target pixel format
-        :param width: width in pixels
-        :param height: height in pixels
-        :param gpu_id: GPU to use
-    )pbdoc")
+         Allocates a new surface with the given pixel format and dimensions
+         on the specified GPU. The surface will be managed by the Python interpreter.
+
+         :param format: Pixel format for the new surface
+         :type format: Pixel_Format
+         :param width: Width of the surface in pixels
+         :type width: int
+         :param height: Height of the surface in pixels
+         :type height: int
+         :param gpu_id: ID of the GPU to allocate memory on
+         :type gpu_id: int
+         :return: New surface with allocated memory
+         :rtype: Surface
+         :raises RuntimeError: If memory allocation fails
+     )pbdoc")
       .def_static(
           "Make",
           [](Pixel_Format format, uint32_t newWidth, uint32_t newHeight,

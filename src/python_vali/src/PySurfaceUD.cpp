@@ -47,20 +47,37 @@ void Init_PySurfaceUD(py::module& m) {
                           "CUDA-accelerated Surface Upsampler-Downscaler")
       .def(py::init<int>(), py::arg("gpu_id"),
            R"pbdoc(
-         Constructor method.
- 
-         :param gpu_id: what GPU to run on.
+         Constructor for PySurfaceUD with GPU ID.
+
+         Creates a new instance of PySurfaceUD that will run on the specified GPU.
+         The CUDA stream will be automatically created and managed.
+
+         :param gpu_id: The ID of the GPU to use for processing
+         :type gpu_id: int
+         :raises RuntimeError: If the specified GPU is not available
      )pbdoc")
       .def(py::init<int, size_t>(), py::arg("gpu_id"), py::arg("stream"),
            R"pbdoc(
-         Constructor method.
- 
-         :param gpu_id: what GPU to run on.
-         :param stream: CUDA stream to use.
+         Constructor for PySurfaceUD with GPU ID and CUDA stream.
+
+         Creates a new instance of PySurfaceUD that will run on the specified GPU
+         using the provided CUDA stream.
+
+         :param gpu_id: The ID of the GPU to use for processing
+         :type gpu_id: int
+         :param stream: The CUDA stream to use for processing
+         :type stream: int
+         :raises RuntimeError: If the specified GPU is not available
      )pbdoc")
       .def_static("SupportedFormats", &PySurfaceUD::SupportedFormats,
                   py::call_guard<py::gil_scoped_release>(), R"pbdoc(
-         Get list of supported pixel formats.
+         Get list of supported pixel format conversions.
+
+         Returns a list of tuples containing supported input and output pixel format pairs
+         that can be processed by the upsampler-downscaler.
+
+         :return: List of tuples containing supported (input_format, output_format) pairs
+         :rtype: list[tuple[Pixel_Format, Pixel_Format]]
      )pbdoc")
       .def(
           "Run",
@@ -72,41 +89,56 @@ void Init_PySurfaceUD(py::module& m) {
             return std::make_tuple(res, details.m_info);
           },
           py::arg("src"), py::arg("dst"),
-
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
-         Convert input Surface.
- 
-         :param src: input Surface.
-         :param dst: output Surface.
-         :return: tuple containing:
-           success (Bool) True in case of success, False otherwise.
-           info (TaskExecInfo) task execution information.
-         :rtype: tuple
+         Convert input Surface synchronously.
+
+         Processes the input surface and stores the result in the output surface.
+         This method blocks until the conversion is complete.
+
+         :param src: Input surface to be processed
+         :type src: Surface
+         :param dst: Output surface to store the result
+         :type dst: Surface
+         :return: Tuple containing:
+             - success (bool): True if conversion was successful, False otherwise
+             - info (TaskExecInfo): Detailed execution information
+         :rtype: tuple[bool, TaskExecInfo]
+         :raises RuntimeError: If the conversion fails
      )pbdoc")
       .def(
           "RunAsync",
-          [](PySurfaceUD& self, Surface& src, Surface& dst, bool record_event) {
+          [](PySurfaceUD& self, Surface& src, Surface& dst) {
             TaskExecDetails details;
             auto res = self.Run(src, dst, details);
-            if (record_event) {
-              self.m_event->Record();
-            }
-            return std::make_tuple(res, details.m_info,
-                                   record_event ? self.m_event : nullptr);
+            return std::make_tuple(res, details.m_info);
           },
-          py::arg("src"), py::arg("dst"), py::arg("record_event") = true,
+          py::arg("src"), py::arg("dst"),
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
-         Convert input Surface.
+         Convert input Surface asynchronously.
 
-         :param src: input Surface.
-         :param dst: output Surface.
-         :param record_event: If False, no event will be recorded. Useful for chain calls.
-         :return: tuple containing:
-           success (Bool) True in case of success, False otherwise.
-           info (TaskExecInfo) task execution information.
-           event (CudaStreamEvent) CUDA stream event.
-         :rtype: tuple
+         Processes the input surface and stores the result in the output surface.
+         This method returns immediately without waiting for the conversion to complete.
+
+         :param src: Input surface to be processed
+         :type src: Surface
+         :param dst: Output surface to store the result
+         :type dst: Surface
+         :return: Tuple containing:
+             - success (bool): True if conversion was successful, False otherwise
+             - info (TaskExecInfo): Detailed execution information
+         :rtype: tuple[bool, TaskExecInfo]
+         :raises RuntimeError: If the conversion fails
+     )pbdoc")
+      .def_property_readonly(
+          "Stream", [](PySurfaceUD& self) { return (size_t)self.m_stream; },
+          R"pbdoc(
+         Get the CUDA stream associated with this instance.
+
+         Returns the handle to the CUDA stream used for processing.
+
+         :return: CUDA stream handle
+         :rtype: int
      )pbdoc");
 }

@@ -56,6 +56,7 @@ psnr_threshold = 42.0
 class TestSurfaceConverter(unittest.TestCase):
     def __init__(self, methodName):
         super().__init__(methodName=methodName)
+        self.gpu_id = 0
 
     def test_unsupported_params(self):
         """
@@ -63,12 +64,14 @@ class TestSurfaceConverter(unittest.TestCase):
         return proper error.
         """
         with open("gt_files.json") as f:
-            gtInfo = tc.GroundTruth(**json.load(f)["basic"])
+            gt_info = tc.GroundTruth(**json.load(f)["basic"])
 
-        pyDec = vali.PyDecoder(
-            input=gtInfo.uri, opts={}, gpu_id=0)
+        py_dec = vali.PyDecoder(
+            input=gt_info.uri,
+            opts={},
+            gpu_id=self.gpu_id)
 
-        nvCvt = vali.PySurfaceConverter(gpu_id=0)
+        py_cvt = vali.PySurfaceConverter(gpu_id=self.gpu_id)
 
         # NV12 > RGB NPP conversion doesn't support BT601 + MPEG params.
         cc_ctx = vali.ColorspaceConversionContext(
@@ -76,15 +79,15 @@ class TestSurfaceConverter(unittest.TestCase):
             vali.ColorRange.MPEG)
 
         surf_src = vali.Surface.Make(
-            pyDec.Format, pyDec.Width, pyDec.Height, gpu_id=0)
-        success, _ = pyDec.DecodeSingleSurface(surf_src)
+            py_dec.Format, py_dec.Width, py_dec.Height, gpu_id=self.gpu_id)
+        success, _ = py_dec.DecodeSingleSurface(surf_src)
         if not success:
             self.fail("Fail to decode surface")
 
         surf_dst = vali.Surface.Make(
-            vali.PixelFormat.RGB, surf_src.Width, surf_src.Height, gpu_id=0)
+            vali.PixelFormat.RGB, surf_src.Width, surf_src.Height, gpu_id=self.gpu_id)
 
-        surf_dst, details = nvCvt.Run(surf_src, surf_dst, cc_ctx)
+        surf_dst, details = py_cvt.Run(surf_src, surf_dst, cc_ctx)
         self.assertEqual(
             details, vali.TaskExecInfo.UNSUPPORTED_FMT_CONV_PARAMS)
 
@@ -100,31 +103,47 @@ class TestSurfaceConverter(unittest.TestCase):
         Args:
             is_async (bool): True if launched in non-blocking mode, False otherwise.
         """
-        with open("gt_files.json") as f:
-            gtInfo = tc.GroundTruth(**json.load(f)["basic"])
 
-        pyDec = vali.PyDecoder(
-            input=gtInfo.uri, opts={}, gpu_id=0)
+        gt_info = tc.gt_by_name("basic")
 
-        nvCvt = vali.PySurfaceConverter(
-            gpu_id=0,
-            stream=pyDec.Stream)
+        py_dec = vali.PyDecoder(
+            input=gt_info.uri,
+            opts={},
+            gpu_id=self.gpu_id)
+
+        py_cvt = vali.PySurfaceConverter(
+            gpu_id=self.gpu_id,
+            stream=py_dec.Stream)
+
+        event = vali.CudaStreamEvent(
+            stream=py_dec.Stream,
+            gpu_id=self.gpu_id)
 
         surf_src = vali.Surface.Make(
-            pyDec.Format, pyDec.Width, pyDec.Height, gpu_id=0)
-        success, _ = pyDec.DecodeSingleSurface(surf_src)
+            py_dec.Format,
+            py_dec.Width,
+            py_dec.Height,
+            gpu_id=self.gpu_id)
+
+        surf_dst = vali.Surface.Make(
+            vali.PixelFormat.RGB,
+            surf_src.Width,
+            surf_src.Height,
+            gpu_id=self.gpu_id)
+
+        success, _ = py_dec.DecodeSingleSurface(surf_src)
         if not success:
             self.fail("Fail to decode surface")
 
-        surf_dst = vali.Surface.Make(
-            vali.PixelFormat.RGB, surf_src.Width, surf_src.Height, gpu_id=0)
-
-        if is_async:
-            success, details, event = nvCvt.RunAsync(surf_src, surf_dst)
-            event.Wait()
-        else:
-            success, details = nvCvt.Run(surf_src, surf_dst)
+        success, details = py_cvt.RunAsync(
+            surf_src, surf_dst) if is_async else py_cvt.Run(surf_src, surf_dst)
         self.assertEqual(details, vali.TaskExecInfo.SUCCESS)
+
+        event.Record()
+        event.Wait()
+
+        # In case of failure exceptions will be thrown and test will be failed
+        # So if we got here, async API is working fine
 
     @parameterized.expand([
         [True],
@@ -137,73 +156,70 @@ class TestSurfaceConverter(unittest.TestCase):
         Args:
             is_async (bool): True if launched in non-blocking mode, False otherwise.
         """
-        with open("gt_files.json") as f:
-            gt_values = json.load(f)
-            dst_info = tc.GroundTruth(**gt_values["basic_rgb"])
-            pln_info = tc.GroundTruth(**gt_values["basic_rgb_planar"])
+        dst_info = tc.gt_by_name("basic_rgb")
+        pln_info = tc.gt_by_name("basic_rgb_planar")
+        f_in = open(dst_info.uri, "rb")
+        f_gt = open(pln_info.uri, "rb")
 
-            nvUpl = vali.PyFrameUploader(
-                gpu_id=0)
+        py_upl = vali.PyFrameUploader(gpu_id=self.gpu_id)
+        py_cvt = vali.PySurfaceConverter(gpu_id=self.gpu_id)
+        py_dwn = vali.PySurfaceDownloader(gpu_id=self.gpu_id)
 
-            toPLN = vali.PySurfaceConverter(gpu_id=0)
+        # Use color space and range of original file.
+        cc_ctx = vali.ColorspaceConversionContext(
+            vali.ColorSpace.BT_709,
+            vali.ColorRange.MPEG)
 
-            nvDwn = vali.PySurfaceDownloader(gpu_id=0)
+        for i in range(0, dst_info.num_frames):
+            frame_size = dst_info.width * dst_info.height * 3
+            # Read from ethalon RGB file
+            dist_frame = np.fromfile(
+                file=f_in, dtype=np.uint8, count=frame_size)
 
-            # Use color space and range of original file.
-            cc_ctx = vali.ColorspaceConversionContext(
-                vali.ColorSpace.BT_709,
-                vali.ColorRange.MPEG)
+            # Upload to GPU
+            surf_rgb = vali.Surface.Make(
+                vali.PixelFormat.RGB,
+                dst_info.width,
+                dst_info.height,
+                gpu_id=self.gpu_id)
 
-            f_in = open(dst_info.uri, "rb")
-            f_gt = open(pln_info.uri, "rb")
-            for i in range(0, dst_info.num_frames):
-                frame_size = dst_info.width * dst_info.height * 3
-                # Read from ethalon RGB file
-                dist_frame = np.fromfile(
-                    file=f_in, dtype=np.uint8, count=frame_size)
+            success = py_upl.Run(dist_frame, surf_rgb)
+            if not success:
+                self.fail("Fail to upload frame.")
 
-                # Upload to GPU
-                surf_rgb = vali.Surface.Make(vali.PixelFormat.RGB, dst_info.width,
-                                             dst_info.height, gpu_id=0)
-                success = nvUpl.Run(dist_frame, surf_rgb)
-                if not success:
-                    self.fail("Fail to upload frame.")
+            # Deinterleave
+            surf_pln = vali.Surface.Make(
+                vali.PixelFormat.RGB_PLANAR,
+                pln_info.width,
+                pln_info.height,
+                gpu_id=self.gpu_id)
 
-                # Deinterleave
-                surf_pln = vali.Surface.Make(
-                    vali.PixelFormat.RGB_PLANAR,
-                    pln_info.width,
-                    pln_info.height,
-                    gpu_id=0)
+            # DtoH memcpy is blocking, no need to sync on event
+            success, details = py_cvt.RunAsync(
+                surf_rgb, surf_pln, cc_ctx) if is_async else py_cvt.Run(surf_rgb, surf_pln, cc_ctx)
+            if not success:
+                self.fail("Fail to convert RGB > RGB_PLANAR: " + details)
 
-                if is_async:
-                    success, details, _ = toPLN.RunAsync(
-                        surf_rgb, surf_pln, cc_ctx, record_event=False)
-                else:
-                    success, details = toPLN.Run(surf_rgb, surf_pln, cc_ctx)
-                if not success:
-                    self.fail("Fail to convert RGB > RGB_PLANAR: " + details)
+            # Download and save to disk
+            dst_frame = np.ndarray(shape=(frame_size), dtype=np.uint8)
+            success = py_dwn.Run(surf_pln, dst_frame)
+            if not success:
+                self.fail("Failed to download surface.")
 
-                # Download and save to disk
-                dst_frame = np.ndarray(shape=(frame_size), dtype=np.uint8)
-                success = nvDwn.Run(surf_pln, dst_frame)
-                if not success:
-                    self.fail("Failed to download surface.")
+            # Compare against GT
+            pln_frame = np.fromfile(
+                file=f_gt, dtype=np.uint8, count=frame_size)
+            score = tc.measure_psnr(pln_frame, dst_frame)
+            if score < psnr_threshold:
+                tc.dump_to_disk(dst_frame, "cc", dst_info.width,
+                                dst_info.height, "rgb_pln_dist")
+                tc.dump_to_disk(pln_frame, "cc", pln_info.width,
+                                pln_info.height, "rgb_pln_gt")
+                self.fail(
+                    "PSNR score is below threshold: " + str(score))
 
-                # Compare against GT
-                pln_frame = np.fromfile(
-                    file=f_gt, dtype=np.uint8, count=frame_size)
-                score = tc.measure_psnr(pln_frame, dst_frame)
-                if score < psnr_threshold:
-                    tc.dump_to_disk(dst_frame, "cc", dst_info.width,
-                                       dst_info.height, "rgb_pln_dist")
-                    tc.dump_to_disk(pln_frame, "cc", pln_info.width,
-                                       pln_info.height, "rgb_pln_gt")
-                    self.fail(
-                        "PSNR score is below threshold: " + str(score))
-
-            f_in.close()
-            f_gt.close()
+        f_in.close()
+        f_gt.close()
 
     @parameterized.expand([
         [True],
@@ -216,16 +232,12 @@ class TestSurfaceConverter(unittest.TestCase):
         Args:
             is_async (bool): True if launched in non-blocking mode, False otherwise.
         """
-        with open("gt_files.json") as f:
-            gt_values = json.load(f)
-            src_info = tc.GroundTruth(**gt_values["basic_nv12"])
-            dst_info = tc.GroundTruth(**gt_values["basic_rgb"])
+        src_info = tc.gt_by_name("basic_nv12")
+        dst_info = tc.gt_by_name("basic_rgb")
 
-        nvUpl = vali.PyFrameUploader(gpu_id=0)
-
-        nvCvt = vali.PySurfaceConverter(gpu_id=0)
-
-        nvDwn = vali.PySurfaceDownloader(gpu_id=0)
+        py_upl = vali.PyFrameUploader(gpu_id=self.gpu_id)
+        py_cvt = vali.PySurfaceConverter(gpu_id=self.gpu_id)
+        py_dwn = vali.PySurfaceDownloader(gpu_id=self.gpu_id)
 
         # Use color space and range of original file.
         cc_ctx = vali.ColorspaceConversionContext(
@@ -241,22 +253,25 @@ class TestSurfaceConverter(unittest.TestCase):
                 src_fin, np.uint8, int(src_info.width * src_info.height * 3 / 2))
 
             # Upload to GPU
-            surf_src = vali.Surface.Make(vali.PixelFormat.NV12, src_info.width,
-                                         src_info.height, gpu_id=0)
-            success = nvUpl.Run(frame_src, surf_src)
+            surf_src = vali.Surface.Make(
+                vali.PixelFormat.NV12,
+                src_info.width,
+                src_info.height,
+                gpu_id=self.gpu_id)
+
+            success = py_upl.Run(frame_src, surf_src)
             if not success:
                 self.fail("Failed to upload frame")
 
             # Convert to RGB
             surf_dst = vali.Surface.Make(
-                vali.PixelFormat.RGB, surf_src.Width, surf_src.Height, gpu_id=0)
+                vali.PixelFormat.RGB,
+                surf_src.Width,
+                surf_src.Height,
+                gpu_id=self.gpu_id)
 
-            if is_async:
-                success, details, _ = nvCvt.RunAsync(
-                    surf_src, surf_dst, cc_ctx, record_event=False)
-            else:
-                success, details = nvCvt.Run(surf_src, surf_dst, cc_ctx)
-
+            success, details = py_cvt.RunAsync(
+                surf_src, surf_dst, cc_ctx) if is_async else py_cvt.Run(surf_src, surf_dst, cc_ctx)
             if not success:
                 self.fail("Fail to convert surface " +
                           str(i) + ": " + str(details))
@@ -264,7 +279,7 @@ class TestSurfaceConverter(unittest.TestCase):
             # Download to numpy array
             dist_frame = np.ndarray(
                 shape=(surf_dst.HostSize), dtype=np.uint8)
-            if not nvDwn.Run(surf_dst, dist_frame):
+            if not py_dwn.Run(surf_dst, dist_frame):
                 self.fail("Fail to download surface")
 
             # Read ethalon RGB frame and compare
@@ -275,9 +290,9 @@ class TestSurfaceConverter(unittest.TestCase):
             # Dump both frames to disk in case of failure
             if score < psnr_threshold:
                 tc.dump_to_disk(dist_frame, "cc", dst_info.width,
-                                   dst_info.height, "rgb_dist")
+                                dst_info.height, "rgb_dist")
                 tc.dump_to_disk(gt_frame, "cc", dst_info.width,
-                                   dst_info.height, "rgb_gt")
+                                dst_info.height, "rgb_gt")
                 self.fail(
                     "PSNR score is below threshold: " + str(score))
 
@@ -295,17 +310,12 @@ class TestSurfaceConverter(unittest.TestCase):
         Args:
             is_async (bool): True if launched in non-blocking mode, False otherwise.
         """
-        with open("gt_files.json") as f:
-            gt_values = json.load(f)
-            src_info = tc.GroundTruth(**gt_values["hevc10_p10"])
-            dst_info = tc.GroundTruth(**gt_values["hevc10_nv12"])
+        src_info = tc.gt_by_name("hevc10_p10")
+        dst_info = tc.gt_by_name("hevc10_nv12")
 
-        nvUpl = vali.PyFrameUploader(
-            gpu_id=0)
-
-        nvCvt = vali.PySurfaceConverter(gpu_id=0)
-
-        nvDwn = vali.PySurfaceDownloader(gpu_id=0)
+        py_upl = vali.PyFrameUploader(gpu_id=self.gpu_id)
+        py_cvt = vali.PySurfaceConverter(gpu_id=self.gpu_id)
+        py_dwn = vali.PySurfaceDownloader(gpu_id=self.gpu_id)
 
         # Use color space and range of original file.
         cc_ctx = vali.ColorspaceConversionContext(
@@ -321,23 +331,26 @@ class TestSurfaceConverter(unittest.TestCase):
                 src_fin, np.uint16, int(src_info.width * src_info.height * 3 / 2))
 
             # Upload to GPU
-            surf_src = vali.Surface.Make(vali.PixelFormat.P10, src_info.width,
-                                         src_info.height, gpu_id=0)
-            success = nvUpl.Run(frame_src, surf_src)
+            surf_src = vali.Surface.Make(
+                vali.PixelFormat.P10,
+                src_info.width,
+                src_info.height,
+                gpu_id=self.gpu_id)
+
+            success = py_upl.Run(frame_src, surf_src)
             if not success:
                 self.fail("Failed to upload frame")
 
             # Convert to destination format
             surf_dst = vali.Surface.Make(
-                vali.PixelFormat.NV12, surf_src.Width, surf_src.Height, gpu_id=0)
+                vali.PixelFormat.NV12,
+                surf_src.Width,
+                surf_src.Height,
+                gpu_id=self.gpu_id)
 
-            if is_async:
-                success, details, _ = nvCvt.RunAsync(
-                    surf_src, surf_dst, cc_ctx, record_event=False)
-            else:
-                success, details = nvCvt.Run(
-                    surf_src, surf_dst, cc_ctx)
-
+            success, details = py_cvt.RunAsync(
+                surf_src, surf_dst, cc_ctx) if is_async else py_cvt.Run(
+                surf_src, surf_dst, cc_ctx)
             if not success:
                 self.fail("Fail to convert surface " +
                           str(i) + ": " + str(details))
@@ -346,7 +359,7 @@ class TestSurfaceConverter(unittest.TestCase):
             dist_frame = np.ndarray(
                 shape=surf_dst.Shape,
                 dtype=tc.to_numpy_dtype(surf_dst))
-            success, info = nvDwn.Run(surf_dst, dist_frame)
+            success, info = py_dwn.Run(surf_dst, dist_frame)
             if not success:
                 self.fail(info)
 
@@ -362,10 +375,10 @@ class TestSurfaceConverter(unittest.TestCase):
             # Dump both frames to disk in case of failure
             if score < psnr_threshold:
                 tc.dump_to_disk(dist_frame, "cc", dst_info.width,
-                                   dst_info.height, "dist")
+                                dst_info.height, "dist")
 
                 tc.dump_to_disk(gt_frame, "cc", dst_info.width,
-                                   dst_info.height, "gt")
+                                dst_info.height, "gt")
 
                 self.fail(
                     "PSNR score is below threshold: " + str(score))

@@ -48,13 +48,31 @@ void Init_PyFrameUploader(py::module& m) {
                               "Surface using CUDA HtoD memcpy.")
       .def(py::init<int>(), py::arg("gpu_id"),
            R"pbdoc(
-        :param gpu_id: what GPU to use for upload.
-    )pbdoc")
+         Create a new frame uploader instance.
+
+         Initializes a CUDA frame uploader that transfers data from host memory
+         (numpy arrays) to device memory (Surface) using CUDA's host-to-device
+         memory copy operations.
+
+         :param gpu_id: ID of the GPU to use for memory transfers
+         :type gpu_id: int
+         :raises RuntimeError: If GPU initialization fails
+     )pbdoc")
       .def(py::init<int, size_t>(), py::arg("gpu_id"), py::arg("stream"),
            R"pbdoc(
-        :param gpu_id: what GPU to use for upload.
-        :param stream: CUDA stream to use for upload
-    )pbdoc")
+         Create a new frame uploader instance with a specific CUDA stream.
+
+         Initializes a CUDA frame uploader that transfers data from host memory
+         to device memory using a specific CUDA stream. This allows for better
+         control over CUDA stream management and potential overlap with other
+         GPU operations.
+
+         :param gpu_id: ID of the GPU to use for memory transfers
+         :type gpu_id: int
+         :param stream: CUDA stream to use for memory transfers
+         :type stream: int
+         :raises RuntimeError: If GPU initialization fails
+     )pbdoc")
       .def(
           "Run",
           [](PyFrameUploader& self, py::array& src, Surface& dst) {
@@ -63,15 +81,20 @@ void Init_PyFrameUploader(py::module& m) {
           },
           py::arg("src"), py::arg("dst"),
           R"pbdoc(
-        Blocking HtoD CUDA memcpy.
+         Perform a blocking host-to-device memory copy.
 
-        :param src: input numpy array
-        :type src: numpy.ndarray
-        :param dst: output surface
-        :type dst: Surface
-        :return: tuple containing:
-          success (Bool) True in case of success, False otherwise.
-          info (TaskExecInfo) task execution information.
-        :rtype: tuple
-    )pbdoc");
+         Transfers data from a numpy array in host memory to a Surface in device
+         memory. The operation is performed synchronously, meaning it will block
+         until the transfer is complete.
+
+         :param src: Source numpy array containing the data to transfer
+         :type src: numpy.ndarray
+         :param dst: Destination Surface that will receive the data
+         :type dst: Surface
+         :return: Tuple containing:
+             - success (bool): True if the transfer was successful, False otherwise
+             - info (TaskExecInfo): Detailed information about the transfer operation
+         :rtype: tuple[bool, TaskExecInfo]
+         :raises RuntimeError: If the memory transfer fails
+     )pbdoc");
 }

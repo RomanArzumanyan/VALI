@@ -389,147 +389,244 @@ void Init_PyNvEncoder(py::module& m) {
            py::arg("settings"), py::arg("gpu_id"), py::arg("format") = NV12,
            py::arg("verbose") = false,
            R"pbdoc(
-        Constructor method.
+         Create a new hardware-accelerated video encoder.
 
-        :param settings: Dictionary with nvenc settings
-        :param gpu_id: what GPU to run encode on
-        :param format: pixel format to use by codec
-        :param verbose: output verbose information to log
-    )pbdoc")
+         Initializes an NVIDIA hardware-accelerated video encoder with the specified
+         settings and pixel format. The encoder uses NVIDIA's NVENC hardware encoder
+         for efficient video compression.
+
+         :param settings: Dictionary containing NVENC encoder settings (e.g., bitrate, codec, etc.)
+         :type settings: dict[str, str]
+         :param gpu_id: ID of the GPU to use for encoding
+         :type gpu_id: int
+         :param format: Pixel format for input frames (default: NV12)
+         :type format: Pixel_Format
+         :param verbose: Whether to output detailed logging information
+         :type verbose: bool
+         :raises RuntimeError: If encoder initialization fails
+     )pbdoc")
       .def(py::init<const map<string, string>&, int, size_t, Pixel_Format,
                     bool>(),
            py::arg("settings"), py::arg("gpu_id"), py::arg("stream"),
            py::arg("format") = NV12, py::arg("verbose") = false,
            R"pbdoc(
-        Constructor method.
+         Create a new hardware-accelerated video encoder with a specific CUDA stream.
 
-        :param settings: Dictionary with nvenc settings
-        :param gpu_id: what GPU to run encode on
-        :param stream: CUDA stream to use
-        :param format: pixel format to use by codec
-        :param verbose: output verbose information to log
-    )pbdoc")
+         Initializes an NVIDIA hardware-accelerated video encoder with the specified
+         settings, pixel format, and CUDA stream. This constructor allows for more
+         control over CUDA stream management.
+
+         :param settings: Dictionary containing NVENC encoder settings
+         :type settings: dict[str, str]
+         :param gpu_id: ID of the GPU to use for encoding
+         :type gpu_id: int
+         :param stream: CUDA stream to use for encoding operations
+         :type stream: int
+         :param format: Pixel format for input frames (default: NV12)
+         :type format: Pixel_Format
+         :param verbose: Whether to output detailed logging information
+         :type verbose: bool
+         :raises RuntimeError: If encoder initialization fails
+     )pbdoc")
       .def("Reconfigure", &PyNvEncoder::Reconfigure, py::arg("settings"),
            py::arg("force_idr") = false, py::arg("reset_encoder") = false,
            py::arg("verbose") = false,
            R"pbdoc(
-        DESC.
+         Reconfigure the encoder with new settings.
 
-        :param settings: Dictionary with nvenc settings
-        :param force_idr: force next encoded frame to be IDR key frame
-        :param reset_encoder: force encoder reset
-        :param verbose: output verbose information to log
-        :return:
-    )pbdoc")
+         Updates the encoder configuration with new settings. This can be used to
+         change encoding parameters during runtime, such as bitrate or resolution.
+
+         :param settings: Dictionary containing new NVENC encoder settings
+         :type settings: dict[str, str]
+         :param force_idr: Force the next encoded frame to be an IDR key frame
+         :type force_idr: bool
+         :param reset_encoder: Force a complete encoder reset
+         :type reset_encoder: bool
+         :param verbose: Whether to output detailed logging information
+         :type verbose: bool
+         :return: True if reconfiguration was successful, False otherwise
+         :rtype: bool
+         :raises RuntimeError: If reconfiguration fails
+     )pbdoc")
       .def_property_readonly("Width", &PyNvEncoder::Width,
                              R"pbdoc(
-        Return encoded video stream width in pixels.
-    )pbdoc")
+         Get the width of the encoded video stream.
+
+         :return: Width of the encoded video in pixels
+         :rtype: int
+     )pbdoc")
       .def_property_readonly("Height", &PyNvEncoder::Height,
                              R"pbdoc(
-        Return encoded video stream height in pixels.
-    )pbdoc")
+         Get the height of the encoded video stream.
+
+         :return: Height of the encoded video in pixels
+         :rtype: int
+     )pbdoc")
       .def_property_readonly("Format", &PyNvEncoder::GetPixelFormat,
                              R"pbdoc(
-        Return encoded video stream pixel format.
-    )pbdoc")
+         Get the pixel format of the encoded video stream.
+
+         :return: Pixel format used for encoding
+         :rtype: Pixel_Format
+     )pbdoc")
       .def_property_readonly("FrameSizeInBytes",
                              &PyNvEncoder::GetFrameSizeInBytes,
                              R"pbdoc(
-        This function is used to get the current frame size based on pixel format.
-    )pbdoc")
+         Get the size of a single frame in bytes.
+
+         Calculates the size of a single frame based on the current pixel format
+         and resolution. This is useful for allocating memory for frame buffers.
+
+         :return: Size of a single frame in bytes
+         :rtype: int
+         :raises ValueError: If the pixel format is not supported
+     )pbdoc")
       .def_property_readonly("Capabilities", &PyNvEncoder::Capabilities,
                              py::return_value_policy::move,
                              R"pbdoc(
-        Return dictionary with Nvenc capabilities.
-    )pbdoc")
+         Get the capabilities of the NVENC encoder.
+
+         Returns a dictionary containing all supported capabilities of the NVENC
+         encoder, such as maximum resolution, supported codecs, and encoding features.
+
+         :return: Dictionary mapping capability types to their values
+         :rtype: dict[NV_ENC_CAPS, int]
+     )pbdoc")
       .def("EncodeSingleSurface",
            py::overload_cast<shared_ptr<Surface>, py::array&, const py::array&,
                              bool, bool>(&PyNvEncoder::EncodeSurface),
            py::arg("surface"), py::arg("packet"), py::arg("sei"),
            py::arg("sync"), py::arg("append"),
            R"pbdoc(
-        Encode single Surface. Please not that this function may not return
-        compressed video packet.
+         Encode a single surface with SEI data and synchronization options.
 
-        :param surface: raw input Surface
-        :param packet: output compressed packet
-        :param sei: unregistered user data SEI information to be attached to encoded bitstream
-        :param sync: run function in sync mode, will ensure encoded packet is returned when function returns
-        :param append: append encoded packet to input packet
-        :return: True in case of success, False otherwise.
-    )pbdoc")
+         Encodes a single surface into a compressed video packet. The function may
+         not return immediately with a compressed packet, depending on the encoder's
+         internal buffering and the sync parameter.
+
+         :param surface: Input surface containing the frame to encode
+         :type surface: Surface
+         :param packet: Output buffer for the compressed video packet
+         :type packet: numpy.ndarray
+         :param sei: Optional SEI (Supplemental Enhancement Information) data to attach
+         :type sei: numpy.ndarray
+         :param sync: Whether to wait for the encoded packet before returning
+         :type sync: bool
+         :param append: Whether to append the new packet to existing data
+         :type append: bool
+         :return: True if encoding was successful, False otherwise
+         :rtype: bool
+         :raises RuntimeError: If encoding fails
+     )pbdoc")
       .def("EncodeSingleSurface",
            py::overload_cast<shared_ptr<Surface>, py::array&, const py::array&,
                              bool>(&PyNvEncoder::EncodeSurface),
            py::arg("surface"), py::arg("packet"), py::arg("sei"),
            py::arg("sync"),
            R"pbdoc(
-        Encode single Surface. Please not that this function may not return
-        compressed video packet.
+         Encode a single surface with SEI data.
 
-        :param surface: raw input Surface
-        :param packet: output compressed packet
-        :param sei: unregistered user data SEI information to be attached to encoded bitstream
-        :param sync: run function in sync mode, will ensure encoded packet is returned when function returns
-        :return: True in case of success, False otherwise.
-    )pbdoc")
+         Encodes a single surface into a compressed video packet with optional
+         SEI data. The sync parameter determines whether to wait for the encoded
+         packet before returning.
+
+         :param surface: Input surface containing the frame to encode
+         :type surface: Surface
+         :param packet: Output buffer for the compressed video packet
+         :type packet: numpy.ndarray
+         :param sei: Optional SEI data to attach to the encoded frame
+         :type sei: numpy.ndarray
+         :param sync: Whether to wait for the encoded packet before returning
+         :type sync: bool
+         :return: True if encoding was successful, False otherwise
+         :rtype: bool
+         :raises RuntimeError: If encoding fails
+     )pbdoc")
       .def("EncodeSingleSurface",
            py::overload_cast<shared_ptr<Surface>, py::array&, bool>(
                &PyNvEncoder::EncodeSurface),
            py::arg("surface"), py::arg("packet"), py::arg("sync"),
            R"pbdoc(
-        Encode single Surface. Please not that this function may not return
-        compressed video packet.
+         Encode a single surface with synchronization option.
 
-        :param surface: raw input Surface
-        :param packet: output compressed packet
-        :param sync: run function in sync mode, will ensure encoded packet is returned when function returns
-        :return: True in case of success, False otherwise.
-    )pbdoc")
+         Encodes a single surface into a compressed video packet. The sync parameter
+         determines whether to wait for the encoded packet before returning.
+
+         :param surface: Input surface containing the frame to encode
+         :type surface: Surface
+         :param packet: Output buffer for the compressed video packet
+         :type packet: numpy.ndarray
+         :param sync: Whether to wait for the encoded packet before returning
+         :type sync: bool
+         :return: True if encoding was successful, False otherwise
+         :rtype: bool
+         :raises RuntimeError: If encoding fails
+     )pbdoc")
       .def("EncodeSingleSurface",
            py::overload_cast<shared_ptr<Surface>, py::array&, const py::array&>(
                &PyNvEncoder::EncodeSurface),
            py::arg("surface"), py::arg("packet"), py::arg("sei"),
            R"pbdoc(
-        Encode single Surface. Please not that this function may not return
-        compressed video packet.
+         Encode a single surface with SEI data.
 
-        :param surface: raw input Surface
-        :param packet: output compressed packet
-        :param sei: unregistered user data SEI information to be attached to encoded bitstream
-        :return: True in case of success, False otherwise.
-    )pbdoc")
+         Encodes a single surface into a compressed video packet with optional
+         SEI data. The function operates asynchronously by default.
+
+         :param surface: Input surface containing the frame to encode
+         :type surface: Surface
+         :param packet: Output buffer for the compressed video packet
+         :type packet: numpy.ndarray
+         :param sei: Optional SEI data to attach to the encoded frame
+         :type sei: numpy.ndarray
+         :return: True if encoding was successful, False otherwise
+         :rtype: bool
+         :raises RuntimeError: If encoding fails
+     )pbdoc")
       .def("EncodeSingleSurface",
            py::overload_cast<shared_ptr<Surface>, py::array&>(
                &PyNvEncoder::EncodeSurface),
            py::arg("surface"), py::arg("packet"),
            R"pbdoc(
-        Encode single Surface. Please not that this function may not return
-        compressed video packet.
+         Encode a single surface.
 
-        :param surface: raw input Surface
-        :param packet: output compressed packet
-        :return: True in case of success, False otherwise.
-    )pbdoc")
+         Encodes a single surface into a compressed video packet. The function
+         operates asynchronously by default.
+
+         :param surface: Input surface containing the frame to encode
+         :type surface: Surface
+         :param packet: Output buffer for the compressed video packet
+         :type packet: numpy.ndarray
+         :return: True if encoding was successful, False otherwise
+         :rtype: bool
+         :raises RuntimeError: If encoding fails
+     )pbdoc")
       .def("Flush", &PyNvEncoder::Flush, py::arg("packets"),
            R"pbdoc(
-        Flush encoder.
-        Use this method in the end of encoding session to obtain all remaining
-        compressed frames.
+         Flush the encoder's internal buffers.
 
-        :param packets: one or multiple compressed packets squashed together.
-        :return: True in case of success, False otherwise.
-    )pbdoc")
+         Forces the encoder to process any remaining frames in its internal
+         buffers and output them as compressed packets.
+
+         :param packets: Output buffer for the compressed packets
+         :type packets: numpy.ndarray
+         :return: True if any packets were flushed, False otherwise
+         :rtype: bool
+         :raises RuntimeError: If flushing fails
+     )pbdoc")
       .def("FlushSinglePacket", &PyNvEncoder::FlushSinglePacket,
            py::arg("packets"),
            R"pbdoc(
-        Flush encoder.
-        Use this method in the end of encoding session to obtain single remaining
-        compressed frame. TO flush encoder completely you need to call this
-        method multiple times.
+        Flush the encoder's internal buffers.
 
-        :param packets: single compressed packet.
-        :return: True in case of success, False otherwise.
+         Forces the encoder to process remaining frame in its internal
+         buffers and output it as compressed packet.
+
+         :param packet: Output buffer for 1 compressed packet
+         :type packet: numpy.ndarray
+         :return: True if any packet was flushed, False otherwise
+         :rtype: bool
+         :raises RuntimeError: If flushing fails
     )pbdoc");
+  ;
 }
