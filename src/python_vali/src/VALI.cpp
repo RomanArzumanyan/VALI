@@ -264,6 +264,19 @@ PYBIND11_MODULE(_python_vali, m) {
 
   py::class_<CudaStreamEvent, shared_ptr<CudaStreamEvent>>(m, "CudaStreamEvent",
                                                            "CUDA stream event")
+      .def(py::init<size_t, int>(), py::arg("stream"), py::arg("gpu_id"),
+           R"pbdoc(
+        Constructor method.
+
+        :param stream: CUDA stream handle.
+        :param gpu_id: GPU ID.
+    )pbdoc")
+      .def("Record", &CudaStreamEvent::Record,
+           py::call_guard<py::gil_scoped_release>(),
+           R"pbdoc(
+      Records CUDA event.
+      Acts exactly like cuEventRecord.
+      )pbdoc")
       .def("Wait", &CudaStreamEvent::Wait,
            py::call_guard<py::gil_scoped_release>(),
            R"pbdoc(
@@ -435,7 +448,7 @@ PYBIND11_MODULE(_python_vali, m) {
   Init_PyNvJpegEncoder(m);
 
   Init_PySurfaceRotator(m);
-  
+
   Init_PySurfaceUD(m);
 
   av_log_set_level(AV_LOG_ERROR);

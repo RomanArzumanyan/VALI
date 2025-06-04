@@ -127,18 +127,13 @@ void Init_PySurfaceRotator(py::module& m) {
       .def(
           "RunAsync",
           [](PySurfaceRotator& self, Surface& src, Surface& dst, double angle,
-             double shift_x, double shift_y, bool record_event) {
+             double shift_x, double shift_y) {
             TaskExecDetails details;
             auto res = self.Run(angle, shift_x, shift_y, src, dst, details);
-            if (record_event) {
-              self.m_event->Record();
-            }
-            return std::make_tuple(res, details.m_info,
-                                   record_event ? self.m_event : nullptr);
+            return std::make_tuple(res, details.m_info);
           },
           py::arg("src"), py::arg("dst"), py::arg("angle"),
           py::arg("shift_x") = 0.0, py::arg("shift_y") = 0.0,
-          py::arg("record_event") = true,
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
          Rotate input Surface.
@@ -148,11 +143,15 @@ void Init_PySurfaceRotator(py::module& m) {
          :param angle: rotation angle.
          :param shift_x: shift alongside X axis in pixels.
          :param shift_y: shift alongside Y axis in pixels.
-         :param record_event: If False, no event will be recorded. Useful for chain calls.
          :return: tuple containing:
            success (Bool) True in case of success, False otherwise.
            info (TaskExecInfo) task execution information.
-           event (CudaStreamEvent) CUDA stream event.
          :rtype: tuple
-     )pbdoc");
+     )pbdoc")
+      .def_property_readonly(
+          "Stream",
+          [](PySurfaceRotator& self) { return (size_t)self.m_stream; },
+          R"pbdoc(
+        Return CUDA stream.
+    )pbdoc");
 }

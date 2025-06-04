@@ -86,27 +86,26 @@ void Init_PySurfaceUD(py::module& m) {
      )pbdoc")
       .def(
           "RunAsync",
-          [](PySurfaceUD& self, Surface& src, Surface& dst, bool record_event) {
+          [](PySurfaceUD& self, Surface& src, Surface& dst) {
             TaskExecDetails details;
             auto res = self.Run(src, dst, details);
-            if (record_event) {
-              self.m_event->Record();
-            }
-            return std::make_tuple(res, details.m_info,
-                                   record_event ? self.m_event : nullptr);
+            return std::make_tuple(res, details.m_info);
           },
-          py::arg("src"), py::arg("dst"), py::arg("record_event") = true,
+          py::arg("src"), py::arg("dst"),
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
          Convert input Surface.
 
          :param src: input Surface.
          :param dst: output Surface.
-         :param record_event: If False, no event will be recorded. Useful for chain calls.
          :return: tuple containing:
            success (Bool) True in case of success, False otherwise.
            info (TaskExecInfo) task execution information.
-           event (CudaStreamEvent) CUDA stream event.
          :rtype: tuple
-     )pbdoc");
+     )pbdoc")
+      .def_property_readonly(
+          "Stream", [](PySurfaceUD& self) { return (size_t)self.m_stream; },
+          R"pbdoc(
+        Return CUDA stream.
+    )pbdoc");
 }

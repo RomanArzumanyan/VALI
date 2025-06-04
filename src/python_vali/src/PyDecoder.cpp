@@ -420,35 +420,27 @@ void Init_PyDecoder(py::module& m) {
     )pbdoc")
       .def(
           "DecodeSingleSurfaceAsync",
-          [](PyDecoder& self, Surface& surf, bool record_event,
+          [](PyDecoder& self, Surface& surf,
              std::optional<SeekContext>& seek_ctx) {
             TaskExecDetails details;
             PacketData pkt_data;
 
             auto res =
                 self.DecodeSingleSurface(surf, details, pkt_data, seek_ctx);
-            if (res && record_event) {
-              self.m_event->Record();
-            }
-            return std::make_tuple(res, details.m_info,
-                                   record_event ? self.m_event : nullptr);
+            return std::make_tuple(res, details.m_info);
           },
-          py::arg("surf"), py::arg("record_event") = true,
-          py::arg("seek_ctx") = std::nullopt,
+          py::arg("surf"), py::arg("seek_ctx") = std::nullopt,
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
         Decode single video surface from input file.
         Only call this method for HW-accelerated decoder.
 
         :param surf: decoded video surface
-        :param record_event: If False, no event will be recorded. Useful for chain calls.
         :param pkt_data: decoded video surface packet data, may be None
         :param seek_ctx: seek context, may be None
-        :param record_event: If False, no event will be recorded. Useful for chain calls.
         :return: tuple:
           success (Bool) True in case of success, False otherwise.
           info (TaskExecInfo) task execution information.
-          event (CudaStreamEvent) CUDA stream event
         :rtype: tuple
     )pbdoc")
       .def(
@@ -480,18 +472,14 @@ void Init_PyDecoder(py::module& m) {
       .def(
           "DecodeSingleSurfaceAsync",
           [](PyDecoder& self, Surface& surf, PacketData& pkt_data,
-             bool record_event, std::optional<SeekContext>& seek_ctx) {
+             std::optional<SeekContext>& seek_ctx) {
             TaskExecDetails details;
 
             auto res =
                 self.DecodeSingleSurface(surf, details, pkt_data, seek_ctx);
-            if (res && record_event) {
-              self.m_event->Record();
-            }
-            return std::make_tuple(res, details.m_info,
-                                   record_event ? self.m_event : nullptr);
+            return std::make_tuple(res, details.m_info);
           },
-          py::arg("surf"), py::arg("pkt_data"), py::arg("record_event") = true,
+          py::arg("surf"), py::arg("pkt_data"),
           py::arg("seek_ctx") = std::nullopt,
           py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
@@ -501,11 +489,9 @@ void Init_PyDecoder(py::module& m) {
         :param surf: decoded video surface
         :param pkt_data: decoded video surface packet data, may be None
         :param seek_ctx: seek context, may be None
-        :param record_event: If False, no event will be recorded. Useful for chain calls.
         :return: tuple:
           success (Bool) True in case of success, False otherwise.
           info (TaskExecInfo) task execution information.
-          event (CudaStreamEvent) CUDA stream event
         :rtype: tuple
     )pbdoc")
       .def_property_readonly(

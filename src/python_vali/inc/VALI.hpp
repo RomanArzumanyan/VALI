@@ -319,10 +319,10 @@ public:
   std::list<Pixel_Format> SupportedFormats();
 
   std::shared_ptr<CudaStreamEvent> m_event;
+  CUstream m_stream;
 
 private:
   std::shared_ptr<RotateSurface> m_rotator;
-  CUstream m_stream;
 };
 
 class PySurfaceUD {
@@ -338,8 +338,8 @@ public:
   static std::list<std::pair<Pixel_Format, Pixel_Format>> SupportedFormats();
 
   std::shared_ptr<CudaStreamEvent> m_event;
+  CUstream m_stream;
 
 private:
   std::shared_ptr<UDSurface> m_ud;
-  CUstream m_stream;
 };
