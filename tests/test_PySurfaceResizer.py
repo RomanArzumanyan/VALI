@@ -103,11 +103,8 @@ class TestSurfaceResizer(unittest.TestCase):
                 self.fail("Failed to upload frame")
 
             # Resize to dst
-            if is_async:
-                success, info, _ = nvRes.RunAsync(
-                    surf_src, surf_dst, record_event=False)
-            else:
-                success, info = nvRes.Run(surf_src, surf_dst)
+            success, info = nvRes.RunAsync(
+                surf_src, surf_dst) if is_async else nvRes.Run(surf_src, surf_dst)
 
             if not success:
                 self.fail(f"Fail to resize surface: {info}")
