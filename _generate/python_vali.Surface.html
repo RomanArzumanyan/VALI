@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>python_vali.Surface &#8212; VALI  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/haiku.css?v=e491ac2d" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="python_vali.CudaStreamEvent" href="python_vali.CudaStreamEvent.html" />
+    <link rel="prev" title="python_vali.SurfacePlane" href="python_vali.SurfacePlane.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="../index.html">
+          <span>VALI  documentation</span></a></h1>
+        <h2 class="heading"><span>python_vali.Surface</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="python_vali.SurfacePlane.html">python_vali.SurfacePlane</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="python_vali.CudaStreamEvent.html">python_vali.CudaStreamEvent</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content" role="main">
+        
+        
+  <section id="python-vali-surface">
+<h1>python_vali.Surface<a class="headerlink" href="#python-vali-surface" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali.Surface">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali.</span></span><span class="sig-name descname"><span class="pre">Surface</span></span><a class="headerlink" href="#python_vali.Surface" title="Link to this definition">¶</a></dt>
+<dd><p>Image stored in vRAM. Consists of 1+ SurfacePlane(s).</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali.Surface.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#python_vali.Surface.__init__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.Surface.Clone" title="python_vali.Surface.Clone"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Clone</span></code></a>(self)</p></td>
+<td><p>Create a deep copy of the surface.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.Surface.Make" title="python_vali.Surface.Make"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Make</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Overloaded function.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.Surface.__init__" title="python_vali.Surface.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(*args, **kwargs)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.Surface.from_cai" title="python_vali.Surface.from_cai"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_cai</span></code></a>(dict, format)</p></td>
+<td><p>DLPack: Make Surface from CAI, don not own memory.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.Surface.from_dlpack" title="python_vali.Surface.from_dlpack"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_dlpack</span></code></a>(capsule, format)</p></td>
+<td><p>DLPack: Make Surface from dlpack, don not own memory.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.Surface.Format" title="python_vali.Surface.Format"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Format</span></code></a></p></td>
+<td><p>Get the pixel format of the surface.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.Surface.Height" title="python_vali.Surface.Height"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Height</span></code></a></p></td>
+<td><p>Get the height of the first plane in pixels.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.Surface.HostSize" title="python_vali.Surface.HostSize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HostSize</span></code></a></p></td>
+<td><p>Get the total amount of host memory needed for device-to-host copy.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.Surface.IsEmpty" title="python_vali.Surface.IsEmpty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsEmpty</span></code></a></p></td>
+<td><p>Check if the surface has allocated memory.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.Surface.IsOwnMemory" title="python_vali.Surface.IsOwnMemory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsOwnMemory</span></code></a></p></td>
+<td><p>Check if the surface owns its memory.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.Surface.NumPlanes" title="python_vali.Surface.NumPlanes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NumPlanes</span></code></a></p></td>
+<td><p>Get the number of planes in the surface.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.Surface.Pitch" title="python_vali.Surface.Pitch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Pitch</span></code></a></p></td>
+<td><p>Get the pitch (stride) of the first plane in bytes.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.Surface.Planes" title="python_vali.Surface.Planes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Planes</span></code></a></p></td>
+<td><p>Get SurfacePlane reference</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.Surface.Shape" title="python_vali.Surface.Shape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Shape</span></code></a></p></td>
+<td><p>Get the numpy-like shape of the surface.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.Surface.Width" title="python_vali.Surface.Width"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Width</span></code></a></p></td>
+<td><p>Get the width of the first plane in pixels.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali.Surface.Clone">
+<span class="sig-name descname"><span class="pre">Clone</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../python_vali.html#python_vali._python_vali.Surface" title="python_vali._python_vali.Surface"><span class="pre">python_vali._python_vali.Surface</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../python_vali.html#python_vali._python_vali.Surface" title="python_vali._python_vali.Surface"><span class="pre">python_vali._python_vali.Surface</span></a></span></span><a class="headerlink" href="#python_vali.Surface.Clone" title="Link to this definition">¶</a></dt>
+<dd><p>Create a deep copy of the surface.</p>
+<p>Allocates new CUDA memory and copies all surface data.
+The returned object is managed by the Python interpreter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A new surface containing a copy of the data</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#python_vali.Surface" title="python_vali.Surface">Surface</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.Surface.Format">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Format</span></span><a class="headerlink" href="#python_vali.Surface.Format" title="Link to this definition">¶</a></dt>
+<dd><p>Get the pixel format of the surface.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Pixel format of the surface</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Pixel_Format</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.Surface.Height">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Height</span></span><a class="headerlink" href="#python_vali.Surface.Height" title="Link to this definition">¶</a></dt>
+<dd><p>Get the height of the first plane in pixels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Height of the first plane in pixels</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.Surface.HostSize">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HostSize</span></span><a class="headerlink" href="#python_vali.Surface.HostSize" title="Link to this definition">¶</a></dt>
+<dd><p>Get the total amount of host memory needed for device-to-host copy.</p>
+<p>This is the total size in bytes required to store all planes of the surface
+in host memory, taking into account the pitch and height of each plane.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Required host memory size in bytes</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.Surface.IsEmpty">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsEmpty</span></span><a class="headerlink" href="#python_vali.Surface.IsEmpty" title="Link to this definition">¶</a></dt>
+<dd><p>Check if the surface has allocated memory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if the surface has no allocated memory, False otherwise</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.Surface.IsOwnMemory">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsOwnMemory</span></span><a class="headerlink" href="#python_vali.Surface.IsOwnMemory" title="Link to this definition">¶</a></dt>
+<dd><p>Check if the surface owns its memory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if the surface owns its memory, False if it only references
+memory owned by another object</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali.Surface.Make">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Make</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#python_vali.Surface.Make" title="Link to this definition">¶</a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic">
+<li><p>Make(format: python_vali._python_vali.PixelFormat, width: int, height: int, gpu_id: int) -&gt; python_vali._python_vali.Surface</p>
+<blockquote>
+<div><p>Create a new surface with the specified parameters.</p>
+<p>Allocates a new surface with the given pixel format and dimensions
+on the specified GPU. The surface will be managed by the Python interpreter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param format<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Pixel format for the new surface</p>
+</dd>
+<dt class="field-even">type format<span class="colon">:</span></dt>
+<dd class="field-even"><p>Pixel_Format</p>
+</dd>
+<dt class="field-odd">param width<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Width of the surface in pixels</p>
+</dd>
+<dt class="field-even">type width<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">param height<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Height of the surface in pixels</p>
+</dd>
+<dt class="field-even">type height<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">param gpu_id<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ID of the GPU to allocate memory on</p>
+</dd>
+<dt class="field-even">type gpu_id<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">return<span class="colon">:</span></dt>
+<dd class="field-odd"><p>New surface with allocated memory</p>
+</dd>
+<dt class="field-even">rtype<span class="colon">:</span></dt>
+<dd class="field-even"><p>Surface</p>
+</dd>
+<dt class="field-odd">raises RuntimeError<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If memory allocation fails</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>Make(format: python_vali._python_vali.PixelFormat, width: int, height: int, context: int) -&gt; python_vali._python_vali.Surface</p>
+<blockquote>
+<div><p>Constructor method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param format<span class="colon">:</span></dt>
+<dd class="field-odd"><p>target pixel format</p>
+</dd>
+<dt class="field-even">param width<span class="colon">:</span></dt>
+<dd class="field-even"><p>width in pixels</p>
+</dd>
+<dt class="field-odd">param height<span class="colon">:</span></dt>
+<dd class="field-odd"><p>height in pixels</p>
+</dd>
+<dt class="field-even">param context<span class="colon">:</span></dt>
+<dd class="field-even"><p>CUDA contet to use</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+</ol>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.Surface.NumPlanes">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NumPlanes</span></span><a class="headerlink" href="#python_vali.Surface.NumPlanes" title="Link to this definition">¶</a></dt>
+<dd><p>Get the number of planes in the surface.</p>
+<p>Different pixel formats may have different numbers of planes.
+For example, RGB has 1 plane while YUV420 has 3 planes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Number of planes in the surface</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.Surface.Pitch">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Pitch</span></span><a class="headerlink" href="#python_vali.Surface.Pitch" title="Link to this definition">¶</a></dt>
+<dd><p>Get the pitch (stride) of the first plane in bytes.</p>
+<p>The pitch represents the number of bytes between the start of consecutive rows
+in the first plane. This may be larger than the width * element size due to
+memory alignment requirements.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Pitch of the first plane in bytes</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.Surface.Planes">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Planes</span></span><a class="headerlink" href="#python_vali.Surface.Planes" title="Link to this definition">¶</a></dt>
+<dd><p>Get SurfacePlane reference</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>plane</strong> – SurfacePlane index</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.Surface.Shape">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Shape</span></span><a class="headerlink" href="#python_vali.Surface.Shape" title="Link to this definition">¶</a></dt>
+<dd><p>Get the numpy-like shape of the surface.</p>
+<p>For multi-plane formats (like YUV420), returns the total memory size.
+The shape represents the dimensions of the surface data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple containing the dimensions of the surface</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.Surface.Width">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Width</span></span><a class="headerlink" href="#python_vali.Surface.Width" title="Link to this definition">¶</a></dt>
+<dd><p>Get the width of the first plane in pixels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Width of the first plane in pixels</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali.Surface.from_cai">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_cai</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dict:</span> <span class="pre">object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format:</span> <span class="pre">python_vali._python_vali.PixelFormat</span> <span class="pre">=</span> <span class="pre">&lt;PixelFormat.RGB:</span> <span class="pre">2&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../python_vali.html#python_vali._python_vali.Surface" title="python_vali._python_vali.Surface"><span class="pre">python_vali._python_vali.Surface</span></a></span></span><a class="headerlink" href="#python_vali.Surface.from_cai" title="Link to this definition">¶</a></dt>
+<dd><p>DLPack: Make Surface from CAI, don not own memory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dict</strong> – dictionary which corresponds to CUDA Array Interface specs.</p></li>
+<li><p><strong>fmt</strong> – pixel format, by default python_vali.PixelFormat.RGB</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Surface</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#python_vali.Surface" title="python_vali.Surface">python_vali.Surface</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali.Surface.from_dlpack">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dlpack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">capsule:</span> <span class="pre">capsule</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format:</span> <span class="pre">python_vali._python_vali.PixelFormat</span> <span class="pre">=</span> <span class="pre">&lt;PixelFormat.RGB:</span> <span class="pre">2&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../python_vali.html#python_vali._python_vali.Surface" title="python_vali._python_vali.Surface"><span class="pre">python_vali._python_vali.Surface</span></a></span></span><a class="headerlink" href="#python_vali.Surface.from_dlpack" title="Link to this definition">¶</a></dt>
+<dd><p>DLPack: Make Surface from dlpack, don not own memory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>capsule</strong> – capsule object with manager dltensor inside</p></li>
+<li><p><strong>fmt</strong> – pixel format, by default python_vali.PixelFormat.RGB</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Surface</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#python_vali.Surface" title="python_vali.Surface">python_vali.Surface</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="python_vali.SurfacePlane.html">python_vali.SurfacePlane</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="python_vali.CudaStreamEvent.html">python_vali.CudaStreamEvent</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023 Roman Arzumanyan.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

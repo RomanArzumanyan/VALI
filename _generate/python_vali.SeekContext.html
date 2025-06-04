@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>python_vali.SeekContext &#8212; VALI  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/haiku.css?v=e491ac2d" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="python_vali.SurfacePlane" href="python_vali.SurfacePlane.html" />
+    <link rel="prev" title="python_vali.PyNvJpegEncoder" href="python_vali.PyNvJpegEncoder.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="../index.html">
+          <span>VALI  documentation</span></a></h1>
+        <h2 class="heading"><span>python_vali.SeekContext</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="python_vali.PyNvJpegEncoder.html">python_vali.PyNvJpegEncoder</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="python_vali.SurfacePlane.html">python_vali.SurfacePlane</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content" role="main">
+        
+        
+  <section id="python-vali-seekcontext">
+<h1>python_vali.SeekContext<a class="headerlink" href="#python-vali-seekcontext" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali.SeekContext">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali.</span></span><span class="sig-name descname"><span class="pre">SeekContext</span></span><a class="headerlink" href="#python_vali.SeekContext" title="Link to this definition">¶</a></dt>
+<dd><p>Context object for video frame seeking operations.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali.SeekContext.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#python_vali.SeekContext.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic">
+<li><p>__init__(self: python_vali._python_vali.SeekContext, seek_frame: int) -&gt; None</p>
+<blockquote>
+<div><p>Create a new seek context for frame-based seeking.</p>
+<p>Initializes a seek context that will seek to a specific frame number
+in the video stream.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param seek_frame<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Target frame number to seek to (0-based index)</p>
+</dd>
+<dt class="field-even">type seek_frame<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>__init__(self: python_vali._python_vali.SeekContext, seek_ts: float) -&gt; None</p>
+<blockquote>
+<div><p>Create a new seek context for timestamp-based seeking.</p>
+<p>Initializes a seek context that will seek to a specific timestamp
+in the video stream.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param seek_ts<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Target timestamp in seconds to seek to</p>
+</dd>
+<dt class="field-even">type seek_ts<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+</ol>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.SeekContext.__init__" title="python_vali.SeekContext.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Overloaded function.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.SeekContext.seek_frame" title="python_vali.SeekContext.seek_frame"><code class="xref py py-obj docutils literal notranslate"><span class="pre">seek_frame</span></code></a></p></td>
+<td><p>Target frame number for seeking.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.SeekContext.seek_tssec" title="python_vali.SeekContext.seek_tssec"><code class="xref py py-obj docutils literal notranslate"><span class="pre">seek_tssec</span></code></a></p></td>
+<td><p>Target timestamp for seeking.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.SeekContext.seek_frame">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">seek_frame</span></span><a class="headerlink" href="#python_vali.SeekContext.seek_frame" title="Link to this definition">¶</a></dt>
+<dd><p>Target frame number for seeking.</p>
+<p>The frame number to seek to when using frame-based seeking.
+This is a 0-based index into the video stream.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.SeekContext.seek_tssec">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">seek_tssec</span></span><a class="headerlink" href="#python_vali.SeekContext.seek_tssec" title="Link to this definition">¶</a></dt>
+<dd><p>Target timestamp for seeking.</p>
+<p>The timestamp in seconds to seek to when using timestamp-based seeking.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="python_vali.PyNvJpegEncoder.html">python_vali.PyNvJpegEncoder</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="python_vali.SurfacePlane.html">python_vali.SurfacePlane</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023 Roman Arzumanyan.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

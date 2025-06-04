@@ -1,0 +1,24 @@
+﻿python\_vali.CudaStreamEvent
+============================
+
+.. currentmodule:: python_vali
+
+.. autoclass:: CudaStreamEvent
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~CudaStreamEvent.Record
+      ~CudaStreamEvent.Wait
+      ~CudaStreamEvent.__init__
+   
+   
+
+   
+   
+   
