@@ -613,5 +613,20 @@ void Init_PyNvEncoder(py::module& m) {
          :return: True if any packets were flushed, False otherwise
          :rtype: bool
          :raises RuntimeError: If flushing fails
-     )pbdoc");
+     )pbdoc")
+      .def("FlushSinglePacket", &PyNvEncoder::FlushSinglePacket,
+           py::arg("packets"),
+           R"pbdoc(
+        Flush the encoder's internal buffers.
+
+         Forces the encoder to process remaining frame in its internal
+         buffers and output it as compressed packet.
+
+         :param packet: Output buffer for 1 compressed packet
+         :type packet: numpy.ndarray
+         :return: True if any packet was flushed, False otherwise
+         :rtype: bool
+         :raises RuntimeError: If flushing fails
+    )pbdoc");
+  ;
 }
