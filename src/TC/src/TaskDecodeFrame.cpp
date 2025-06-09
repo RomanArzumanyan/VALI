@@ -684,24 +684,18 @@ struct FfmpegDecodeFrame_Impl {
     return DEC_SUCCESS;
   }
 
-  /// @brief Send single video packet from queue to decoder.
+  /// @brief Send single video packet from queue to decoder. Blocking call.
   /// @retval DEC_SUCCESS on success.
   /// @retval DEC_ERROR on failure.
   DECODE_STATUS SendPacket() {
-    if (m_noacpt) {
+    if (m_noacpt)
       return DEC_SUCCESS;
-    }
 
-    int res = 0;
-    bool pop = false;
+    int res = 0, pop = 0;
     if (!m_pkt_queue.empty()) {
-      /* We don't just pop the packet because decoder may not accept it.
-       * That often happens e. g. upon resolution change: before we get 
-       * the frame of new resolution we need to flush decoder internal queue.
-       */
-      auto pkt = m_pkt_queue.front().get();
-      res = avcodec_send_packet(m_avc_ctx.get(), pkt);
-      pop = true;
+      // We don't pop just the packet because decoder may not accept it.
+      res = avcodec_send_packet(m_avc_ctx.get(), m_pkt_queue.front().get());
+      pop = 1;
     } else if (m_eof) {
       res = avcodec_send_packet(m_avc_ctx.get(), nullptr);
     } else {
@@ -710,25 +704,27 @@ struct FfmpegDecodeFrame_Impl {
     }
 
     if (AVERROR_EOF == res) {
-      // Non an error, just EOF;
+      // Non an error.
     } else if (res == AVERROR(EAGAIN)) {
-      // Need to call ReceiveFrame 1+ times and then resend packet;
+      // Not an error. Decoder can't accept packet at current state.
+      // May happen upon some events, e. g. resolution change.
       m_noacpt = true;
     } else if (res < 0) {
       std::cerr << "Error while sending a packet to the decoder. ";
       std::cerr << "Error description: " << AvErrorToString(res);
       return DEC_ERROR;
     } else {
+      // Packet was successfuly sent, now we can pop it.
       m_num_pkt_sent++;
-      if (!m_noacpt && pop) {
+      if (pop)
         m_pkt_queue.pop();
-      }
     }
 
     return DEC_SUCCESS;
   }
 
-  /// @brief Receive a frame from decoder. Non-blocking call on GPU.
+  /// @brief Receive single frame from decoder. Non-blocking call on GPU. 
+  /// Blocking call on CPU.
   /// @param dst place to put frame to.
   /// @retval DEC_SUCCESS on success.
   /// @retval DEC_ERROR on failure.
@@ -740,8 +736,11 @@ struct FfmpegDecodeFrame_Impl {
 
     auto res = avcodec_receive_frame(m_avc_ctx.get(), m_frame.get());
     if (res == AVERROR_EOF) {
+      // Decoder won't output any more frames, signal decode end.
       return DEC_EOS;
     } else if (res == AVERROR(EAGAIN)) {
+      // Decoder returned all the frames after noaccept flag was set.
+      // Time to put the flag down and continue to send packets to decoder.
       if (m_noacpt) {
         m_noacpt = false;
       }
