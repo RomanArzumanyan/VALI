@@ -1,0 +1,6 @@
+﻿python\_vali.GetNvencParams
+===========================
+
+.. currentmodule:: python_vali
+
+.. autofunction:: GetNvencParams

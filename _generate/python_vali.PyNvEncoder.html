@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>python_vali.PyNvEncoder &#8212; VALI  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/haiku.css?v=e491ac2d" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="python_vali.PyDecoder" href="python_vali.PyDecoder.html" />
+    <link rel="prev" title="python_vali.PySurfaceConverter" href="python_vali.PySurfaceConverter.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="../index.html">
+          <span>VALI  documentation</span></a></h1>
+        <h2 class="heading"><span>python_vali.PyNvEncoder</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="python_vali.PySurfaceConverter.html">python_vali.PySurfaceConverter</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="python_vali.PyDecoder.html">python_vali.PyDecoder</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content" role="main">
+        
+        
+  <section id="python-vali-pynvencoder">
+<h1>python_vali.PyNvEncoder<a class="headerlink" href="#python-vali-pynvencoder" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali.PyNvEncoder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali.</span></span><span class="sig-name descname"><span class="pre">PyNvEncoder</span></span><a class="headerlink" href="#python_vali.PyNvEncoder" title="Link to this definition">¶</a></dt>
+<dd><p>HW-accelerated video encoder which uses Nvenc.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali.PyNvEncoder.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#python_vali.PyNvEncoder.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic">
+<li><p>__init__(self: python_vali._python_vali.PyNvEncoder, settings: dict[str, str], gpu_id: int, format: python_vali._python_vali.PixelFormat = &lt;PixelFormat.NV12: 3&gt;, verbose: bool = False) -&gt; None</p>
+<blockquote>
+<div><p>Create a new hardware-accelerated video encoder.</p>
+<p>Initializes an NVIDIA hardware-accelerated video encoder with the specified
+settings and pixel format. The encoder uses NVIDIA’s NVENC hardware encoder
+for efficient video compression.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param settings<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary containing NVENC encoder settings (e.g., bitrate, codec, etc.)</p>
+</dd>
+<dt class="field-even">type settings<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict[str, str]</p>
+</dd>
+<dt class="field-odd">param gpu_id<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ID of the GPU to use for encoding</p>
+</dd>
+<dt class="field-even">type gpu_id<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">param format<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Pixel format for input frames (default: NV12)</p>
+</dd>
+<dt class="field-even">type format<span class="colon">:</span></dt>
+<dd class="field-even"><p>Pixel_Format</p>
+</dd>
+<dt class="field-odd">param verbose<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Whether to output detailed logging information</p>
+</dd>
+<dt class="field-even">type verbose<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+<dt class="field-odd">raises RuntimeError<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If encoder initialization fails</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>__init__(self: python_vali._python_vali.PyNvEncoder, settings: dict[str, str], gpu_id: int, stream: int, format: python_vali._python_vali.PixelFormat = &lt;PixelFormat.NV12: 3&gt;, verbose: bool = False) -&gt; None</p>
+<blockquote>
+<div><p>Create a new hardware-accelerated video encoder with a specific CUDA stream.</p>
+<p>Initializes an NVIDIA hardware-accelerated video encoder with the specified
+settings, pixel format, and CUDA stream. This constructor allows for more
+control over CUDA stream management.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param settings<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary containing NVENC encoder settings</p>
+</dd>
+<dt class="field-even">type settings<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict[str, str]</p>
+</dd>
+<dt class="field-odd">param gpu_id<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ID of the GPU to use for encoding</p>
+</dd>
+<dt class="field-even">type gpu_id<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">param stream<span class="colon">:</span></dt>
+<dd class="field-odd"><p>CUDA stream to use for encoding operations</p>
+</dd>
+<dt class="field-even">type stream<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">param format<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Pixel format for input frames (default: NV12)</p>
+</dd>
+<dt class="field-even">type format<span class="colon">:</span></dt>
+<dd class="field-even"><p>Pixel_Format</p>
+</dd>
+<dt class="field-odd">param verbose<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Whether to output detailed logging information</p>
+</dd>
+<dt class="field-even">type verbose<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+<dt class="field-odd">raises RuntimeError<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If encoder initialization fails</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+</ol>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.PyNvEncoder.EncodeSingleSurface" title="python_vali.PyNvEncoder.EncodeSingleSurface"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EncodeSingleSurface</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Overloaded function.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.PyNvEncoder.Flush" title="python_vali.PyNvEncoder.Flush"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Flush</span></code></a>(self, packets)</p></td>
+<td><p>Flush the encoder's internal buffers.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.PyNvEncoder.FlushSinglePacket" title="python_vali.PyNvEncoder.FlushSinglePacket"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlushSinglePacket</span></code></a>(self, packets)</p></td>
+<td><p>Flush the encoder's internal buffers.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.PyNvEncoder.Reconfigure" title="python_vali.PyNvEncoder.Reconfigure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reconfigure</span></code></a>(self, settings[, force_idr, ...])</p></td>
+<td><p>Reconfigure the encoder with new settings.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.PyNvEncoder.__init__" title="python_vali.PyNvEncoder.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Overloaded function.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.PyNvEncoder.Capabilities" title="python_vali.PyNvEncoder.Capabilities"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Capabilities</span></code></a></p></td>
+<td><p>Get the capabilities of the NVENC encoder.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.PyNvEncoder.Format" title="python_vali.PyNvEncoder.Format"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Format</span></code></a></p></td>
+<td><p>Get the pixel format of the encoded video stream.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.PyNvEncoder.FrameSizeInBytes" title="python_vali.PyNvEncoder.FrameSizeInBytes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FrameSizeInBytes</span></code></a></p></td>
+<td><p>Get the size of a single frame in bytes.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.PyNvEncoder.Height" title="python_vali.PyNvEncoder.Height"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Height</span></code></a></p></td>
+<td><p>Get the height of the encoded video stream.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.PyNvEncoder.Width" title="python_vali.PyNvEncoder.Width"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Width</span></code></a></p></td>
+<td><p>Get the width of the encoded video stream.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyNvEncoder.Capabilities">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Capabilities</span></span><a class="headerlink" href="#python_vali.PyNvEncoder.Capabilities" title="Link to this definition">¶</a></dt>
+<dd><p>Get the capabilities of the NVENC encoder.</p>
+<p>Returns a dictionary containing all supported capabilities of the NVENC
+encoder, such as maximum resolution, supported codecs, and encoding features.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary mapping capability types to their values</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict[<a class="reference internal" href="../python_vali.html#python_vali._python_vali.NV_ENC_CAPS" title="python_vali._python_vali.NV_ENC_CAPS">NV_ENC_CAPS</a>, int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali.PyNvEncoder.EncodeSingleSurface">
+<span class="sig-name descname"><span class="pre">EncodeSingleSurface</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#python_vali.PyNvEncoder.EncodeSingleSurface" title="Link to this definition">¶</a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic">
+<li><p>EncodeSingleSurface(self: python_vali._python_vali.PyNvEncoder, surface: VPF::Surface, packet: numpy.ndarray, sei: numpy.ndarray, sync: bool, append: bool) -&gt; bool</p>
+<blockquote>
+<div><p>Encode a single surface with SEI data and synchronization options.</p>
+<p>Encodes a single surface into a compressed video packet. The function may
+not return immediately with a compressed packet, depending on the encoder’s
+internal buffering and the sync parameter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param surface<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Input surface containing the frame to encode</p>
+</dd>
+<dt class="field-even">type surface<span class="colon">:</span></dt>
+<dd class="field-even"><p>Surface</p>
+</dd>
+<dt class="field-odd">param packet<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Output buffer for the compressed video packet</p>
+</dd>
+<dt class="field-even">type packet<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+<dt class="field-odd">param sei<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional SEI (Supplemental Enhancement Information) data to attach</p>
+</dd>
+<dt class="field-even">type sei<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+<dt class="field-odd">param sync<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Whether to wait for the encoded packet before returning</p>
+</dd>
+<dt class="field-even">type sync<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+<dt class="field-odd">param append<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Whether to append the new packet to existing data</p>
+</dd>
+<dt class="field-even">type append<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+<dt class="field-odd">return<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if encoding was successful, False otherwise</p>
+</dd>
+<dt class="field-even">rtype<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+<dt class="field-odd">raises RuntimeError<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If encoding fails</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>EncodeSingleSurface(self: python_vali._python_vali.PyNvEncoder, surface: VPF::Surface, packet: numpy.ndarray, sei: numpy.ndarray, sync: bool) -&gt; bool</p>
+<blockquote>
+<div><p>Encode a single surface with SEI data.</p>
+<p>Encodes a single surface into a compressed video packet with optional
+SEI data. The sync parameter determines whether to wait for the encoded
+packet before returning.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param surface<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Input surface containing the frame to encode</p>
+</dd>
+<dt class="field-even">type surface<span class="colon">:</span></dt>
+<dd class="field-even"><p>Surface</p>
+</dd>
+<dt class="field-odd">param packet<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Output buffer for the compressed video packet</p>
+</dd>
+<dt class="field-even">type packet<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+<dt class="field-odd">param sei<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional SEI data to attach to the encoded frame</p>
+</dd>
+<dt class="field-even">type sei<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+<dt class="field-odd">param sync<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Whether to wait for the encoded packet before returning</p>
+</dd>
+<dt class="field-even">type sync<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+<dt class="field-odd">return<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if encoding was successful, False otherwise</p>
+</dd>
+<dt class="field-even">rtype<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+<dt class="field-odd">raises RuntimeError<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If encoding fails</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>EncodeSingleSurface(self: python_vali._python_vali.PyNvEncoder, surface: VPF::Surface, packet: numpy.ndarray, sync: bool) -&gt; bool</p>
+<blockquote>
+<div><p>Encode a single surface with synchronization option.</p>
+<p>Encodes a single surface into a compressed video packet. The sync parameter
+determines whether to wait for the encoded packet before returning.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param surface<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Input surface containing the frame to encode</p>
+</dd>
+<dt class="field-even">type surface<span class="colon">:</span></dt>
+<dd class="field-even"><p>Surface</p>
+</dd>
+<dt class="field-odd">param packet<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Output buffer for the compressed video packet</p>
+</dd>
+<dt class="field-even">type packet<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+<dt class="field-odd">param sync<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Whether to wait for the encoded packet before returning</p>
+</dd>
+<dt class="field-even">type sync<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+<dt class="field-odd">return<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if encoding was successful, False otherwise</p>
+</dd>
+<dt class="field-even">rtype<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+<dt class="field-odd">raises RuntimeError<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If encoding fails</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>EncodeSingleSurface(self: python_vali._python_vali.PyNvEncoder, surface: VPF::Surface, packet: numpy.ndarray, sei: numpy.ndarray) -&gt; bool</p>
+<blockquote>
+<div><p>Encode a single surface with SEI data.</p>
+<p>Encodes a single surface into a compressed video packet with optional
+SEI data. The function operates asynchronously by default.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param surface<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Input surface containing the frame to encode</p>
+</dd>
+<dt class="field-even">type surface<span class="colon">:</span></dt>
+<dd class="field-even"><p>Surface</p>
+</dd>
+<dt class="field-odd">param packet<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Output buffer for the compressed video packet</p>
+</dd>
+<dt class="field-even">type packet<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+<dt class="field-odd">param sei<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional SEI data to attach to the encoded frame</p>
+</dd>
+<dt class="field-even">type sei<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+<dt class="field-odd">return<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if encoding was successful, False otherwise</p>
+</dd>
+<dt class="field-even">rtype<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+<dt class="field-odd">raises RuntimeError<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If encoding fails</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>EncodeSingleSurface(self: python_vali._python_vali.PyNvEncoder, surface: VPF::Surface, packet: numpy.ndarray) -&gt; bool</p>
+<blockquote>
+<div><p>Encode a single surface.</p>
+<p>Encodes a single surface into a compressed video packet. The function
+operates asynchronously by default.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param surface<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Input surface containing the frame to encode</p>
+</dd>
+<dt class="field-even">type surface<span class="colon">:</span></dt>
+<dd class="field-even"><p>Surface</p>
+</dd>
+<dt class="field-odd">param packet<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Output buffer for the compressed video packet</p>
+</dd>
+<dt class="field-even">type packet<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+<dt class="field-odd">return<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if encoding was successful, False otherwise</p>
+</dd>
+<dt class="field-even">rtype<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+<dt class="field-odd">raises RuntimeError<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If encoding fails</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali.PyNvEncoder.Flush">
+<span class="sig-name descname"><span class="pre">Flush</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../python_vali.html#python_vali._python_vali.PyNvEncoder" title="python_vali._python_vali.PyNvEncoder"><span class="pre">python_vali._python_vali.PyNvEncoder</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">packets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#python_vali.PyNvEncoder.Flush" title="Link to this definition">¶</a></dt>
+<dd><p>Flush the encoder’s internal buffers.</p>
+<p>Forces the encoder to process any remaining frames in its internal
+buffers and output them as compressed packets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>packets</strong> (<em>numpy.ndarray</em>) – Output buffer for the compressed packets</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if any packets were flushed, False otherwise</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>RuntimeError</strong> – If flushing fails</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali.PyNvEncoder.FlushSinglePacket">
+<span class="sig-name descname"><span class="pre">FlushSinglePacket</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../python_vali.html#python_vali._python_vali.PyNvEncoder" title="python_vali._python_vali.PyNvEncoder"><span class="pre">python_vali._python_vali.PyNvEncoder</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">packets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#python_vali.PyNvEncoder.FlushSinglePacket" title="Link to this definition">¶</a></dt>
+<dd><p>Flush the encoder’s internal buffers.</p>
+<blockquote>
+<div><p>Forces the encoder to process remaining frame in its internal
+buffers and output it as compressed packet.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param packet<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Output buffer for 1 compressed packet</p>
+</dd>
+<dt class="field-even">type packet<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+<dt class="field-odd">return<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if any packet was flushed, False otherwise</p>
+</dd>
+<dt class="field-even">rtype<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+<dt class="field-odd">raises RuntimeError<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If flushing fails</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyNvEncoder.Format">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Format</span></span><a class="headerlink" href="#python_vali.PyNvEncoder.Format" title="Link to this definition">¶</a></dt>
+<dd><p>Get the pixel format of the encoded video stream.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Pixel format used for encoding</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Pixel_Format</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyNvEncoder.FrameSizeInBytes">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FrameSizeInBytes</span></span><a class="headerlink" href="#python_vali.PyNvEncoder.FrameSizeInBytes" title="Link to this definition">¶</a></dt>
+<dd><p>Get the size of a single frame in bytes.</p>
+<p>Calculates the size of a single frame based on the current pixel format
+and resolution. This is useful for allocating memory for frame buffers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Size of a single frame in bytes</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If the pixel format is not supported</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyNvEncoder.Height">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Height</span></span><a class="headerlink" href="#python_vali.PyNvEncoder.Height" title="Link to this definition">¶</a></dt>
+<dd><p>Get the height of the encoded video stream.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Height of the encoded video in pixels</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali.PyNvEncoder.Reconfigure">
+<span class="sig-name descname"><span class="pre">Reconfigure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../python_vali.html#python_vali._python_vali.PyNvEncoder" title="python_vali._python_vali.PyNvEncoder"><span class="pre">python_vali._python_vali.PyNvEncoder</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">settings</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_idr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_encoder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#python_vali.PyNvEncoder.Reconfigure" title="Link to this definition">¶</a></dt>
+<dd><p>Reconfigure the encoder with new settings.</p>
+<p>Updates the encoder configuration with new settings. This can be used to
+change encoding parameters during runtime, such as bitrate or resolution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>settings</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>) – Dictionary containing new NVENC encoder settings</p></li>
+<li><p><strong>force_idr</strong> (<em>bool</em>) – Force the next encoded frame to be an IDR key frame</p></li>
+<li><p><strong>reset_encoder</strong> (<em>bool</em>) – Force a complete encoder reset</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em>) – Whether to output detailed logging information</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if reconfiguration was successful, False otherwise</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>RuntimeError</strong> – If reconfiguration fails</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyNvEncoder.Width">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Width</span></span><a class="headerlink" href="#python_vali.PyNvEncoder.Width" title="Link to this definition">¶</a></dt>
+<dd><p>Get the width of the encoded video stream.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Width of the encoded video in pixels</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="python_vali.PySurfaceConverter.html">python_vali.PySurfaceConverter</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="python_vali.PyDecoder.html">python_vali.PyDecoder</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023 Roman Arzumanyan.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

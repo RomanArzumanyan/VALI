@@ -1,0 +1,41 @@
+﻿python\_vali.Surface
+====================
+
+.. currentmodule:: python_vali
+
+.. autoclass:: Surface
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Surface.Clone
+      ~Surface.Make
+      ~Surface.__init__
+      ~Surface.from_cai
+      ~Surface.from_dlpack
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Surface.Format
+      ~Surface.Height
+      ~Surface.HostSize
+      ~Surface.IsEmpty
+      ~Surface.IsOwnMemory
+      ~Surface.NumPlanes
+      ~Surface.Pitch
+      ~Surface.Planes
+      ~Surface.Shape
+      ~Surface.Width
+   
+   

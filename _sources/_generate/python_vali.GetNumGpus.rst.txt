@@ -1,0 +1,6 @@
+﻿python\_vali.GetNumGpus
+=======================
+
+.. currentmodule:: python_vali
+
+.. autofunction:: GetNumGpus

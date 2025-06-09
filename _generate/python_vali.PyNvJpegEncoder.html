@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>python_vali.PyNvJpegEncoder &#8212; VALI  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/haiku.css?v=e491ac2d" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="python_vali.SeekContext" href="python_vali.SeekContext.html" />
+    <link rel="prev" title="python_vali.PyFrameUploader" href="python_vali.PyFrameUploader.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="../index.html">
+          <span>VALI  documentation</span></a></h1>
+        <h2 class="heading"><span>python_vali.PyNvJpegEncoder</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="python_vali.PyFrameUploader.html">python_vali.PyFrameUploader</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="python_vali.SeekContext.html">python_vali.SeekContext</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content" role="main">
+        
+        
+  <section id="python-vali-pynvjpegencoder">
+<h1>python_vali.PyNvJpegEncoder<a class="headerlink" href="#python-vali-pynvjpegencoder" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali.PyNvJpegEncoder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali.</span></span><span class="sig-name descname"><span class="pre">PyNvJpegEncoder</span></span><a class="headerlink" href="#python_vali.PyNvJpegEncoder" title="Link to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="python_vali.PyNvJpegEncoder.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#python_vali.PyNvJpegEncoder" title="python_vali._python_vali.PyNvJpegEncoder"><span class="pre">python_vali._python_vali.PyNvJpegEncoder</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">gpu_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#python_vali.PyNvJpegEncoder.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Create a new JPEG encoder instance.</p>
+<p>Initializes a hardware-accelerated JPEG encoder on the specified GPU.
+The encoder uses NVIDIA’s hardware JPEG encoding capabilities for efficient
+image compression.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>gpu_id</strong> (<em>int</em>) – ID of the GPU to use for encoding</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>RuntimeError</strong> – If GPU initialization fails</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.PyNvJpegEncoder.Context" title="python_vali.PyNvJpegEncoder.Context"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Context</span></code></a>(self, compression, pixel_format)</p></td>
+<td><p>Create a new encoding context with specified parameters.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.PyNvJpegEncoder.Run" title="python_vali.PyNvJpegEncoder.Run"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Run</span></code></a>(self, context, surfaces)</p></td>
+<td><p>Encode multiple surfaces to JPEG format.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.PyNvJpegEncoder.__init__" title="python_vali.PyNvJpegEncoder.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(self, gpu_id)</p></td>
+<td><p>Create a new JPEG encoder instance.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali.PyNvJpegEncoder.Context">
+<span class="sig-name descname"><span class="pre">Context</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#python_vali.PyNvJpegEncoder" title="python_vali._python_vali.PyNvJpegEncoder"><span class="pre">python_vali._python_vali.PyNvJpegEncoder</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">compression</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pixel_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../python_vali.html#python_vali._python_vali.PixelFormat" title="python_vali._python_vali.PixelFormat"><span class="pre">python_vali._python_vali.PixelFormat</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">python_vali._python_vali.NvJpegEncodeContext</span></span></span><a class="headerlink" href="#python_vali.PyNvJpegEncoder.Context" title="Link to this definition">¶</a></dt>
+<dd><p>Create a new encoding context with specified parameters.</p>
+<p>The context contains the state and parameters for JPEG encoding, including
+compression quality and pixel format. Each context should be used by only
+one thread at a time to ensure thread safety.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>compression</strong> (<em>int</em>) – Compression coefficient (1-100, where 100 is maximum quality)</p></li>
+<li><p><strong>pixel_format</strong> (<em>Pixel_Format</em>) – Pixel format for the input surfaces</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>New encoding context with specified parameters</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>NvJpegEncodeContext</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>RuntimeError</strong> – If context creation fails</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali.PyNvJpegEncoder.Run">
+<span class="sig-name descname"><span class="pre">Run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#python_vali.PyNvJpegEncoder" title="python_vali._python_vali.PyNvJpegEncoder"><span class="pre">python_vali._python_vali.PyNvJpegEncoder</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">python_vali._python_vali.NvJpegEncodeContext</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surfaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../python_vali.html#python_vali._python_vali.Surface" title="python_vali._python_vali.Surface"><span class="pre">python_vali._python_vali.Surface</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../python_vali.html#python_vali._python_vali.TaskExecInfo" title="python_vali._python_vali.TaskExecInfo"><span class="pre">python_vali._python_vali.TaskExecInfo</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#python_vali.PyNvJpegEncoder.Run" title="Link to this definition">¶</a></dt>
+<dd><p>Encode multiple surfaces to JPEG format.</p>
+<p>Compresses a list of input surfaces into JPEG format using the specified
+encoding context. The operation is performed asynchronously on the GPU
+for better performance. If any surface fails to encode, the entire operation
+is considered failed and no compressed data is returned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>context</strong> (<em>NvJpegEncodeContext</em>) – Encoding context containing compression parameters</p></li>
+<li><p><strong>surfaces</strong> (<em>list</em><em>[</em><a class="reference internal" href="python_vali.Surface.html#python_vali.Surface" title="python_vali.Surface"><em>Surface</em></a><em>]</em>) – List of input surfaces to encode</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tuple containing:
+- List of compressed JPEG data as numpy arrays (empty if encoding fails)
+- TaskExecInfo indicating success or failure</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[list[numpy.ndarray], <a class="reference internal" href="../python_vali.html#python_vali._python_vali.TaskExecInfo" title="python_vali._python_vali.TaskExecInfo">TaskExecInfo</a>]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>RuntimeError</strong> – If encoding fails</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="python_vali.PyFrameUploader.html">python_vali.PyFrameUploader</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="python_vali.SeekContext.html">python_vali.SeekContext</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023 Roman Arzumanyan.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

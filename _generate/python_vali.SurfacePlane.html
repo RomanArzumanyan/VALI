@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>python_vali.SurfacePlane &#8212; VALI  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/haiku.css?v=e491ac2d" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="python_vali.Surface" href="python_vali.Surface.html" />
+    <link rel="prev" title="python_vali.SeekContext" href="python_vali.SeekContext.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="../index.html">
+          <span>VALI  documentation</span></a></h1>
+        <h2 class="heading"><span>python_vali.SurfacePlane</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="python_vali.SeekContext.html">python_vali.SeekContext</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="python_vali.Surface.html">python_vali.Surface</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content" role="main">
+        
+        
+  <section id="python-vali-surfaceplane">
+<h1>python_vali.SurfacePlane<a class="headerlink" href="#python-vali-surfaceplane" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali.SurfacePlane">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali.</span></span><span class="sig-name descname"><span class="pre">SurfacePlane</span></span><a class="headerlink" href="#python_vali.SurfacePlane" title="Link to this definition">¶</a></dt>
+<dd><p>Continious 2D chunk of memory stored in vRAM which represents single plane / channel of video frame. It supports DLPack specification.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali.SurfacePlane.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#python_vali.SurfacePlane.__init__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.SurfacePlane.__init__" title="python_vali.SurfacePlane.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(*args, **kwargs)</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.SurfacePlane.ElemSize" title="python_vali.SurfacePlane.ElemSize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ElemSize</span></code></a></p></td>
+<td><p>Get the size of each element in the surface plane in bytes.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.SurfacePlane.GpuMem" title="python_vali.SurfacePlane.GpuMem"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GpuMem</span></code></a></p></td>
+<td><p>Get the CUDA device pointer to the surface plane data.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.SurfacePlane.Height" title="python_vali.SurfacePlane.Height"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Height</span></code></a></p></td>
+<td><p>Get the height of the surface plane in pixels.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.SurfacePlane.HostFrameSize" title="python_vali.SurfacePlane.HostFrameSize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HostFrameSize</span></code></a></p></td>
+<td><p>Get the amount of host memory needed to store this surface plane.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.SurfacePlane.Pitch" title="python_vali.SurfacePlane.Pitch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Pitch</span></code></a></p></td>
+<td><p>Get the pitch (stride) of the surface plane in bytes.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.SurfacePlane.Width" title="python_vali.SurfacePlane.Width"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Width</span></code></a></p></td>
+<td><p>Get the width of the surface plane in pixels.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.SurfacePlane.ElemSize">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ElemSize</span></span><a class="headerlink" href="#python_vali.SurfacePlane.ElemSize" title="Link to this definition">¶</a></dt>
+<dd><p>Get the size of each element in the surface plane in bytes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Size of each element in bytes</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.SurfacePlane.GpuMem">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GpuMem</span></span><a class="headerlink" href="#python_vali.SurfacePlane.GpuMem" title="Link to this definition">¶</a></dt>
+<dd><p>Get the CUDA device pointer to the surface plane data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>CUDA device pointer to the plane’s data</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.SurfacePlane.Height">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Height</span></span><a class="headerlink" href="#python_vali.SurfacePlane.Height" title="Link to this definition">¶</a></dt>
+<dd><p>Get the height of the surface plane in pixels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Height of the plane in pixels</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.SurfacePlane.HostFrameSize">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HostFrameSize</span></span><a class="headerlink" href="#python_vali.SurfacePlane.HostFrameSize" title="Link to this definition">¶</a></dt>
+<dd><p>Get the amount of host memory needed to store this surface plane.</p>
+<p>This is the total size in bytes required to store the plane’s data
+in host memory, taking into account the pitch and height.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Required host memory size in bytes</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.SurfacePlane.Pitch">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Pitch</span></span><a class="headerlink" href="#python_vali.SurfacePlane.Pitch" title="Link to this definition">¶</a></dt>
+<dd><p>Get the pitch (stride) of the surface plane in bytes.</p>
+<p>The pitch represents the number of bytes between the start of consecutive rows
+in the surface plane. This may be larger than the width * element size due to
+memory alignment requirements.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Pitch of the plane in bytes</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.SurfacePlane.Width">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Width</span></span><a class="headerlink" href="#python_vali.SurfacePlane.Width" title="Link to this definition">¶</a></dt>
+<dd><p>Get the width of the surface plane in pixels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Width of the plane in pixels</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="python_vali.SeekContext.html">python_vali.SeekContext</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="python_vali.Surface.html">python_vali.Surface</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023 Roman Arzumanyan.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

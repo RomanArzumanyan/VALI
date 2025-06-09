@@ -1,0 +1,33 @@
+﻿python\_vali.SurfacePlane
+=========================
+
+.. currentmodule:: python_vali
+
+.. autoclass:: SurfacePlane
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~SurfacePlane.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~SurfacePlane.ElemSize
+      ~SurfacePlane.GpuMem
+      ~SurfacePlane.Height
+      ~SurfacePlane.HostFrameSize
+      ~SurfacePlane.Pitch
+      ~SurfacePlane.Width
+   
+   

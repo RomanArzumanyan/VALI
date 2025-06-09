@@ -1,0 +1,58 @@
+﻿python\_vali.PyDecoder
+======================
+
+.. currentmodule:: python_vali
+
+.. autoclass:: PyDecoder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PyDecoder.DecodeSingleFrame
+      ~PyDecoder.DecodeSingleSurface
+      ~PyDecoder.DecodeSingleSurfaceAsync
+      ~PyDecoder.Probe
+      ~PyDecoder.SetMode
+      ~PyDecoder.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~PyDecoder.AvgFramerate
+      ~PyDecoder.Bitrate
+      ~PyDecoder.ColorRange
+      ~PyDecoder.ColorSpace
+      ~PyDecoder.Delay
+      ~PyDecoder.DisplayRotation
+      ~PyDecoder.Duration
+      ~PyDecoder.Format
+      ~PyDecoder.Framerate
+      ~PyDecoder.GopSize
+      ~PyDecoder.Height
+      ~PyDecoder.HostFrameSize
+      ~PyDecoder.IsAccelerated
+      ~PyDecoder.IsVFR
+      ~PyDecoder.Level
+      ~PyDecoder.Metadata
+      ~PyDecoder.Mode
+      ~PyDecoder.MotionVectors
+      ~PyDecoder.NumFrames
+      ~PyDecoder.NumStreams
+      ~PyDecoder.Profile
+      ~PyDecoder.StartTime
+      ~PyDecoder.Stream
+      ~PyDecoder.StreamIndex
+      ~PyDecoder.Timebase
+      ~PyDecoder.Width
+   
+   

@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>python_vali.PyDecoder &#8212; VALI  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/haiku.css?v=e491ac2d" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="python_vali.PyFrameUploader" href="python_vali.PyFrameUploader.html" />
+    <link rel="prev" title="python_vali.PyNvEncoder" href="python_vali.PyNvEncoder.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="../index.html">
+          <span>VALI  documentation</span></a></h1>
+        <h2 class="heading"><span>python_vali.PyDecoder</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="python_vali.PyNvEncoder.html">python_vali.PyNvEncoder</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="python_vali.PyFrameUploader.html">python_vali.PyFrameUploader</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content" role="main">
+        
+        
+  <section id="python-vali-pydecoder">
+<h1>python_vali.PyDecoder<a class="headerlink" href="#python-vali-pydecoder" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="python_vali.PyDecoder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">python_vali.</span></span><span class="sig-name descname"><span class="pre">PyDecoder</span></span><a class="headerlink" href="#python_vali.PyDecoder" title="Link to this definition">¶</a></dt>
+<dd><p>Video decoder class.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#python_vali.PyDecoder.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic">
+<li><p>__init__(self: python_vali._python_vali.PyDecoder, input: str, opts: dict[str, str], gpu_id: int = 0) -&gt; None</p>
+<blockquote>
+<div><p>Create a new video decoder instance from a file.</p>
+<p>Initializes a video decoder that can decode frames from a video file.
+The decoder can operate in either CPU or GPU mode depending on the gpu_id parameter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param input<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Path to the input video file</p>
+</dd>
+<dt class="field-even">type input<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+<dt class="field-odd">param opts<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary of options to pass to libavcodec API. Can include:
+- preferred_width: Select a stream with desired width from multiple video streams
+- Other FFmpeg options as key-value pairs</p>
+</dd>
+<dt class="field-even">type opts<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict[str, str]</p>
+</dd>
+<dt class="field-odd">param gpu_id<span class="colon">:</span></dt>
+<dd class="field-odd"><p>GPU device ID to use for hardware acceleration. Default is 0.
+Use negative value for CPU-only decoding.</p>
+</dd>
+<dt class="field-even">type gpu_id<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">raises RuntimeError<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If decoder initialization fails</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>__init__(self: python_vali._python_vali.PyDecoder, buffered_reader: object, opts: dict[str, str], gpu_id: int = 0) -&gt; None</p>
+<blockquote>
+<div><p>Create a new video decoder instance from a buffered reader.</p>
+<p>Initializes a video decoder that can decode frames from a buffered reader object.
+The decoder can operate in either CPU or GPU mode depending on the gpu_id parameter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param buffered_reader<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Python object with a ‘read’ method (e.g., io.BufferedReader)</p>
+</dd>
+<dt class="field-even">type buffered_reader<span class="colon">:</span></dt>
+<dd class="field-even"><p>object</p>
+</dd>
+<dt class="field-odd">param opts<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary of options to pass to libavcodec API. Can include:
+- preferred_width: Select a stream with desired width from multiple video streams
+- Other FFmpeg options as key-value pairs</p>
+</dd>
+<dt class="field-even">type opts<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict[str, str]</p>
+</dd>
+<dt class="field-odd">param gpu_id<span class="colon">:</span></dt>
+<dd class="field-odd"><p>GPU device ID to use for hardware acceleration. Default is 0.
+Use negative value for CPU-only decoding.</p>
+</dd>
+<dt class="field-even">type gpu_id<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">raises RuntimeError<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If decoder initialization fails</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+</ol>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.PyDecoder.DecodeSingleFrame" title="python_vali.PyDecoder.DecodeSingleFrame"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DecodeSingleFrame</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Overloaded function.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.PyDecoder.DecodeSingleSurface" title="python_vali.PyDecoder.DecodeSingleSurface"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DecodeSingleSurface</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Overloaded function.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.PyDecoder.DecodeSingleSurfaceAsync" title="python_vali.PyDecoder.DecodeSingleSurfaceAsync"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DecodeSingleSurfaceAsync</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Overloaded function.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.PyDecoder.Probe" title="python_vali.PyDecoder.Probe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Probe</span></code></a>(input)</p></td>
+<td><p>Probe input without decoding.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.PyDecoder.SetMode" title="python_vali.PyDecoder.SetMode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetMode</span></code></a>(self, arg0)</p></td>
+<td><p>Set the decoder operation mode.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.PyDecoder.__init__" title="python_vali.PyDecoder.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Overloaded function.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.PyDecoder.AvgFramerate" title="python_vali.PyDecoder.AvgFramerate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AvgFramerate</span></code></a></p></td>
+<td><p>Return encoded video file average framerate.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.PyDecoder.Bitrate" title="python_vali.PyDecoder.Bitrate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Bitrate</span></code></a></p></td>
+<td><p>Return encoded video bitrate in bits per second.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.PyDecoder.ColorRange" title="python_vali.PyDecoder.ColorRange"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ColorRange</span></code></a></p></td>
+<td><p>Get color range information stored in video file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.PyDecoder.ColorSpace" title="python_vali.PyDecoder.ColorSpace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ColorSpace</span></code></a></p></td>
+<td><p>Get color space information stored in video file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.PyDecoder.Delay" title="python_vali.PyDecoder.Delay"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Delay</span></code></a></p></td>
+<td><p>Return encoded video delay.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.PyDecoder.DisplayRotation" title="python_vali.PyDecoder.DisplayRotation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DisplayRotation</span></code></a></p></td>
+<td><p>Return last decoded frame display rotation info.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.PyDecoder.Duration" title="python_vali.PyDecoder.Duration"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Duration</span></code></a></p></td>
+<td><p>Return video duration time in seconds.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.PyDecoder.Format" title="python_vali.PyDecoder.Format"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Format</span></code></a></p></td>
+<td><p>Return encoded video file pixel format.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.PyDecoder.Framerate" title="python_vali.PyDecoder.Framerate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Framerate</span></code></a></p></td>
+<td><p>Return encoded video file framerate.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.PyDecoder.GopSize" title="python_vali.PyDecoder.GopSize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GopSize</span></code></a></p></td>
+<td><p>Return encoded video GOP size.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.PyDecoder.Height" title="python_vali.PyDecoder.Height"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Height</span></code></a></p></td>
+<td><p>Return encoded video file height in pixels.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.PyDecoder.HostFrameSize" title="python_vali.PyDecoder.HostFrameSize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HostFrameSize</span></code></a></p></td>
+<td><p>Return amount of bytes needed to store decoded frame.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.PyDecoder.IsAccelerated" title="python_vali.PyDecoder.IsAccelerated"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsAccelerated</span></code></a></p></td>
+<td><p>Return true if decoder has HW acceleration support, false otherwise.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.PyDecoder.IsVFR" title="python_vali.PyDecoder.IsVFR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsVFR</span></code></a></p></td>
+<td><p>Return true if video has variable framerate, false otherwise.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.PyDecoder.Level" title="python_vali.PyDecoder.Level"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Level</span></code></a></p></td>
+<td><p>Return encoded video level coding parameter.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.PyDecoder.Metadata" title="python_vali.PyDecoder.Metadata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Metadata</span></code></a></p></td>
+<td><p>Return dictionary with video file metadata.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.PyDecoder.Mode" title="python_vali.PyDecoder.Mode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Mode</span></code></a></p></td>
+<td><p>Get the current decoder operation mode.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.PyDecoder.MotionVectors" title="python_vali.PyDecoder.MotionVectors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MotionVectors</span></code></a></p></td>
+<td><p>Return motion vectors of last decoded frame.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.PyDecoder.NumFrames" title="python_vali.PyDecoder.NumFrames"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NumFrames</span></code></a></p></td>
+<td><p>Return number of video frames in encoded video file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.PyDecoder.NumStreams" title="python_vali.PyDecoder.NumStreams"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NumStreams</span></code></a></p></td>
+<td><p>audio and video.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.PyDecoder.Profile" title="python_vali.PyDecoder.Profile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Profile</span></code></a></p></td>
+<td><p>Return encoded video profile coding parameter.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.PyDecoder.StartTime" title="python_vali.PyDecoder.StartTime"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StartTime</span></code></a></p></td>
+<td><p>Return video start time in seconds.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.PyDecoder.Stream" title="python_vali.PyDecoder.Stream"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Stream</span></code></a></p></td>
+<td><p>Get the CUDA stream used by the decoder.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.PyDecoder.StreamIndex" title="python_vali.PyDecoder.StreamIndex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StreamIndex</span></code></a></p></td>
+<td><p>Return number of current video stream in file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#python_vali.PyDecoder.Timebase" title="python_vali.PyDecoder.Timebase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Timebase</span></code></a></p></td>
+<td><p>Return encoded video file time base.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#python_vali.PyDecoder.Width" title="python_vali.PyDecoder.Width"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Width</span></code></a></p></td>
+<td><p>Return encoded video file width in pixels.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.AvgFramerate">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AvgFramerate</span></span><a class="headerlink" href="#python_vali.PyDecoder.AvgFramerate" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video file average framerate.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.Bitrate">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Bitrate</span></span><a class="headerlink" href="#python_vali.PyDecoder.Bitrate" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video bitrate in bits per second.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.ColorRange">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ColorRange</span></span><a class="headerlink" href="#python_vali.PyDecoder.ColorRange" title="Link to this definition">¶</a></dt>
+<dd><p>Get color range information stored in video file.
+Please not that some video containers may not store this information.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>color range information</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.ColorSpace">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ColorSpace</span></span><a class="headerlink" href="#python_vali.PyDecoder.ColorSpace" title="Link to this definition">¶</a></dt>
+<dd><p>Get color space information stored in video file.
+Please not that some video containers may not store this information.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>color space information</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.DecodeSingleFrame">
+<span class="sig-name descname"><span class="pre">DecodeSingleFrame</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#python_vali.PyDecoder.DecodeSingleFrame" title="Link to this definition">¶</a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic">
+<li><p>DecodeSingleFrame(self: python_vali._python_vali.PyDecoder, frame: numpy.ndarray, seek_ctx: Optional[python_vali._python_vali.SeekContext] = None) -&gt; tuple[bool, python_vali._python_vali.TaskExecInfo]</p>
+<blockquote>
+<div><p>Decode a single video frame from the input source.</p>
+<p>This method is for CPU-only decoding (non-accelerated decoder).
+The frame will be decoded into the provided numpy array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param frame<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Numpy array to store the decoded frame</p>
+</dd>
+<dt class="field-even">type frame<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+<dt class="field-odd">param seek_ctx<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional seek context for frame positioning</p>
+</dd>
+<dt class="field-even">type seek_ctx<span class="colon">:</span></dt>
+<dd class="field-even"><p>Optional[SeekContext]</p>
+</dd>
+<dt class="field-odd">return<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple containing:
+- success (bool): True if decoding was successful
+- info (TaskExecInfo): Detailed execution information</p>
+</dd>
+<dt class="field-even">rtype<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple[bool, TaskExecInfo]</p>
+</dd>
+<dt class="field-odd">raises RuntimeError<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If called with hardware acceleration enabled</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>DecodeSingleFrame(self: python_vali._python_vali.PyDecoder, frame: numpy.ndarray, pkt_data: python_vali._python_vali.PacketData, seek_ctx: Optional[python_vali._python_vali.SeekContext] = None) -&gt; tuple[bool, python_vali._python_vali.TaskExecInfo]</p>
+<blockquote>
+<div><p>Decode a single video frame with packet data from the input source.</p>
+<p>This method is for CPU-only decoding (non-accelerated decoder).
+The frame will be decoded into the provided numpy array, and packet
+metadata will be stored in pkt_data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param frame<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Numpy array to store the decoded frame</p>
+</dd>
+<dt class="field-even">type frame<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+<dt class="field-odd">param pkt_data<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Object to store packet metadata</p>
+</dd>
+<dt class="field-even">type pkt_data<span class="colon">:</span></dt>
+<dd class="field-even"><p>PacketData</p>
+</dd>
+<dt class="field-odd">param seek_ctx<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional seek context for frame positioning</p>
+</dd>
+<dt class="field-even">type seek_ctx<span class="colon">:</span></dt>
+<dd class="field-even"><p>Optional[SeekContext]</p>
+</dd>
+<dt class="field-odd">return<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple containing:
+- success (bool): True if decoding was successful
+- info (TaskExecInfo): Detailed execution information</p>
+</dd>
+<dt class="field-even">rtype<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple[bool, TaskExecInfo]</p>
+</dd>
+<dt class="field-odd">raises RuntimeError<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If called with hardware acceleration enabled</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.DecodeSingleSurface">
+<span class="sig-name descname"><span class="pre">DecodeSingleSurface</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#python_vali.PyDecoder.DecodeSingleSurface" title="Link to this definition">¶</a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic">
+<li><p>DecodeSingleSurface(self: python_vali._python_vali.PyDecoder, surf: VPF::Surface, seek_ctx: Optional[python_vali._python_vali.SeekContext] = None) -&gt; tuple[bool, python_vali._python_vali.TaskExecInfo]</p>
+<blockquote>
+<div><p>Decode a single video frame into a CUDA surface.</p>
+<p>This method is for hardware-accelerated decoding.
+The frame will be decoded directly into the provided CUDA surface.
+The operation is synchronous and will wait for completion.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param surf<span class="colon">:</span></dt>
+<dd class="field-odd"><p>CUDA surface to store the decoded frame</p>
+</dd>
+<dt class="field-even">type surf<span class="colon">:</span></dt>
+<dd class="field-even"><p>Surface</p>
+</dd>
+<dt class="field-odd">param seek_ctx<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional seek context for frame positioning</p>
+</dd>
+<dt class="field-even">type seek_ctx<span class="colon">:</span></dt>
+<dd class="field-even"><p>Optional[SeekContext]</p>
+</dd>
+<dt class="field-odd">return<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple containing:
+- success (bool): True if decoding was successful
+- info (TaskExecInfo): Detailed execution information</p>
+</dd>
+<dt class="field-even">rtype<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple[bool, TaskExecInfo]</p>
+</dd>
+<dt class="field-odd">raises RuntimeError<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If called without hardware acceleration</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>DecodeSingleSurface(self: python_vali._python_vali.PyDecoder, surf: VPF::Surface, pkt_data: python_vali._python_vali.PacketData, seek_ctx: Optional[python_vali._python_vali.SeekContext] = None) -&gt; tuple[bool, python_vali._python_vali.TaskExecInfo]</p>
+<blockquote>
+<div><p>Decode a single video frame into a CUDA surface with packet data.</p>
+<p>This method is for hardware-accelerated decoding.
+The frame will be decoded directly into the provided CUDA surface,
+and packet metadata will be stored in pkt_data.
+The operation is synchronous and will wait for completion.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param surf<span class="colon">:</span></dt>
+<dd class="field-odd"><p>CUDA surface to store the decoded frame</p>
+</dd>
+<dt class="field-even">type surf<span class="colon">:</span></dt>
+<dd class="field-even"><p>Surface</p>
+</dd>
+<dt class="field-odd">param pkt_data<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Object to store packet metadata</p>
+</dd>
+<dt class="field-even">type pkt_data<span class="colon">:</span></dt>
+<dd class="field-even"><p>PacketData</p>
+</dd>
+<dt class="field-odd">param seek_ctx<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional seek context for frame positioning</p>
+</dd>
+<dt class="field-even">type seek_ctx<span class="colon">:</span></dt>
+<dd class="field-even"><p>Optional[SeekContext]</p>
+</dd>
+<dt class="field-odd">return<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple containing:
+- success (bool): True if decoding was successful
+- info (TaskExecInfo): Detailed execution information</p>
+</dd>
+<dt class="field-even">rtype<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple[bool, TaskExecInfo]</p>
+</dd>
+<dt class="field-odd">raises RuntimeError<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If called without hardware acceleration</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.DecodeSingleSurfaceAsync">
+<span class="sig-name descname"><span class="pre">DecodeSingleSurfaceAsync</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#python_vali.PyDecoder.DecodeSingleSurfaceAsync" title="Link to this definition">¶</a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic">
+<li><p>DecodeSingleSurfaceAsync(self: python_vali._python_vali.PyDecoder, surf: VPF::Surface, seek_ctx: Optional[python_vali._python_vali.SeekContext] = None) -&gt; tuple[bool, python_vali._python_vali.TaskExecInfo]</p>
+<blockquote>
+<div><p>Decode a single video frame into a CUDA surface asynchronously.</p>
+<p>This method is for hardware-accelerated decoding.
+The frame will be decoded directly into the provided CUDA surface.
+The operation is asynchronous and returns immediately.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param surf<span class="colon">:</span></dt>
+<dd class="field-odd"><p>CUDA surface to store the decoded frame</p>
+</dd>
+<dt class="field-even">type surf<span class="colon">:</span></dt>
+<dd class="field-even"><p>Surface</p>
+</dd>
+<dt class="field-odd">param seek_ctx<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional seek context for frame positioning</p>
+</dd>
+<dt class="field-even">type seek_ctx<span class="colon">:</span></dt>
+<dd class="field-even"><p>Optional[SeekContext]</p>
+</dd>
+<dt class="field-odd">return<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple containing:
+- success (bool): True if decoding was successful
+- info (TaskExecInfo): Detailed execution information</p>
+</dd>
+<dt class="field-even">rtype<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple[bool, TaskExecInfo]</p>
+</dd>
+<dt class="field-odd">raises RuntimeError<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If called without hardware acceleration</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>DecodeSingleSurfaceAsync(self: python_vali._python_vali.PyDecoder, surf: VPF::Surface, pkt_data: python_vali._python_vali.PacketData, seek_ctx: Optional[python_vali._python_vali.SeekContext] = None) -&gt; tuple[bool, python_vali._python_vali.TaskExecInfo]</p>
+<blockquote>
+<div><p>Decode a single video frame into a CUDA surface with packet data asynchronously.</p>
+<p>This method is for hardware-accelerated decoding.
+The frame will be decoded directly into the provided CUDA surface,
+and packet metadata will be stored in pkt_data.
+The operation is asynchronous and returns immediately.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param surf<span class="colon">:</span></dt>
+<dd class="field-odd"><p>CUDA surface to store the decoded frame</p>
+</dd>
+<dt class="field-even">type surf<span class="colon">:</span></dt>
+<dd class="field-even"><p>Surface</p>
+</dd>
+<dt class="field-odd">param pkt_data<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Object to store packet metadata</p>
+</dd>
+<dt class="field-even">type pkt_data<span class="colon">:</span></dt>
+<dd class="field-even"><p>PacketData</p>
+</dd>
+<dt class="field-odd">param seek_ctx<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional seek context for frame positioning</p>
+</dd>
+<dt class="field-even">type seek_ctx<span class="colon">:</span></dt>
+<dd class="field-even"><p>Optional[SeekContext]</p>
+</dd>
+<dt class="field-odd">return<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple containing:
+- success (bool): True if decoding was successful
+- info (TaskExecInfo): Detailed execution information</p>
+</dd>
+<dt class="field-even">rtype<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple[bool, TaskExecInfo]</p>
+</dd>
+<dt class="field-odd">raises RuntimeError<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If called without hardware acceleration</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+</ol>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.Delay">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Delay</span></span><a class="headerlink" href="#python_vali.PyDecoder.Delay" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video delay.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.DisplayRotation">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DisplayRotation</span></span><a class="headerlink" href="#python_vali.PyDecoder.DisplayRotation" title="Link to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Return last decoded frame display rotation info.</dt><dd><p>If there’s no such data, 361.0 will be returned.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>value in degrees</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.Duration">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Duration</span></span><a class="headerlink" href="#python_vali.PyDecoder.Duration" title="Link to this definition">¶</a></dt>
+<dd><p>Return video duration time in seconds. May not be present.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.Format">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Format</span></span><a class="headerlink" href="#python_vali.PyDecoder.Format" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video file pixel format.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.Framerate">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Framerate</span></span><a class="headerlink" href="#python_vali.PyDecoder.Framerate" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video file framerate.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.GopSize">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GopSize</span></span><a class="headerlink" href="#python_vali.PyDecoder.GopSize" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video GOP size.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.Height">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Height</span></span><a class="headerlink" href="#python_vali.PyDecoder.Height" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video file height in pixels.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.HostFrameSize">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HostFrameSize</span></span><a class="headerlink" href="#python_vali.PyDecoder.HostFrameSize" title="Link to this definition">¶</a></dt>
+<dd><p>Return amount of bytes needed to store decoded frame.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.IsAccelerated">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsAccelerated</span></span><a class="headerlink" href="#python_vali.PyDecoder.IsAccelerated" title="Link to this definition">¶</a></dt>
+<dd><p>Return true if decoder has HW acceleration support, false otherwise.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.IsVFR">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsVFR</span></span><a class="headerlink" href="#python_vali.PyDecoder.IsVFR" title="Link to this definition">¶</a></dt>
+<dd><p>Return true if video has variable framerate, false otherwise.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.Level">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Level</span></span><a class="headerlink" href="#python_vali.PyDecoder.Level" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video level coding parameter.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.Metadata">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Metadata</span></span><a class="headerlink" href="#python_vali.PyDecoder.Metadata" title="Link to this definition">¶</a></dt>
+<dd><p>Return dictionary with video file metadata.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.Mode">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Mode</span></span><a class="headerlink" href="#python_vali.PyDecoder.Mode" title="Link to this definition">¶</a></dt>
+<dd><p>Get the current decoder operation mode.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Current decode mode (e.g., KEY_FRAMES, ALL_FRAMES)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="../python_vali.html#python_vali._python_vali.DecodeMode" title="python_vali._python_vali.DecodeMode">DecodeMode</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.MotionVectors">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MotionVectors</span></span><a class="headerlink" href="#python_vali.PyDecoder.MotionVectors" title="Link to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Return motion vectors of last decoded frame.</dt><dd><p>If there are no movion vectors it will return empty list.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of motion vectors</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>List[vali.MotionVector]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.NumFrames">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NumFrames</span></span><a class="headerlink" href="#python_vali.PyDecoder.NumFrames" title="Link to this definition">¶</a></dt>
+<dd><p>Return number of video frames in encoded video file.
+Please note that some video containers doesn’t store this infomation.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.NumStreams">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NumStreams</span></span><a class="headerlink" href="#python_vali.PyDecoder.NumStreams" title="Link to this definition">¶</a></dt>
+<dd><p>audio and video.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Return number of streams in video file. E. g. 2 streams</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.Probe">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Probe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../python_vali.html#python_vali._python_vali.StreamParams" title="python_vali._python_vali.StreamParams"><span class="pre">python_vali._python_vali.StreamParams</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#python_vali.PyDecoder.Probe" title="Link to this definition">¶</a></dt>
+<dd><p>Probe input without decoding.
+Information about streams will be returned without codec initialization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>input</strong> – path to input file</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of structures with stream parameters</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.Profile">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Profile</span></span><a class="headerlink" href="#python_vali.PyDecoder.Profile" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video profile coding parameter.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.SetMode">
+<span class="sig-name descname"><span class="pre">SetMode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../python_vali.html#python_vali._python_vali.PyDecoder" title="python_vali._python_vali.PyDecoder"><span class="pre">python_vali._python_vali.PyDecoder</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">arg0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../python_vali.html#python_vali._python_vali.DecodeMode" title="python_vali._python_vali.DecodeMode"><span class="pre">python_vali._python_vali.DecodeMode</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#python_vali.PyDecoder.SetMode" title="Link to this definition">¶</a></dt>
+<dd><p>Set the decoder operation mode.</p>
+<p>Changes how the decoder processes frames and handles seeking operations.
+When in KEY_FRAMES mode, seeking will return the closest previous key frame.
+When switching modes, the internal frame queue is preserved to avoid discarding
+decoded frames that may be needed for future operations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>new_mode</strong> (<a class="reference internal" href="../python_vali.html#python_vali._python_vali.DecodeMode" title="python_vali._python_vali.DecodeMode"><em>DecodeMode</em></a>) – The new decode mode to set</p>
+</dd>
+<dt class="field-even">Note<span class="colon">:</span></dt>
+<dd class="field-even"><p>Mode changes affect seek behavior and frame processing strategy</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.StartTime">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">StartTime</span></span><a class="headerlink" href="#python_vali.PyDecoder.StartTime" title="Link to this definition">¶</a></dt>
+<dd><p>Return video start time in seconds.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.Stream">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Stream</span></span><a class="headerlink" href="#python_vali.PyDecoder.Stream" title="Link to this definition">¶</a></dt>
+<dd><p>Get the CUDA stream used by the decoder.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>CUDA stream handle as an integer</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.StreamIndex">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">StreamIndex</span></span><a class="headerlink" href="#python_vali.PyDecoder.StreamIndex" title="Link to this definition">¶</a></dt>
+<dd><p>Return number of current video stream in file. E. g. video stream has
+index 0, and audio stream has index 1. This method will return 0 then.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.Timebase">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Timebase</span></span><a class="headerlink" href="#python_vali.PyDecoder.Timebase" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video file time base.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="python_vali.PyDecoder.Width">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Width</span></span><a class="headerlink" href="#python_vali.PyDecoder.Width" title="Link to this definition">¶</a></dt>
+<dd><p>Return encoded video file width in pixels.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="python_vali.PyNvEncoder.html">python_vali.PyNvEncoder</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="python_vali.PyFrameUploader.html">python_vali.PyFrameUploader</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023 Roman Arzumanyan.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

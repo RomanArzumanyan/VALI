@@ -1,0 +1,30 @@
+﻿python\_vali.PySurfaceResizer
+=============================
+
+.. currentmodule:: python_vali
+
+.. autoclass:: PySurfaceResizer
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PySurfaceResizer.Run
+      ~PySurfaceResizer.RunAsync
+      ~PySurfaceResizer.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~PySurfaceResizer.Stream
+   
+   
