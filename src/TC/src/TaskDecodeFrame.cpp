@@ -17,9 +17,12 @@
 #include "Utils.hpp"
 
 #include <algorithm>
-#include <array>
+#include <atomic>
+#include <condition_variable>
 #include <iostream>
 #include <memory>
+#include <mutex>
+#include <optional>
 #include <queue>
 #include <sstream>
 #include <stdexcept>
@@ -43,11 +46,12 @@ using namespace VPF;
 namespace VPF {
 
 enum DECODE_STATUS {
-  DEC_SUCCESS,
-  DEC_ERROR,
-  DEC_EOS,
-  DEC_MORE,
-  DEC_RES_CHANGE
+  DEC_RES_CHANGE, // resolution has changed
+  DEC_SUCCESS,    // success, frame is ready
+  DEC_ERROR,      // error happened, can't continue
+  DEC_OVER,       // input file is over, but some frames are still available
+  DEC_MORE,       // frame isn't available yet, read more packets
+  DEC_DONE        // decoder won't return any more frames
 };
 
 #ifndef TEGRA_BUILD
@@ -103,12 +107,74 @@ static std::string FindDecoderById(AVCodecID id) {
   return it->second;
 }
 
+template <typename T> class ProducerConsumerQueue {
+private:
+  std::queue<T> m_queue;
+  std::mutex m_mutex;
+  std::condition_variable m_cv_prod;
+  std::condition_variable m_cv_cons;
+  size_t m_capacity;
+  std::atomic<bool> m_closed = {false};
+
+public:
+  ProducerConsumerQueue(size_t capacity) : m_capacity(capacity) {}
+
+  void close() { m_closed = true; }
+
+  bool closed() const { return m_closed; }
+
+  bool push(const T& item) {
+    if (closed())
+      return false;
+
+    std::unique_lock lock{m_mutex};
+    m_cv_prod.wait(lock, [this] { return m_queue.size() < m_capacity; });
+    m_queue.push(item);
+    m_cv_cons.notify_one();
+    return true;
+  }
+
+  bool pop(T& item) {
+    if (closed())
+      return false;
+
+    std::unique_lock lock{m_mutex};
+    m_cv_cons.wait(lock, [this] { return !m_queue.empty(); });
+    item = m_queue.front();
+    m_queue.pop();
+    m_cv_prod.notify_one();
+
+    return true;
+  }
+
+  bool pop() {
+    if (closed())
+      return false;
+
+    std::unique_lock lock{m_mutex};
+    m_cv_cons.wait(lock, [this] { return !m_queue.empty(); });
+    m_queue.pop();
+    m_cv_prod.notify_one();
+
+    return true;
+  }
+
+  std::optional<T> peek() {
+    if (closed())
+      return std::nullopt;
+
+    std::unique_lock lock{m_mutex};
+    m_cv_cons.wait(lock, [this] { return !m_queue.empty(); });
+    return std::optional<T>(m_queue.front());
+  }
+};
+
 struct FfmpegDecodeFrame_Impl {
   std::shared_ptr<AVFormatContext> m_fmt_ctx;
   std::shared_ptr<SwrContext> m_swr_ctx;
   std::shared_ptr<AVCodecContext> m_avc_ctx;
   std::shared_ptr<AVFrame> m_frame;
-  std::queue<std::shared_ptr<AVPacket>> m_pkt_queue;
+  ProducerConsumerQueue<std::shared_ptr<AVPacket>> m_queue;
   std::shared_ptr<AVBufferRef> m_hw_ctx;
   std::map<AVFrameSideDataType, Buffer*> m_side_data;
   std::shared_ptr<AVDictionary> m_options;
@@ -132,20 +198,22 @@ struct FfmpegDecodeFrame_Impl {
   // User prefferred stream width. Mostly useful for HLS ABR streams.
   int m_preferred_width = -1;
 
-  // Flag which signals that decode is done
-  bool m_end_decode = false;
-
-  // Flag which signals that encoded packets aren't accepted
-  bool m_noacpt = false;
-
-  // Flag which signals end of file
-  bool m_eof = false;
-
-  // Flag which signals resolution change
-  bool m_res_change = false;
-
   // True if codec is opened, false otherwise
   bool m_codec_open = false;
+
+  struct State {
+    // Packets aren't accepted by decoder
+    bool m_noacpt = false;
+
+    // Resolution has changed
+    bool m_res_change = false;
+
+    // Input file is over, no more packets will be put into queue
+    std::atomic<bool> m_over = {false};
+
+    // Decode is canceled
+    std::atomic<bool> m_cancel = {false};
+  } m_state;
 
   /* These are handy counters for debug:
    *
@@ -166,6 +234,10 @@ struct FfmpegDecodeFrame_Impl {
   // Decoder operation mode
   DecodeMode m_mode = DecodeMode::ALL_FRAMES;
 
+  bool IsCancel() const { return m_state.m_cancel.load(); }
+
+  void SetCancel() { m_state.m_cancel = true; }
+
   void SetMode(DecodeMode new_mode) { m_mode = new_mode; }
 
   DecodeMode GetMode() const { return m_mode; }
@@ -183,6 +255,10 @@ struct FfmpegDecodeFrame_Impl {
     return -1;
   }
 
+  // 24 FPS is a common value, so encoded packet queue size is set to hold
+  // amount of packets enough for ~1s of video.
+  static constexpr auto default_queue_size = 24U;
+
   /// @brief Constructor
   /// @param URL input url
   /// @param ffmpeg_options list of options you would pass to ffmpeg cli
@@ -193,7 +269,7 @@ struct FfmpegDecodeFrame_Impl {
                          std::map<std::string, std::string>& ffmpeg_options,
                          int gpu_id, std::shared_ptr<AVIOContext> p_io_ctx,
                          bool probe = false)
-      : m_io_ctx(p_io_ctx) {
+      : m_io_ctx(p_io_ctx), m_queue(default_queue_size) {
 
     // Extract preferred width from options because it's not ffmpeg option.
     auto it = ffmpeg_options.find("preferred_width");
@@ -236,12 +312,12 @@ struct FfmpegDecodeFrame_Impl {
     auto options = GetAvOptions(ffmpeg_options);
     if (gpu_id >= 0) {
       m_gpu_id = gpu_id;
-      auto res = av_dict_set(&options, "hwaccel_device",
+      auto ret = av_dict_set(&options, "hwaccel_device",
                              std::to_string(m_gpu_id).c_str(), 0);
-      ThrowOnAvError(res, "Failed to set hwaccel_device AVOption", &options);
+      ThrowOnAvError(ret, "Failed to set hwaccel_device AVOption", &options);
 
-      res = av_dict_set(&options, "current_ctx", "1", 0);
-      ThrowOnAvError(res, "Failed to set current_ctx AVOption", &options);
+      ret = av_dict_set(&options, "current_ctx", "1", 0);
+      ThrowOnAvError(ret, "Failed to set current_ctx AVOption", &options);
     }
 
     /* After we are done settings options, save them in case we need them
@@ -257,16 +333,16 @@ struct FfmpegDecodeFrame_Impl {
      * free input options and replace them with list of unrecognized options.
      */
     options = nullptr;
-    auto res = av_dict_copy(&options, m_options.get(), 0);
-    ThrowOnAvError(res, "Can't copy AVOptions", options ? &options : nullptr);
+    auto ret = av_dict_copy(&options, m_options.get(), 0);
+    ThrowOnAvError(ret, "Can't copy AVOptions", options ? &options : nullptr);
 
     m_timeout_handler->Reset();
-    res = avformat_open_input(&fmt_ctx, m_io_ctx ? "" : URL, NULL, &options);
+    ret = avformat_open_input(&fmt_ctx, m_io_ctx ? "" : URL, NULL, &options);
     if (options) {
       av_dict_free(&options);
     }
 
-    if (res < 0) {
+    if (ret < 0) {
       {
         // Don't remove, it's here to make linker clear of libswresample
         // dependency. Otherwise it's required by libavcodec but never put into
@@ -276,15 +352,15 @@ struct FfmpegDecodeFrame_Impl {
             swr_ctx_, [](void* p) { swr_free((SwrContext**)&p); });
       }
 
-      ThrowOnAvError(res, "Can't open souce file " + std::string(URL), nullptr);
+      ThrowOnAvError(ret, "Can't open souce file " + std::string(URL), nullptr);
     }
 
     m_fmt_ctx = std::shared_ptr<AVFormatContext>(
         fmt_ctx, [](void* p) { avformat_close_input((AVFormatContext**)&p); });
 
     m_timeout_handler->Reset();
-    res = avformat_find_stream_info(m_fmt_ctx.get(), NULL);
-    ThrowOnAvError(res, "Can't find stream information", nullptr);
+    ret = avformat_find_stream_info(m_fmt_ctx.get(), NULL);
+    ThrowOnAvError(ret, "Can't find stream information", nullptr);
 
     m_timeout_handler->Reset();
     m_stream_idx = av_find_best_stream(m_fmt_ctx.get(), AVMEDIA_TYPE_VIDEO,
@@ -386,25 +462,25 @@ struct FfmpegDecodeFrame_Impl {
     m_avc_ctx = std::shared_ptr<AVCodecContext>(
         avctx, [](void* p) { avcodec_free_context((AVCodecContext**)&p); });
 
-    auto res =
+    auto ret =
         avcodec_parameters_to_context(m_avc_ctx.get(), video_stream->codecpar);
-    if (res < 0) {
+    if (ret < 0) {
       std::stringstream ss;
       ss << "Failed to pass codec parameters to codec "
             "context "
          << av_get_media_type_string(AVMEDIA_TYPE_VIDEO);
-      ss << "Error description: " << AvErrorToString(res);
+      ss << "Error description: " << AvErrorToString(ret);
       throw std::runtime_error(ss.str());
     }
 
     AVDictionary* options = nullptr;
-    res = av_dict_copy(&options, m_options.get(), 0);
-    if (res < 0) {
+    ret = av_dict_copy(&options, m_options.get(), 0);
+    if (ret < 0) {
       if (options) {
         av_dict_free(&options);
       }
       std::stringstream ss;
-      ss << "Could not copy AVOptions: " << AvErrorToString(res);
+      ss << "Could not copy AVOptions: " << AvErrorToString(ret);
       throw std::runtime_error(ss.str());
     }
 
@@ -417,12 +493,12 @@ struct FfmpegDecodeFrame_Impl {
        * copied to RAM.
        */
       AVBufferRef* hwdevice_ctx = nullptr;
-      auto res = av_hwdevice_ctx_create(&hwdevice_ctx, AV_HWDEVICE_TYPE_CUDA,
+      auto ret = av_hwdevice_ctx_create(&hwdevice_ctx, AV_HWDEVICE_TYPE_CUDA,
                                         NULL, options, 0);
 
-      if (res < 0) {
+      if (ret < 0) {
         std::stringstream ss;
-        ss << "Failed to create HW device context: " << AvErrorToString(res);
+        ss << "Failed to create HW device context: " << AvErrorToString(ret);
         throw std::runtime_error(ss.str());
       }
 
@@ -446,13 +522,13 @@ struct FfmpegDecodeFrame_Impl {
      */
     m_avc_ctx->pkt_timebase = m_fmt_ctx->streams[GetVideoStrIdx()]->time_base;
 
-    res = avcodec_open2(m_avc_ctx.get(), p_codec, &options);
+    ret = avcodec_open2(m_avc_ctx.get(), p_codec, &options);
     if (options) {
       av_dict_free(&options);
     }
 
     ThrowOnAvError(
-        res, "Failed to open codec " +
+        ret, "Failed to open codec " +
                  std::string(av_get_media_type_string(AVMEDIA_TYPE_VIDEO)));
     m_codec_open = true;
   }
@@ -473,36 +549,26 @@ struct FfmpegDecodeFrame_Impl {
   }
 
   TaskExecDetails DecodeSingleFrame(Token& dst) {
-    if (m_end_decode) {
-      return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL, TaskExecInfo::FAIL,
-                             "decode finished");
-    }
-
     // Run in loop until a decoded frame is received from decoder
     do {
       auto status = DEC_SUCCESS;
       do {
         status = ReadPacket();
-        if (status != DEC_SUCCESS)
+        if (status != DEC_SUCCESS && status != DEC_OVER)
           break;
 
-        status = SendPacket();
-        if (status != DEC_SUCCESS)
-          break;
-
-        status = ReceiveFrame(dst);
+        status = DecodePacket(dst);
       } while (false);
 
       switch (status) {
+      case DEC_OVER:
       case DEC_SUCCESS:
         return TaskExecDetails(TaskExecStatus::TASK_EXEC_SUCCESS,
                                TaskExecInfo::SUCCESS);
       case DEC_ERROR:
-        m_end_decode = true;
         return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL,
                                TaskExecInfo::FAIL, "decode error, end decode");
-      case DEC_EOS:
-        m_end_decode = true;
+      case DEC_DONE:
         return TaskExecDetails(TaskExecStatus::TASK_EXEC_FAIL,
                                TaskExecInfo::END_OF_STREAM, "end of stream");
       case DEC_RES_CHANGE:
@@ -603,13 +669,14 @@ struct FfmpegDecodeFrame_Impl {
   }
 
   bool UpdGetResChange() {
-    m_res_change = (m_last_h != GetHeight()) || (m_last_w != GetWidth());
-    return m_res_change;
+    m_state.m_res_change =
+        (m_last_h != GetHeight()) || (m_last_w != GetWidth());
+    return m_state.m_res_change;
   }
 
   bool FlipGetResChange() {
-    m_res_change = !m_res_change;
-    return !m_res_change;
+    m_state.m_res_change = !m_state.m_res_change;
+    return !m_state.m_res_change;
   }
 
   /* Copy last decoded frame to output token.
@@ -630,14 +697,14 @@ struct FfmpegDecodeFrame_Impl {
       auto& dstBuf = dynamic_cast<Buffer&>(dst);
       const int alignment = 1;
 
-      auto res = av_image_copy_to_buffer(
+      auto ret = av_image_copy_to_buffer(
           dstBuf.GetDataAs<uint8_t>(), GetHostFrameSize(), m_frame->data,
           m_frame->linesize, (AVPixelFormat)m_frame->format, m_frame->width,
           m_frame->height, alignment);
 
-      if (res < 0) {
+      if (ret < 0) {
         std::cerr << "Error while copying a frame from FFMpeg to VALI: "
-                  << AvErrorToString(res);
+                  << AvErrorToString(ret);
         return DEC_ERROR;
       }
     }
@@ -645,11 +712,14 @@ struct FfmpegDecodeFrame_Impl {
     return DEC_SUCCESS;
   }
 
-  /// @brief Read single video frame packet into queue. Blocking call.
-  /// @retval DEC_SUCCESS on success.
-  /// @retval DEC_ERROR on failure.
   DECODE_STATUS ReadPacket() {
-    auto is_desired_packet = [this](std::shared_ptr<AVPacket> pkt) {
+    if (m_state.m_over)
+      return DEC_OVER;
+
+    if (m_state.m_cancel)
+      return DEC_ERROR;
+
+    auto is_desired_video_packet = [this](std::shared_ptr<AVPacket> pkt) {
       auto const is_video = GetVideoStrIdx() == pkt->stream_index;
       auto const is_key = pkt->flags & AV_PKT_FLAG_KEY;
 
@@ -657,7 +727,7 @@ struct FfmpegDecodeFrame_Impl {
                                                  : is_video;
     };
 
-    while (!m_eof) {
+    while (!m_state.m_over) {
       auto pkt = std::shared_ptr<AVPacket>(av_packet_alloc(), [](void* p) {
         av_packet_unref((AVPacket*)p);
         av_packet_free((AVPacket**)&p);
@@ -667,16 +737,20 @@ struct FfmpegDecodeFrame_Impl {
       auto ret = av_read_frame(m_fmt_ctx.get(), pkt.get());
 
       if (AVERROR_EOF == ret) {
-        m_eof = true;
+        // Put sentinel and signal that no more packets will be put into queue.
+        m_queue.push({});
+        m_state.m_over = true;
         break;
       } else if (ret < 0) {
-        m_end_decode = true;
+        // Return error but don't change internal state.
+        // E. g. network issue may cause single packet read to fail but we don't
+        // want whole decoding session to be stopped by that.
         return DEC_ERROR;
       }
 
       m_num_pkt_read++;
-      if (is_desired_packet(pkt)) {
-        m_pkt_queue.push(pkt);
+      if (is_desired_video_packet(pkt)) {
+        m_queue.push(pkt);
         break;
       }
     };
@@ -684,70 +758,52 @@ struct FfmpegDecodeFrame_Impl {
     return DEC_SUCCESS;
   }
 
-  /// @brief Send single video packet from queue to decoder. Blocking call.
-  /// @retval DEC_SUCCESS on success.
-  /// @retval DEC_ERROR on failure.
-  DECODE_STATUS SendPacket() {
-    if (m_noacpt)
-      return DEC_SUCCESS;
+  DECODE_STATUS DecodePacket(Token& dst) {
+    if (m_state.m_noacpt)
+      return ReceiveFrame(dst);
 
-    int res = 0, pop = 0;
-    if (!m_pkt_queue.empty()) {
-      // We don't pop just the packet because decoder may not accept it.
-      res = avcodec_send_packet(m_avc_ctx.get(), m_pkt_queue.front().get());
-      pop = 1;
-    } else if (m_eof) {
-      res = avcodec_send_packet(m_avc_ctx.get(), nullptr);
-    } else {
-      std::cerr << "Empty packet queue without EOF";
+    if (m_state.m_cancel)
       return DEC_ERROR;
+
+    // Don't pop the packet right away because decoder may not accept it.
+    std::shared_ptr<AVPacket> pkt = m_queue.peek().value_or(nullptr);
+    if (!pkt) {
+      // Sentinel message received, time to close the queue.
+      m_queue.close();
     }
 
-    if (AVERROR_EOF == res) {
-      // Non an error.
-    } else if (res == AVERROR(EAGAIN)) {
-      // Not an error. Decoder can't accept packet at current state.
-      // May happen upon some events, e. g. resolution change.
-      m_noacpt = true;
-    } else if (res < 0) {
-      std::cerr << "Error while sending a packet to the decoder. ";
-      std::cerr << "Error description: " << AvErrorToString(res);
+    auto ret = avcodec_send_packet(m_avc_ctx.get(), pkt.get());
+
+    if (AVERROR_EOF == ret) {
+      // Not an error, just flushing the queues.
+    } else if (AVERROR(EAGAIN) == ret) {
+      // Also not an error. Decoder isn't ready to accept packet.
+      m_state.m_noacpt = true;
+    } else if (ret < 0) {
+      std::cerr << "avcodec_send_packet failed: " << AvErrorToString(ret);
       return DEC_ERROR;
     } else {
-      // Packet was successfuly sent, now we can pop it.
+      // Decoder has accepted the packet, now it can be removed from queue.
       m_num_pkt_sent++;
-      if (pop)
-        m_pkt_queue.pop();
+      m_queue.pop();
     }
 
-    return DEC_SUCCESS;
+    return ReceiveFrame(dst);
   }
 
-  /// @brief Receive single frame from decoder. Non-blocking call on GPU. 
-  /// Blocking call on CPU.
-  /// @param dst place to put frame to.
-  /// @retval DEC_SUCCESS on success.
-  /// @retval DEC_ERROR on failure.
-  /// @retval DEC_MORE if frame isn't ready yet.
-  /// @retval DEC_EOS on EOF.
-  /// @retval DEC_RES_CHANGE on resolution change.
   DECODE_STATUS ReceiveFrame(Token& dst) {
     SaveCurrentRes();
 
-    auto res = avcodec_receive_frame(m_avc_ctx.get(), m_frame.get());
-    if (res == AVERROR_EOF) {
+    auto ret = avcodec_receive_frame(m_avc_ctx.get(), m_frame.get());
+    if (ret == AVERROR_EOF) {
       // Decoder won't output any more frames, signal decode end.
-      return DEC_EOS;
-    } else if (res == AVERROR(EAGAIN)) {
-      // Decoder returned all the frames after noaccept flag was set.
-      // Time to put the flag down and continue to send packets to decoder.
-      if (m_noacpt) {
-        m_noacpt = false;
-      }
+      return DEC_DONE;
+    } else if (ret == AVERROR(EAGAIN)) {
+      // Decoder once again needs to accept packets.
+      m_state.m_noacpt = false;
       return DEC_MORE;
-    } else if (res < 0) {
-      std::cerr << "Error while receiving a frame from the decoder. ";
-      std::cerr << "Error description: " << AvErrorToString(res);
+    } else if (ret < 0) {
+      std::cerr << "avcodec_receive_frame failed: " << AvErrorToString(ret);
       return DEC_ERROR;
     } else {
       m_num_frm_recv++;
@@ -1007,7 +1063,7 @@ struct FfmpegDecodeFrame_Impl {
      * done when decoder has previously get all available packets.
      */
     m_frame->pts = AV_NOPTS_VALUE;
-    m_eof = false;
+    m_state.m_over = false;
 
     /* Decode in loop until we reach desired frame.
      */
