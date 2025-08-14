@@ -560,20 +560,56 @@ void Init_PyDecoder(py::module& m) {
       .def(
           "DecodePacketToSurface",
           [](PyDecoder& self, Surface& surf) {
+            auto ret = self.DecodePacketToSurface(surf);
+            if (DEC_SUCCESS == ret) {
+              self.m_event->Record();
+              self.m_event->Wait();
+            }
+          },
+          py::arg("surf"), py::call_guard<py::gil_scoped_release>(),
+          R"pbdoc(
+         Decode a single video frame into a CUDA surface.
+
+         This method is for hardware-accelerated decoding.
+         The frame will be decoded directly into the provided CUDA surface.
+
+         :param surf: CUDA surface to store the decoded frame
+         :rtype: DecodeStatus
+         :raises RuntimeError: If called without hardware acceleration
+     )pbdoc")
+      .def(
+          "DecodePacketToSurfaceAsync",
+          [](PyDecoder& self, Surface& surf) {
             return self.DecodePacketToSurface(surf);
           },
           py::arg("surf"), py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
-         Decodes single compressed video packet to Surface.
+         Decode a single video frame into a CUDA surface.
+
+         This method is for hardware-accelerated decoding.
+         The frame will be decoded directly into the provided CUDA surface,
+         and packet metadata will be stored in pkt_data.
+         The operation is synchronous and will wait for completion.
+
+         :param surf: CUDA surface to store the decoded frame
+         :rtype: DecodeStatus
+         :raises RuntimeError: If called without hardware acceleration
      )pbdoc")
       .def(
           "DecodePacketToFrame",
-          [](PyDecoder& self, py::array &frame) {
+          [](PyDecoder& self, py::array& frame) {
             return self.DecodePacketToFrame(frame);
           },
           py::arg("frame"),
           R"pbdoc(
-         Decodes single compressed video packet to numpy array.
+         Decode a single video frame from the input source.
+
+         This method is for CPU-only decoding (non-accelerated decoder).
+         The frame will be decoded into the provided numpy array.
+
+         :param frame: Numpy array to store the decoded frame
+         :rtype: DecodeStatus
+         :raises RuntimeError: If called without hardware acceleration
      )pbdoc")
       .def(
           "DecodeSingleSurfaceAsync",
