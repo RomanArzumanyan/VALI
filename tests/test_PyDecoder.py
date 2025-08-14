@@ -390,6 +390,28 @@ class TestDecoder(unittest.TestCase):
         self.assertEqual(self.hbdInfo.num_frames, dec_frames)
         self.assertEqual(details, vali.TaskExecInfo.END_OF_STREAM)
 
+    def test_producer_consuer_gpu(self):
+        """
+        This test checks that decoder returns all video frames using
+        producer-consumer API.
+        """
+        dec = vali.PyDecoder(self.gt_info.uri, {}, gpu_id=0)
+        surf = vali.Surface.Make(dec.Format, dec.Width, dec.Height, gpu_id=0)
+        num_frames = 0
+
+        while True:
+            status = dec.ReadPacket()
+            if status == vali.DecodeStatus.ERROR:
+                break
+
+            status = dec.DecodePacketToSurface(surf)
+            if status in [vali.DecodeStatus.DONE, vali.DecodeStatus.ERROR]:
+                break
+            elif status == vali.DecodeStatus.SUCCESS:
+                num_frames += 1
+
+        self.assertEqual(num_frames, self.gt_info.num_frames)
+
     @parameterized.expand([
         ["from_url"],
         ["from_buf"]
@@ -631,6 +653,7 @@ class TestDecoder(unittest.TestCase):
 
         Two frames are expected to be different.
         """
+        seek_frames = []
         with open("gt_files.json") as f:
             gt_info = tc.GroundTruth(**json.load(f)["basic"])
 
@@ -648,12 +671,12 @@ class TestDecoder(unittest.TestCase):
         # Seek to the random frame, decode, save.
         seek_frame = random.randint(
             int(gt_info.num_frames / 2), gt_info.num_frames - 1)
+        seek_frames.append(seek_frame)
 
         success, details = py_dec.DecodeSingleSurface(
             surf=surf, seek_ctx=vali.SeekContext(seek_frame))
         self.assertTrue(success,
-                        "Failed to decode frame " + str(seek_frame) +
-                        ": " + str(details))
+                        f"Failed to decode frame {seek_frame}: {str(details)}, seek frames: {seek_frames}")
 
         success, details = py_dwn.Run(src=surf, dst=frames[0])
         if not success:
@@ -661,19 +684,19 @@ class TestDecoder(unittest.TestCase):
 
         # Now seek back and do the same
         seek_frame = random.randint(0, seek_frame - 1)
-
+        seek_frames.append(seek_frame)
         success, details = py_dec.DecodeSingleSurface(
             surf=surf, seek_ctx=vali.SeekContext(seek_frame))
         self.assertTrue(success,
-                        "Failed to decode frame " + str(seek_frame) +
-                        ": " + str(details))
+                        f"Failed to decode frame {seek_frame}: {str(details)}, seek frames: {seek_frames}")
 
         success, details = py_dwn.Run(src=surf, dst=frames[1])
         if not success:
             self.fail("Failed to download surface: " + str(details))
 
         # Check if frames are different (issue #89)
-        self.assertFalse(np.array_equal(frames[0], frames[1]))
+        self.assertFalse(np.array_equal(
+            frames[0], frames[1]), f"Seek frames: {seek_frames}")
 
     def test_display_rotation(self):
         """

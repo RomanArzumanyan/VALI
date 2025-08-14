@@ -45,15 +45,6 @@ using namespace VPF;
 
 namespace VPF {
 
-enum DECODE_STATUS {
-  DEC_RES_CHANGE, // resolution has changed
-  DEC_SUCCESS,    // success, frame is ready
-  DEC_ERROR,      // error happened, can't continue
-  DEC_OVER,       // input file is over, but some frames are still available
-  DEC_MORE,       // frame isn't available yet, read more packets
-  DEC_DONE        // decoder won't return any more frames
-};
-
 #ifndef TEGRA_BUILD
 static AVPixelFormat get_format(AVCodecContext* avctx,
                                 const enum AVPixelFormat* pix_fmts) {
@@ -121,12 +112,13 @@ public:
 
   void close() { m_closed = true; }
 
+  void open() { m_closed = false; }
+
   bool closed() const { return m_closed; }
 
   bool push(const T& item) {
     if (closed())
       return false;
-
     std::unique_lock lock{m_mutex};
     m_cv_prod.wait(lock, [this] { return m_queue.size() < m_capacity; });
     m_queue.push(item);
@@ -137,8 +129,9 @@ public:
   bool pop(T& item) {
     if (closed())
       return false;
-
     std::unique_lock lock{m_mutex};
+    if (m_queue.empty())
+      return false;
     m_cv_cons.wait(lock, [this] { return !m_queue.empty(); });
     item = m_queue.front();
     m_queue.pop();
@@ -150,8 +143,9 @@ public:
   bool pop() {
     if (closed())
       return false;
-
     std::unique_lock lock{m_mutex};
+    if (m_queue.empty())
+      return false;
     m_cv_cons.wait(lock, [this] { return !m_queue.empty(); });
     m_queue.pop();
     m_cv_prod.notify_one();
@@ -162,8 +156,9 @@ public:
   std::optional<T> peek() {
     if (closed())
       return std::nullopt;
-
     std::unique_lock lock{m_mutex};
+    if (m_queue.empty())
+      return std::nullopt;
     m_cv_cons.wait(lock, [this] { return !m_queue.empty(); });
     return std::optional<T>(m_queue.front());
   }
@@ -738,7 +733,8 @@ struct FfmpegDecodeFrame_Impl {
 
       if (AVERROR_EOF == ret) {
         // Put sentinel and signal that no more packets will be put into queue.
-        m_queue.push({});
+        if (!m_queue.push({}))
+          std::cerr << "Failed to push sentinel: closed queue";
         m_state.m_over = true;
         break;
       } else if (ret < 0) {
@@ -750,7 +746,10 @@ struct FfmpegDecodeFrame_Impl {
 
       m_num_pkt_read++;
       if (is_desired_video_packet(pkt)) {
-        m_queue.push(pkt);
+        if (!m_queue.push(pkt)) {
+          std::cerr << "Failed to push packet: closed queue";
+          return DEC_ERROR;
+        }
         break;
       }
     };
@@ -1043,9 +1042,9 @@ struct FfmpegDecodeFrame_Impl {
       start_time = 0;
     }
 
-    auto const was_accelerated = IsAccelerated();
-    CloseCodec();
-    OpenCodec(was_accelerated);
+    // auto const was_accelerated = IsAccelerated();
+    // CloseCodec();
+    // OpenCodec(was_accelerated);
 
     m_timeout_handler->Reset();
     auto ret = avformat_seek_file(m_fmt_ctx.get(), GetVideoStrIdx(), 0,
@@ -1061,10 +1060,13 @@ struct FfmpegDecodeFrame_Impl {
     /* Discard existing frame timestamp and OEF flag.
      * Otherwise, seek will only go forward and will return EOF if seek is
      * done when decoder has previously get all available packets.
+     * Discard packets in the queue, reopen if closed.
      */
     m_frame->pts = AV_NOPTS_VALUE;
     m_state.m_over = false;
-
+    m_queue.open();
+    while (m_queue.pop()) {}
+    
     /* Decode in loop until we reach desired frame.
      */
     while (m_frame->pts + start_time < timestamp) {
@@ -1182,4 +1184,10 @@ void DecodeFrame::Probe(const char* URL, NvDecoderClInterface& cli_iface,
       continue;
     info.push_back(params);
   }
+}
+
+DECODE_STATUS DecodeFrame::ReadPacket() { return pImpl->ReadPacket(); }
+
+DECODE_STATUS DecodeFrame::DecodePacket(Token& dst) {
+  return pImpl->DecodePacket(dst);
 }

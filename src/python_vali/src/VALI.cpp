@@ -213,6 +213,15 @@ PYBIND11_MODULE(_python_vali, m) {
       .value("DEBUG", FFMpegLogLevel::LOG_DEBUG, "AV_LOG_DEBUG")
       .export_values();
 
+  py::enum_<DECODE_STATUS>(m, "DecodeStatus")
+      .value("RES_CHANGE", DECODE_STATUS::DEC_RES_CHANGE, "Resolution change.")
+      .value("SUCCESS", DECODE_STATUS::DEC_SUCCESS, "Success.")
+      .value("ERROR", DECODE_STATUS::DEC_ERROR, "Error.")
+      .value("OVER", DECODE_STATUS::DEC_OVER, "Input file is over.")
+      .value("MORE", DECODE_STATUS::DEC_MORE, "More data needed.")
+      .value("DONE", DECODE_STATUS::DEC_DONE, "Decoded frames are over.")
+      .export_values();
+
   py::class_<SeekContext, shared_ptr<SeekContext>>(
       m, "SeekContext",
       "Context object for video frame seeking operations.")

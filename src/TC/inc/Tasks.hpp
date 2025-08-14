@@ -103,6 +103,15 @@ enum NV_DEC_CAPS {
   NV_DEC_CAPS_NUM_ENTRIES
 };
 
+enum DECODE_STATUS {
+  DEC_RES_CHANGE, // resolution has changed
+  DEC_SUCCESS,    // success, frame is ready
+  DEC_ERROR,      // error happened, can't continue
+  DEC_OVER,       // input file is over, but some frames are still available
+  DEC_MORE,       // frame isn't available yet, read more packets
+  DEC_DONE        // decoder won't return any more frames
+};
+
 class TC_CORE_EXPORT DecodeFrame {
 public:
   DecodeFrame() = delete;
@@ -130,6 +139,9 @@ public:
 
   void SetMode(DecodeMode new_mode);
   DecodeMode GetMode() const;
+
+  DECODE_STATUS ReadPacket();
+  DECODE_STATUS DecodePacket(Token& dst);
 
 private:
   struct FfmpegDecodeFrame_Impl* pImpl = nullptr;

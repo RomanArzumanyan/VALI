@@ -170,6 +170,12 @@ public:
             const std::map<std::string, std::string>& ffmpeg_options,
             int gpu_id);
 
+  DECODE_STATUS ReadPacket();
+
+  DECODE_STATUS DecodePacketToSurface(Surface& surf);
+
+  DECODE_STATUS DecodePacketToFrame(py::array& frame);
+
   bool DecodeSingleFrame(py::array& frame, TaskExecDetails& details,
                          PacketData& pkt_data,
                          std::optional<SeekContext> seek_ctx);
