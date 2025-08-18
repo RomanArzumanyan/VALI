@@ -4,6 +4,3 @@
 [submodule "extern/dlpack"]
 	path = extern/dlpack
 	url = https://github.com/dmlc/dlpack
-[submodule "extern/readerwriterqueue"]
-	path = extern/readerwriterqueue
-	url = https://github.com/cameron314/readerwriterqueue
