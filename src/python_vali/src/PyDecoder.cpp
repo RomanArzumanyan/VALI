@@ -565,6 +565,7 @@ void Init_PyDecoder(py::module& m) {
               self.m_event->Record();
               self.m_event->Wait();
             }
+            return ret;
           },
           py::arg("surf"), py::call_guard<py::gil_scoped_release>(),
           R"pbdoc(
