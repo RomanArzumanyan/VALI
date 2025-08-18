@@ -17,6 +17,7 @@
 #include "Utils.hpp"
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <condition_variable>
 #include <iostream>
@@ -289,7 +290,9 @@ struct FfmpegDecodeFrame_Impl {
       fmt_ctx->flags |= AVFMT_FLAG_CUSTOM_IO;
 
       if (fmt_ctx->pb->seek) {
-        std::array<uint8_t, 1024U> probe;
+        // probe_size constant is taken from internet examples.
+        constexpr auto probe_size = 1024U;
+        std::array<uint8_t, probe_size> probe;
         auto nbytes = fmt_ctx->pb->read_packet(fmt_ctx->pb->opaque,
                                                probe.data(), probe.size());
         fmt_ctx->pb->seek(fmt_ctx->pb->opaque, 0U, SEEK_SET);
@@ -1065,8 +1068,9 @@ struct FfmpegDecodeFrame_Impl {
     m_frame->pts = AV_NOPTS_VALUE;
     m_state.m_over = false;
     m_queue.open();
-    while (m_queue.pop()) {}
-    
+    while (m_queue.pop()) {
+    }
+
     /* Decode in loop until we reach desired frame.
      */
     while (m_frame->pts + start_time < timestamp) {
