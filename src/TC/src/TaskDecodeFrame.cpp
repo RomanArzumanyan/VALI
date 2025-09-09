@@ -1005,6 +1005,7 @@ struct FfmpegDecodeFrame_Impl {
      */
     if (m_fmt_ctx->flags & AVFMT_FLAG_CUSTOM_IO) {
       if (!m_fmt_ctx->pb->seek) {
+        std::cerr << "Seek operation is not supported by AVIOContext. \n";
         return TaskExecDetails(
             TaskExecStatus::TASK_EXEC_FAIL, TaskExecInfo::NOT_SUPPORTED,
             "Seek operation is not supported by AVIOContext.");
@@ -1016,6 +1017,8 @@ struct FfmpegDecodeFrame_Impl {
      * seek relies on PTS.
      */
     if (IsVFR() && ctx.IsByNumber()) {
+      std::cerr << "Seek by frame number isn't supported for VFR sequences. "
+                   "Seek by timestamp instead. \n";
       return TaskExecDetails(
           TaskExecStatus::TASK_EXEC_FAIL, TaskExecInfo::NOT_SUPPORTED,
           "Seek by frame number isn't supported for VFR sequences. "
@@ -1044,10 +1047,6 @@ struct FfmpegDecodeFrame_Impl {
     } else {
       start_time = 0;
     }
-
-    // auto const was_accelerated = IsAccelerated();
-    // CloseCodec();
-    // OpenCodec(was_accelerated);
 
     m_timeout_handler->Reset();
     auto ret = avformat_seek_file(m_fmt_ctx.get(), GetVideoStrIdx(), 0,
