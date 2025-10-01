@@ -492,7 +492,7 @@ void Init_PySurface(py::module& m) {
                 const auto min_len = std::min(
                     CudaArrayInterfaceDescriptor::m_num_elems, py::len(tup));
                 for (int i = 0; i < min_len; i++) {
-                  cai.m_shape[i] = tup[i].cast<unsigned int>();
+                  cai.m_strides[i] = tup[i].cast<unsigned int>();
                 }
               } else if ("typestr" == key) {
                 cai.m_typestr = item.second.cast<std::string>();
@@ -501,7 +501,7 @@ void Init_PySurface(py::module& m) {
                 cai.m_ptr = (CUdeviceptr)tup[0].cast<size_t>();
                 cai.m_read_only = tup[1].cast<bool>();
               } else if ("stream" == key) {
-                cai.m_stream = (CUstream)item.second.cast<int>();
+                cai.m_stream = (CUstream)item.second.cast<size_t>();
               } else if ("version" == key) {
                 auto const version = item.second.cast<int>();
                 if (version != 3) {
