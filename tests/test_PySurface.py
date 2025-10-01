@@ -240,7 +240,10 @@ class TestSurface(unittest.TestCase):
         # Share memory with nvimmgcodec and compress to jpeg
         encoder = nvimgcodec.Encoder()
         img = nvimgcodec.as_image(surf_big)
-        encoder.write("frame_nvcv.jpg", img)
+        enc_params = nvimgcodec.EncodeParams(
+            quality_type=nvimgcodec.QualityType.QUALITY,
+            quality_value=95)
+        encoder.write("frame_nvcv.jpg", img, params=enc_params)
 
         # Do the same thing with PyNvJpegEncoder
         buffers, info = nvJpg.Run(nvJpgCtx, [surf_big])
