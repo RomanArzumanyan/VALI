@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "Utils.hpp"
 #include "VALI.hpp"
 
 using namespace std;
@@ -103,19 +104,21 @@ bool PyDecoder::DecodeSingleSurface(Surface& surf, TaskExecDetails& details,
   }
 
   if (surf.Empty()) {
-    std::cerr << "Empty Surface";
+    av_log(nullptr, AV_LOG_ERROR, "Empty Surface \n");
     return false;
   }
 
   if (surf.Width() != Width() || surf.Height() != Height()) {
-    std::cerr << "Surface dimensions mismatch: " << surf.Width() << "x"
-              << surf.Height() << " vs " << Width() << "x" << Height();
+    av_log(nullptr, AV_LOG_ERROR,
+           "Surface dimensions mismatch: %d x %d vs %d x %d \n", surf.Width(),
+           surf.Height(), Width(), Height());
     return false;
   }
 
   if (surf.PixelFormat() != PixelFormat()) {
-    std::cerr << "Surface format mismatch: " << surf.PixelFormat() << " vs "
-              << PixelFormat();
+    av_log(nullptr, AV_LOG_ERROR, "Pixel format mismatch: %s vs %s \n",
+           GetFormatName(surf.PixelFormat()).c_str(),
+           GetFormatName(PixelFormat()).c_str());
     return false;
   }
 

@@ -39,16 +39,18 @@ template <std::shared_ptr<LibraryLoader> (*LoadLibrary)(), typename Return,
           typename... Args>
 class LoadableFunction {
 public:
-  LoadableFunction(const char* name) : m_name(name) {
-    auto pLoader = LoadLibrary();
-    m_filename = pLoader->getFilename();
-    if (pLoader->getHandle()) {
-      m_fptr = reinterpret_cast<decltype(m_fptr)>(
-          tc_dlsym(pLoader->getHandle(), m_name.c_str()));
-    }
-  }
+  LoadableFunction(const char* name) : m_name(name) {}
 
   Return operator()(Args... args) {
+    if (!m_fptr) {
+      auto pLoader = LoadLibrary();
+      m_filename = pLoader->getFilename();
+      if (pLoader->getHandle()) {
+        m_fptr = reinterpret_cast<decltype(m_fptr)>(
+            tc_dlsym(pLoader->getHandle(), m_name.c_str()));
+      }
+    }
+
     if (m_fptr) {
       return (*m_fptr)(args...);
     }

@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 
+#include "Utils.hpp"
 #include "VALI.hpp"
 
 namespace py = pybind11;
@@ -36,7 +37,8 @@ int BufferedReader::read(void* self, uint8_t* buf, int buf_size) {
     py::gil_scoped_acquire acq;
 
     if (!me || !buf || buf_size <= 0 || buf_size > me->m_buffer_size) {
-      std::cerr << __FUNCTION__ << "Invalid argument given";
+      av_log(nullptr, AV_LOG_ERROR, "%s: invalid argument given \n",
+             __FUNCTION__);
       return AVERROR_UNKNOWN;
     }
 
@@ -55,7 +57,7 @@ int BufferedReader::read(void* self, uint8_t* buf, int buf_size) {
       return AVERROR_EOF;
     }
   } catch (std::exception& e) {
-    std::cerr << e.what();
+    av_log(nullptr, AV_LOG_ERROR, "%s \n", e.what());
     return AVERROR_UNKNOWN;
   }
 }
@@ -66,7 +68,8 @@ int64_t BufferedReader::seek(void* self, int64_t offset, int whence) {
     py::gil_scoped_acquire acq;
 
     if (!me) {
-      std::cerr << __FUNCTION__ << "Invalid argument given";
+      av_log(nullptr, AV_LOG_ERROR, "%s: invalid argument given \n",
+             __FUNCTION__);
       return AVERROR_UNKNOWN;
     }
 
@@ -74,7 +77,8 @@ int64_t BufferedReader::seek(void* self, int64_t offset, int whence) {
     if (whence & AVSEEK_SIZE) {
       return me->m_buffer_size;
     } else if (whence & AVSEEK_FORCE) {
-      std::cerr << "AVSEEK_FORCE isn't supported as whence parameter value";
+      av_log(nullptr, AV_LOG_ERROR,
+             "AVSEEK_FORCE isn't supported as whence parameter value \n");
       return AVERROR_UNKNOWN;
     }
 
@@ -82,7 +86,7 @@ int64_t BufferedReader::seek(void* self, int64_t offset, int whence) {
         py::reinterpret_borrow<py::function>(me->m_obj.attr("seek"));
     return seek_func(offset, whence).cast<int64_t>();
   } catch (std::exception& e) {
-    std::cerr << e.what() << std::endl;
+    av_log(nullptr, AV_LOG_ERROR, "%s \n", e.what());
     me->m_is_seekable = false;
     me->m_io_ctx_ptr->seek = 0x0;
     return AVERROR_UNKNOWN;

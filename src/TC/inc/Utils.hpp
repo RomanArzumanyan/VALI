@@ -14,12 +14,12 @@
 
 #pragma once
 #include <chrono>
+#include <functional>
 #include <map>
 #include <memory>
 #include <sstream>
 #include <string>
 #include <utility>
-#include <functional>
 
 #include "MemoryInterfaces.hpp"
 #include <cuda_runtime.h>
@@ -27,6 +27,7 @@
 extern "C" {
 #include <libavutil/dict.h>
 #include <libavutil/error.h>
+#include <libavutil/log.h>
 #include <libavutil/pixfmt.h>
 #include <libavutil/rational.h>
 
@@ -133,4 +134,4 @@ void ThrowOnAvError(int res, const std::string& msg);
 
 void ThrowOnAvError(int res, const std::string& msg, AVDictionary** options);
 
-double FromAVRational(AVRational &val);
+double FromAVRational(AVRational& val);

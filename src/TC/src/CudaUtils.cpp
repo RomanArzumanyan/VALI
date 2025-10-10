@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 #include "CudaUtils.hpp"
+#include "Utils.hpp"
 #include <iostream>
 #include <sstream>
 
@@ -183,6 +184,7 @@ void CudaStreamSync(void* args) {
 };
 
 CudaResMgr::CudaResMgr() {
+  av_log(nullptr, AV_LOG_INFO, "Initializing CUDA \n");
   std::lock_guard<std::mutex> lock_ctx(CudaResMgr::gInsMutex);
 
   ThrowOnCudaError(LibCuda::cuInit(0), __LINE__);
@@ -198,6 +200,8 @@ CudaResMgr::CudaResMgr() {
     CUstream cuStream = nullptr;
     g_Streams.push_back(cuStream);
   }
+
+  av_log(nullptr, AV_LOG_INFO, "CUDA initialized \n");
   return;
 }
 
@@ -265,7 +269,7 @@ CudaResMgr::~CudaResMgr() {
       g_Contexts.clear();
     }
   } catch (std::runtime_error& e) {
-    std::cerr << e.what() << std::endl;
+    av_log(nullptr, AV_LOG_ERROR, "Exception: %s \n", e.what());
   }
 
 #ifdef TRACK_TOKEN_ALLOCATIONS
@@ -276,8 +280,18 @@ CudaResMgr::~CudaResMgr() {
 }
 
 CudaResMgr& CudaResMgr::Instance() {
-  static CudaResMgr instance;
-  return instance;
+  static std::mutex mtx;
+  static std::unique_ptr<CudaResMgr> instance;
+
+  if (!instance) {
+    std::unique_lock<std::mutex> lock(mtx);
+    if (instance)
+      return *instance.get();
+    else
+      instance.reset(new CudaResMgr());
+  }
+
+  return *instance.get();
 }
 
 int CudaResMgr::GetVersion() const {

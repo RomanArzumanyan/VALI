@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 
+#include "Utils.hpp"
 #include "VALI.hpp"
 #include <list>
 
@@ -43,7 +44,7 @@ PyNvJpegEncoder::CompressImpl(NvJpegEncodeContext& encoder_context,
   try {
     for (auto surface : surfaces) {
       if (surface->Empty()) {
-        std::cerr << "Input surface is empty\n";
+        av_log(nullptr, AV_LOG_ERROR, "Input surface is empty\n");
         info = TaskExecInfo::FAIL;
         break;
       }
@@ -61,10 +62,10 @@ PyNvJpegEncoder::CompressImpl(NvJpegEncodeContext& encoder_context,
       buffers.push_back(buf);
     }
   } catch (std::exception& e) {
-    std::cerr << "Exception " << e.what() << "\n";
+    av_log(nullptr, AV_LOG_ERROR, "Exception: %s \n", e.what());
     info = TaskExecInfo::FAIL;
   } catch (...) {
-    std::cerr << "Unknown exception\n";
+    av_log(nullptr, AV_LOG_ERROR, "Unknown exception \n");
     info = TaskExecInfo::FAIL;
   }
 
