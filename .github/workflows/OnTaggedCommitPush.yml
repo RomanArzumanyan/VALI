@@ -56,7 +56,7 @@ jobs:
       url: https://test.pypi.org/p/python_vali
 
     permissions:
-      id-token: write  # IMPORTANT: mandatory for trusted publishing
+      id-token: write
 
     steps:
     - name: Download all the dists
@@ -67,7 +67,7 @@ jobs:
     - name: Publish distribution to TestPyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
-        repository-url: https://test.pypi.org/legacy/
+        verbose: true
 
   publish-to-pypi:
     name: Publish to PyPI
@@ -79,7 +79,7 @@ jobs:
       name: pypi
       url: https://pypi.org/p/python_vali
     permissions:
-      id-token: write  # IMPORTANT: mandatory for trusted publishing
+      id-token: write
 
     steps:
     - name: Download all the dists
@@ -89,3 +89,5 @@ jobs:
         path: dist/
     - name: Publish distribution to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        verbose: true
