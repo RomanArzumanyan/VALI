@@ -1,6 +1,8 @@
 name: Publish to PyPI and TestPyPI
 
-on: workflow_dispatch
+on:
+  push:
+    branches: [ "fix_pypi_upload" ]
 
 jobs:
   build:
@@ -67,27 +69,28 @@ jobs:
     - name: Publish distribution to TestPyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
+        repository-url: https://test.pypi.org/legacy/
         verbose: true
 
-  publish-to-pypi:
-    name: Publish to PyPI
-    needs:
-    - build
-    - publish-to-testpypi
-    runs-on: [ubuntu-latest]
-    environment:
-      name: pypi
-      url: https://pypi.org/p/python_vali
-    permissions:
-      id-token: write
+  # publish-to-pypi:
+  #   name: Publish to PyPI
+  #   needs:
+  #   - build
+  #   - publish-to-testpypi
+  #   runs-on: [ubuntu-latest]
+  #   environment:
+  #     name: pypi
+  #     url: https://pypi.org/p/python_vali
+  #   permissions:
+  #     id-token: write
 
-    steps:
-    - name: Download all the dists
-      uses: actions/download-artifact@v4.1.7
-      with:
-        name: python-package-distributions
-        path: dist/
-    - name: Publish distribution to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        verbose: true
+  #   steps:
+  #   - name: Download all the dists
+  #     uses: actions/download-artifact@v4.1.7
+  #     with:
+  #       name: python-package-distributions
+  #       path: dist/
+  #   - name: Publish distribution to PyPI
+  #     uses: pypa/gh-action-pypi-publish@release/v1
+  #     with:
+  #       verbose: true
