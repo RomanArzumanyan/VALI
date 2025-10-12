@@ -67,13 +67,6 @@ struct ColorspaceConversionContext {
       : color_space(cspace), color_range(crange) {}
 };
 
-#ifdef TRACK_TOKEN_ALLOCATIONS
-/* Returns true if allocation counters are equal to zero, false otherwise;
- * If you want to check for dangling pointers, call this function at exit;
- */
-bool TC_EXPORT CheckAllocationCounters();
-#endif
-
 /* Represents CPU-side memory.
  * May own the memory or be a wrapper around existing ponter;
  */
@@ -111,43 +104,6 @@ private:
   bool own_memory = true;
   size_t mem_size = 0UL;
   void* pRawData = nullptr;
-#ifdef TRACK_TOKEN_ALLOCATIONS
-  uint32_t id;
-#endif
-};
-
-class TC_EXPORT CudaBuffer final : public Token {
-public:
-  CudaBuffer() = delete;
-  CudaBuffer(const CudaBuffer& other) = delete;
-  CudaBuffer& operator=(CudaBuffer& other) = delete;
-
-  static CudaBuffer* Make(size_t elemSize, size_t numElems, CUcontext context);
-  static CudaBuffer* Make(const void* ptr, size_t elemSize, size_t numElems,
-                          CUcontext context, CUstream str);
-  CudaBuffer* Clone();
-
-  size_t GetRawMemSize() const { return elem_size * num_elems; }
-  size_t GetNumElems() const { return num_elems; }
-  size_t GetElemSize() const { return elem_size; }
-  CUdeviceptr GpuMem() { return gpuMem; }
-  ~CudaBuffer();
-
-private:
-  CudaBuffer(size_t elemSize, size_t numElems, CUcontext context);
-  CudaBuffer(const void* ptr, size_t elemSize, size_t numElems,
-             CUcontext context, CUstream str);
-  bool Allocate();
-  void Deallocate();
-
-  CUdeviceptr gpuMem = 0UL;
-  CUcontext ctx = nullptr;
-  size_t elem_size = 0U;
-  size_t num_elems = 0U;
-
-#ifdef TRACK_TOKEN_ALLOCATIONS
-  uint64_t id = 0;
-#endif
 };
 
 /* Represents GPU-side memory.
@@ -155,7 +111,7 @@ private:
  */
 class TC_EXPORT Surface : public Token {
 public:
-  virtual ~Surface();
+  virtual ~Surface() = default;
 
   /* Returns width in pixels;
    */
@@ -256,12 +212,7 @@ public:
                        uint32_t newHeight, CUcontext context);
 
 protected:
-  Surface();
+  Surface() = default;
   std::vector<SurfacePlane> m_planes;
-
-private:
-#ifdef TRACK_TOKEN_ALLOCATIONS
-  uint64_t id = 0;
-#endif
 };
 } // namespace VPF

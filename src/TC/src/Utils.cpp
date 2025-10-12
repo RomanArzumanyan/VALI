@@ -255,11 +255,10 @@ static std::chrono::milliseconds fromString(const char* val) {
   try {
     return std::chrono::milliseconds(std::stoul(val));
   } catch (std::exception& e) {
-    std::cerr << "Error parsing timeout value: " << e.what() << "\n";
-    std::cerr << "Using default timeout value: "
-              << TimeoutHandler::GetDefaultTimeout();
-    std::cerr << std::endl;
-
+    av_log(
+        nullptr, AV_LOG_ERROR,
+        "Error parsing timeout value: %s. Using default timeout value: %lu \n",
+        e.what(), TimeoutHandler::GetDefaultTimeout());
     return std::chrono::milliseconds(TimeoutHandler::GetDefaultTimeout());
   }
 }

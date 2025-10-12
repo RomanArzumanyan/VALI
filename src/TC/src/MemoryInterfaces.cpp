@@ -14,6 +14,7 @@
  */
 
 #include "Surfaces.hpp"
+#include "Utils.hpp"
 #include <algorithm>
 #include <cstring>
 #include <iostream>
@@ -23,113 +24,6 @@
 
 using namespace VPF;
 using namespace std;
-
-#ifdef TRACK_TOKEN_ALLOCATIONS
-#include <atomic>
-#include <iostream>
-#include <mutex>
-#include <sstream>
-#include <stdexcept>
-#include <vector>
-
-namespace VPF {
-
-struct AllocInfo {
-  uint64_t id;
-  uint64_t size;
-
-  bool operator==(const AllocInfo& other) {
-    /* Buffer size may change during the lifetime so we check id only;
-     */
-    return id == other.id;
-  }
-
-  explicit AllocInfo(decltype(id) const& newId, decltype(size) const& newSize)
-      : id(newId), size(newSize) {}
-};
-
-struct AllocRegister {
-  vector<AllocInfo> instances;
-  mutex guard;
-  uint64_t ID = 1U;
-  atomic<int> num_allocs = 0;
-  atomic<int> num_deallocs = 0;
-  string name;
-
-  AllocRegister(const string& my_name) : name(my_name) {}
-
-  decltype(AllocInfo::id) AddNote(decltype(AllocInfo::size) const& size) {
-    unique_lock<decltype(guard)> lock;
-    auto id = ID++;
-    num_allocs++;
-    AllocInfo info(id, size);
-    instances.push_back(info);
-    return id;
-  }
-
-  void DeleteNote(AllocInfo const& allocInfo) {
-    unique_lock<decltype(guard)> lock;
-    num_deallocs++;
-    instances.erase(remove(instances.begin(), instances.end(), allocInfo),
-                    instances.end());
-  }
-
-  /* Call this after you're done releasing mem objects in your app;
-   */
-  size_t GetSize() const { return instances.size(); }
-
-  /* Call this after you're done releasing mem objects in your app;
-   */
-  AllocInfo const* GetNoteByIndex(uint64_t idx) {
-    return idx < instances.size() ? instances.data() + idx : nullptr;
-  }
-};
-
-AllocRegister BuffersRegister("Buffers"), SurfaceRegister("Surfaces"),
-    CudaBuffersRegister("CudaBuffers");
-
-bool CheckAllocationCounters() {
-  auto numLeakedBuffers = BuffersRegister.GetSize();
-  auto numLeakedSurfaces = SurfaceRegister.GetSize();
-  auto numLeakedCudaBuffers = CudaBuffersRegister.GetSize();
-
-  if (numLeakedBuffers) {
-    cerr << "Leaked buffers (id : size): " << endl;
-    for (auto i = 0; i < numLeakedBuffers; i++) {
-      auto pNote = BuffersRegister.GetNoteByIndex(i);
-      cerr << "\t" << pNote->id << "\t: " << pNote->size << endl;
-    }
-  }
-
-  if (numLeakedSurfaces) {
-    cerr << "Leaked surfaces (id : size): " << endl;
-    for (auto i = 0; i < numLeakedSurfaces; i++) {
-      auto pNote = SurfaceRegister.GetNoteByIndex(i);
-      cerr << "\t" << pNote->id << "\t: " << pNote->size << endl;
-    }
-  }
-
-  if (numLeakedCudaBuffers) {
-    cerr << "Leaked CUDA buffers (id : size): " << endl;
-    for (auto i = 0; i < numLeakedCudaBuffers; i++) {
-      auto pNote = CudaBuffersRegister.GetNoteByIndex(i);
-      cerr << "\t" << pNote->id << "\t: " << pNote->size << endl;
-    }
-  }
-
-  for (auto registry :
-       {&BuffersRegister, &SurfaceRegister, &CudaBuffersRegister}) {
-    cout << endl << registry->name << endl;
-    cout << "  allocations   : " << registry->num_allocs << endl;
-    cout << "  deallocations : " << registry->num_deallocs << endl;
-  }
-
-  return (0U == numLeakedBuffers) && (0U == numLeakedSurfaces) &&
-         (0U == numLeakedCudaBuffers);
-}
-
-} // namespace VPF
-#endif
 
 Buffer* Buffer::Make(size_t bufferSize) {
   return new Buffer(bufferSize, false);
@@ -146,9 +40,6 @@ Buffer::Buffer(size_t bufferSize, bool ownMemory)
       throw bad_alloc();
     }
   }
-#ifdef TRACK_TOKEN_ALLOCATIONS
-  id = BuffersRegister.AddNote(mem_size);
-#endif
 }
 
 Buffer::Buffer(size_t bufferSize, void* pCopyFrom, bool ownMemory)
@@ -162,9 +53,6 @@ Buffer::Buffer(size_t bufferSize, void* pCopyFrom, bool ownMemory)
   } else {
     pRawData = pCopyFrom;
   }
-#ifdef TRACK_TOKEN_ALLOCATIONS
-  id = BuffersRegister.AddNote(mem_size);
-#endif
 }
 
 Buffer::Buffer(size_t bufferSize, const void* pCopyFrom)
@@ -174,18 +62,9 @@ Buffer::Buffer(size_t bufferSize, const void* pCopyFrom)
   } else {
     throw bad_alloc();
   }
-#ifdef TRACK_TOKEN_ALLOCATIONS
-  id = BuffersRegister.AddNote(mem_size);
-#endif
 }
 
-Buffer::~Buffer() {
-  Deallocate();
-#ifdef TRACK_TOKEN_ALLOCATIONS
-  AllocInfo info(id, mem_size);
-  BuffersRegister.DeleteNote(info);
-#endif
-}
+Buffer::~Buffer() { Deallocate(); }
 
 size_t Buffer::GetRawMemSize() const { return mem_size; }
 
@@ -244,95 +123,6 @@ Buffer* Buffer::MakeOwnMem(size_t bufferSize, const void* pCopyFrom) {
   return new Buffer(bufferSize, pCopyFrom);
 }
 
-CudaBuffer* CudaBuffer::Make(size_t elemSize, size_t numElems,
-                             CUcontext context) {
-  return new CudaBuffer(elemSize, numElems, context);
-}
-
-CudaBuffer* CudaBuffer::Make(const void* ptr, size_t elemSize, size_t numElems,
-                             CUcontext context, CUstream str) {
-  return new CudaBuffer(ptr, elemSize, numElems, context, str);
-}
-
-CudaBuffer* CudaBuffer::Clone() {
-  auto pCopy = CudaBuffer::Make(elem_size, num_elems, ctx);
-
-  if (CUDA_SUCCESS !=
-      LibCuda::cuMemcpyDtoD(pCopy->GpuMem(), GpuMem(), GetRawMemSize())) {
-    delete pCopy;
-    return nullptr;
-  }
-
-  return pCopy;
-}
-
-CudaBuffer::~CudaBuffer() { Deallocate(); }
-
-CudaBuffer::CudaBuffer(size_t elemSize, size_t numElems, CUcontext context) {
-  elem_size = elemSize;
-  num_elems = numElems;
-  ctx = context;
-
-  if (!Allocate()) {
-    throw bad_alloc();
-  }
-}
-
-CudaBuffer::CudaBuffer(const void* ptr, size_t elemSize, size_t numElems,
-                       CUcontext context, CUstream str) {
-  elem_size = elemSize;
-  num_elems = numElems;
-  ctx = context;
-
-  if (!Allocate()) {
-    throw bad_alloc();
-  }
-
-  CudaCtxPush lock(ctx);
-  ThrowOnCudaError(
-      LibCuda::cuMemcpyHtoDAsync(gpuMem, ptr, GetRawMemSize(), str), __LINE__);
-
-  ThrowOnCudaError(LibCuda::cuStreamSynchronize(str), __LINE__);
-}
-
-bool CudaBuffer::Allocate() {
-  if (GetRawMemSize()) {
-    CudaCtxPush lock(ctx);
-    ThrowOnCudaError(LibCuda::cuMemAlloc(&gpuMem, GetRawMemSize()), __LINE__);
-
-    if (0U != gpuMem) {
-#ifdef TRACK_TOKEN_ALLOCATIONS
-      id = CudaBuffersRegister.AddNote(GetRawMemSize());
-#endif
-      return true;
-    }
-  }
-  return false;
-}
-
-void CudaBuffer::Deallocate() {
-  ThrowOnCudaError(LibCuda::cuMemFree(gpuMem), __LINE__);
-  gpuMem = 0U;
-
-#ifdef TRACK_TOKEN_ALLOCATIONS
-  AllocInfo info(id, GetRawMemSize());
-  CudaBuffersRegister.DeleteNote(info);
-#endif
-}
-
-Surface::Surface() {
-#ifdef TRACK_TOKEN_ALLOCATIONS
-  id = SurfaceRegister.AddNote(HostMemSize());
-#endif
-}
-
-Surface::~Surface() {
-#ifdef TRACK_TOKEN_ALLOCATIONS
-  AllocInfo info(id, HostMemSize());
-  SurfaceRegister.DeleteNote(info);
-#endif
-}
-
 Surface* Surface::Make(Pixel_Format format) {
   switch (format) {
   case Y:
@@ -361,7 +151,8 @@ Surface* Surface::Make(Pixel_Format format) {
   case P12:
     return new SurfaceP12;
   default:
-    cerr << __FUNCTION__ << "Unsupported pixeld format: " << format << endl;
+    av_log(nullptr, AV_LOG_ERROR, "Unsupported pixeld format: %s \n",
+           GetFormatName(format).c_str());
     return nullptr;
   }
 }
@@ -398,7 +189,8 @@ Surface* Surface::Make(Pixel_Format format, uint32_t newWidth,
   case P12:
     return new SurfaceP12(newWidth, newHeight, context);
   default:
-    cerr << __FUNCTION__ << "Unsupported pixeld format: " << format << endl;
+    av_log(nullptr, AV_LOG_ERROR, "Unsupported pixeld format: %s \n",
+           GetFormatName(format).c_str());
     return nullptr;
   }
 }

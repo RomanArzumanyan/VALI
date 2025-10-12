@@ -13,6 +13,7 @@
  */
 
 #include "Tasks.hpp"
+#include "Utils.hpp"
 #include <iostream>
 #include <sstream>
 
@@ -39,12 +40,8 @@ static void ThrowOnNvJpegError(nvjpegStatus_t result, const char* err_msg,
  */
 static void ScoldOnNvJpegError(nvjpegStatus_t result, const char* err_msg,
                                int line) {
-  if (NVJPEG_STATUS_SUCCESS != result) {
-    std::stringstream ss;
-    ss << __FILE__ << ":" << line << " " << err_msg
-       << ", error code: " << result << "\n";
-    std::cerr << ss.str();
-  }
+  if (NVJPEG_STATUS_SUCCESS != result)
+    av_log(nullptr, AV_LOG_ERROR, "NvJPEG error %d: %s \n", result, err_msg);
 }
 
 struct NvJpegEncodeContext_Impl {
