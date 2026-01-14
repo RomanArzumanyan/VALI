@@ -6,6 +6,7 @@ from ultralytics import YOLO
 import threading
 import nvtx
 import queue
+import time
 
 # Input video URLs
 urls = [
@@ -109,6 +110,7 @@ class PreprocessingContext:
         self.inf_queue = inf_queue
         self.pyDec = pyDecs[self.source_id]
         self.event = vali.CudaStreamEvent(self.pyDec.Stream, gpu_id=0)
+        self.start_time = time.time()
 
         self.surf_dec = vali.Surface.Make(
             format=self.pyDec.Format,
@@ -119,7 +121,8 @@ class PreprocessingContext:
     @nvtx.annotate()
     def decode_to_tensor(self, surf_inf: vali.Surface) -> vali.DecodeStatus:
         """
-        Decode and preprocess video frame in-place
+        Decode and preprocess video frame in-place.
+        Outputs performance stats every 3 seconds.
 
         Args:
             surf_inf (vali.Surface): output surface
@@ -149,6 +152,12 @@ class PreprocessingContext:
             self.inf_queue.put((img_tensor, self.event))
 
         self.frame_id += 1
+
+        # Output perf stats every 3 seconds
+        if self.frame_id % (3 * int(self.pyDec.Framerate)) == 0:
+            fps = int(self.frame_id / (time.time() - self.start_time))
+            print(f"source {self.source_id}: {fps} fps")
+
         return vali.DecodeStatus.SUCCESS
 
     @staticmethod
