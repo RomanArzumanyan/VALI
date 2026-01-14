@@ -1,12 +1,3 @@
-# %% [markdown]
-# This sample illustrates torch segmentation. \
-# To illustrate interop with cvcuda and nvimgcodec, they are used to:
-# - OSD operations like bbox and label drawing.
-# - JPEG compression.
-#
-# For memory sharing both DLPack and CAI (CUDA Array Interface) are used.
-
-# %%
 import python_vali as vali
 import numpy as np
 
@@ -18,9 +9,6 @@ import time
 import nvtx
 import queue
 
-# %%
-# Every input will be processed in separate thread to avoid potential network
-# packet read timeout influencing other video sources
 urls = [
     "/home/vlabs/Videos/ToS-4k-1920.mov",
     "/home/vlabs/Videos/ToS-4k-1920.mov",
@@ -29,120 +17,13 @@ urls = [
     "/home/vlabs/Videos/ToS-4k-1920.mov",
     "/home/vlabs/Videos/ToS-4k-1920.mov",
     "/home/vlabs/Videos/ToS-4k-1920.mov",
-    "/home/vlabs/Videos/ToS-4k-1920.mov",
+    "/home/vlabs/Videos/ToS-4k-1920.mov",    
 ]
 
-# %%
-coco_names = [
-    "__background__",
-    "person",
-    "bicycle",
-    "car",
-    "motorcycle",
-    "airplane",
-    "bus",
-    "train",
-    "truck",
-    "boat",
-    "traffic light",
-    "fire hydrant",
-    "N/A",
-    "stop sign",
-    "parking meter",
-    "bench",
-    "bird",
-    "cat",
-    "dog",
-    "horse",
-    "sheep",
-    "cow",
-    "elephant",
-    "bear",
-    "zebra",
-    "giraffe",
-    "N/A",
-    "backpack",
-    "umbrella",
-    "N/A",
-    "N/A",
-    "handbag",
-    "tie",
-    "suitcase",
-    "frisbee",
-    "skis",
-    "snowboard",
-    "sports ball",
-    "kite",
-    "baseball bat",
-    "baseball glove",
-    "skateboard",
-    "surfboard",
-    "tennis racket",
-    "bottle",
-    "N/A",
-    "wine glass",
-    "cup",
-    "fork",
-    "knife",
-    "spoon",
-    "bowl",
-    "banana",
-    "apple",
-    "sandwich",
-    "orange",
-    "broccoli",
-    "carrot",
-    "hot dog",
-    "pizza",
-    "donut",
-    "cake",
-    "chair",
-    "couch",
-    "potted plant",
-    "bed",
-    "N/A",
-    "dining table",
-    "N/A",
-    "N/A",
-    "toilet",
-    "N/A",
-    "tv",
-    "laptop",
-    "mouse",
-    "remote",
-    "keyboard",
-    "cell phone",
-    "microwave",
-    "oven",
-    "toaster",
-    "sink",
-    "refrigerator",
-    "N/A",
-    "book",
-    "clock",
-    "vase",
-    "scissors",
-    "teddy bear",
-    "hair drier",
-    "toothbrush",
-]
-
-# %% [markdown]
-# Resources which are shared between threads:
-#   - Model
-#   - Color converter
-#   - JPEG encoder
-#   - Video decoders (one per input)
-#
-
-# %%
-# Prepare model
 model = YOLO("yolo11n.pt")
 model.eval()
 model.to("cuda")
 
-# %%
-# GPU-accelerated decoders
 try:
     pyDecs = []
     for url in urls:
@@ -151,23 +32,13 @@ except Exception as e:
     print(f"{repr(e)}")
     exit(1)
 
-# GPU-accelerated combined resize + conversion
-pyUD = vali.PySurfaceUD(gpu_id=0)
+pyUD = vali.PySurfaceUD(gpu_id=0, stream=pyDecs[0].Stream)
 
-# NN expects input pictures to be of this size
 target_w = 640
 target_h = 480
 
-# NN inference batch size
-batch_size = 8
-
-# Tenor queue
+batch_size = 4
 frame_queue = queue.Queue(maxsize=batch_size)
-
-# %% [markdown]
-# `VideoSourceContext` encapsulates compressed packets read from source
-
-# %%
 
 
 class ReaderContext:
@@ -200,11 +71,6 @@ class ReaderContext:
             if self.emulate_real_time:
                 time.sleep(1.0 / float(self.pyDec.Framerate))
 
-# %% [markdown]
-# `InferenceContext` encapsulates data needed to decode video frame and prepare it for inference
-
-# %%
-
 
 class PreprocessingContext:
     def __init__(self, frame_queue: queue.Queue, target_w: int, target_h: int, source_id: int):
@@ -234,7 +100,7 @@ class PreprocessingContext:
         if status != vali.DecodeStatus.SUCCESS:
             return status
 
-        success, details = pyUD.Run(self.surfaces[0], self.surfaces[-1])
+        success, details = pyUD.RunAsync(self.surfaces[0], self.surfaces[-1])
         if not success:
             print(details)
             return vali.DecodeStatus.ERROR
@@ -242,9 +108,13 @@ class PreprocessingContext:
         img_tensor = torch.from_dlpack(self.surfaces[-1]).clamp(0.0, 1.0)
         img_tensor = torch.reshape(img_tensor, [3, target_h, target_w])
 
-        self.frame_id += 1
-        self.frame_queue.put(img_tensor.clone().detach())
+        # Queue has fixed size, so if this NVTX marker is lettings larger it
+        # only means that preprocessing thread is waiting for inference thread
+        # to take frames from queue.
+        with nvtx.annotate("PutIntoQueue"):
+            self.frame_queue.put(img_tensor.clone().detach())
 
+        self.frame_id += 1
         return vali.DecodeStatus.SUCCESS
 
     @staticmethod
@@ -253,7 +123,6 @@ class PreprocessingContext:
             num_active_ctx = len(contexts)
 
             for ctx in contexts:
-                # Skip inactive context processing
                 if not ctx.active:
                     num_active_ctx -= 1
                     continue
@@ -263,14 +132,13 @@ class PreprocessingContext:
                     ctx.active = False
                     print(f"{ctx.frame_id} frames processed\n")
 
-            # If there are no active contexts left, all inputs are processed
             if num_active_ctx == 0:
                 return
 
 
 class InferenceContext:
     def __init__(self):
-        pass
+        self.stream = torch.cuda.Stream()
 
     @nvtx.annotate()
     def _output(self, results) -> None:
@@ -280,30 +148,19 @@ class InferenceContext:
     @nvtx.annotate()
     def run_inference(self, frames: list[torch.tensor]) -> tuple[list[list[np.int32]], list[str]]:
         batch = torch.stack(frames, dim=0)
-        results = model.model(batch)
-        self._output(results)
+        with torch.cuda.stream(self.stream):
+            results = model.model(batch)
+            self._output(results)
 
-
-# %% [markdown]
-# Create multiple reader threads
-
-
-# %%
-readers = []
 
 # Init readers first because it may take some time
+readers = []
 for source_id in range(0, len(urls)):
     readers.append(ReaderContext(source_id, emulate_real_time=False))
 
-# then start the threads
+# Then start the threads
 for reader in readers:
     reader.start()
-
-# %% [markdown]
-# Run decode + inference in another thread
-
-# %%
-
 
 # Init preprocessing
 preproc_ctx = []
