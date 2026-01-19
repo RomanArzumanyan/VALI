@@ -27,11 +27,13 @@ constexpr auto TASK_EXEC_SUCCESS = TaskExecStatus::TASK_EXEC_SUCCESS;
 constexpr auto TASK_EXEC_FAIL = TaskExecStatus::TASK_EXEC_FAIL;
 
 PyDecoder::PyDecoder(const string& pathToFile,
-                     const map<string, string>& ffmpeg_options, int gpuID) {
+                     const map<string, string>& ffmpeg_options, int gpuID,
+                     int pkt_queue_size) {
   gpu_id = gpuID;
   NvDecoderClInterface cli_iface(ffmpeg_options);
 
-  upDecoder.reset(DecodeFrame::Make(pathToFile.c_str(), cli_iface, gpu_id));
+  upDecoder.reset(
+      DecodeFrame::Make(pathToFile.c_str(), cli_iface, gpu_id, pkt_queue_size));
   if (gpu_id >= 0) {
     /* Libavcodec will use primary CUDA context for given GPU.
      * In case it prefers default CUDA tream (0x0) we shall not query context by
@@ -47,13 +49,14 @@ PyDecoder::PyDecoder(const string& pathToFile,
 }
 
 PyDecoder::PyDecoder(py::object buffered_reader,
-                     const map<string, string>& ffmpeg_options, int gpuID) {
+                     const map<string, string>& ffmpeg_options, int gpuID,
+                     int pkt_queue_size) {
   gpu_id = gpuID;
   NvDecoderClInterface cli_iface(ffmpeg_options);
 
   upBuff.reset(new BufferedReader(buffered_reader));
-  upDecoder.reset(
-      DecodeFrame::Make("", cli_iface, gpu_id, upBuff->GetAVIOContext()));
+  upDecoder.reset(DecodeFrame::Make("", cli_iface, gpu_id, pkt_queue_size,
+                                    upBuff->GetAVIOContext()));
   if (gpu_id >= 0) {
     /* Libavcodec will use primary CUDA context for given GPU.
      * In case it prefers default CUDA tream (0x0) we shall not query context by
@@ -334,8 +337,9 @@ DECODE_STATUS PyDecoder::DecodePacketToFrame(py::array& frame) {
 void Init_PyDecoder(py::module& m) {
   py::class_<PyDecoder, shared_ptr<PyDecoder>>(m, "PyDecoder",
                                                "Video decoder class.")
-      .def(py::init<const string&, const map<string, string>&, int>(),
+      .def(py::init<const string&, const map<string, string>&, int, int>(),
            py::arg("input"), py::arg("opts"), py::arg("gpu_id") = 0,
+           py::arg("pkt_queue_size") = 25,
            R"pbdoc(
          Create a new video decoder instance from a file.
 
@@ -350,11 +354,14 @@ void Init_PyDecoder(py::module& m) {
          :type opts: dict[str, str]
          :param gpu_id: GPU device ID to use for hardware acceleration. Default is 0.
              Use negative value for CPU-only decoding.
-         :type gpu_id: int
+         :type gpu_id: int.
+         :type pkt_queue_size: internal decoder packet queue size. Default is 25.
+         :type pkt_queue_size: int.
          :raises RuntimeError: If decoder initialization fails
      )pbdoc")
-      .def(py::init<py::object, const map<string, string>&, int>(),
+      .def(py::init<py::object, const map<string, string>&, int, int>(),
            py::arg("buffered_reader"), py::arg("opts"), py::arg("gpu_id") = 0,
+           py::arg("pkt_queue_size") = 25,
            R"pbdoc(
          Create a new video decoder instance from a buffered reader.
 
@@ -370,6 +377,8 @@ void Init_PyDecoder(py::module& m) {
          :param gpu_id: GPU device ID to use for hardware acceleration. Default is 0.
              Use negative value for CPU-only decoding.
          :type gpu_id: int
+         :type pkt_queue_size: internal decoder packet queue size. Default is 25.
+         :type pkt_queue_size: int.         
          :raises RuntimeError: If decoder initialization fails
      )pbdoc")
       .def_property_readonly("Mode", &PyDecoder::GetMode,

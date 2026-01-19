@@ -164,11 +164,11 @@ class PyDecoder {
 public:
   PyDecoder(const std::string& pathToFile,
             const std::map<std::string, std::string>& ffmpeg_options,
-            int gpu_id);
+            int gpu_id, int pkt_queue_size);
 
   PyDecoder(py::object buffered_reader,
             const std::map<std::string, std::string>& ffmpeg_options,
-            int gpu_id);
+            int gpu_id, int pkt_queue_size);
 
   DECODE_STATUS ReadPacket();
 

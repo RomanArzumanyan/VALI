@@ -288,21 +288,19 @@ struct FfmpegDecodeFrame_Impl {
     return -1;
   }
 
-  // 24 FPS is a common value, so encoded packet queue size is set to hold
-  // amount of packets enough for ~1s of video.
-  static constexpr auto default_queue_size = 24U;
-
   /// @brief Constructor
   /// @param URL input url
   /// @param ffmpeg_options list of options you would pass to ffmpeg cli
   /// @param gpu_id gpu id, -1 for cpu
+  /// @param pkt_queue_size internal packet queue size
   /// @param p_io_ctx custom IO context
   /// @param probe if true, only video streams information will be collected
   FfmpegDecodeFrame_Impl(const char* URL,
                          std::map<std::string, std::string>& ffmpeg_options,
-                         int gpu_id, std::shared_ptr<AVIOContext> p_io_ctx,
+                         int gpu_id, int pkt_queue_size,
+                         std::shared_ptr<AVIOContext> p_io_ctx,
                          bool probe = false)
-      : m_io_ctx(p_io_ctx), m_queue(default_queue_size) {
+      : m_io_ctx(p_io_ctx), m_queue(pkt_queue_size) {
 
     // Extract preferred width from options because it's not ffmpeg option.
     auto it = ffmpeg_options.find("preferred_width");
@@ -1200,20 +1198,22 @@ TaskExecDetails DecodeFrame::GetSideData(AVFrameSideDataType data_type,
 }
 
 DecodeFrame* DecodeFrame::Make(const char* URL, NvDecoderClInterface& cli_iface,
-                               int gpu_id,
+                               int gpu_id, int pkt_queue_size,
                                std::shared_ptr<AVIOContext> p_io_ctx) {
-  return new DecodeFrame(URL, cli_iface, gpu_id, p_io_ctx);
+  return new DecodeFrame(URL, cli_iface, gpu_id, pkt_queue_size, p_io_ctx);
 }
 
 /* Don't mention any sync call in parent class constructor because GPU
  * acceleration is optional. Sync in decode method(s) instead.
  */
 DecodeFrame::DecodeFrame(const char* URL, NvDecoderClInterface& cli_iface,
-                         int gpu_id, std::shared_ptr<AVIOContext> p_io_ctx) {
+                         int gpu_id, int pkt_queue_size,
+                         std::shared_ptr<AVIOContext> p_io_ctx) {
   std::map<std::string, std::string> ffmpeg_options;
   cli_iface.GetOptions(ffmpeg_options);
 
-  pImpl = new FfmpegDecodeFrame_Impl(URL, ffmpeg_options, gpu_id, p_io_ctx);
+  pImpl = new FfmpegDecodeFrame_Impl(URL, ffmpeg_options, gpu_id,
+                                     pkt_queue_size, p_io_ctx);
 }
 
 DecodeFrame::~DecodeFrame() { delete pImpl; }
@@ -1234,7 +1234,10 @@ void DecodeFrame::Probe(const char* URL, NvDecoderClInterface& cli_iface,
 
   std::map<std::string, std::string> ffmpeg_options;
   cli_iface.GetOptions(ffmpeg_options);
-  FfmpegDecodeFrame_Impl dummy(URL, ffmpeg_options, -1, p_io_ctx, true);
+  // Huge packet queue just to make sure it won't return `full queue`.
+  const int pkt_queue_size = 250;
+  FfmpegDecodeFrame_Impl dummy(URL, ffmpeg_options, -1, pkt_queue_size,
+                               p_io_ctx, true);
 
   for (auto i = 0; i < dummy.GetNumStreams(); i++) {
     StreamParams params = {};

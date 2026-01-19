@@ -134,7 +134,7 @@ public:
 
   ~DecodeFrame();
   static DecodeFrame* Make(const char* URL, NvDecoderClInterface& cli_iface,
-                           int gpu_id,
+                           int gpu_id, int pkt_queue_size,
                            std::shared_ptr<AVIOContext> p_io_ctx = nullptr);
 
   void SetMode(DecodeMode new_mode);
@@ -147,6 +147,7 @@ private:
   struct FfmpegDecodeFrame_Impl* pImpl = nullptr;
 
   DecodeFrame(const char* URL, NvDecoderClInterface& cli_iface, int gpu_id,
+              int pkt_queue_size,
               std::shared_ptr<AVIOContext> p_io_ctx = nullptr);
 };
 
