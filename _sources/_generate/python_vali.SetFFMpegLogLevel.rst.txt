@@ -1,0 +1,6 @@
+﻿python\_vali.SetFFMpegLogLevel
+==============================
+
+.. currentmodule:: python_vali
+
+.. autofunction:: SetFFMpegLogLevel

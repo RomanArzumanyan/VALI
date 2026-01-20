@@ -1,0 +1,29 @@
+﻿python\_vali.SeekContext
+========================
+
+.. currentmodule:: python_vali
+
+.. autoclass:: SeekContext
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~SeekContext.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~SeekContext.seek_frame
+      ~SeekContext.seek_tssec
+   
+   

@@ -1,0 +1,31 @@
+﻿python\_vali.PySurfaceRotator
+=============================
+
+.. currentmodule:: python_vali
+
+.. autoclass:: PySurfaceRotator
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PySurfaceRotator.Run
+      ~PySurfaceRotator.RunAsync
+      ~PySurfaceRotator.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~PySurfaceRotator.Stream
+      ~PySurfaceRotator.SupportedFormats
+   
+   
